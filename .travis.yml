@@ -13,4 +13,4 @@ script:
     - sudo sed -i 's/secure_path="/secure_path="\/home\/travis\/rust\/bin:/' /etc/sudoers
     - sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH sh -c "make && make test && make doc"
 after_script:
-  - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
+  - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sudo sh
