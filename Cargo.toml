@@ -1,0 +1,10 @@
+[package]
+
+name = "pnet"
+version = "0.0.1"
+authors = [ "Robert Clipsham <robert@octarineparrot.com>" ]
+
+[lib]
+
+name = "pnet"
+crate_type = [ "dylib" ]
