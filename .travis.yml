@@ -1,0 +1,11 @@
+language: rust
+os:
+    - linux
+    - osx
+before_script:
+    - rustc -v
+    - cargo -V
+env: VERBOSE=1
+script:
+    - sudo sed -i 's/secure_path="/secure_path="\/home\/travis\/rust\/bin:/' /etc/sudoers
+    - sudo LD_LIBRARY_PATH=$LD_LIBRARY_PATH sh -c "make && make test && make doc"
