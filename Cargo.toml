@@ -7,4 +7,4 @@ authors = [ "Robert Clipsham <robert@octarineparrot.com>" ]
 [lib]
 
 name = "pnet"
-crate_type = [ "dylib" ]
+crate_type = [ "rlib", "dylib" ]
