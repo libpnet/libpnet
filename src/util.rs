@@ -10,9 +10,10 @@
 
 use bindings::libc;
 
-//use libc::consts::os::bsd44 as bsd44;
 use std::fmt;
+use std::from_str;
 use std::mem;
+use std::num::from_str_radix;
 use std::io::net::ip::IpAddr;
 
 #[cfg(not(windows))] use internal;
@@ -32,6 +33,46 @@ impl fmt::Show for MacAddr {
                        a, b, c, d, e, f)
         }
     }
+}
+
+impl from_str::FromStr for MacAddr {
+    fn from_str(s: &str) -> Option<MacAddr> {
+        let mut parts = [0u8, ..6];
+        let mut splits = s.split(':');
+        let mut i = 0;
+        for split in splits {
+            if i == 6 {
+                return None;
+            }
+            match from_str_radix(split, 16) {
+                Some(b) if split.len() != 0 => parts[i] = b,
+                _ => return None,
+            }
+            i += 1;
+        }
+
+        if i == 6 {
+            Some(MacAddr(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]))
+        } else {
+            None
+        }
+    }
+}
+
+#[test]
+fn mac_addr_from_str() {
+    assert_eq!(from_str::<MacAddr>("00:00:00:00:00:00"), Some(MacAddr(0, 0, 0, 0, 0, 0)));
+    assert_eq!(from_str::<MacAddr>("ff:ff:ff:ff:ff:ff"), Some(MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)));
+    assert_eq!(from_str::<MacAddr>("12:34:56:78:90:ab"), Some(MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB)));
+    assert_eq!(from_str::<MacAddr>("::::::"), None);
+    assert_eq!(from_str::<MacAddr>("0::::::"), None);
+    assert_eq!(from_str::<MacAddr>("::::0::"), None);
+    assert_eq!(from_str::<MacAddr>("12:34:56:78"), None);
+    assert_eq!(from_str::<MacAddr>("12:34:56:78:"), None);
+    assert_eq!(from_str::<MacAddr>("12:34:56:78:90"), None);
+    assert_eq!(from_str::<MacAddr>("12:34:56:78:90:"), None);
+    assert_eq!(from_str::<MacAddr>("12:34:56:78:90:00:00"), None);
+    assert_eq!(from_str::<MacAddr>("xx:xx:xx:xx:xx:xx"), None);
 }
 
 /// Represents a network interface and its associated addresses
