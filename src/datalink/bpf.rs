@@ -143,7 +143,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     };
     let receiver = DataLinkReceiverImpl {
         fd: fd,
-        read_buffer: Vec::from_elem(write_buffer_size, 0u8),
+        read_buffer: Vec::from_elem(read_buffer_size, 0u8),
         header_size: header_size,
     };
 
