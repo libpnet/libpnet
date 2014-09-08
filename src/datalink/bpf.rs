@@ -16,6 +16,7 @@ use std::option::{Option, Some};
 use std::sync::Arc;
 
 use bindings::bpf;
+use packet::Packet;
 use packet::ethernet::{EthernetHeader, MutableEthernetHeader};
 use datalink::{DataLinkChannelType, Layer2, Layer3};
 use internal;
@@ -185,6 +186,16 @@ impl DataLinkSenderImpl {
                 }
             }
             Some(Ok(()))
+        }
+    }
+
+    pub fn send_to(&mut self, packet: EthernetHeader, _dst: Option<NetworkInterface>)
+        -> Option<IoResult<()>> {
+        match unsafe { libc::write(self.fd.fd,
+                                   packet.packet().as_ptr() as *const libc::c_void,
+                                   packet.packet().len() as libc::size_t) } {
+            len if len == -1 => Some(Err(IoError::last_error())),
+            _ => Some(Ok(()))
         }
     }
 }

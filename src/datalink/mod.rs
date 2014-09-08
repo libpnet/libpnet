@@ -12,7 +12,6 @@ use std::io::{IoResult};
 use std::iter::Iterator;
 use std::option::{Option};
 
-use packet::{MutablePacket, Packet};
 use packet::ethernet::{EtherType, EthernetHeader, MutableEthernetHeader};
 use util::NetworkInterface;
 
@@ -44,8 +43,9 @@ pub enum DataLinkChannelType {
 ///
 /// A list of network interfaces can be retrieved using util::get_network_interfaces().
 ///
-/// The buffer sizes should be laand the transportrge enough to handle the largest packet you wish
-/// to send or receive.
+/// The buffer sizes should be large enough to handle the largest packet you wish
+/// to send or receive. Note that these parameters may be ignored, depending on the operating
+/// system.
 ///
 /// The channel type specifies what layer to send and receive packets at, currently only layer 2 is
 /// supported.
@@ -83,14 +83,13 @@ impl DataLinkSender {
 
     /// Send a packet
     ///
-    /// This requires an additional copy compared to `build_and_send`. The second parameter is
-    /// currently ignored, however `None` should be passed.
+    /// This may require an additional copy compared to `build_and_send`, depending on the
+    /// operating system being used. The second parameter is currently ignored, however `None`
+    /// should be passed.
     #[inline]
-    pub fn send_to(&mut self, packet: EthernetHeader, _dst: Option<NetworkInterface>)
+    pub fn send_to(&mut self, packet: EthernetHeader, dst: Option<NetworkInterface>)
         -> Option<IoResult<()>> {
-        self.build_and_send(1, packet.packet().len(), |mut eh| {
-            eh.clone_from(packet);
-        })
+        self.dlsi.send_to(packet, dst)
     }
 }
 

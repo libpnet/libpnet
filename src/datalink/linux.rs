@@ -16,6 +16,7 @@ use bindings::libc;
 use bindings::linux;
 use datalink::{DataLinkChannelType, Layer2, Layer3};
 use internal;
+use packet::Packet;
 use packet::ethernet::{EtherType, EthernetHeader, MutableEthernetHeader};
 use util::{NetworkInterface, MacAddr};
 
@@ -69,6 +70,17 @@ impl DataLinkSenderImpl {
             Some(Ok(()))
         } else {
             None
+        }
+    }
+
+    pub fn send_to(&mut self, packet: EthernetHeader, _dst: Option<NetworkInterface>)
+        -> Option<IoResult<()>> {
+        match internal::send_to(self.socket.fd,
+                                packet.packet(),
+                                (&self.send_addr as *const libc::sockaddr_ll) as *const _,
+                                self.send_addr_len as libc::socklen_t) {
+            Err(e) => Some(Err(e)),
+            Ok(_) => Some(Ok(()))
         }
     }
 }
