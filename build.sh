@@ -17,6 +17,9 @@ CARGO=$(which cargo)
 SUDO=$(which sudo)
 SYSTEM=$(uname -s)
 TESTER="$CARGO test"
+CC=$(which clang || which gcc)
+
+CARGO_FLAGS=
 
 # FIXME Need to get interface differently on Windows
 PNET_TEST_IFACE=$(ifconfig | egrep 'UP| active' | \
@@ -26,7 +29,7 @@ PNET_TEST_IFACE=$(ifconfig | egrep 'UP| active' | \
 # FIXME Need to link libraries properly on Windows
 build() {
     if [[ -x "$CARGO" ]]; then
-        $CARGO build
+        $CARGO build $CARGO_FLAGS --release
     else
         $RUSTC src/lib.rs
     fi
@@ -34,7 +37,7 @@ build() {
 
 build_doc() {
     if [[ -x "$CARGO" ]]; then
-        $CARGO doc
+        $CARGO doc $CARGO_FLAGS
     else
         $RUSTDOC src/lib.rs -o target/doc --crate-name pnet
     fi
@@ -42,7 +45,7 @@ build_doc() {
 
 build_test() {
     if [[ -x "$CARGO" ]]; then
-        $CARGO test --no-run
+        $CARGO test --no-run $CARGO_FLAGS
     else
         $RUSTC src/lib.rs --test --out-dir ./target/ -C extra-filename=-no-cargo
     fi
@@ -70,7 +73,30 @@ run_test() {
     esac
 }
 
+clean() {
+    if [[ -x "$CARGO" ]]; then
+        $CARGO clean $CARGO_FLAGS
+    else
+        rm -fr target
+    fi
+}
+
+benchmarks() {
+    [[ "$SYSTEM" != "Darwin" ]] && echo warning: C benchmarks only work on OS X
+    $CC -W -Wall -O2 benches/c_receiver.c -o target/benches/c_receiver
+    $CC -W -Wall -O2 benches/c_sender.c -o target/benches/c_sender
+
+    $RUSTC -O benches/rs_receiver.rs --out-dir target/benches -L target/release
+    $RUSTC -O benches/rs_sender.rs --out-dir target/benches -L target/release
+}
+
 mkdir -p target/doc
+mkdir -p target/benches
+
+if [[ "$VERBOSE" == "1" ]]; then
+    CARGO_FLAGS="--verbose"
+    TESTER="$TESTER $CARGO_FLAGS"
+fi
 
 if [[ ! -x "$CARGO" ]]; then
     TESTER='./target/pnet-*'
@@ -82,6 +108,12 @@ case "$1" in
     ;;
     doc)
         build_doc
+    ;;
+    clean)
+        clean
+    ;;
+    benchmarks)
+        benchmarks
     ;;
     *)
         build

@@ -18,3 +18,9 @@ test:
 
 doc:
 	bash build.sh doc
+
+benchmarks:
+	bash build.sh benchmarks
+
+clean:
+	bash build.sh clean
