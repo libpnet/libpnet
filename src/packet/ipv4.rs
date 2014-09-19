@@ -109,7 +109,7 @@ impl<'p> MutablePacket for MutableIpv4Header<'p> {
     fn mut_packet<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 
     #[inline(always)]
-    fn mut_payload<'p>(&'p mut self) -> &'p mut [u8] { self.packet.mut_slice_from(20) /* FIXME */ }
+    fn mut_payload<'p>(&'p mut self) -> &'p mut [u8] { self.packet.slice_from_mut(20) /* FIXME */ }
 }
 
 /// Trait implemented by anything which provides an interface to read IPv4

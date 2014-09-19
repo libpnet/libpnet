@@ -85,7 +85,7 @@ impl<'p> MutablePacket for MutableEthernetHeader<'p> {
     fn mut_packet<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 
     #[inline(always)]
-    fn mut_payload<'p>(&'p mut self) -> &'p mut [u8] { self.packet.mut_slice_from(14) }
+    fn mut_payload<'p>(&'p mut self) -> &'p mut [u8] { self.packet.slice_from_mut(14) }
 }
 
 /// A trait implemented by anything which provides the ability to retrieve
