@@ -81,10 +81,10 @@ impl<'p> Packet for MutableUdpHeader<'p> {
 
 impl<'p> MutablePacket for MutableUdpHeader<'p> {
     #[inline(always)]
-    fn mut_packet<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
+    fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 
     #[inline(always)]
-    fn mut_payload<'p>(&'p mut self) -> &'p mut [u8] { self.packet.slice_from_mut(8) }
+    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.slice_from_mut(8) }
 }
 
 /// Trait implemented by anything which provides an interface to read UDP

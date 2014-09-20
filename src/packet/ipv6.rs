@@ -78,10 +78,10 @@ impl<'p> Packet for MutableIpv6Header<'p> {
 
 impl<'p> MutablePacket for MutableIpv6Header<'p> {
     #[inline(always)]
-    fn mut_packet<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
+    fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 
     #[inline(always)]
-    fn mut_payload<'p>(&'p mut self) -> &'p mut [u8] { self.packet.slice_from_mut(40) }
+    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.slice_from_mut(40) }
 }
 
 /// Trait implemented by anything which provides an interface to read IPv6

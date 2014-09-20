@@ -22,15 +22,15 @@ pub trait Packet {
 /// Represents a generic, mutable, network packet
 pub trait MutablePacket {
     /// Retreive the underlying, mutable, buffer for the packet
-    fn mut_packet<'p>(&'p mut self) -> &'p mut [u8];
+    fn packet_mut<'p>(&'p mut self) -> &'p mut [u8];
 
     /// Retreive the mutable payload for the packet
-    fn mut_payload<'p>(&'p mut self) -> &'p mut [u8];
+    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8];
 
     /// Initialize this packet by cloning another
     fn clone_from<'p, T : Packet>(&'p mut self, other: T) {
         use std::slice::bytes::copy_memory;
-        copy_memory(self.mut_packet(), other.packet())
+        copy_memory(self.packet_mut(), other.packet())
     }
 }
 
