@@ -54,10 +54,10 @@ pub fn build_udp4_packet(packet: &mut [u8], msg: &str) {
     let mut ip_header = build_ipv4_header(packet);
     let source = ip_header.get_source();
     let destination = ip_header.get_destination();
-    let mut udp_header = build_udp_header(ip_header.mut_payload());
+    let mut udp_header = build_udp_header(ip_header.payload_mut());
 
     {
-        let data = udp_header.mut_payload();
+        let data = udp_header.payload_mut();
         data[0] = msg.char_at(0) as u8;
         data[1] = msg.char_at(1) as u8;
         data[2] = msg.char_at(2) as u8;
@@ -90,7 +90,7 @@ fn main() {
         mut_ethernet_header.set_destination(destination);
         mut_ethernet_header.set_source(interface.mac_address());
         mut_ethernet_header.set_ethertype(EtherTypes::Ipv4);
-        build_udp4_packet(mut_ethernet_header.mut_payload(), "rmesg");
+        build_udp4_packet(mut_ethernet_header.payload_mut(), "rmesg");
     }
 
     let ethernet_header = EthernetHeader::new(mut_ethernet_header.packet());

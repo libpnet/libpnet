@@ -53,8 +53,8 @@ impl DataLinkSenderImpl {
         if len < self.write_buffer.as_slice().len() {
             let min = cmp::min(self.write_buffer.as_slice().len(), len);
             let ref mut mut_slice = self.write_buffer;
-            for chunk in mut_slice.as_mut_slice().mut_slice_to(min)
-                                  .mut_chunks(packet_size) {
+            for chunk in mut_slice.as_mut_slice().slice_to_mut(min)
+                                  .chunks_mut(packet_size) {
                 {
                     let eh = MutableEthernetHeader::new(chunk);
                     func(eh);

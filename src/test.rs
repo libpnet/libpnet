@@ -44,7 +44,7 @@ static IPV6_DESTINATION: IpAddr = Ipv6Addr(0, 0, 0, 0, 0, 0, 0, 1);
 static TEST_PROTO: IpNextHeaderProtocol = IpNextHeaderProtocols::Test1;
 
 fn build_ipv4_header(packet: &mut [u8], offset: uint) {
-    let mut ip_header = MutableIpv4Header::new(packet.mut_slice_from(offset));
+    let mut ip_header = MutableIpv4Header::new(packet.slice_from_mut(offset));
 
     let total_len = (IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN) as u16;
 
@@ -59,7 +59,7 @@ fn build_ipv4_header(packet: &mut [u8], offset: uint) {
 }
 
 fn build_ipv6_header(packet: &mut [u8], offset: uint) {
-    let mut ip_header = MutableIpv6Header::new(packet.mut_slice_from(offset));
+    let mut ip_header = MutableIpv6Header::new(packet.slice_from_mut(offset));
 
     ip_header.set_version(6);
     ip_header.set_payload_length((UDP_HEADER_LEN + TEST_DATA_LEN) as u16);
@@ -70,7 +70,7 @@ fn build_ipv6_header(packet: &mut [u8], offset: uint) {
 }
 
 fn build_udp_header(packet: &mut [u8], offset: uint) {
-    let mut udp_header = MutableUdpHeader::new(packet.mut_slice_from(offset));
+    let mut udp_header = MutableUdpHeader::new(packet.slice_from_mut(offset));
 
     udp_header.set_source(1234); // Arbitary port number
     udp_header.set_destination(1234);
@@ -87,7 +87,7 @@ fn build_udp4_packet(packet: &mut [u8], start: uint, msg: &str) {
     packet[data_start + 2] = msg.char_at(2) as u8;
     packet[data_start + 3] = msg.char_at(3) as u8;
 
-    let slice = packet.mut_slice_from(start + IPV4_HEADER_LEN as uint);
+    let slice = packet.slice_from_mut(start + IPV4_HEADER_LEN as uint);
     MutableUdpHeader::new(slice).checksum(IPV4_SOURCE, IPV4_DESTINATION, TEST_PROTO);
 }
 
@@ -101,7 +101,7 @@ fn build_udp6_packet(packet: &mut [u8], start: uint, msg: &str) {
     packet[data_start + 2] = msg.char_at(2) as u8;
     packet[data_start + 3] = msg.char_at(3) as u8;
 
-    let slice = packet.mut_slice_from(start + IPV6_HEADER_LEN as uint);
+    let slice = packet.slice_from_mut(start + IPV6_HEADER_LEN as uint);
     MutableUdpHeader::new(slice).checksum(IPV6_SOURCE, IPV6_DESTINATION, TEST_PROTO);
 }
 

@@ -178,7 +178,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
                 flags: (*addr).ifa_flags
             };
             let mut found: bool = false;
-            for iface in ifaces.mut_iter() {
+            for iface in ifaces.iter_mut() {
                 if name == iface.name {
                     merge(iface, &ni);
                     found = true;
@@ -192,7 +192,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
         }
         libc::freeifaddrs(addrs);
 
-        for iface in ifaces.mut_iter() {
+        for iface in ifaces.iter_mut() {
             iface.index = iface.name.with_c_str(
                 |name| libc::if_nametoindex(name)
             );

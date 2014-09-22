@@ -166,7 +166,7 @@ impl DataLinkSenderImpl {
                         }
                     )
             };
-            for chunk in slice.mut_chunks(packet_size) {
+            for chunk in slice.chunks_mut(packet_size) {
                 {
                     let eh = MutableEthernetHeader::new(chunk);
                     func(eh);

@@ -165,8 +165,8 @@ impl DataLinkSenderImpl {
             None
         } else {
             let min = cmp::min(self.write_buffer.len(), len);
-            for chunk in self.write_buffer.mut_slice_to(min)
-                                          .mut_chunks(packet_size + self.header_size) {
+            for chunk in self.write_buffer.slice_to_mut(min)
+                                          .chunks_mut(packet_size + self.header_size) {
                 // If we're sending on the loopback device, the first 4 bytes must be set to
                 // AF_INET
                 if self.header_size == 4 {
@@ -175,7 +175,7 @@ impl DataLinkSenderImpl {
                     }
                 }
                 {
-                    let eh = MutableEthernetHeader::new(chunk.mut_slice_from(self.header_size));
+                    let eh = MutableEthernetHeader::new(chunk.slice_from_mut(self.header_size));
                     func(eh);
                 }
                 match unsafe { libc::write(self.fd.fd,
