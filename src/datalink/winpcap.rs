@@ -191,6 +191,7 @@ impl DataLinkSenderImpl {
 
     pub fn send_to(&mut self, packet: EthernetHeader, _dst: Option<NetworkInterface>)
         -> Option<IoResult<()>> {
+        use packet::MutablePacket;
         self.build_and_send(1, packet.packet().len(), |mut eh| {
             eh.clone_from(packet);
         })
