@@ -173,7 +173,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
                 name: name.clone(),
                 index: 0,
                 mac: mac,
-                ips: ip.map(|ip| Vec::from_slice([ip])),
+                ips: ip.map(|ip| [ip].to_vec()),
                 flags: (*addr).ifa_flags
             };
             let mut found: bool = false;
