@@ -12,61 +12,61 @@
 
 extern crate libc;
 
-pub static AF_LINK: libc::c_int = 18;
+pub const AF_LINK: libc::c_int = 18;
 
-static IF_NAMESIZE: uint = 16;
-static IFNAMSIZ: uint = IF_NAMESIZE;
-static IOC_IN: libc::c_ulong = 0x80000000;
-static IOC_OUT: libc::c_ulong = 0x40000000;
-static IOC_INOUT: libc::c_ulong = IOC_IN | IOC_OUT;
-static IOCPARM_SHIFT: libc::c_ulong = 13;
-static IOCPARM_MASK: libc::c_ulong = (1 << (IOCPARM_SHIFT as uint)) - 1;
+const IF_NAMESIZE: uint = 16;
+const IFNAMSIZ: uint = IF_NAMESIZE;
+const IOC_IN: libc::c_ulong = 0x80000000;
+const IOC_OUT: libc::c_ulong = 0x40000000;
+const IOC_INOUT: libc::c_ulong = IOC_IN | IOC_OUT;
+const IOCPARM_SHIFT: libc::c_ulong = 13;
+const IOCPARM_MASK: libc::c_ulong = (1 << (IOCPARM_SHIFT as uint)) - 1;
 
-static SIZEOF_IFREQ: libc::c_ulong = 32;
-static SIZEOF_C_UINT: libc::c_ulong = 4;
+const SIZEOF_IFREQ: libc::c_ulong = 32;
+const SIZEOF_C_UINT: libc::c_ulong = 4;
 #[cfg(target_os = "freebsd")]
-static SIZEOF_C_LONG: libc::c_int = 8;
+const SIZEOF_C_LONG: libc::c_int = 8;
 
-pub static BIOCSETIF: libc::c_ulong = IOC_IN |
+pub const BIOCSETIF: libc::c_ulong = IOC_IN |
                                       ((SIZEOF_IFREQ & IOCPARM_MASK) << 16u) |
                                       ('B' as libc::c_ulong << 8u) |
                                       108;
-pub static BIOCIMMEDIATE: libc::c_ulong = IOC_IN |
+pub const BIOCIMMEDIATE: libc::c_ulong = IOC_IN |
                                           ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
                                           ('B' as libc::c_ulong << 8) |
                                           112;
-pub static BIOCGBLEN: libc::c_ulong = IOC_OUT |
+pub const BIOCGBLEN: libc::c_ulong = IOC_OUT |
                                       ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
                                       ('B' as libc::c_ulong << 8) |
                                       102;
-pub static BIOCGDLT: libc::c_ulong = IOC_OUT |
+pub const BIOCGDLT: libc::c_ulong = IOC_OUT |
                                       ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
                                       ('B' as libc::c_ulong << 8) |
                                       106;
 
-pub static BIOCSBLEN: libc::c_ulong = IOC_INOUT |
+pub const BIOCSBLEN: libc::c_ulong = IOC_INOUT |
                                       ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
                                       ('B' as libc::c_ulong << 8) |
                                       102;
-pub static BIOCSHDRCMPLT: libc::c_ulong = IOC_IN |
+pub const BIOCSHDRCMPLT: libc::c_ulong = IOC_IN |
                                           ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
                                           ('B' as libc::c_ulong << 8) |
                                           117;
 
 #[cfg(target_os = "freebsd")]
-pub static BIOCFEEDBACK: libc::c_ulong = IOC_IN |
+pub const BIOCFEEDBACK: libc::c_ulong = IOC_IN |
                                           ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
                                           ('B' as libc::c_ulong << 8) |
                                           124;
 // NOTE Could use BIOCSSEESENT on OS X, though set to 1 by default anyway
 
-pub static DLT_NULL: libc::c_uint = 0;
+pub const DLT_NULL: libc::c_uint = 0;
 
 #[cfg(target_os = "freebsd")]
-static BPF_ALIGNMENT: libc::c_int = SIZEOF_C_LONG;
+const BPF_ALIGNMENT: libc::c_int = SIZEOF_C_LONG;
 #[cfg(target_os = "macos")]
 #[cfg(windows)]
-static BPF_ALIGNMENT: libc::c_int = 4;
+const BPF_ALIGNMENT: libc::c_int = 4;
 
 pub fn BPF_WORDALIGN<T : Int + ToPrimitive + FromPrimitive>(x: T) -> T {
     use std::num::{from_i32};

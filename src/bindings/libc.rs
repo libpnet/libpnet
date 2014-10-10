@@ -56,34 +56,34 @@ pub struct sockaddr_ll {
 }
 
 #[cfg(windows)]
-pub static SOCK_RAW: c_int = 3;
+pub const SOCK_RAW: c_int = 3;
 #[cfg(windows)]
-pub static IP_HDRINCL: c_int = 2;
+pub const IP_HDRINCL: c_int = 2;
 #[cfg(windows)]
-pub static IFF_LOOPBACK: c_int = 4;
+pub const IFF_LOOPBACK: c_int = 4;
 
 #[cfg(target_os = "linux")]
-pub static SOCK_RAW: c_int = 3;
+pub const SOCK_RAW: c_int = 3;
 #[cfg(target_os = "linux")]
-pub static IP_HDRINCL: c_int = 3;
+pub const IP_HDRINCL: c_int = 3;
 #[cfg(target_os = "linux")]
-pub static IFF_LOOPBACK: c_int = 0x8;
+pub const IFF_LOOPBACK: c_int = 0x8;
 #[cfg(target_os = "linux")]
-pub static AF_PACKET : c_int = 17;
+pub const AF_PACKET : c_int = 17;
 
 #[cfg(target_os = "freebsd")]
-pub static SOCK_RAW: c_int = 3;
+pub const SOCK_RAW: c_int = 3;
 #[cfg(target_os = "freebsd")]
-pub static IP_HDRINCL: c_int = 2;
+pub const IP_HDRINCL: c_int = 2;
 #[cfg(target_os = "freebsd")]
-pub static IFF_LOOPBACK: c_int = 0x8;
+pub const IFF_LOOPBACK: c_int = 0x8;
 
 #[cfg(target_os = "macos")]
-pub static SOCK_RAW: c_int = 3;
+pub const SOCK_RAW: c_int = 3;
 #[cfg(target_os = "macos")]
-pub static IP_HDRINCL: c_int = 2;
+pub const IP_HDRINCL: c_int = 2;
 #[cfg(target_os = "macos")]
-pub static IFF_LOOPBACK: c_int = 0x8;
+pub const IFF_LOOPBACK: c_int = 0x8;
 
 #[cfg(not(windows))]
 extern "system" {

@@ -11,9 +11,9 @@
 
 extern crate libc;
 
-pub static SOL_PACKET: libc::c_int = 263;
-pub static PACKET_ADD_MEMBERSHIP: libc::c_int = 1;
-pub static PACKET_MR_PROMISC: libc::c_int = 1;
+pub const SOL_PACKET: libc::c_int = 263;
+pub const PACKET_ADD_MEMBERSHIP: libc::c_int = 1;
+pub const PACKET_MR_PROMISC: libc::c_int = 1;
 
 // man 7 packet
 pub struct packet_mreq {

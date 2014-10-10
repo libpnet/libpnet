@@ -45,12 +45,12 @@ pub type UINT32 = u32;
 pub type UINT8 = u8;
 pub type INT = i32;
 
-static MAX_ADAPTER_DESCRIPTION_LENGTH: uint = 128;
-static MAX_ADAPTER_NAME_LENGTH: uint = 256;
-static MAX_ADAPTER_ADDRESS_LENGTH: uint = 8;
+const MAX_ADAPTER_DESCRIPTION_LENGTH: uint = 128;
+const MAX_ADAPTER_NAME_LENGTH: uint = 256;
+const MAX_ADAPTER_ADDRESS_LENGTH: uint = 8;
 
 // from ntddndis.h
-pub static NDIS_PACKET_TYPE_PROMISCUOUS: ULONG = 0x00000020;
+pub const NDIS_PACKET_TYPE_PROMISCUOUS: ULONG = 0x00000020;
 
 // from IPTypes.h
 #[repr(C)]
@@ -100,8 +100,8 @@ struct _IP_ADAPTER_INFO {
 pub type IP_ADAPTER_INFO = _IP_ADAPTER_INFO;
 pub type PIP_ADAPTER_INFO = *mut _IP_ADAPTER_INFO;
 
-static MAX_DHCPV6_DUID_LENGTH: uint = 130;
-static MAX_DNS_SUFFIX_STRING_LENGTH: uint = 256;
+const MAX_DHCPV6_DUID_LENGTH: uint = 130;
+const MAX_DNS_SUFFIX_STRING_LENGTH: uint = 256;
 
 pub type LPSOCKADDR = *mut libc::sockaddr;
 
