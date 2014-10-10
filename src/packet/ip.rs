@@ -8,7 +8,10 @@
 
 //! Defines the type and constants for IP next header/next level protocol fields.
 
+// NOTE Everything here is pretending to be an enum, but with namespacing by default, so we allow
+//      breaking style guidelines.
 #[allow(non_snake_case)]
+#[allow(non_uppercase_statics)]
 
 /// Protocol numbers as defined at:
 /// http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
