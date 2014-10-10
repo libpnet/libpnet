@@ -9,9 +9,7 @@
 // NOTE Remove this once the next rust nightly is out.
 pub mod libc;
 
-#[cfg(target_os = "freebsd")]
-#[cfg(target_os = "macos")]
-#[cfg(windows)]
+#[cfg(any(target_os = "freebsd", target_os = "macos", windows))]
 pub mod bpf;
 
 #[cfg(target_os = "linux")]

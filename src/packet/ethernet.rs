@@ -205,14 +205,15 @@ fn ethernet_header_test() {
 /// FIXME Should include all
 /// A handful of these have been selected since most are archaic and unused.
 #[allow(non_snake_case)]
+#[allow(non_uppercase_statics)]
 pub mod EtherTypes {
     use packet::ethernet::EtherType;
 
-    pub static Ipv4: EtherType      = EtherType(0x0800);
-    pub static Arp: EtherType       = EtherType(0x0806);
-    pub static WakeOnLan: EtherType = EtherType(0x0842);
-    pub static Rarp: EtherType      = EtherType(0x8035);
-    pub static Ipv6: EtherType      = EtherType(0x86DD);
+    pub const Ipv4: EtherType      = EtherType(0x0800);
+    pub const Arp: EtherType       = EtherType(0x0806);
+    pub const WakeOnLan: EtherType = EtherType(0x0842);
+    pub const Rarp: EtherType      = EtherType(0x8035);
+    pub const Ipv6: EtherType      = EtherType(0x86DD);
 }
 
 /// Represents the Ethernet ethertype field.

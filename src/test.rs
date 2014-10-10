@@ -28,20 +28,20 @@ use transport;
 use datalink;
 use util::NetworkInterface;
 
-static MIN_PACKET_SIZE: uint = 64;
-static ETHERNET_HEADER_LEN: uint = 14;
-static IPV4_HEADER_LEN: uint = 20;
-static IPV6_HEADER_LEN: uint = 40;
-static UDP_HEADER_LEN: uint = 8;
-static TEST_DATA_LEN: uint = 4;
+const MIN_PACKET_SIZE: uint = 64;
+const ETHERNET_HEADER_LEN: uint = 14;
+const IPV4_HEADER_LEN: uint = 20;
+const IPV6_HEADER_LEN: uint = 40;
+const UDP_HEADER_LEN: uint = 8;
+const TEST_DATA_LEN: uint = 4;
 
-static IPV4_SOURCE: IpAddr = Ipv4Addr(127, 0, 0, 1);
-static IPV4_DESTINATION: IpAddr = Ipv4Addr(127, 0, 0, 1);
-static IPV6_SOURCE: IpAddr = Ipv6Addr(0, 0, 0, 0, 0, 0, 0, 1);
-static IPV6_DESTINATION: IpAddr = Ipv6Addr(0, 0, 0, 0, 0, 0, 0, 1);
+const IPV4_SOURCE: IpAddr = Ipv4Addr(127, 0, 0, 1);
+const IPV4_DESTINATION: IpAddr = Ipv4Addr(127, 0, 0, 1);
+const IPV6_SOURCE: IpAddr = Ipv6Addr(0, 0, 0, 0, 0, 0, 0, 1);
+const IPV6_DESTINATION: IpAddr = Ipv6Addr(0, 0, 0, 0, 0, 0, 0, 1);
 
 // Use a protocol which is unlikely to have other packets on
-static TEST_PROTO: IpNextHeaderProtocol = IpNextHeaderProtocols::Test1;
+const TEST_PROTO: IpNextHeaderProtocol = IpNextHeaderProtocols::Test1;
 
 fn build_ipv4_header(packet: &mut [u8], offset: uint) {
     let mut ip_header = MutableIpv4Header::new(packet.slice_from_mut(offset));

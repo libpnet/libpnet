@@ -121,8 +121,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
     }
 }
 
-#[cfg(target_os = "freebsd")]
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
 fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
     use bindings::bpf;
     unsafe {
@@ -174,7 +173,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
                 name: name.clone(),
                 index: 0,
                 mac: mac,
-                ips: ip.map(|ip| Vec::from_slice([ip])),
+                ips: ip.map(|ip| [ip].to_vec()),
                 flags: (*addr).ifa_flags
             };
             let mut found: bool = false;

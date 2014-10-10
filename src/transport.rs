@@ -130,13 +130,12 @@ impl TransportSender {
         self.send_to_impl(packet, destination)
     }
 
-    #[cfg(not(target_os = "freebsd"), not(target_os = "macos"))]
+    #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]
     fn send_to_impl<T : Packet>(&mut self, packet: T, dst: ip::IpAddr) -> IoResult<uint> {
         self.send(packet, dst)
     }
 
-    #[cfg(target_os = "freebsd")]
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "freebsd", target_os = "macos"))]
     fn send_to_impl<T : Packet>(&mut self, packet: T, dst: ip::IpAddr) -> IoResult<uint> {
         use packet::ipv4::MutableIpv4Header;
 
@@ -211,8 +210,7 @@ pub macro_rules! transport_channel_iterator (
                     Err(e) => Err(e),
                 };
 
-                #[cfg(target_os = "freebsd")]
-                #[cfg(target_os = "macos")]
+                #[cfg(any(target_os = "freebsd", target_os = "macos"))]
                 fn fixup_packet(buffer: &mut [u8]) {
                     use packet::ipv4::MutableIpv4Header;
 
@@ -234,7 +232,7 @@ pub macro_rules! transport_channel_iterator (
                     new_packet.set_fragment_offset(offset);
                 }
 
-                #[cfg(not(target_os = "freebsd"), not(target_os = "macos"))]
+                #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]
                 fn fixup_packet(_buffer: &mut [u8]) {}
             }
         }
