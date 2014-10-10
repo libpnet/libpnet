@@ -23,8 +23,7 @@ mod backend;
 #[path = "linux.rs"]
 mod backend;
 
-#[cfg(target_os = "freebsd")]
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
 #[path = "bpf.rs"]
 mod backend;
 

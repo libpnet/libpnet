@@ -121,8 +121,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
     }
 }
 
-#[cfg(target_os = "freebsd")]
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
 fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
     use bindings::bpf;
     unsafe {
