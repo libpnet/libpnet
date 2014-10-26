@@ -82,7 +82,9 @@ pub struct ifreq {
 }
 
 // See /usr/include/net/if_dl.h
-#[cfg(target_os = "freebsd")]
+// sdl_data does not match if_dl.h on OS X, since the size of 12 is a minimum. Will be unsafe
+// when sdl_nlen > 40.
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
 pub struct sockaddr_dl {
     pub sdl_len: libc::c_uchar,
     pub sdl_family: libc::c_uchar,
@@ -93,21 +95,6 @@ pub struct sockaddr_dl {
     pub sdl_slen: libc::c_uchar,
     pub sdl_data: [libc::c_char, ..46],
 }
-
-#[cfg(target_os = "macos")]
-pub struct sockaddr_dl {
-    pub sdl_len: libc::c_uchar,
-    pub sdl_family: libc::c_uchar,
-    pub sdl_index: libc::c_ushort,
-    pub sdl_type: libc::c_uchar,
-    pub sdl_nlen: libc::c_uchar,
-    pub sdl_alen: libc::c_uchar,
-    pub sdl_slen: libc::c_uchar,
-    pub sdl_data: [libc::c_char, ..12],
-    pub sdl_rcf: libc::c_ushort,
-    pub sdl_route: [libc::c_ushort, ..16],
-}
-
 
 // See man 4 bpf or /usr/include/net/bpf.h [windows: or Common/Packet32.h]
 #[cfg(any(target_os = "freebsd", all(target_os = "macos", target_word_size = "32"), windows))]
