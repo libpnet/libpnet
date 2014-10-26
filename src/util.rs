@@ -130,7 +130,6 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
         } else if (*sa).sa_family as libc::c_int == bpf::AF_LINK {
             let sdl: *const bpf::sockaddr_dl = mem::transmute(sa);
             let nlen = (*sdl).sdl_nlen as uint;
-            println!("nlen {}", nlen);
             let mac = MacAddr((*sdl).sdl_data[nlen + 0] as u8,
                               (*sdl).sdl_data[nlen + 1] as u8,
                               (*sdl).sdl_data[nlen + 2] as u8,
