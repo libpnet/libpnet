@@ -83,6 +83,7 @@ pub struct ifreq {
 }
 
 // See /usr/include/net/if_dl.h
+// sdl_data does not match if_dl.h, since the size of 12 is a minimum. Will be unsafe when sdl_nlen > 40.
 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
 pub struct sockaddr_dl {
     pub sdl_len: libc::c_uchar,
