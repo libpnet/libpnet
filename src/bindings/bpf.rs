@@ -64,8 +64,7 @@ pub const DLT_NULL: libc::c_uint = 0;
 
 #[cfg(target_os = "freebsd")]
 const BPF_ALIGNMENT: libc::c_int = SIZEOF_C_LONG;
-#[cfg(target_os = "macos")]
-#[cfg(windows)]
+#[cfg(any(target_os = "macos", windows))]
 const BPF_ALIGNMENT: libc::c_int = 4;
 
 pub fn BPF_WORDALIGN<T : Int + ToPrimitive + FromPrimitive>(x: T) -> T {
@@ -111,9 +110,7 @@ pub struct sockaddr_dl {
 
 
 // See man 4 bpf or /usr/include/net/bpf.h [windows: or Common/Packet32.h]
-#[cfg(target_os = "freebsd")]
-#[cfg(target_os = "macos", target_word_size = "32")]
-#[cfg(windows)]
+#[cfg(any(target_os = "freebsd", all(target_os = "macos", target_word_size = "32"), windows))]
 pub struct bpf_hdr {
     pub bh_tstamp: libc::timeval,
     pub bh_caplen: u32,
@@ -126,7 +123,7 @@ pub struct timeval32 {
     pub tv_usec: i32,
 }
 
-#[cfg(target_os = "macos", target_word_size = "64")]
+#[cfg(all(target_os = "macos", target_word_size = "64"))]
 pub struct bpf_hdr {
     pub bh_tstamp: timeval32,
     pub bh_caplen: u32,
