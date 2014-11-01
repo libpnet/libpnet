@@ -97,7 +97,7 @@
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 
-#![deny(missing_doc)]
+#![deny(missing_docs)]
 
 #![feature(macro_rules)]
 

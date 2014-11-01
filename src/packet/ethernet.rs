@@ -205,7 +205,7 @@ fn ethernet_header_test() {
 /// FIXME Should include all
 /// A handful of these have been selected since most are archaic and unused.
 #[allow(non_snake_case)]
-#[allow(non_uppercase_statics)]
+#[allow(non_upper_case_globals)]
 pub mod EtherTypes {
     use packet::ethernet::EtherType;
 
