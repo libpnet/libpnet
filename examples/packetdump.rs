@@ -118,12 +118,12 @@ fn main() {
     // Create a channel to receive on
     let (_, mut rx) = match datalink_channel(interface, 0, 4096, Layer2) {
         Ok((tx, rx)) => (tx, rx),
-        Err(e) => fail!("packetdump: unable to create channel: {}", e)
+        Err(e) => panic!("packetdump: unable to create channel: {}", e)
     };
 
     pfor!(packet in rx.iter() {
         handle_packet(interface.name.as_slice(), &packet);
     } on Err(e) {
-        fail!("packetdump: unable to receive packet: {}", e);
+        panic!("packetdump: unable to receive packet: {}", e);
     })
 }

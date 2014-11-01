@@ -81,7 +81,7 @@ fn main() {
     // Create a channel to send on
     let (mut tx, _) = match datalink_channel(interface, 64, 0, Layer2) {
         Ok((tx, rx)) => (tx, rx),
-        Err(e) => fail!("rs_sender: unable to create channel: {}", e)
+        Err(e) => panic!("rs_sender: unable to create channel: {}", e)
     };
 
     let mut buffer = [0u8, ..64];

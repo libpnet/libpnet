@@ -159,7 +159,7 @@ fn layer4(ip: IpAddr, header_len: uint) {
 
     let (mut ttx, mut trx) = match transport_channel(128, transport::Layer4(get_proto(ip))) {
         Ok((tx, rx)) => (tx, rx),
-        Err(e) => fail!("layer4: unable to create channel: {}", e),
+        Err(e) => panic!("layer4: unable to create channel: {}", e),
     };
 
     let res = try_future( proc() {
@@ -169,14 +169,14 @@ fn layer4(ip: IpAddr, header_len: uint) {
             assert_eq!(header, UdpHeader::new(packet.slice(header_len, packet_len)));
             break;
         } on Err(e) {
-            fail!("Receive failed for layer4_test(): {}", e);
+            panic!("Receive failed for layer4_test(): {}", e);
         })
     });
 
     rx.recv();
     match ttx.send_to(udp, ip) {
         Ok(res) => assert_eq!(res as uint, UDP_HEADER_LEN + TEST_DATA_LEN),
-        Err(e) => fail!("layer4_test failed: {}", e)
+        Err(e) => panic!("layer4_test failed: {}", e)
     }
 
     fn get_proto(ip: IpAddr) -> TransportProtocol {
@@ -187,7 +187,7 @@ fn layer4(ip: IpAddr, header_len: uint) {
     }
 
     match res.unwrap() {
-        Err(e) => fail!(e),
+        Err(e) => panic!(e),
         _ => ()
     }
 }
@@ -215,7 +215,7 @@ fn layer3_ipv4() {
                                     transport::Layer3(TEST_PROTO));
     let (mut ttx, mut trx) = match tc {
         Ok((tx, rx)) => (tx, rx),
-        Err(e) => fail!("layer3: unable to create channel: {}", e),
+        Err(e) => panic!("layer3: unable to create channel: {}", e),
     };
 
     let res = try_future( proc() {
@@ -231,7 +231,7 @@ fn layer3_ipv4() {
                        packet.slice_from(IPV4_HEADER_LEN + UDP_HEADER_LEN))
             break;
         } on Err(e) {
-            fail!("receive failed for layer3_ipv4_test(): {}", e);
+            panic!("receive failed for layer3_ipv4_test(): {}", e);
         })
     });
 
@@ -239,11 +239,11 @@ fn layer3_ipv4() {
     rx.recv();
     match ttx.send_to(Ipv4Header::new(packet), send_addr) {
         Ok(res) => assert_eq!(res as uint, packet.len()),
-        Err(e) => fail!("layer3_ipv4_test failed: {}", e)
+        Err(e) => panic!("layer3_ipv4_test failed: {}", e)
     }
 
     match res.unwrap() {
-        Err(e) => fail!(e),
+        Err(e) => panic!(e),
         _ => ()
     }
 
@@ -272,7 +272,7 @@ fn layer2() {
     let dlc = datalink_channel(&interface, MIN_PACKET_SIZE*2, MIN_PACKET_SIZE*2, datalink::Layer2);
     let (mut dltx, mut dlrx) = match dlc {
         Ok((tx, rx)) => (tx, rx),
-        Err(e) => fail!("layer2: unable to create channel: {}", e)
+        Err(e) => panic!("layer2: unable to create channel: {}", e)
     };
 
     let res = try_future( proc() {
@@ -280,26 +280,26 @@ fn layer2() {
         let mut i = 0u;
         pfor!(eh in dlrx.iter() {
             if i == 10_000 {
-                fail!("layer2: did not find matching packet after 10_000 iterations");
+                panic!("layer2: did not find matching packet after 10_000 iterations");
             }
             if EthernetHeader::new(packet) == eh {
                 return;
             }
             i += 1;
         } on Err(e) {
-            fail!("layer2 failed: {}", e);
+            panic!("layer2 failed: {}", e);
         })
     });
 
     rx.recv();
     match dltx.send_to(EthernetHeader::new(packet), None) {
         Some(Ok(())) => (),
-        Some(Err(e)) => fail!("layer2_test failed: {}", e),
-        None => fail!("Provided buffer too small")
+        Some(Err(e)) => panic!("layer2_test failed: {}", e),
+        None => panic!("Provided buffer too small")
     }
 
     match res.unwrap() {
-        Err(e) => fail!(e),
+        Err(e) => panic!(e),
         _ => ()
     }
 }
@@ -309,7 +309,7 @@ fn check_test_environment() {
     use std::os;
     let tasks = os::getenv("RUST_TEST_TASKS");
     if !tasks.is_some() || tasks.unwrap().as_slice() != "1" {
-        fail!("Tests must be run with environment variable RUST_TEST_TASKS=1");
+        panic!("Tests must be run with environment variable RUST_TEST_TASKS=1");
     }
 
     test_iface();
@@ -318,7 +318,7 @@ fn check_test_environment() {
     fn test_iface() {
         let iface = os::getenv("PNET_TEST_IFACE");
         if !iface.is_some() {
-            fail!("The environment variable PNET_TEST_IFACE must be set.");
+            panic!("The environment variable PNET_TEST_IFACE must be set.");
         }
     }
 

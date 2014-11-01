@@ -47,7 +47,7 @@ pub trait MutablePacket {
 /// pfor!(packet in some_iterator {
 ///     /* Do something with packet */
 /// } on Err(e) {
-///     fail!("An error occured while receiving packets: {}", e);
+///     panic!("An error occured while receiving packets: {}", e);
 /// })
 /// ```
 #[macro_export]

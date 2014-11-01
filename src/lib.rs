@@ -63,7 +63,7 @@
 //!     // Create a new channel, dealing with layer 2 packets
 //!     let (mut tx, mut rx) = match datalink_channel(interface, 4096, 4096, Layer2) {
 //!         Ok((tx, rx)) => (tx, rx),
-//!         Err(e) => fail!("An error occurred when creating the datalink channel: {}", e)
+//!         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
 //!     };
 //!
 //!     // pfor works just like an ordinary for loop, but has additional syntax for
@@ -87,7 +87,7 @@
 //!         // If an error occurs, we can handle it here. Note that this is handled
 //!         // within the loop - if you wish to exit the loop you must `break` or
 //!         // `return` as appropriate, otherwise it will keep executing.
-//!         fail!("An error occurred while reading: {}", e);
+//!         panic!("An error occurred while reading: {}", e);
 //!     });
 //! }
 //! ```
@@ -97,7 +97,7 @@
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 
-#![deny(missing_doc)]
+#![deny(missing_docs)]
 
 #![feature(macro_rules)]
 
