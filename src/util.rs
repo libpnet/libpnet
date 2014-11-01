@@ -284,7 +284,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
     if unsafe { winpcap::PacketGetAdapterNames(buf.as_mut_ptr() as *mut i8, &mut buflen) } == 0 {
         // FIXME [windows] Should allocate a buffer big enough and try again
         //        - size should be buf.len() + buflen (buflen is overwritten)
-        fail!("FIXME [windows] unable to get interface list");
+        panic!("FIXME [windows] unable to get interface list");
     }
 
     let buf_str = from_utf8(buf).unwrap();

@@ -23,7 +23,7 @@ fn main() {
     // It has a receive buffer of 4096 bytes.
     let (mut tx, mut rx) = match transport_channel(4096, protocol) {
         Ok((tx, rx)) => (tx, rx),
-        Err(e) => fail!("An error occurred when creating the transport channel: {}", e)
+        Err(e) => panic!("An error occurred when creating the transport channel: {}", e)
     };
 
     // pfor works just like an ordinary for loop, but has additional syntax for
@@ -45,13 +45,13 @@ fn main() {
         // Send the packet
         match tx.send_to(new_packet, addr) {
             Ok(n) => assert_eq!(n, packet.packet().len()),
-            Err(e) => fail!("failed to send packet: {}", e)
+            Err(e) => panic!("failed to send packet: {}", e)
         }
     } on Err(e) {
         // If an error occurs, we can handle it here. Note that this is handled
         // within the loop - if you wish to exit the loop you must `break` or
         // `return` as appropriate, otherwise it will keep executing.
-        fail!("An error occurred while reading: {}", e);
+        panic!("An error occurred while reading: {}", e);
     });
 }
 

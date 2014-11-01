@@ -29,7 +29,7 @@ fn main() {
     // Create a channel to receive on
     let (_, mut rx) = match datalink_channel(interface, 0, 4096, Layer2) {
         Ok((tx, rx)) => (tx, rx),
-        Err(e) => fail!("rs_benchmark: unable to create channel: {}", e)
+        Err(e) => panic!("rs_benchmark: unable to create channel: {}", e)
     };
 
     let mut i = 0u;
