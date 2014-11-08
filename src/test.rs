@@ -11,7 +11,6 @@ extern crate libc;
 use std::clone::Clone;
 use std::result::{Ok, Err};
 use std::option::{Some};
-use std::str::StrSlice;
 use std::task::try_future;
 use std::io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::iter::Iterator;
