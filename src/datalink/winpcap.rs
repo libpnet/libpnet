@@ -9,7 +9,7 @@
 extern crate libc;
 
 use std::cmp;
-use std::collections::{RingBuf, Deque};
+use std::collections::{RingBuf};
 use std::io::{IoResult, IoError};
 use std::mem;
 use std::option::{Option, Some};
