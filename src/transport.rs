@@ -213,6 +213,7 @@ pub macro_rules! transport_channel_iterator (
 
                 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
                 fn fixup_packet(buffer: &mut [u8]) {
+                    use std::num::Int;
                     use packet::ipv4::MutableIpv4Header;
 
                     let buflen = buffer.len();

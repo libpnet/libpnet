@@ -241,7 +241,7 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
                     let start = ptr as int +
                                 (*packet).bh_hdrlen as int -
                                 self.pc.read_buffer.as_ptr() as int;
-                    self.packets.push((start as uint + self.pc.header_size,
+                    self.packets.push_back((start as uint + self.pc.header_size,
                                       (*packet).bh_caplen as uint - self.pc.header_size));
                     let offset = (*packet).bh_hdrlen as int + (*packet).bh_caplen as int;
                     ptr = ptr.offset(bpf::BPF_WORDALIGN(offset));
