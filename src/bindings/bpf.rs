@@ -12,6 +12,8 @@
 
 extern crate libc;
 
+use std::num::Int;
+
 pub const AF_LINK: libc::c_int = 18;
 
 const IF_NAMESIZE: uint = 16;

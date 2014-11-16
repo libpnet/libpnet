@@ -137,6 +137,7 @@ impl TransportSender {
 
     #[cfg(any(target_os = "freebsd", target_os = "macos"))]
     fn send_to_impl<T : Packet>(&mut self, packet: T, dst: ip::IpAddr) -> IoResult<uint> {
+        use std::num::Int;
         use packet::ipv4::MutableIpv4Header;
 
         // FreeBSD and OS X expect total length and fragment offset fields of IPv4 packets to be in
@@ -212,6 +213,7 @@ pub macro_rules! transport_channel_iterator (
 
                 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
                 fn fixup_packet(buffer: &mut [u8]) {
+                    use std::num::Int;
                     use packet::ipv4::MutableIpv4Header;
 
                     let buflen = buffer.len();

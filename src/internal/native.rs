@@ -13,7 +13,7 @@
 extern crate libc;
 
 use std::mem;
-use std::num::from_i32;
+use std::num::{Int, from_i32, SignedInt};
 use std::os;
 use std::io::{IoResult, IoError};
 use std::io::net::ip::{SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr};
@@ -27,7 +27,7 @@ pub unsafe fn close(sock: CSocket) { let _ = libc::close(sock); }
 
 #[cfg(windows)]
 #[inline]
-pub fn retry<T:Signed + FromPrimitive>(f: || -> T) -> T {
+pub fn retry<T:SignedInt + FromPrimitive>(f: || -> T) -> T {
     loop {
         let minus1: T = from_i32(-1).unwrap();
         let ret = f();
@@ -39,7 +39,7 @@ pub fn retry<T:Signed + FromPrimitive>(f: || -> T) -> T {
 
 #[cfg(unix)]
 #[inline]
-pub fn retry<T:Signed + FromPrimitive>(f: || -> T) -> T {
+pub fn retry<T:SignedInt + FromPrimitive>(f: || -> T) -> T {
     loop {
         let minus1: T = from_i32(-1).unwrap();
         let ret = f();
