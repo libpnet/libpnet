@@ -11,7 +11,7 @@
 use bindings::libc;
 
 use std::fmt;
-use std::from_str;
+use std::str::FromStr;
 use std::mem;
 use std::num::from_str_radix;
 use std::io::net::ip::IpAddr;
@@ -32,7 +32,7 @@ impl fmt::Show for MacAddr {
     }
 }
 
-impl from_str::FromStr for MacAddr {
+impl FromStr for MacAddr {
     fn from_str(s: &str) -> Option<MacAddr> {
         let mut parts = [0u8, ..6];
         let mut splits = s.split(':');
