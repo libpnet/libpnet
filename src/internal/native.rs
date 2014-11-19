@@ -12,6 +12,8 @@
 
 extern crate libc;
 
+use self::InAddr::{In4Addr, In6Addr};
+
 use std::mem;
 use std::num::{Int, from_i32, SignedInt};
 use std::os;

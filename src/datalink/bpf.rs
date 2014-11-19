@@ -18,7 +18,8 @@ use std::sync::Arc;
 use bindings::bpf;
 use packet::Packet;
 use packet::ethernet::{EthernetHeader, MutableEthernetHeader};
-use datalink::{DataLinkChannelType, Layer2, Layer3};
+use datalink::DataLinkChannelType;
+use datalink::DataLinkChannelType::{Layer2, Layer3};
 use internal;
 use util::NetworkInterface;
 

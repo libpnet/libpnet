@@ -18,6 +18,9 @@
 
 #![macro_escape]
 
+use self::TransportProtocol::{Ipv4, Ipv6};
+use self::TransportChannelType::{Layer3, Layer4};
+
 use std::io::{IoResult, IoError};
 use std::io::net::ip;
 use std::mem;

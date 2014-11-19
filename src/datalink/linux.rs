@@ -15,7 +15,8 @@ use std::sync::Arc;
 
 use bindings::libc;
 use bindings::linux;
-use datalink::{DataLinkChannelType, Layer2, Layer3};
+use datalink::DataLinkChannelType;
+use datalink::DataLinkChannelType::{Layer2, Layer3};
 use internal;
 use packet::Packet;
 use packet::ethernet::{EtherType, EthernetHeader, MutableEthernetHeader};

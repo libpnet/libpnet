@@ -15,16 +15,16 @@ use std::task::try_future;
 use std::io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::iter::Iterator;
 
-use datalink::{datalink_channel};
+use datalink::{datalink_channel, DataLinkChannelType};
 use packet::Packet;
 use packet::ethernet::{EtherTypes, EthernetHeader, MutableEthernetHeader, EthernetPacket};
 use packet::ip::{IpNextHeaderProtocols, IpNextHeaderProtocol};
 use packet::ipv4::{Ipv4Header, MutableIpv4Header, Ipv4Packet};
 use packet::ipv6::{MutableIpv6Header, Ipv6Packet};
 use packet::udp::{UdpHeader, MutableUdpHeader, UdpPacket};
-use transport::{udp_header_iter, ipv4_header_iter, transport_channel, TransportProtocol, Ipv4, Ipv6};
-use transport;
-use datalink;
+use transport::{udp_header_iter, ipv4_header_iter, transport_channel, TransportProtocol,
+                TransportChannelType};
+use transport::TransportProtocol::{Ipv4, Ipv6};
 use util::NetworkInterface;
 
 const MIN_PACKET_SIZE: uint = 64;
@@ -156,7 +156,8 @@ fn layer4(ip: IpAddr, header_len: uint) {
 
     let (tx, rx) = channel();
 
-    let (mut ttx, mut trx) = match transport_channel(128, transport::Layer4(get_proto(ip))) {
+    let tc = transport_channel(128, TransportChannelType::Layer4(get_proto(ip)));
+    let (mut ttx, mut trx) = match tc {
         Ok((tx, rx)) => (tx, rx),
         Err(e) => panic!("layer4: unable to create channel: {}", e),
     };
@@ -211,7 +212,7 @@ fn layer3_ipv4() {
     let (tx, rx) = channel();
 
     let tc =  transport_channel(IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN,
-                                    transport::Layer3(TEST_PROTO));
+                                    TransportChannelType::Layer3(TEST_PROTO));
     let (mut ttx, mut trx) = match tc {
         Ok((tx, rx)) => (tx, rx),
         Err(e) => panic!("layer3: unable to create channel: {}", e),
@@ -268,7 +269,10 @@ fn layer2() {
 
     let (tx, rx) = channel();
 
-    let dlc = datalink_channel(&interface, MIN_PACKET_SIZE*2, MIN_PACKET_SIZE*2, datalink::Layer2);
+    let dlc = datalink_channel(&interface,
+                               MIN_PACKET_SIZE*2,
+                               MIN_PACKET_SIZE*2,
+                               DataLinkChannelType::Layer2);
     let (mut dltx, mut dlrx) = match dlc {
         Ok((tx, rx)) => (tx, rx),
         Err(e) => panic!("layer2: unable to create channel: {}", e)
