@@ -222,7 +222,7 @@ fn layer3_ipv4() {
         tx.send(());
         pfor!((header, addr) in ipv4_header_iter(&mut trx) {
             assert_eq!(addr, send_addr);
-            check_ipv4_header(packet, header);
+            check_ipv4_header(packet.as_slice(), header);
             let udp_header = UdpHeader::new(header.packet().slice_from(
                                            header.get_header_length() as uint * 4u));
             assert_eq!(udp_header, UdpHeader::new(packet.slice_from(IPV4_HEADER_LEN)));
@@ -237,7 +237,7 @@ fn layer3_ipv4() {
 
 
     rx.recv();
-    match ttx.send_to(Ipv4Header::new(packet), send_addr) {
+    match ttx.send_to(Ipv4Header::new(packet.as_slice()), send_addr) {
         Ok(res) => assert_eq!(res as uint, packet.len()),
         Err(e) => panic!("layer3_ipv4_test failed: {}", e)
     }
@@ -285,7 +285,7 @@ fn layer2() {
             if i == 10_000 {
                 panic!("layer2: did not find matching packet after 10_000 iterations");
             }
-            if EthernetHeader::new(packet) == eh {
+            if EthernetHeader::new(packet.as_slice()) == eh {
                 return;
             }
             i += 1;
@@ -295,7 +295,7 @@ fn layer2() {
     });
 
     rx.recv();
-    match dltx.send_to(EthernetHeader::new(packet), None) {
+    match dltx.send_to(EthernetHeader::new(packet.as_slice()), None) {
         Some(Ok(())) => (),
         Some(Err(e)) => panic!("layer2_test failed: {}", e),
         None => panic!("Provided buffer too small")
