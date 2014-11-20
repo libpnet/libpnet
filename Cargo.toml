@@ -9,7 +9,7 @@ repository = "https://github.com/libpnet/libpnet"
 documentation = "http://octarineparrot.com/assets/libpnet/doc/pnet/"
 description = "Cross-platform, low level networking using the Rust programming language."
 readme = "README.md"
-keywords = ["network", "low level", "transport", "data link", "packet", "protocol"]
+keywords = ["network", "networking", "transport", "datalink", "packet", "protocol"]
 
 [lib]
 
