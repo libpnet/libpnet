@@ -157,7 +157,7 @@ pub fn get_network_interfaces() -> Vec<NetworkInterface> {
 
 #[cfg(not(windows))]
 fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
-    use std::string::raw as strraw;
+    use std::string::String;
 
     let mut ifaces: Vec<NetworkInterface> = Vec::new();
     unsafe {
@@ -167,7 +167,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
         }
         let mut addr = addrs;
         while addr.is_not_null() {
-            let name = strraw::from_buf((*addr).ifa_name as *const u8);
+            let name = String::from_raw_buf((*addr).ifa_name as *const u8);
             let (mac, ip) = sockaddr_to_network_addr((*addr).ifa_addr as *const libc::sockaddr);
             let ni = NetworkInterface {
                 name: name.clone(),
