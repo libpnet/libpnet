@@ -186,7 +186,7 @@ fn layer4(ip: IpAddr, header_len: uint) {
         }
     }
 
-    match res.unwrap() {
+    match res.into_inner() {
         Err(e) => panic!(e),
         _ => ()
     }
@@ -242,7 +242,7 @@ fn layer3_ipv4() {
         Err(e) => panic!("layer3_ipv4_test failed: {}", e)
     }
 
-    match res.unwrap() {
+    match res.into_inner() {
         Err(e) => panic!(e),
         _ => ()
     }
@@ -301,7 +301,7 @@ fn layer2() {
         None => panic!("Provided buffer too small")
     }
 
-    match res.unwrap() {
+    match res.into_inner() {
         Err(e) => panic!(e),
         _ => ()
     }
