@@ -42,7 +42,8 @@
 //! #![feature(phase)]
 //! #[phase(plugin, link)] extern crate pnet;
 //!
-//! use pnet::datalink::{datalink_channel, Layer2};
+//! use pnet::datalink::{datalink_channel};
+//! use pnet::datalink::DataLinkChannelType::{Layer2};
 //! use pnet::packet::{MutablePacket, Packet};
 //! use pnet::packet::ethernet::EthernetPacket;
 //! use pnet::util::get_network_interfaces;
@@ -93,7 +94,6 @@
 //! ```
 
 #![crate_name = "pnet"]
-#![license = "MIT/ASL2"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 

@@ -21,7 +21,8 @@ use pnet::packet::ipv4::{Ipv4Header, Ipv4Packet};
 use pnet::packet::ipv6::{Ipv6Header, Ipv6Packet};
 use pnet::packet::udp::{UdpHeader, UdpPacket};
 
-use pnet::datalink::{datalink_channel, Layer2};
+use pnet::datalink::{datalink_channel};
+use pnet::datalink::DataLinkChannelType::{Layer2};
 
 use pnet::util::get_network_interfaces;
 
