@@ -35,6 +35,7 @@ pub enum DataLinkChannelType {
     /// FIXME Currently unimplemented
     Layer3(EtherType)
 }
+impl Copy for DataLinkChannelType {}
 
 /// Create a new (DataLinkSender, DataLinkReceiver) pair
 ///

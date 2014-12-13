@@ -12,7 +12,6 @@ use std::cmp;
 use std::collections::{RingBuf};
 use std::io::{IoResult, IoError};
 use std::mem;
-use std::option::{Option, Some};
 use std::raw::Slice;
 use std::sync::Arc;
 

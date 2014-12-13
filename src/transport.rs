@@ -42,6 +42,7 @@ pub enum TransportProtocol {
     /// Represents a transport protocol built on top of IPv6
     Ipv6(IpNextHeaderProtocol)
 }
+impl Copy for TransportProtocol {}
 
 /// Type of transport channel to present
 pub enum TransportChannelType {
@@ -50,6 +51,7 @@ pub enum TransportChannelType {
     /// The application will send and receive IPv4 packets, with the specified transport protocol
     Layer3(IpNextHeaderProtocol)
 }
+impl Copy for TransportChannelType {}
 
 /// Structure used for sending at the transport layer. Should be created with transport_channel()
 pub struct TransportSender {
