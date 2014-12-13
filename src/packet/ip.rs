@@ -465,4 +465,5 @@ pub mod IpNextHeaderProtocols {
 /// see `IpNextHeaderProtocols` for a list of values.
 #[deriving(Show, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IpNextHeaderProtocol(pub u8);
+impl Copy for IpNextHeaderProtocol {}
 

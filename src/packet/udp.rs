@@ -18,6 +18,7 @@ use packet::ip::{IpNextHeaderProtocol};
 pub struct UdpHeader<'p> {
     packet: &'p [u8],
 }
+impl<'p> Copy for UdpHeader<'p> {}
 
 impl<'p> PartialEq for UdpHeader<'p> {
     fn eq(&self, other: &UdpHeader) -> bool {

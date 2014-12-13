@@ -21,6 +21,7 @@ use std::io::net::ip::IpAddr;
 /// A MAC address
 #[deriving(PartialEq, Eq, Clone)]
 pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
+impl Copy for MacAddr {}
 
 impl fmt::Show for MacAddr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {

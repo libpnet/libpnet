@@ -18,6 +18,7 @@ use packet::ip::IpNextHeaderProtocol;
 pub struct Ipv4Header<'p> {
     packet: &'p [u8],
 }
+impl<'p> Copy for Ipv4Header<'p> {}
 
 // FIXME This should probably be a macro
 impl<'p> PartialEq for Ipv4Header<'p> {

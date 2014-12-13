@@ -10,7 +10,6 @@ use std::cmp;
 use std::io::{IoResult, IoError};
 use std::mem;
 use std::num::Int;
-use std::option::{Option, Some};
 use std::sync::Arc;
 
 use bindings::libc;

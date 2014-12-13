@@ -18,6 +18,7 @@ use packet::ip::IpNextHeaderProtocol;
 pub struct Ipv6Header<'p> {
     packet: &'p [u8],
 }
+impl<'p> Copy for Ipv6Header<'p> {}
 
 /// Structure representing a mutable IPv6 header
 pub struct MutableIpv6Header<'p> {
