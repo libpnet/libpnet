@@ -54,6 +54,7 @@ pub struct sockaddr_ll {
     pub sll_halen: c_uchar,
     pub sll_addr: [c_uchar, ..8]
 }
+#[cfg(target_os = "linux")]
 impl Copy for sockaddr_ll {}
 
 #[cfg(windows)]
