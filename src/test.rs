@@ -160,7 +160,7 @@ fn layer4(ip: IpAddr, header_len: uint) {
         Err(e) => panic!("layer4: unable to create channel: {}", e),
     };
 
-    let res = try_future( proc() {
+    let res = try_future( move || {
         tx.send(());
         pfor!((header, addr) in udp_header_iter(&mut trx) {
             assert_eq!(addr, ip);
@@ -216,7 +216,7 @@ fn layer3_ipv4() {
         Err(e) => panic!("layer3: unable to create channel: {}", e),
     };
 
-    let res = try_future( proc() {
+    let res = try_future( move || {
         tx.send(());
         pfor!((header, addr) in ipv4_header_iter(&mut trx) {
             assert_eq!(addr, send_addr);
@@ -276,7 +276,7 @@ fn layer2() {
         Err(e) => panic!("layer2: unable to create channel: {}", e)
     };
 
-    let res = try_future( proc() {
+    let res = try_future( move || {
         tx.send(());
         let mut i = 0u;
         pfor!(eh in dlrx.iter() {
