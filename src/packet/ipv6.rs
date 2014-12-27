@@ -285,7 +285,7 @@ fn ipv6_header_test() {
         assert_eq!(ip_header.get_next_header(), IpNextHeaderProtocols::Udp);
 
         ip_header.set_hop_limit(1);
-        assert_eq!(ip_header.get_hop_limit(), 1)
+        assert_eq!(ip_header.get_hop_limit(), 1);
 
         let source = Ipv6Addr(0x110, 0x1001, 0x110, 0x1001, 0x110, 0x1001, 0x110, 0x1001);
         ip_header.set_source(source);
