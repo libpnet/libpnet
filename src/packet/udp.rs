@@ -64,7 +64,7 @@ pub struct MutableUdpHeader<'p> {
     packet: &'p mut [u8],
 }
 
-impl<'p> Packet for UdpHeader<'p> {
+impl<'a> Packet for UdpHeader<'a> {
     #[inline(always)]
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet }
 
@@ -72,7 +72,7 @@ impl<'p> Packet for UdpHeader<'p> {
     fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(8) }
 }
 
-impl<'p> Packet for MutableUdpHeader<'p> {
+impl<'a> Packet for MutableUdpHeader<'a> {
     #[inline(always)]
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet.as_slice() }
 
@@ -80,7 +80,7 @@ impl<'p> Packet for MutableUdpHeader<'p> {
     fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(8) }
 }
 
-impl<'p> MutablePacket for MutableUdpHeader<'p> {
+impl<'a> MutablePacket for MutableUdpHeader<'a> {
     #[inline(always)]
     fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 

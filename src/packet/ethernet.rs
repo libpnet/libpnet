@@ -65,7 +65,7 @@ pub struct MutableEthernetHeader<'p> {
     packet: &'p mut [u8],
 }
 
-impl<'p> Packet for EthernetHeader<'p> {
+impl<'a> Packet for EthernetHeader<'a> {
     #[inline(always)]
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet }
 
@@ -73,7 +73,7 @@ impl<'p> Packet for EthernetHeader<'p> {
     fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(14) }
 }
 
-impl<'p> Packet for MutableEthernetHeader<'p> {
+impl<'a> Packet for MutableEthernetHeader<'a> {
     #[inline(always)]
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet.as_slice() }
 
@@ -81,7 +81,7 @@ impl<'p> Packet for MutableEthernetHeader<'p> {
     fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(14) }
 }
 
-impl<'p> MutablePacket for MutableEthernetHeader<'p> {
+impl<'a> MutablePacket for MutableEthernetHeader<'a> {
     #[inline(always)]
     fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 

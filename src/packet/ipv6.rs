@@ -61,7 +61,7 @@ impl<'p> fmt::Show for MutableIpv6Header<'p> {
     }
 }
 
-impl<'p> Packet for Ipv6Header<'p> {
+impl<'a> Packet for Ipv6Header<'a> {
     #[inline(always)]
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet }
 
@@ -69,7 +69,7 @@ impl<'p> Packet for Ipv6Header<'p> {
     fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(40) }
 }
 
-impl<'p> Packet for MutableIpv6Header<'p> {
+impl<'a> Packet for MutableIpv6Header<'a> {
     #[inline(always)]
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet.as_slice() }
 
@@ -77,7 +77,7 @@ impl<'p> Packet for MutableIpv6Header<'p> {
     fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(40) }
 }
 
-impl<'p> MutablePacket for MutableIpv6Header<'p> {
+impl<'a> MutablePacket for MutableIpv6Header<'a> {
     #[inline(always)]
     fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 
