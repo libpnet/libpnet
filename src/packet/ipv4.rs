@@ -89,7 +89,7 @@ pub struct MutableIpv4Header<'p> {
     packet: &'p mut [u8],
 }
 
-impl<'p> Packet for Ipv4Header<'p> {
+impl<'a> Packet for Ipv4Header<'a> {
     #[inline(always)]
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet }
 
@@ -97,7 +97,7 @@ impl<'p> Packet for Ipv4Header<'p> {
     fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(20) /* FIXME */ }
 }
 
-impl<'p> Packet for MutableIpv4Header<'p> {
+impl<'a> Packet for MutableIpv4Header<'a> {
     #[inline(always)]
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet.as_slice() }
 
@@ -105,7 +105,7 @@ impl<'p> Packet for MutableIpv4Header<'p> {
     fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(20) /* FIXME */ }
 }
 
-impl<'p> MutablePacket for MutableIpv4Header<'p> {
+impl<'a> MutablePacket for MutableIpv4Header<'a> {
     #[inline(always)]
     fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 

@@ -61,7 +61,7 @@ impl<'p> fmt::Show for MutableIpv6Header<'p> {
     }
 }
 
-impl<'p> Packet for Ipv6Header<'p> {
+impl<'a> Packet for Ipv6Header<'a> {
     #[inline(always)]
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet }
 
@@ -69,7 +69,7 @@ impl<'p> Packet for Ipv6Header<'p> {
     fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(40) }
 }
 
-impl<'p> Packet for MutableIpv6Header<'p> {
+impl<'a> Packet for MutableIpv6Header<'a> {
     #[inline(always)]
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet.as_slice() }
 
@@ -77,7 +77,7 @@ impl<'p> Packet for MutableIpv6Header<'p> {
     fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(40) }
 }
 
-impl<'p> MutablePacket for MutableIpv6Header<'p> {
+impl<'a> MutablePacket for MutableIpv6Header<'a> {
     #[inline(always)]
     fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 
@@ -285,7 +285,7 @@ fn ipv6_header_test() {
         assert_eq!(ip_header.get_next_header(), IpNextHeaderProtocols::Udp);
 
         ip_header.set_hop_limit(1);
-        assert_eq!(ip_header.get_hop_limit(), 1)
+        assert_eq!(ip_header.get_hop_limit(), 1);
 
         let source = Ipv6Addr(0x110, 0x1001, 0x110, 0x1001, 0x110, 0x1001, 0x110, 0x1001);
         ip_header.set_source(source);

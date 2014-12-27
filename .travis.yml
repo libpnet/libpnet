@@ -2,9 +2,6 @@ language: rust
 os:
     - linux
     - osx
-before_script:
-    - rustc -v
-    - cargo -V
 env:
   global:
     - secure: kd+Q+IWrHUZK+BwwEh37IiR7B76yyvfjAB3Gx6roshKyAk2KmduoyLGv6v902gbLAtt/8JtPMBHZdKbMv7A1eKBsCOF/rMz1rHziuTbnFwfnx6UN+jalZZRIYmn20M7I1UfvhcvWXqvcrpo84NbhOYlXMmvI+X6HZ2rSIsYta6E=

@@ -9,7 +9,7 @@
 extern crate libc;
 
 use std::clone::Clone;
-use std::task::try_future;
+use std::thread::Thread;
 use std::io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::iter::Iterator;
 
@@ -160,7 +160,7 @@ fn layer4(ip: IpAddr, header_len: uint) {
         Err(e) => panic!("layer4: unable to create channel: {}", e),
     };
 
-    let res = try_future( move || {
+    let res = Thread::spawn( move || {
         tx.send(());
         pfor!((header, addr) in udp_header_iter(&mut trx) {
             assert_eq!(addr, ip);
@@ -184,7 +184,7 @@ fn layer4(ip: IpAddr, header_len: uint) {
         }
     }
 
-    match res.into_inner() {
+    match res.join() {
         Err(e) => panic!(e),
         _ => ()
     }
@@ -216,7 +216,7 @@ fn layer3_ipv4() {
         Err(e) => panic!("layer3: unable to create channel: {}", e),
     };
 
-    let res = try_future( move || {
+    let res = Thread::spawn( move || {
         tx.send(());
         pfor!((header, addr) in ipv4_header_iter(&mut trx) {
             assert_eq!(addr, send_addr);
@@ -226,7 +226,7 @@ fn layer3_ipv4() {
             assert_eq!(udp_header, UdpHeader::new(packet.slice_from(IPV4_HEADER_LEN)));
 
             assert_eq!(udp_header.packet().slice_from(UDP_HEADER_LEN),
-                       packet.slice_from(IPV4_HEADER_LEN + UDP_HEADER_LEN))
+                       packet.slice_from(IPV4_HEADER_LEN + UDP_HEADER_LEN));
             break;
         } on Err(e) {
             panic!("receive failed for layer3_ipv4_test(): {}", e);
@@ -240,7 +240,7 @@ fn layer3_ipv4() {
         Err(e) => panic!("layer3_ipv4_test failed: {}", e)
     }
 
-    match res.into_inner() {
+    match res.join() {
         Err(e) => panic!(e),
         _ => ()
     }
@@ -276,7 +276,7 @@ fn layer2() {
         Err(e) => panic!("layer2: unable to create channel: {}", e)
     };
 
-    let res = try_future( move || {
+    let res = Thread::spawn( move || {
         tx.send(());
         let mut i = 0u;
         pfor!(eh in dlrx.iter() {
@@ -299,7 +299,7 @@ fn layer2() {
         None => panic!("Provided buffer too small")
     }
 
-    match res.into_inner() {
+    match res.join() {
         Err(e) => panic!(e),
         _ => ()
     }

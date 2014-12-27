@@ -51,7 +51,7 @@ pub trait MutablePacket {
 /// })
 /// ```
 #[macro_export]
-pub macro_rules! pfor (
+pub macro_rules! pfor {
     ($var:pat in $iter:expr $body:block on Err($err:pat) $err_body:block) => {{
         let mut iter = $iter;
         loop {
@@ -66,7 +66,7 @@ pub macro_rules! pfor (
     ($var:pat in $iter:expr $body:block) => {
         pfor!($var in $iter $body on Err(_) {})
     }
-)
+}
 
 pub mod ethernet;
 pub mod ip;

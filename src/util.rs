@@ -59,18 +59,18 @@ impl FromStr for MacAddr {
 
 #[test]
 fn mac_addr_from_str() {
-    assert_eq!(from_str::<MacAddr>("00:00:00:00:00:00"), Some(MacAddr(0, 0, 0, 0, 0, 0)));
-    assert_eq!(from_str::<MacAddr>("ff:ff:ff:ff:ff:ff"), Some(MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)));
-    assert_eq!(from_str::<MacAddr>("12:34:56:78:90:ab"), Some(MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB)));
-    assert_eq!(from_str::<MacAddr>("::::::"), None);
-    assert_eq!(from_str::<MacAddr>("0::::::"), None);
-    assert_eq!(from_str::<MacAddr>("::::0::"), None);
-    assert_eq!(from_str::<MacAddr>("12:34:56:78"), None);
-    assert_eq!(from_str::<MacAddr>("12:34:56:78:"), None);
-    assert_eq!(from_str::<MacAddr>("12:34:56:78:90"), None);
-    assert_eq!(from_str::<MacAddr>("12:34:56:78:90:"), None);
-    assert_eq!(from_str::<MacAddr>("12:34:56:78:90:00:00"), None);
-    assert_eq!(from_str::<MacAddr>("xx:xx:xx:xx:xx:xx"), None);
+    assert_eq!("00:00:00:00:00:00".parse(), Some(MacAddr(0, 0, 0, 0, 0, 0)));
+    assert_eq!("ff:ff:ff:ff:ff:ff".parse(), Some(MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)));
+    assert_eq!("12:34:56:78:90:ab".parse(), Some(MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB)));
+    assert_eq!("::::::".parse::<MacAddr>(), None);
+    assert_eq!("0::::::".parse::<MacAddr>(), None);
+    assert_eq!("::::0::".parse::<MacAddr>(), None);
+    assert_eq!("12:34:56:78".parse::<MacAddr>(), None);
+    assert_eq!("12:34:56:78:".parse::<MacAddr>(), None);
+    assert_eq!("12:34:56:78:90".parse::<MacAddr>(), None);
+    assert_eq!("12:34:56:78:90:".parse::<MacAddr>(), None);
+    assert_eq!("12:34:56:78:90:00:00".parse::<MacAddr>(), None);
+    assert_eq!("xx:xx:xx:xx:xx:xx".parse::<MacAddr>(), None);
 }
 
 /// Represents a network interface and its associated addresses
