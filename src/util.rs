@@ -19,7 +19,7 @@ use std::io::net::ip::IpAddr;
 #[cfg(not(windows))] use internal;
 
 /// A MAC address
-#[deriving(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
 impl Copy for MacAddr {}
 
@@ -35,7 +35,7 @@ impl fmt::Show for MacAddr {
 
 impl FromStr for MacAddr {
     fn from_str(s: &str) -> Option<MacAddr> {
-        let mut parts = [0u8, ..6];
+        let mut parts = [0u8; 6];
         let mut splits = s.split(':');
         let mut i = 0;
         for split in splits {
@@ -74,7 +74,7 @@ fn mac_addr_from_str() {
 }
 
 /// Represents a network interface and its associated addresses
-#[deriving(Clone, PartialEq, Eq, Show)]
+#[derive(Clone, PartialEq, Eq, Show)]
 pub struct NetworkInterface {
     /// The name of the interface
     pub name: String,
@@ -158,6 +158,7 @@ pub fn get_network_interfaces() -> Vec<NetworkInterface> {
 
 #[cfg(not(windows))]
 fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
+    use std::c_str::ToCStr;
     use std::string::String;
 
     let mut ifaces: Vec<NetworkInterface> = Vec::new();
@@ -167,7 +168,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
             return ifaces;
         }
         let mut addr = addrs;
-        while addr.is_not_null() {
+        while !addr.is_null() {
             let name = String::from_raw_buf((*addr).ifa_name as *const u8);
             let (mac, ip) = sockaddr_to_network_addr((*addr).ifa_addr as *const libc::sockaddr);
             let ni = NetworkInterface {

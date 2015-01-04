@@ -103,14 +103,14 @@ pub trait Ipv6Packet : Packet {
     /// Get the flow label field for the packet
     fn get_flow_label(&self) -> u32 {
         let fl1 = (self.packet()[1] as u32 & 0xF) << 16;
-        let fl2 =  self.packet()[2] as u32 << 8;
+        let fl2 = (self.packet()[2] as u32) << 8;
         let fl3 =  self.packet()[3] as u32;
         fl1 | fl2 | fl3
     }
 
     /// Get the payload length field for the packet
     fn get_payload_length(&self) -> u16 {
-        let len1 = self.packet()[4] as u16 << 8;
+        let len1 = (self.packet()[4] as u16) << 8;
         let len2 = self.packet()[5] as u16;
         len1 | len2
     }
@@ -129,14 +129,14 @@ pub trait Ipv6Packet : Packet {
     fn get_source(&self) -> IpAddr {
         let packet = self.packet();
 
-        let a = (packet[ 8] as u16 << 8) | packet[ 9] as u16;
-        let b = (packet[10] as u16 << 8) | packet[11] as u16;
-        let c = (packet[12] as u16 << 8) | packet[13] as u16;
-        let d = (packet[14] as u16 << 8) | packet[15] as u16;
-        let e = (packet[16] as u16 << 8) | packet[17] as u16;
-        let f = (packet[18] as u16 << 8) | packet[19] as u16;
-        let g = (packet[20] as u16 << 8) | packet[21] as u16;
-        let h = (packet[22] as u16 << 8) | packet[23] as u16;
+        let a = ((packet[ 8] as u16) << 8) | packet[ 9] as u16;
+        let b = ((packet[10] as u16) << 8) | packet[11] as u16;
+        let c = ((packet[12] as u16) << 8) | packet[13] as u16;
+        let d = ((packet[14] as u16) << 8) | packet[15] as u16;
+        let e = ((packet[16] as u16) << 8) | packet[17] as u16;
+        let f = ((packet[18] as u16) << 8) | packet[19] as u16;
+        let g = ((packet[20] as u16) << 8) | packet[21] as u16;
+        let h = ((packet[22] as u16) << 8) | packet[23] as u16;
 
         Ipv6Addr(a, b, c, d, e, f, g, h)
     }
@@ -145,14 +145,14 @@ pub trait Ipv6Packet : Packet {
     fn get_destination(&self) -> IpAddr {
         let packet = self.packet();
 
-        let a = (packet[24] as u16 << 8) | packet[25] as u16;
-        let b = (packet[26] as u16 << 8) | packet[27] as u16;
-        let c = (packet[28] as u16 << 8) | packet[29] as u16;
-        let d = (packet[30] as u16 << 8) | packet[31] as u16;
-        let e = (packet[32] as u16 << 8) | packet[33] as u16;
-        let f = (packet[34] as u16 << 8) | packet[35] as u16;
-        let g = (packet[36] as u16 << 8) | packet[37] as u16;
-        let h = (packet[38] as u16 << 8) | packet[39] as u16;
+        let a = ((packet[24] as u16) << 8) | packet[25] as u16;
+        let b = ((packet[26] as u16) << 8) | packet[27] as u16;
+        let c = ((packet[28] as u16) << 8) | packet[29] as u16;
+        let d = ((packet[30] as u16) << 8) | packet[31] as u16;
+        let e = ((packet[32] as u16) << 8) | packet[33] as u16;
+        let f = ((packet[34] as u16) << 8) | packet[35] as u16;
+        let g = ((packet[36] as u16) << 8) | packet[37] as u16;
+        let h = ((packet[38] as u16) << 8) | packet[39] as u16;
 
         Ipv6Addr(a, b, c, d, e, f, g, h)
     }
@@ -266,7 +266,7 @@ impl<'p> MutableIpv6Header<'p> {
 #[test]
 fn ipv6_header_test() {
     use packet::ip::IpNextHeaderProtocols;
-    let mut packet = [0u8, ..40];
+    let mut packet = [0u8; 40];
     {
         let mut ip_header = MutableIpv6Header::new(packet.as_mut_slice());
         ip_header.set_version(6);

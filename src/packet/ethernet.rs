@@ -118,7 +118,7 @@ pub trait EthernetPacket : Packet {
 
     /// Get the Ethertype field of an Ethernet packet
     fn get_ethertype(&self) -> EtherType {
-        EtherType((self.packet()[12] as u16 << 8) | (self.packet()[13] as u16))
+        EtherType(((self.packet()[12] as u16) << 8) | (self.packet()[13] as u16))
     }
 }
 
@@ -177,7 +177,7 @@ impl<'p> MutableEthernetHeader<'p> {
 
 #[test]
 fn ethernet_header_test() {
-    let mut packet = [0u8, ..14];
+    let mut packet = [0u8; 14];
     {
         let mut ethernet_header = MutableEthernetHeader::new(packet.as_mut_slice());
 
@@ -218,7 +218,7 @@ pub mod EtherTypes {
 }
 
 /// Represents the Ethernet ethertype field.
-#[deriving(Show, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Show, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EtherType(pub u16);
 impl Copy for EtherType {}
 

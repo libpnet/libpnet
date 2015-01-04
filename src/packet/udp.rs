@@ -93,28 +93,28 @@ impl<'a> MutablePacket for MutableUdpHeader<'a> {
 pub trait UdpPacket : Packet {
     /// Get the source port for the packet
     fn get_source(&self) -> u16 {
-        let s1 = self.packet()[0] as u16 << 8;
+        let s1 = (self.packet()[0] as u16) << 8;
         let s2 = self.packet()[1] as u16;
         s1 | s2
     }
 
     /// Get the destination port for the packet
     fn get_destination(&self) -> u16 {
-        let d1 = self.packet()[2] as u16 << 8;
+        let d1 = (self.packet()[2] as u16) << 8;
         let d2 = self.packet()[3] as u16;
         d1 | d2
     }
 
     /// Get the length field for the packet
     fn get_length(&self) -> u16 {
-        let l1 = self.packet()[4] as u16 << 8;
+        let l1 = (self.packet()[4] as u16) << 8;
         let l2 = self.packet()[5] as u16;
         l1 | l2
     }
 
     /// Get the checksum field for the packet
     fn get_checksum(&self) -> u16 {
-        let c1 = self.packet()[6] as u16 << 8;
+        let c1 = (self.packet()[6] as u16) << 8;
         let c2 = self.packet()[7] as u16;
         c1 | c2
     }
@@ -132,8 +132,8 @@ pub trait UdpPacket : Packet {
         // IPv4 source
         match ipv4_source {
             Ipv4Addr(a, b, c, d) => {
-                sum = sum + (a as u32 << 8 | b as u32);
-                sum = sum + (c as u32 << 8 | d as u32);
+                sum = sum + ((a as u32) << 8 | b as u32);
+                sum = sum + ((c as u32) << 8 | d as u32);
             },
             _ => ()
         }
@@ -141,8 +141,8 @@ pub trait UdpPacket : Packet {
         // IPv4 destination
         match ipv4_destination {
             Ipv4Addr(a, b, c, d) => {
-                sum = sum + (a as u32 << 8 | b as u32);
-                sum = sum + (c as u32 << 8 | d as u32);
+                sum = sum + ((a as u32) << 8 | b as u32);
+                sum = sum + ((c as u32) << 8 | d as u32);
             },
             _ => ()
         }
@@ -151,20 +151,20 @@ pub trait UdpPacket : Packet {
         sum = sum + next_level_protocol as u32;
 
         // UDP Length
-        sum = sum + (self.packet()[4] as u32 << 8 |
-                     self.packet()[5] as u32);
+        sum = sum + ((self.packet()[4] as u32) << 8 |
+                      self.packet()[5] as u32);
 
         // Checksum UDP header/packet
         let mut i = 0;
         let len = self.get_length() as uint;
         while i < len && i + 1 < self.packet().len() {
-            let word = self.packet()[i] as u32 << 8 | self.packet()[i + 1] as u32;
+            let word = (self.packet()[i] as u32) << 8 | self.packet()[i + 1] as u32;
             sum = sum + word;
             i = i + 2;
         }
         // If the length is odd, make sure to checksum the final byte
         if len & 1 != 0 && len <= self.packet().len() {
-            sum = sum + (self.packet()[len - 1] as u32 << 8);
+            sum = sum + ((self.packet()[len - 1] as u32) << 8);
         }
         while sum >> 16 != 0 {
             sum = (sum >> 16) + (sum & 0xFFFF);
@@ -220,13 +220,13 @@ pub trait UdpPacket : Packet {
         let mut i = 0;
         let len = self.get_length() as uint;
         while i < len && i + 1 < self.packet().len() {
-            let word = self.packet()[i] as u32 << 8 | self.packet()[i + 1] as u32;
+            let word = (self.packet()[i] as u32) << 8 | self.packet()[i + 1] as u32;
             sum = sum + word;
             i = i + 2;
         }
         // If the length is odd, make sure to checksum the final byte
         if len & 1 != 0 && len <= self.packet().len() {
-            sum = sum + self.packet()[len - 1] as u32 << 8;
+            sum = sum + (self.packet()[len - 1] as u32) << 8;
         }
 
         while sum >> 16 != 0 {
@@ -309,7 +309,7 @@ fn udp_header_ipv4_test() {
     use packet::ip::{IpNextHeaderProtocols};
     use packet::ipv4::{MutableIpv4Header, Ipv4Packet};
 
-    let mut packet = [0u8, ..20 + 8 + 4];
+    let mut packet = [0u8; 20 + 8 + 4];
     let ipv4_source = Ipv4Addr(192, 168, 0, 1);
     let ipv4_destination = Ipv4Addr(192, 168, 0, 199);
     let next_level_protocol = IpNextHeaderProtocols::Udp;
@@ -353,7 +353,7 @@ fn udp_header_ipv6_test() {
     use packet::ip::{IpNextHeaderProtocols};
     use packet::ipv6::{MutableIpv6Header, Ipv6Packet};
 
-    let mut packet = [0u8, ..40 + 8 + 4];
+    let mut packet = [0u8; 40 + 8 + 4];
     let next_header = IpNextHeaderProtocols::Udp;
     let ipv6_source = Ipv6Addr(0, 0, 0, 0, 0, 0, 0, 1);
     let ipv6_destination = Ipv6Addr(0, 0, 0, 0, 0, 0, 0, 1);

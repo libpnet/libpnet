@@ -52,7 +52,7 @@ pub struct sockaddr_ll {
     pub sll_hatype: c_ushort,
     pub sll_pkttype: c_uchar,
     pub sll_halen: c_uchar,
-    pub sll_addr: [c_uchar, ..8]
+    pub sll_addr: [c_uchar; 8]
 }
 #[cfg(target_os = "linux")]
 impl Copy for sockaddr_ll {}

@@ -138,14 +138,14 @@ pub trait Ipv4Packet : Packet {
 
     /// Get the total length of the packet
     fn get_total_length(&self) -> u16 {
-        let b1 = self.packet()[2] as u16 << 8;
+        let b1 = (self.packet()[2] as u16) << 8;
         let b2 = self.packet()[3] as u16;
         b1 | b2
     }
 
     /// Get the identification field for the packet
     fn get_identification(&self) -> u16 {
-        let b1 = self.packet()[4] as u16 << 8;
+        let b1 = (self.packet()[4] as u16) << 8;
         let b2 = self.packet()[5] as u16;
         b1 | b2
     }
@@ -157,7 +157,7 @@ pub trait Ipv4Packet : Packet {
 
     /// Get the fragment offset for the packet
     fn get_fragment_offset(&self) -> u16 {
-        let b1 = (self.packet()[6] & 0x1F) as u16 << 8;
+        let b1 = ((self.packet()[6] & 0x1F) as u16) << 8;
         let b2 = self.packet()[7] as u16;
         b1 | b2
     }
@@ -174,7 +174,7 @@ pub trait Ipv4Packet : Packet {
 
     /// Get the checksum field for the packet
     fn get_checksum(&self) -> u16 {
-        let cs1 = self.packet()[10] as u16 << 8;
+        let cs1 = (self.packet()[10] as u16) << 8;
         let cs2 = self.packet()[11] as u16;
         cs1 | cs2
     }
@@ -201,7 +201,7 @@ pub trait Ipv4Packet : Packet {
         let mut sum = 0u32;
         let mut i = 0;
         while i < len {
-            let word = self.packet()[i] as u32 << 8 | self.packet()[i + 1] as u32;
+            let word = (self.packet()[i] as u32) << 8 | self.packet()[i + 1] as u32;
             sum = sum + word;
             i = i + 2;
         }
@@ -335,7 +335,7 @@ impl<'p> MutableIpv4Header<'p> {
 fn ipv4_header_test() {
     use packet::ip::IpNextHeaderProtocols;
 
-    let mut packet = [0u8, ..20];
+    let mut packet = [0u8; 20];
     {
         let mut ip_header = MutableIpv4Header::new(packet.as_mut_slice());
         ip_header.set_version(4);

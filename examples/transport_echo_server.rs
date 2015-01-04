@@ -11,6 +11,8 @@
 
 /// A simple echo server for packets using a test protocol
 
+use std::iter::repeat;
+
 use pnet::packet::{MutablePacket, Packet};
 use pnet::packet::ip::IpNextHeaderProtocols;
 use pnet::packet::udp::{MutableUdpHeader, UdpPacket};
@@ -34,7 +36,7 @@ fn main() {
     // We treat received packets as if they were UDP packets
     pfor!((packet, addr) in udp_header_iter(&mut rx) {
         // Allocate enough space for a new packet
-        let mut vec = Vec::from_elem(packet.packet().len(), 0u8);
+        let mut vec: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
         let mut new_packet = MutableUdpHeader::new(vec.as_mut_slice());
 
         // Create a clone of the original packet
