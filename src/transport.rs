@@ -21,6 +21,7 @@
 use self::TransportProtocol::{Ipv4, Ipv6};
 use self::TransportChannelType::{Layer3, Layer4};
 
+use std::iter::{repeat};
 use std::io::{IoResult, IoError};
 use std::io::net::ip;
 use std::mem;
@@ -110,7 +111,7 @@ pub fn transport_channel(buffer_size: uint, channel_type: TransportChannelType)
         };
         let receiver = TransportReceiver {
             socket: sock,
-            buffer: Vec::from_elem(buffer_size, 0u8),
+            buffer: repeat(0u8).take(buffer_size).collect(),
             channel_type: channel_type,
         };
 

@@ -9,6 +9,7 @@
 extern crate libc;
 
 use std::clone::Clone;
+use std::sync::mpsc::channel;
 use std::thread::Thread;
 use std::io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::iter::Iterator;
@@ -138,7 +139,7 @@ fn check_ipv4_header(packet: &[u8], header: Ipv4Header) {
 }
 
 fn layer4(ip: IpAddr, header_len: uint) {
-    let mut packet = [0u8, ..IPV6_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN];
+    let mut packet = [0u8; IPV6_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN];
     let packet_len = header_len + UDP_HEADER_LEN + TEST_DATA_LEN;
 
     match ip {
@@ -161,7 +162,7 @@ fn layer4(ip: IpAddr, header_len: uint) {
     };
 
     let res = Thread::spawn( move || {
-        tx.send(());
+        tx.send(()).unwrap();
         pfor!((header, addr) in udp_header_iter(&mut trx) {
             assert_eq!(addr, ip);
             assert_eq!(header, UdpHeader::new(packet.slice(header_len, packet_len)));
@@ -171,7 +172,7 @@ fn layer4(ip: IpAddr, header_len: uint) {
         })
     });
 
-    rx.recv();
+    rx.recv().unwrap();
     match ttx.send_to(udp, ip) {
         Ok(res) => assert_eq!(res as uint, UDP_HEADER_LEN + TEST_DATA_LEN),
         Err(e) => panic!("layer4_test failed: {}", e)
@@ -203,7 +204,7 @@ fn layer4_ipv6() {
 #[test]
 fn layer3_ipv4() {
     let send_addr = Ipv4Addr(127, 0, 0, 1);
-    let mut packet = [0u8, ..IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN];
+    let mut packet = [0u8; IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN];
 
     build_udp4_packet(packet.as_mut_slice(), 0, "l3i4");
 
@@ -217,7 +218,7 @@ fn layer3_ipv4() {
     };
 
     let res = Thread::spawn( move || {
-        tx.send(());
+        tx.send(()).unwrap();
         pfor!((header, addr) in ipv4_header_iter(&mut trx) {
             assert_eq!(addr, send_addr);
             check_ipv4_header(packet.as_slice(), header);
@@ -234,7 +235,7 @@ fn layer3_ipv4() {
     });
 
 
-    rx.recv();
+    rx.recv().unwrap();
     match ttx.send_to(Ipv4Header::new(packet.as_slice()), send_addr) {
         Ok(res) => assert_eq!(res as uint, packet.len()),
         Err(e) => panic!("layer3_ipv4_test failed: {}", e)
@@ -251,10 +252,10 @@ fn layer3_ipv4() {
 fn layer2() {
     let interface = get_test_interface();
 
-    let mut packet = [0u8, ..ETHERNET_HEADER_LEN +
-                             IPV4_HEADER_LEN +
-                             UDP_HEADER_LEN +
-                             TEST_DATA_LEN];
+    let mut packet = [0u8; ETHERNET_HEADER_LEN +
+                           IPV4_HEADER_LEN +
+                           UDP_HEADER_LEN +
+                           TEST_DATA_LEN];
 
     {
         let mut ethernet_header = MutableEthernetHeader::new(packet.as_mut_slice());
@@ -277,7 +278,7 @@ fn layer2() {
     };
 
     let res = Thread::spawn( move || {
-        tx.send(());
+        tx.send(()).unwrap();
         let mut i = 0u;
         pfor!(eh in dlrx.iter() {
             if i == 10_000 {
@@ -292,7 +293,7 @@ fn layer2() {
         })
     });
 
-    rx.recv();
+    rx.recv().unwrap();
     match dltx.send_to(EthernetHeader::new(packet.as_slice()), None) {
         Some(Ok(())) => (),
         Some(Err(e)) => panic!("layer2_test failed: {}", e),

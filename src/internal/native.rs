@@ -15,7 +15,7 @@ extern crate libc;
 use self::InAddr::{In4Addr, In6Addr};
 
 use std::mem;
-use std::num::{Int, from_i32, SignedInt};
+use std::num::{Int, from_i32, SignedInt, FromPrimitive};
 use std::os;
 use std::io::{IoResult, IoError};
 use std::io::net::ip::{SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr};
@@ -70,10 +70,10 @@ enum InAddr {
 fn ip_to_inaddr(ip: IpAddr) -> InAddr {
     match ip {
         Ipv4Addr(a, b, c, d) => {
-            let ip = (a as u32 << 24) |
-                     (b as u32 << 16) |
-                     (c as u32 <<  8) |
-                     (d as u32 <<  0);
+            let ip = ((a as u32) << 24) |
+                     ((b as u32) << 16) |
+                     ((c as u32) <<  8) |
+                     ((d as u32) <<  0);
             In4Addr(libc::in_addr {
                 s_addr: Int::from_be(ip)
             })

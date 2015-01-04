@@ -8,6 +8,7 @@
 
 use std::cmp;
 use std::io::{IoResult, IoError};
+use std::iter::repeat;
 use std::mem;
 use std::num::Int;
 use std::sync::Arc;
@@ -146,14 +147,14 @@ pub fn datalink_channel (network_interface: &NetworkInterface,
         let fd = Arc::new(internal::FileDesc { fd: socket });
         let sender = DataLinkSenderImpl {
             socket: fd.clone(),
-            write_buffer: Vec::from_elem(write_buffer_size, 0u8),
+            write_buffer: repeat(0u8).take(write_buffer_size).collect(),
             _channel_type: channel_type,
             send_addr: unsafe { *(send_addr as *const libc::sockaddr_ll) },
             send_addr_len: len,
         };
         let receiver = DataLinkReceiverImpl {
             socket: fd,
-            read_buffer: Vec::from_elem(read_buffer_size, 0u8),
+            read_buffer: repeat(0u8).take(read_buffer_size).collect(),
             _channel_type: channel_type
         };
         Ok((sender, receiver))

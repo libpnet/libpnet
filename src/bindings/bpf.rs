@@ -31,34 +31,34 @@ const SIZEOF_C_LONG: libc::c_int = 8;
 
 pub const BIOCSETIF: libc::c_ulong = IOC_IN |
                                       ((SIZEOF_IFREQ & IOCPARM_MASK) << 16u) |
-                                      ('B' as libc::c_ulong << 8u) |
+                                      (('B' as libc::c_ulong) << 8u) |
                                       108;
 pub const BIOCIMMEDIATE: libc::c_ulong = IOC_IN |
                                           ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
-                                          ('B' as libc::c_ulong << 8) |
+                                          (('B' as libc::c_ulong) << 8) |
                                           112;
 pub const BIOCGBLEN: libc::c_ulong = IOC_OUT |
                                       ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
-                                      ('B' as libc::c_ulong << 8) |
+                                      (('B' as libc::c_ulong) << 8) |
                                       102;
 pub const BIOCGDLT: libc::c_ulong = IOC_OUT |
                                       ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
-                                      ('B' as libc::c_ulong << 8) |
+                                      (('B' as libc::c_ulong) << 8) |
                                       106;
 
 pub const BIOCSBLEN: libc::c_ulong = IOC_INOUT |
                                       ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
-                                      ('B' as libc::c_ulong << 8) |
+                                      (('B' as libc::c_ulong) << 8) |
                                       102;
 pub const BIOCSHDRCMPLT: libc::c_ulong = IOC_IN |
                                           ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
-                                          ('B' as libc::c_ulong << 8) |
+                                          (('B' as libc::c_ulong) << 8) |
                                           117;
 
 #[cfg(target_os = "freebsd")]
 pub const BIOCFEEDBACK: libc::c_ulong = IOC_IN |
                                           ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
-                                          ('B' as libc::c_ulong << 8) |
+                                          (('B' as libc::c_ulong) << 8) |
                                           124;
 // NOTE Could use BIOCSSEESENT on OS X, though set to 1 by default anyway
 
@@ -79,7 +79,7 @@ pub fn BPF_WORDALIGN<T : Int + ToPrimitive + FromPrimitive>(x: T) -> T {
 
 // See /usr/include/net/if.h
 pub struct ifreq {
-    pub ifr_name: [libc::c_char, ..IFNAMSIZ],
+    pub ifr_name: [libc::c_char; ..IFNAMSIZ],
     pub ifru_addr: libc::sockaddr, // NOTE Should be a union
 }
 
@@ -95,7 +95,7 @@ pub struct sockaddr_dl {
     pub sdl_nlen: libc::c_uchar,
     pub sdl_alen: libc::c_uchar,
     pub sdl_slen: libc::c_uchar,
-    pub sdl_data: [libc::c_char, ..46],
+    pub sdl_data: [libc::c_char; ..46],
 }
 
 // See man 4 bpf or /usr/include/net/bpf.h [windows: or Common/Packet32.h]
