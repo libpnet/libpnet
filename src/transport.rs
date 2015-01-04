@@ -149,7 +149,7 @@ impl TransportSender {
         // FreeBSD and OS X expect total length and fragment offset fields of IPv4 packets to be in
         // host byte order rather than network byte order (man 4 ip/Raw IP Sockets)
         if match self._channel_type { Layer3(..) => true, _ => false } {
-            let mut mut_slice = Vec::from_elem(packet.packet().len(), 0);
+            let mut mut_slice: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
             mut_slice.as_mut_slice().clone_from_slice(packet.packet());
 
             let mut new_packet = MutableIpv4Header::new(mut_slice.as_mut_slice());

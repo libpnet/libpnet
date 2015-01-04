@@ -12,7 +12,7 @@
 
 extern crate libc;
 
-use std::num::Int;
+use std::num::{Int, ToPrimitive, FromPrimitive};
 
 pub const AF_LINK: libc::c_int = 18;
 
@@ -79,7 +79,7 @@ pub fn BPF_WORDALIGN<T : Int + ToPrimitive + FromPrimitive>(x: T) -> T {
 
 // See /usr/include/net/if.h
 pub struct ifreq {
-    pub ifr_name: [libc::c_char; ..IFNAMSIZ],
+    pub ifr_name: [libc::c_char; IFNAMSIZ],
     pub ifru_addr: libc::sockaddr, // NOTE Should be a union
 }
 
@@ -95,7 +95,7 @@ pub struct sockaddr_dl {
     pub sdl_nlen: libc::c_uchar,
     pub sdl_alen: libc::c_uchar,
     pub sdl_slen: libc::c_uchar,
-    pub sdl_data: [libc::c_char; ..46],
+    pub sdl_data: [libc::c_char; 46],
 }
 
 // See man 4 bpf or /usr/include/net/bpf.h [windows: or Common/Packet32.h]
