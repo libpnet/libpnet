@@ -149,8 +149,10 @@ pub struct DataLinkReceiverImpl {
 }
 
 impl DataLinkSenderImpl {
-    pub fn build_and_send(&mut self, num_packets: uint, packet_size: uint,
-                          func: |MutableEthernetHeader| -> ()) -> Option<IoResult<()>> {
+    pub fn build_and_send<F>(&mut self, num_packets: uint, packet_size: uint,
+                          func: F) -> Option<IoResult<()>>
+        where F : FnMut(MutableEthernetHeader)
+    {
         use std::raw::Slice;
         let len = num_packets * packet_size;
         if len >= unsafe { (*self.packet.packet).Length } as uint {

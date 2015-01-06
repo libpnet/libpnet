@@ -29,7 +29,10 @@ pub unsafe fn close(sock: CSocket) { let _ = libc::close(sock); }
 
 #[cfg(windows)]
 #[inline]
-pub fn retry<T:SignedInt + FromPrimitive>(f: || -> T) -> T {
+pub fn retry<T, F>(f: &mut F) -> T
+    where T : SignedInt + FromPrimitive,
+          F : FnMut() -> T
+{
     loop {
         let minus1: T = from_i32(-1).unwrap();
         let ret = f();
@@ -41,7 +44,10 @@ pub fn retry<T:SignedInt + FromPrimitive>(f: || -> T) -> T {
 
 #[cfg(unix)]
 #[inline]
-pub fn retry<T:SignedInt + FromPrimitive>(f: || -> T) -> T {
+pub fn retry<T, F>(f: &mut F) -> T
+    where T : SignedInt + FromPrimitive,
+          F : FnMut() -> T
+{
     loop {
         let minus1: T = from_i32(-1).unwrap();
         let ret = f();
