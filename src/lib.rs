@@ -76,7 +76,7 @@
 //!         // problem, you could also use send_to.
 //!         //
 //!         // The packet is sent once the closure has finished executing.
-//!         tx.build_and_send(1, packet.packet().len(), |mut new_packet| {
+//!         tx.build_and_send(1, packet.packet().len(), &mut |mut new_packet| {
 //!             // Create a clone of the original packet
 //!             new_packet.clone_from(packet);
 //!

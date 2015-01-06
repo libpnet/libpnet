@@ -76,8 +76,10 @@ impl DataLinkSender {
     /// avoiding the copy required for `send`. If there is not sufficient capacity in the buffer,
     /// None will be returned.
     #[inline]
-    pub fn build_and_send(&mut self, num_packets: uint, packet_size: uint,
-                          func: |MutableEthernetHeader| -> ()) -> Option<IoResult<()>> {
+    pub fn build_and_send<F>(&mut self, num_packets: uint, packet_size: uint,
+                          func: &mut F) -> Option<IoResult<()>>
+        where F : FnMut(MutableEthernetHeader)
+    {
         self.dlsi.build_and_send(num_packets, packet_size, func)
     }
 
