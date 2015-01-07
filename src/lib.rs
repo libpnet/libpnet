@@ -39,8 +39,7 @@
 //!
 //! ```rust,no_run
 //! // These attributes are required to get access to the pfor! macro
-//! #![feature(phase)]
-//! #[phase(plugin, link)] extern crate pnet;
+//! #[macro_use] extern crate pnet;
 //!
 //! use pnet::datalink::{datalink_channel};
 //! use pnet::datalink::DataLinkChannelType::{Layer2};
@@ -98,8 +97,6 @@
 #![crate_type = "dylib"]
 
 #![deny(missing_docs)]
-
-#![feature(macro_rules)]
 
 extern crate libc;
 
