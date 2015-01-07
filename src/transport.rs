@@ -16,7 +16,7 @@
 //! impossible to implement protocols which are already implemented in the kernel such as TCP and
 //! UDP.
 
-#![macro_escape]
+#![macro_use]
 
 use self::TransportProtocol::{Ipv4, Ipv6};
 use self::TransportChannelType::{Layer3, Layer4};

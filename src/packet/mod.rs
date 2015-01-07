@@ -8,7 +8,7 @@
 
 //! Provides interfaces for interacting with packets and headers
 
-#![macro_escape]
+#![macro_use]
 
 /// Represents a generic network packet
 pub trait Packet {

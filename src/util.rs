@@ -158,8 +158,8 @@ pub fn get_network_interfaces() -> Vec<NetworkInterface> {
 
 #[cfg(not(windows))]
 fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
-    use std::c_str::ToCStr;
-    use std::string::String;
+    use std::ffi::{c_str_to_bytes, CString};
+    use std::str::from_utf8_unchecked;
 
     let mut ifaces: Vec<NetworkInterface> = Vec::new();
     unsafe {
@@ -169,7 +169,9 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
         }
         let mut addr = addrs;
         while !addr.is_null() {
-            let name = String::from_raw_buf((*addr).ifa_name as *const u8);
+            let c_str = &((*addr).ifa_name as *const i8);
+            let bytes = c_str_to_bytes(c_str);
+            let name = from_utf8_unchecked(bytes).to_string();
             let (mac, ip) = sockaddr_to_network_addr((*addr).ifa_addr as *const libc::sockaddr);
             let ni = NetworkInterface {
                 name: name.clone(),
@@ -194,9 +196,8 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
         libc::freeifaddrs(addrs);
 
         for iface in ifaces.iter_mut() {
-            iface.index = iface.name.with_c_str(
-                |name| libc::if_nametoindex(name)
-            );
+            let name = CString::from_slice(iface.name.as_bytes());
+            iface.index = libc::if_nametoindex(name.as_ptr());
         }
         return ifaces;
     }

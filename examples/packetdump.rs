@@ -5,11 +5,10 @@
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
-#![feature(phase)]
 
 /// This example shows a basic packet logger using libpnet
 
-#[phase(plugin, link)] extern crate pnet;
+#[macro_use] extern crate pnet;
 
 use std::io::net::ip::{IpAddr, Ipv4Addr};
 use std::os;

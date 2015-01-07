@@ -6,8 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(phase)]
-#[phase(plugin, link)] extern crate pnet;
+#[macro_use] extern crate pnet;
 
 /// A simple echo server for packets using a test protocol
 
