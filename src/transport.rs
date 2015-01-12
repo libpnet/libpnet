@@ -77,7 +77,7 @@ pub struct TransportReceiver {
 /// allow sending and receiving UDP packets using IPv4; whereas Layer3(IpNextHeaderProtocols::Udp)
 /// would include the IPv4 Header in received values, and require manual construction of an IP
 /// header when sending.
-pub fn transport_channel(buffer_size: uint, channel_type: TransportChannelType)
+pub fn transport_channel(buffer_size: usize, channel_type: TransportChannelType)
     -> IoResult<(TransportSender, TransportReceiver)> {
     let socket = unsafe {
         match channel_type {
@@ -122,7 +122,7 @@ pub fn transport_channel(buffer_size: uint, channel_type: TransportChannelType)
 }
 
 impl TransportSender {
-    fn send<T : Packet>(&mut self, packet: T, dst: ip::IpAddr) -> IoResult<uint> {
+    fn send<T : Packet>(&mut self, packet: T, dst: ip::IpAddr) -> IoResult<usize> {
         let mut caddr = unsafe { mem::zeroed() };
         let slen = internal::addr_to_sockaddr(ip::SocketAddr { ip: dst, port: 0 }, &mut caddr);
         let caddr_ptr = (&caddr as *const libc::sockaddr_storage) as *const libc::sockaddr;
@@ -132,17 +132,17 @@ impl TransportSender {
 
     /// Send a packet to the provided desination
     #[inline]
-    pub fn send_to<T : Packet>(&mut self, packet: T, destination: ip::IpAddr) -> IoResult<uint> {
+    pub fn send_to<T : Packet>(&mut self, packet: T, destination: ip::IpAddr) -> IoResult<usize> {
         self.send_to_impl(packet, destination)
     }
 
     #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]
-    fn send_to_impl<T : Packet>(&mut self, packet: T, dst: ip::IpAddr) -> IoResult<uint> {
+    fn send_to_impl<T : Packet>(&mut self, packet: T, dst: ip::IpAddr) -> IoResult<usize> {
         self.send(packet, dst)
     }
 
     #[cfg(any(target_os = "freebsd", target_os = "macos"))]
-    fn send_to_impl<T : Packet>(&mut self, packet: T, dst: ip::IpAddr) -> IoResult<uint> {
+    fn send_to_impl<T : Packet>(&mut self, packet: T, dst: ip::IpAddr) -> IoResult<usize> {
         use std::num::Int;
         use packet::ipv4::MutableIpv4Header;
 
@@ -196,7 +196,7 @@ pub macro_rules! transport_channel_iterator {
                     Layer4(Ipv4(_)) => {
                         let ip_header = Ipv4Header::new(self.tr.buffer.as_slice());
 
-                        ip_header.get_header_length() as uint * 4u
+                        ip_header.get_header_length() as usize * 4us
                     },
                     Layer3(_) => {
                         fixup_packet(self.tr.buffer.as_mut_slice());
@@ -230,8 +230,8 @@ pub macro_rules! transport_channel_iterator {
 
                     // OS X does this awesome thing where it removes the header length
                     // from the total length sometimes.
-                    let length = new_packet.get_total_length() as uint +
-                                 (new_packet.get_header_length() as uint * 4u);
+                    let length = new_packet.get_total_length() as usize +
+                                 (new_packet.get_header_length() as usize * 4us);
                     if length == buflen {
                         new_packet.set_total_length(length as u16)
                     }

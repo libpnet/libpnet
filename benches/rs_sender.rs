@@ -19,9 +19,9 @@ use pnet::util::get_network_interfaces;
 use std::io::net::ip::Ipv4Addr;
 use std::os;
 
-static IPV4_HEADER_LEN: uint = 20;
-static UDP_HEADER_LEN: uint = 8;
-static TEST_DATA_LEN: uint = 5;
+static IPV4_HEADER_LEN: usize = 20;
+static UDP_HEADER_LEN: usize = 8;
+static TEST_DATA_LEN: usize = 5;
 
 pub fn build_ipv4_header(packet: &mut [u8]) -> MutableIpv4Header {
     let mut ip_header = MutableIpv4Header::new(packet);

@@ -26,12 +26,12 @@ use transport::{udp_header_iter, ipv4_header_iter, transport_channel, TransportP
 use transport::TransportProtocol::{Ipv4, Ipv6};
 use util::NetworkInterface;
 
-const MIN_PACKET_SIZE: uint = 64;
-const ETHERNET_HEADER_LEN: uint = 14;
-const IPV4_HEADER_LEN: uint = 20;
-const IPV6_HEADER_LEN: uint = 40;
-const UDP_HEADER_LEN: uint = 8;
-const TEST_DATA_LEN: uint = 4;
+const MIN_PACKET_SIZE: usize = 64;
+const ETHERNET_HEADER_LEN: usize = 14;
+const IPV4_HEADER_LEN: usize = 20;
+const IPV6_HEADER_LEN: usize = 40;
+const UDP_HEADER_LEN: usize = 8;
+const TEST_DATA_LEN: usize = 4;
 
 const IPV4_SOURCE: IpAddr = Ipv4Addr(127, 0, 0, 1);
 const IPV4_DESTINATION: IpAddr = Ipv4Addr(127, 0, 0, 1);
@@ -41,7 +41,7 @@ const IPV6_DESTINATION: IpAddr = Ipv6Addr(0, 0, 0, 0, 0, 0, 0, 1);
 // Use a protocol which is unlikely to have other packets on
 const TEST_PROTO: IpNextHeaderProtocol = IpNextHeaderProtocols::Test1;
 
-fn build_ipv4_header(packet: &mut [u8], offset: uint) {
+fn build_ipv4_header(packet: &mut [u8], offset: usize) {
     let mut ip_header = MutableIpv4Header::new(packet.slice_from_mut(offset));
 
     let total_len = (IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN) as u16;
@@ -56,7 +56,7 @@ fn build_ipv4_header(packet: &mut [u8], offset: uint) {
     ip_header.checksum();
 }
 
-fn build_ipv6_header(packet: &mut [u8], offset: uint) {
+fn build_ipv6_header(packet: &mut [u8], offset: usize) {
     let mut ip_header = MutableIpv6Header::new(packet.slice_from_mut(offset));
 
     ip_header.set_version(6);
@@ -67,7 +67,7 @@ fn build_ipv6_header(packet: &mut [u8], offset: uint) {
     ip_header.set_destination(IPV6_DESTINATION);
 }
 
-fn build_udp_header(packet: &mut [u8], offset: uint) {
+fn build_udp_header(packet: &mut [u8], offset: usize) {
     let mut udp_header = MutableUdpHeader::new(packet.slice_from_mut(offset));
 
     udp_header.set_source(1234); // Arbitary port number
@@ -75,9 +75,9 @@ fn build_udp_header(packet: &mut [u8], offset: uint) {
     udp_header.set_length((UDP_HEADER_LEN + TEST_DATA_LEN) as u16);
 }
 
-fn build_udp4_packet(packet: &mut [u8], start: uint, msg: &str) {
+fn build_udp4_packet(packet: &mut [u8], start: usize, msg: &str) {
     build_ipv4_header(packet, start);
-    build_udp_header(packet, start + IPV4_HEADER_LEN as uint);
+    build_udp_header(packet, start + IPV4_HEADER_LEN as usize);
 
     let data_start = start + IPV4_HEADER_LEN + UDP_HEADER_LEN;
     packet[data_start + 0] = msg.char_at(0) as u8;
@@ -85,13 +85,13 @@ fn build_udp4_packet(packet: &mut [u8], start: uint, msg: &str) {
     packet[data_start + 2] = msg.char_at(2) as u8;
     packet[data_start + 3] = msg.char_at(3) as u8;
 
-    let slice = packet.slice_from_mut(start + IPV4_HEADER_LEN as uint);
+    let slice = packet.slice_from_mut(start + IPV4_HEADER_LEN as usize);
     MutableUdpHeader::new(slice).checksum(IPV4_SOURCE, IPV4_DESTINATION, TEST_PROTO);
 }
 
-fn build_udp6_packet(packet: &mut [u8], start: uint, msg: &str) {
+fn build_udp6_packet(packet: &mut [u8], start: usize, msg: &str) {
     build_ipv6_header(packet, start);
-    build_udp_header(packet, start + IPV6_HEADER_LEN as uint);
+    build_udp_header(packet, start + IPV6_HEADER_LEN as usize);
 
     let data_start = start + IPV6_HEADER_LEN + UDP_HEADER_LEN;
     packet[data_start + 0] = msg.char_at(0) as u8;
@@ -99,7 +99,7 @@ fn build_udp6_packet(packet: &mut [u8], start: uint, msg: &str) {
     packet[data_start + 2] = msg.char_at(2) as u8;
     packet[data_start + 3] = msg.char_at(3) as u8;
 
-    let slice = packet.slice_from_mut(start + IPV6_HEADER_LEN as uint);
+    let slice = packet.slice_from_mut(start + IPV6_HEADER_LEN as usize);
     MutableUdpHeader::new(slice).checksum(IPV6_SOURCE, IPV6_DESTINATION, TEST_PROTO);
 }
 
@@ -138,7 +138,7 @@ fn check_ipv4_header(packet: &[u8], header: Ipv4Header) {
     assert_eq!(header.get_destination(), ipv4_header.get_destination());
 }
 
-fn layer4(ip: IpAddr, header_len: uint) {
+fn layer4(ip: IpAddr, header_len: usize) {
     let mut packet = [0u8; IPV6_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN];
     let packet_len = header_len + UDP_HEADER_LEN + TEST_DATA_LEN;
 
@@ -174,7 +174,7 @@ fn layer4(ip: IpAddr, header_len: uint) {
 
     rx.recv().unwrap();
     match ttx.send_to(udp, ip) {
-        Ok(res) => assert_eq!(res as uint, UDP_HEADER_LEN + TEST_DATA_LEN),
+        Ok(res) => assert_eq!(res as usize, UDP_HEADER_LEN + TEST_DATA_LEN),
         Err(e) => panic!("layer4_test failed: {}", e)
     }
 
@@ -193,7 +193,7 @@ fn layer4(ip: IpAddr, header_len: uint) {
 
 #[test]
 fn layer4_ipv4() {
-    layer4(Ipv4Addr(127, 0, 0, 1), IPV4_HEADER_LEN as uint);
+    layer4(Ipv4Addr(127, 0, 0, 1), IPV4_HEADER_LEN as usize);
 }
 
 #[test]
@@ -223,7 +223,7 @@ fn layer3_ipv4() {
             assert_eq!(addr, send_addr);
             check_ipv4_header(packet.as_slice(), header);
             let udp_header = UdpHeader::new(header.packet().slice_from(
-                                           header.get_header_length() as uint * 4u));
+                                           header.get_header_length() as usize * 4us));
             assert_eq!(udp_header, UdpHeader::new(packet.slice_from(IPV4_HEADER_LEN)));
 
             assert_eq!(udp_header.packet().slice_from(UDP_HEADER_LEN),
@@ -237,7 +237,7 @@ fn layer3_ipv4() {
 
     rx.recv().unwrap();
     match ttx.send_to(Ipv4Header::new(packet.as_slice()), send_addr) {
-        Ok(res) => assert_eq!(res as uint, packet.len()),
+        Ok(res) => assert_eq!(res as usize, packet.len()),
         Err(e) => panic!("layer3_ipv4_test failed: {}", e)
     }
 
@@ -264,7 +264,7 @@ fn layer2() {
         ethernet_header.set_ethertype(EtherTypes::Ipv4);
     }
 
-    build_udp4_packet(packet.as_mut_slice(), ETHERNET_HEADER_LEN as uint, "l2tt");
+    build_udp4_packet(packet.as_mut_slice(), ETHERNET_HEADER_LEN as usize, "l2tt");
 
     let (tx, rx) = channel();
 
@@ -279,7 +279,7 @@ fn layer2() {
 
     let res = Thread::scoped( move || {
         tx.send(()).unwrap();
-        let mut i = 0u;
+        let mut i = 0us;
         pfor!(eh, dlrx.iter(), {
             if i == 10_000 {
                 panic!("layer2: did not find matching packet after 10_000 iterations");

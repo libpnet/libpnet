@@ -36,7 +36,7 @@ pub fn retry<T, F>(f: &mut F) -> T
     loop {
         let minus1: T = from_i32(-1).unwrap();
         let ret = f();
-        if ret != minus1 || os::errno() as int != libc::WSAEINTR as int {
+        if ret != minus1 || os::errno() as isize != libc::WSAEINTR as isize {
             return ret
         }
     }
@@ -51,7 +51,7 @@ pub fn retry<T, F>(f: &mut F) -> T
     loop {
         let minus1: T = from_i32(-1).unwrap();
         let ret = f();
-        if ret != minus1 || os::errno() as int != libc::EINTR as int {
+        if ret != minus1 || os::errno() as isize != libc::EINTR as isize {
             return ret
         }
     }
@@ -126,10 +126,10 @@ pub fn addr_to_sockaddr(addr: SocketAddr,
 }
 
 pub fn sockaddr_to_addr(storage: &libc::sockaddr_storage,
-                        len: uint) -> IoResult<SocketAddr> {
+                        len: usize) -> IoResult<SocketAddr> {
     match storage.ss_family as libc::c_int {
         libc::AF_INET => {
-            assert!(len as uint >= mem::size_of::<libc::sockaddr_in>());
+            assert!(len as usize >= mem::size_of::<libc::sockaddr_in>());
             let storage: &libc::sockaddr_in = unsafe {
                 mem::transmute(storage)
             };
@@ -144,7 +144,7 @@ pub fn sockaddr_to_addr(storage: &libc::sockaddr_storage,
             })
         }
         libc::AF_INET6 => {
-            assert!(len as uint >= mem::size_of::<libc::sockaddr_in6>());
+            assert!(len as usize >= mem::size_of::<libc::sockaddr_in6>());
             let storage: &libc::sockaddr_in6 = unsafe {
                 mem::transmute(storage)
             };
@@ -164,7 +164,7 @@ pub fn sockaddr_to_addr(storage: &libc::sockaddr_storage,
         _ => {
             #[cfg(unix)] use libc::EINVAL as ERROR;
             #[cfg(windows)] use libc::WSAEINVAL as ERROR;
-            Err(IoError::from_errno(ERROR as uint, true))
+            Err(IoError::from_errno(ERROR as usize, true))
         }
     }
 }

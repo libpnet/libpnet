@@ -26,8 +26,8 @@ use util::NetworkInterface;
 
 // NOTE buffer must be word aligned.
 pub fn datalink_channel(network_interface: &NetworkInterface,
-                        write_buffer_size: uint,
-                        read_buffer_size: uint,
+                        write_buffer_size: usize,
+                        read_buffer_size: usize,
                         channel_type: DataLinkChannelType)
     -> IoResult<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
     #[cfg(target_os = "freebsd")]
@@ -54,7 +54,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
 
     #[cfg(target_os = "freebsd")]
     fn set_feedback(fd: libc::c_int) -> Result<(), IoError> {
-        let one: libc::c_uint = 1;
+        let one: libc::c_usize = 1;
         if unsafe { bpf::ioctl(fd, bpf::BIOCFEEDBACK, &one) } == -1 {
             let err = IoError::last_error();
             unsafe { libc::close(fd); }
@@ -84,7 +84,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         i += 1;
     }
 
-    let buflen = read_buffer_size as libc::c_uint;
+    let buflen = read_buffer_size as libc::c_usize;
     // NOTE Buffer length must be set before binding to an interface
     //      otherwise this will return Invalid Argument
     if unsafe { bpf::ioctl(fd, bpf::BIOCSBLEN, &buflen) } == -1 {
@@ -101,7 +101,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     }
 
     // Return from read as soon as packets are available - don't wait to fill the buffer
-    let one: libc::c_uint = 1;
+    let one: libc::c_usize = 1;
     if unsafe { bpf::ioctl(fd, bpf::BIOCIMMEDIATE, &one) } == -1 {
         let err = IoError::last_error();
         unsafe { libc::close(fd); }
@@ -111,7 +111,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     let mut header_size = 0;
 
     // Get the device type
-    let mut dlt: libc::c_uint = 0;
+    let mut dlt: libc::c_usize = 0;
     if unsafe { bpf::ioctl(fd, bpf::BIOCGDLT, &mut dlt) } == -1 {
         let err = IoError::last_error();
         unsafe { libc::close(fd); }
@@ -156,11 +156,11 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
 pub struct DataLinkSenderImpl {
     fd: Arc<internal::FileDesc>,
     write_buffer: Vec<u8>,
-    header_size: uint,
+    header_size: usize,
 }
 
 impl DataLinkSenderImpl {
-    pub fn build_and_send<F>(&mut self, num_packets: uint, packet_size: uint,
+    pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
                           func: &mut F) -> Option<IoResult<()>>
         where F : FnMut(MutableEthernetHeader)
     {
@@ -207,7 +207,7 @@ impl DataLinkSenderImpl {
 pub struct DataLinkReceiverImpl {
     fd: Arc<internal::FileDesc>,
     read_buffer: Vec<u8>,
-    header_size: uint,
+    header_size: usize,
 }
 
 impl DataLinkReceiverImpl {
@@ -223,7 +223,7 @@ impl DataLinkReceiverImpl {
 
 pub struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
-    packets: RingBuf<(uint, uint)>,
+    packets: RingBuf<(usize, usize)>,
 }
 
 impl<'a> DataLinkChannelIteratorImpl<'a> {
@@ -245,8 +245,8 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
                     let start = ptr as int +
                                 (*packet).bh_hdrlen as int -
                                 self.pc.read_buffer.as_ptr() as int;
-                    self.packets.push_back((start as uint + self.pc.header_size,
-                                      (*packet).bh_caplen as uint - self.pc.header_size));
+                    self.packets.push_back((start as usize + self.pc.header_size,
+                                      (*packet).bh_caplen as usize - self.pc.header_size));
                     let offset = (*packet).bh_hdrlen as int + (*packet).bh_caplen as int;
                     ptr = ptr.offset(bpf::BPF_WORDALIGN(offset));
                 }

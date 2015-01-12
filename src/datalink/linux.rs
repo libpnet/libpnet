@@ -24,7 +24,7 @@ use util::{NetworkInterface, MacAddr};
 
 fn network_addr_to_sockaddr(ni: &NetworkInterface,
                             storage: *mut libc::sockaddr_storage,
-                            proto: libc::c_int) -> uint {
+                            proto: libc::c_int) -> usize {
     unsafe {
         let sll: *mut libc::sockaddr_ll = mem::transmute(storage);
         (*sll).sll_family = libc::AF_PACKET as libc::sa_family_t;
@@ -44,12 +44,12 @@ pub struct DataLinkSenderImpl {
     write_buffer: Vec<u8>,
     _channel_type: DataLinkChannelType,
     send_addr: libc::sockaddr_ll,
-    send_addr_len: uint
+    send_addr_len: usize
 }
 
 impl DataLinkSenderImpl {
     // FIXME Layer 3
-    pub fn build_and_send<F>(&mut self, num_packets: uint, packet_size: uint,
+    pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
                           func: &mut F) -> Option<IoResult<()>>
         where F : FnMut(MutableEthernetHeader)
     {
@@ -105,8 +105,8 @@ impl DataLinkReceiverImpl {
 }
 
 pub fn datalink_channel (network_interface: &NetworkInterface,
-                         write_buffer_size: uint,
-                         read_buffer_size: uint,
+                         write_buffer_size: usize,
+                         read_buffer_size: usize,
                          channel_type: DataLinkChannelType)
     -> IoResult<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
     let eth_p_all = 0x0003;

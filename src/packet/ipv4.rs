@@ -197,7 +197,7 @@ pub trait Ipv4Packet : Packet {
 
     /// Calculate the checksum for the packet
     fn calculate_checksum(&mut self) -> u16 {
-        let len = self.get_header_length() as uint * 4;
+        let len = self.get_header_length() as usize * 4;
         let mut sum = 0u32;
         let mut i = 0;
         while i < len {
