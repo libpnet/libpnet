@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#[macro_use] extern crate pnet;
+extern crate pnet;
 
 /// A simple echo server for packets using a test protocol
 
@@ -29,32 +29,33 @@ fn main() {
         Err(e) => panic!("An error occurred when creating the transport channel: {}", e)
     };
 
-    // pfor works just like an ordinary for loop, but has additional syntax for
-    // handling errors
-    //
     // We treat received packets as if they were UDP packets
-    pfor!((packet, addr) in udp_header_iter(&mut rx) {
-        // Allocate enough space for a new packet
-        let mut vec: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
-        let mut new_packet = MutableUdpHeader::new(vec.as_mut_slice());
+    let mut iter = udp_header_iter(&mut rx);
+    loop {
+        match iter.next() {
+            Ok((packet, addr)) => {
+                // Allocate enough space for a new packet
+                let mut vec: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
+                let mut new_packet = MutableUdpHeader::new(vec.as_mut_slice());
 
-        // Create a clone of the original packet
-        new_packet.clone_from(packet);
+                // Create a clone of the original packet
+                new_packet.clone_from(packet);
 
-        // Switch the source and destination ports
-        new_packet.set_source(packet.get_destination());
-        new_packet.set_destination(packet.get_source());
+                // Switch the source and destination ports
+                new_packet.set_source(packet.get_destination());
+                new_packet.set_destination(packet.get_source());
 
-        // Send the packet
-        match tx.send_to(new_packet, addr) {
-            Ok(n) => assert_eq!(n, packet.packet().len()),
-            Err(e) => panic!("failed to send packet: {}", e)
+                // Send the packet
+                match tx.send_to(new_packet, addr) {
+                    Ok(n) => assert_eq!(n, packet.packet().len()),
+                    Err(e) => panic!("failed to send packet: {}", e)
+                }
+            },
+            Err(e) => {
+                // If an error occurs, we can handle it here
+                panic!("An error occurred while reading: {}", e);
+            }
         }
-    } on Err(e) {
-        // If an error occurs, we can handle it here. Note that this is handled
-        // within the loop - if you wish to exit the loop you must `break` or
-        // `return` as appropriate, otherwise it will keep executing.
-        panic!("An error occurred while reading: {}", e);
-    });
+    }
 }
 

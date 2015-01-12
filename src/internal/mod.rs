@@ -35,7 +35,7 @@ impl Drop for FileDesc {
 }
 
 pub fn send_to(socket: CSocket, buffer: &[u8], dst: *const libc::sockaddr, slen: libc::socklen_t)
-    -> IoResult<uint> {
+    -> IoResult<usize> {
 
     let send_len = retry(&mut |&:| unsafe {
         libc::sendto(socket, buffer.as_ptr() as *const libc::c_void, buffer.len() as BufLen,
@@ -45,12 +45,12 @@ pub fn send_to(socket: CSocket, buffer: &[u8], dst: *const libc::sockaddr, slen:
     if send_len < 0 {
         Err(IoError::last_error())
     } else {
-        Ok(send_len as uint)
+        Ok(send_len as usize)
     }
 }
 
 pub fn recv_from(socket: CSocket, buffer: &mut [u8], caddr: *mut libc::sockaddr_storage)
-    -> IoResult<uint> {
+    -> IoResult<usize> {
     let mut caddrlen = mem::size_of::<libc::sockaddr_storage>() as libc::socklen_t;
     let len = retry(&mut |&mut:| unsafe {
         libc::recvfrom(socket, buffer.as_ptr() as *mut libc::c_void, buffer.len() as BufLen,
@@ -60,7 +60,7 @@ pub fn recv_from(socket: CSocket, buffer: &mut [u8], caddr: *mut libc::sockaddr_
     if len < 0 {
         Err(IoError::last_error())
     } else {
-        Ok(len as uint)
+        Ok(len as usize)
     }
 }
 

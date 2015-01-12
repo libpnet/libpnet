@@ -156,7 +156,7 @@ pub trait UdpPacket : Packet {
 
         // Checksum UDP header/packet
         let mut i = 0;
-        let len = self.get_length() as uint;
+        let len = self.get_length() as usize;
         while i < len && i + 1 < self.packet().len() {
             let word = (self.packet()[i] as u32) << 8 | self.packet()[i + 1] as u32;
             sum = sum + word;
@@ -218,7 +218,7 @@ pub trait UdpPacket : Packet {
 
         // Checksum UDP header/packet
         let mut i = 0;
-        let len = self.get_length() as uint;
+        let len = self.get_length() as usize;
         while i < len && i + 1 < self.packet().len() {
             let word = (self.packet()[i] as u32) << 8 | self.packet()[i + 1] as u32;
             sum = sum + word;

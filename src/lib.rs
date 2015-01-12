@@ -38,25 +38,26 @@
 //! an interface, it echo's the packet back; reversing the source and destination addresses.
 //!
 //! ```rust,no_run
-//! // These attributes are required to get access to the pfor! macro
-//! #[macro_use] extern crate pnet;
+//! extern crate pnet;
 //!
 //! use pnet::datalink::{datalink_channel};
 //! use pnet::datalink::DataLinkChannelType::{Layer2};
 //! use pnet::packet::{MutablePacket, Packet};
 //! use pnet::packet::ethernet::EthernetPacket;
-//! use pnet::util::get_network_interfaces;
+//! use pnet::util::{NetworkInterface, get_network_interfaces};
 //!
 //! use std::os;
 //!
 //! // Invoke as echo <interface name>
+//! // FIXME Remove before 1.0
+//! #[allow(unstable)]
 //! fn main() {
-//!     let ref interface_name = os::args()[1];
+//!     let interface_names_match = |&: iface: &&NetworkInterface| iface.name == os::args()[1];
 //!
 //!     // Find the network interface with the provided name
 //!     let interfaces = get_network_interfaces();
 //!     let interface = interfaces.iter()
-//!                               .filter(|iface| iface.name == *interface_name)
+//!                               .filter(interface_names_match)
 //!                               .next()
 //!                               .unwrap();
 //!
@@ -66,29 +67,31 @@
 //!         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
 //!     };
 //!
-//!     // pfor works just like an ordinary for loop, but has additional syntax for
-//!     // handling errors
-//!     pfor!(packet in rx.iter() {
-//!         // Constructs a single packet, the same length as the the one received,
-//!         // using the provided closure. This allows the packet to be constructed
-//!         // directly in the write buffer, without copying. If copying is not a
-//!         // problem, you could also use send_to.
-//!         //
-//!         // The packet is sent once the closure has finished executing.
-//!         tx.build_and_send(1, packet.packet().len(), &mut |mut new_packet| {
-//!             // Create a clone of the original packet
-//!             new_packet.clone_from(packet);
+//!     let mut iter = rx.iter();
+//!     loop {
+//!         match iter.next() {
+//!             Ok(packet) => {
+//!                 // Constructs a single packet, the same length as the the one received,
+//!                 // using the provided closure. This allows the packet to be constructed
+//!                 // directly in the write buffer, without copying. If copying is not a
+//!                 // problem, you could also use send_to.
+//!                 //
+//!                 // The packet is sent once the closure has finished executing.
+//!                 tx.build_and_send(1, packet.packet().len(), &mut |mut new_packet| {
+//!                     // Create a clone of the original packet
+//!                     new_packet.clone_from(packet);
 //!
-//!             // Switch the source and destination
-//!             new_packet.set_source(packet.get_destination());
-//!             new_packet.set_destination(packet.get_source());
-//!         });
-//!     } on Err(e) {
-//!         // If an error occurs, we can handle it here. Note that this is handled
-//!         // within the loop - if you wish to exit the loop you must `break` or
-//!         // `return` as appropriate, otherwise it will keep executing.
-//!         panic!("An error occurred while reading: {}", e);
-//!     });
+//!                     // Switch the source and destination
+//!                     new_packet.set_source(packet.get_destination());
+//!                     new_packet.set_destination(packet.get_source());
+//!                 });
+//!             },
+//!             Err(e) => {
+//!                 // If an error occurs, we can handle it here
+//!                 panic!("An error occurred while reading: {}", e);
+//!             }
+//!         }
+//!     }
 //! }
 //! ```
 
@@ -97,6 +100,9 @@
 #![crate_type = "dylib"]
 
 #![deny(missing_docs)]
+
+// FIXME Remove this once the std lib has stabilised
+#![allow(unstable)]
 
 extern crate libc;
 

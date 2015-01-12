@@ -8,7 +8,7 @@
 
 /// This example shows a basic packet logger using libpnet
 
-#[macro_use] extern crate pnet;
+extern crate pnet;
 
 use std::io::net::ip::{IpAddr, Ipv4Addr};
 use std::os;
@@ -23,7 +23,7 @@ use pnet::packet::udp::{UdpHeader, UdpPacket};
 use pnet::datalink::{datalink_channel};
 use pnet::datalink::DataLinkChannelType::{Layer2};
 
-use pnet::util::get_network_interfaces;
+use pnet::util::{NetworkInterface, get_network_interfaces};
 
 fn handle_udp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8]) {
     let udp = UdpHeader::new(packet);
@@ -53,7 +53,7 @@ fn handle_transport_protocol(interface_name: &str, source: IpAddr, destination: 
     match protocol {
         IpNextHeaderProtocols::Udp  => handle_udp_packet(interface_name, source, destination, packet),
         IpNextHeaderProtocols::Tcp  => handle_tcp_packet(interface_name, source, destination, packet),
-        _ => println!("[{}]: Unknown {} packet: {} > {}; protocol: {} length: {}",
+        _ => println!("[{}]: Unknown {} packet: {} > {}; protocol: {:?} length: {}",
                 interface_name,
                 match source { Ipv4Addr(..) => "IPv4", _ => "IPv6" },
                 source,
@@ -96,7 +96,7 @@ fn handle_packet(interface_name: &str, ethernet: &EthernetHeader) {
         EtherTypes::Ipv4 => handle_ipv4_packet(interface_name, ethernet),
         EtherTypes::Ipv6 => handle_ipv6_packet(interface_name, ethernet),
         EtherTypes::Arp  => handle_arp_packet(interface_name, ethernet),
-        _                => println!("[{}]: Unknown packet: {} > {}; ethertype: {} length: {}",
+        _                => println!("[{}]: Unknown packet: {} > {}; ethertype: {:?} length: {}",
                                         interface_name,
                                         ethernet.get_source(),
                                         ethernet.get_destination(),
@@ -105,13 +105,16 @@ fn handle_packet(interface_name: &str, ethernet: &EthernetHeader) {
     }
 }
 
+
+// FIXME Remove before 1.0
+#[allow(unstable)]
 fn main() {
-    let ref interface_name = os::args()[1];
+    let interface_names_match = |&: iface: &&NetworkInterface| iface.name == os::args()[1];
 
     // Find the network interface with the provided name
     let interfaces = get_network_interfaces();
     let interface = interfaces.iter()
-                              .filter(|iface| iface.name == *interface_name)
+                              .filter(interface_names_match)
                               .next()
                               .unwrap();
 
@@ -121,9 +124,11 @@ fn main() {
         Err(e) => panic!("packetdump: unable to create channel: {}", e)
     };
 
-    pfor!(packet in rx.iter() {
-        handle_packet(interface.name.as_slice(), &packet);
-    } on Err(e) {
-        panic!("packetdump: unable to receive packet: {}", e);
-    })
+    let mut iter = rx.iter();
+    loop {
+        match iter.next() {
+            Ok(packet) => handle_packet(interface.name.as_slice(), &packet),
+            Err(e) => panic!("packetdump: unable to receive packet: {}", e)
+        }
+    }
 }

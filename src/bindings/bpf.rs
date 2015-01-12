@@ -16,13 +16,13 @@ use std::num::{Int, ToPrimitive, FromPrimitive};
 
 pub const AF_LINK: libc::c_int = 18;
 
-const IF_NAMESIZE: uint = 16;
-const IFNAMSIZ: uint = IF_NAMESIZE;
+const IF_NAMESIZE: usize = 16;
+const IFNAMSIZ: usize = IF_NAMESIZE;
 const IOC_IN: libc::c_ulong = 0x80000000;
 const IOC_OUT: libc::c_ulong = 0x40000000;
 const IOC_INOUT: libc::c_ulong = IOC_IN | IOC_OUT;
 const IOCPARM_SHIFT: libc::c_ulong = 13;
-const IOCPARM_MASK: libc::c_ulong = (1 << (IOCPARM_SHIFT as uint)) - 1;
+const IOCPARM_MASK: libc::c_ulong = (1 << (IOCPARM_SHIFT as usize)) - 1;
 
 const SIZEOF_IFREQ: libc::c_ulong = 32;
 const SIZEOF_C_UINT: libc::c_ulong = 4;
@@ -62,7 +62,7 @@ pub const BIOCFEEDBACK: libc::c_ulong = IOC_IN |
                                           124;
 // NOTE Could use BIOCSSEESENT on OS X, though set to 1 by default anyway
 
-pub const DLT_NULL: libc::c_uint = 0;
+pub const DLT_NULL: libc::c_usize = 0;
 
 #[cfg(target_os = "freebsd")]
 const BPF_ALIGNMENT: libc::c_int = SIZEOF_C_LONG;
