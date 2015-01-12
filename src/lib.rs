@@ -40,7 +40,6 @@
 //! ```rust,no_run
 //! // These attributes are required to get access to the pfor! macro
 //! #[macro_use] extern crate pnet;
-//! #[allow(unstable)]
 //!
 //! use pnet::datalink::{datalink_channel};
 //! use pnet::datalink::DataLinkChannelType::{Layer2};
@@ -49,10 +48,11 @@
 //! use pnet::util::get_network_interfaces;
 //!
 //! use std::os;
+//! #[allow(unstable)]
 //!
 //! // Invoke as echo <interface name>
 //! fn main() {
-//!     let ref interface_name = os::args()[1];
+//!     let ref interface_name = os::args()[1].to_string();
 //!
 //!     // Find the network interface with the provided name
 //!     let interfaces = get_network_interfaces();

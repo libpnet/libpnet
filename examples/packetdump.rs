@@ -106,7 +106,7 @@ fn handle_packet(interface_name: &str, ethernet: &EthernetHeader) {
 }
 
 fn main() {
-    let ref interface_name = os::args()[1];
+    let ref interface_name = os::args()[1].to_string();
 
     // Find the network interface with the provided name
     let interfaces = get_network_interfaces();
