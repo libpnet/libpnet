@@ -218,7 +218,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
             _ => new.mac
         };
         match (&mut old.ips, &new.ips) {
-            (&Some(ref mut old_ips), &Some(ref new_ips)) => old_ips.push_all(new_ips.as_slice()),
+            (&mut Some(ref mut old_ips), &Some(ref new_ips)) => old_ips.push_all(new_ips.as_slice()),
             _ => {}
         };
         old.flags = old.flags | new.flags;
