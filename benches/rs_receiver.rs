@@ -35,7 +35,7 @@ fn main() {
     let mut i = 0u;
     let mut timestamps = Vec::with_capacity(201);
     timestamps.push(time::precise_time_ns() / 1_000);
-    pfor!(_ in rx.iter() {
+    pfor!(_, rx.iter(), {
         i += 1;
         if i == 1_000_000 {
             timestamps.push(time::precise_time_ns() / 1_000);
@@ -46,7 +46,7 @@ fn main() {
         }
     } on Err(e) {
         println!("rs_benchmark: unable to receive packet: {}", e);
-    })
+    });
 
     // We received 1_000_000 packets in ((b - a) * 1_000_000) seconds.
     for (a, b) in timestamps.iter().zip(timestamps.tail().iter()) {

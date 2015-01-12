@@ -33,7 +33,7 @@ fn main() {
     // handling errors
     //
     // We treat received packets as if they were UDP packets
-    pfor!((packet, addr) in udp_header_iter(&mut rx) {
+    pfor!((packet, addr), udp_header_iter(&mut rx), {
         // Allocate enough space for a new packet
         let mut vec: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
         let mut new_packet = MutableUdpHeader::new(vec.as_mut_slice());

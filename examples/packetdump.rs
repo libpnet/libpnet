@@ -121,7 +121,7 @@ fn main() {
         Err(e) => panic!("packetdump: unable to create channel: {}", e)
     };
 
-    pfor!(packet in rx.iter() {
+    pfor!(packet, rx.iter(), {
         handle_packet(interface.name.as_slice(), &packet);
     } on Err(e) {
         panic!("packetdump: unable to receive packet: {}", e);

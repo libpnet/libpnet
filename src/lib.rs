@@ -40,6 +40,7 @@
 //! ```rust,no_run
 //! // These attributes are required to get access to the pfor! macro
 //! #[macro_use] extern crate pnet;
+//! #[allow(unstable)]
 //!
 //! use pnet::datalink::{datalink_channel};
 //! use pnet::datalink::DataLinkChannelType::{Layer2};
@@ -68,7 +69,7 @@
 //!
 //!     // pfor works just like an ordinary for loop, but has additional syntax for
 //!     // handling errors
-//!     pfor!(packet in rx.iter() {
+//!     pfor!(packet, rx.iter(), {
 //!         // Constructs a single packet, the same length as the the one received,
 //!         // using the provided closure. This allows the packet to be constructed
 //!         // directly in the write buffer, without copying. If copying is not a

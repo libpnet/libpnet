@@ -163,7 +163,7 @@ fn layer4(ip: IpAddr, header_len: uint) {
 
     let res = Thread::spawn( move || {
         tx.send(()).unwrap();
-        pfor!((header, addr) in udp_header_iter(&mut trx) {
+        pfor!((header, addr), udp_header_iter(&mut trx), {
             assert_eq!(addr, ip);
             assert_eq!(header, UdpHeader::new(packet.slice(header_len, packet_len)));
             break;
@@ -219,7 +219,7 @@ fn layer3_ipv4() {
 
     let res = Thread::spawn( move || {
         tx.send(()).unwrap();
-        pfor!((header, addr) in ipv4_header_iter(&mut trx) {
+        pfor!((header, addr), ipv4_header_iter(&mut trx), {
             assert_eq!(addr, send_addr);
             check_ipv4_header(packet.as_slice(), header);
             let udp_header = UdpHeader::new(header.packet().slice_from(
@@ -280,7 +280,7 @@ fn layer2() {
     let res = Thread::spawn( move || {
         tx.send(()).unwrap();
         let mut i = 0u;
-        pfor!(eh in dlrx.iter() {
+        pfor!(eh, dlrx.iter(), {
             if i == 10_000 {
                 panic!("layer2: did not find matching packet after 10_000 iterations");
             }
