@@ -52,17 +52,17 @@
 //! // FIXME Remove before 1.0
 //! #[allow(unstable)]
 //! fn main() {
-//!     let interface_names_match = |&: iface: &&NetworkInterface| iface.name == os::args()[1];
+//!     let interface_names_match = |&: iface: &NetworkInterface| iface.name == os::args()[1];
 //!
 //!     // Find the network interface with the provided name
 //!     let interfaces = get_network_interfaces();
-//!     let interface = interfaces.iter()
+//!     let interface = interfaces.into_iter()
 //!                               .filter(interface_names_match)
 //!                               .next()
 //!                               .unwrap();
 //!
 //!     // Create a new channel, dealing with layer 2 packets
-//!     let (mut tx, mut rx) = match datalink_channel(interface, 4096, 4096, Layer2) {
+//!     let (mut tx, mut rx) = match datalink_channel(&interface, 4096, 4096, Layer2) {
 //!         Ok((tx, rx)) => (tx, rx),
 //!         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
 //!     };

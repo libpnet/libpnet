@@ -109,17 +109,17 @@ fn handle_packet(interface_name: &str, ethernet: &EthernetHeader) {
 // FIXME Remove before 1.0
 #[allow(unstable)]
 fn main() {
-    let interface_names_match = |&: iface: &&NetworkInterface| iface.name == os::args()[1];
+    let interface_names_match = |&: iface: &NetworkInterface| iface.name == os::args()[1];
 
     // Find the network interface with the provided name
     let interfaces = get_network_interfaces();
-    let interface = interfaces.iter()
+    let interface = interfaces.into_iter()
                               .filter(interface_names_match)
                               .next()
                               .unwrap();
 
     // Create a channel to receive on
-    let (_, mut rx) = match datalink_channel(interface, 0, 4096, Layer2) {
+    let (_, mut rx) = match datalink_channel(&interface, 0, 4096, Layer2) {
         Ok((tx, rx)) => (tx, rx),
         Err(e) => panic!("packetdump: unable to create channel: {}", e)
     };
