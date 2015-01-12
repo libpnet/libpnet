@@ -46,8 +46,8 @@ impl Drop for WinPcapPacket {
 }
 
 pub fn datalink_channel(network_interface: &NetworkInterface,
-           read_buffer_size: uint,
-           write_buffer_size: uint,
+           read_buffer_size: usize,
+           write_buffer_size: usize,
            channel_type: DataLinkChannelType)
     -> IoResult<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
     let mut read_buffer = Vec::from_elem(read_buffer_size, 0u8);
@@ -149,16 +149,16 @@ pub struct DataLinkReceiverImpl {
 }
 
 impl DataLinkSenderImpl {
-    pub fn build_and_send<F>(&mut self, num_packets: uint, packet_size: uint,
+    pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
                           func: &mut F) -> Option<IoResult<()>>
         where F : FnMut(MutableEthernetHeader)
     {
         use std::raw::Slice;
         let len = num_packets * packet_size;
-        if len >= unsafe { (*self.packet.packet).Length } as uint {
+        if len >= unsafe { (*self.packet.packet).Length } as usize {
             None
         } else {
-            let min = unsafe { cmp::min((*self.packet.packet).Length as uint, len) };
+            let min = unsafe { cmp::min((*self.packet.packet).Length as usize, len) };
             let slice: &mut [u8] = unsafe {
                     mem::transmute(
                         Slice {
@@ -201,7 +201,7 @@ impl DataLinkSenderImpl {
 
 impl DataLinkReceiverImpl {
     pub fn iter<'a>(&'a mut self) -> DataLinkChannelIteratorImpl<'a> {
-        let buflen = unsafe { (*self.packet.packet).Length } as uint;
+        let buflen = unsafe { (*self.packet.packet).Length } as usize;
         DataLinkChannelIteratorImpl {
             pc: self,
             // Enough room for minimally sized packets without reallocating
@@ -212,7 +212,7 @@ impl DataLinkReceiverImpl {
 
 pub struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
-    packets: RingBuf<(uint, uint)>,
+    packets: RingBuf<(usize, usize)>,
 }
 
 impl<'a> DataLinkChannelIteratorImpl<'a> {
@@ -234,7 +234,7 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
                     let start = ptr as int +
                                 (*packet).bh_hdrlen as int -
                                 (*self.pc.packet.packet).Buffer as int;
-                    self.packets.push((start as uint, (*packet).bh_caplen as uint));
+                    self.packets.push((start as usize, (*packet).bh_caplen as usize));
                     let offset = (*packet).bh_hdrlen as int + (*packet).bh_caplen as int;
                     ptr = ptr.offset(bpf::BPF_WORDALIGN(offset));
                 }
@@ -242,7 +242,7 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
         }
         let (start, len) = self.packets.pop_front().unwrap();
         let slice = unsafe {
-            let data = (*self.pc.packet.packet).Buffer as uint + start;
+            let data = (*self.pc.packet.packet).Buffer as usize + start;
             mem::transmute(Slice { data: data as *const u8, len: len } )
         };
         Ok(EthernetHeader::new(slice))

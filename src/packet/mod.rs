@@ -34,40 +34,6 @@ pub trait MutablePacket {
     }
 }
 
-/// Provides a faux-for loop for packet channels.
-///
-/// Usage:
-/// ```
-/// pfor!(packet in some_iterator {
-///     /* Do something with packet */
-/// })
-/// ```
-/// It may also handle errors:
-/// ```rust
-/// pfor!(packet in some_iterator {
-///     /* Do something with packet */
-/// } on Err(e) {
-///     panic!("An error occured while receiving packets: {}", e);
-/// })
-/// ```
-#[macro_export]
-pub macro_rules! pfor {
-    ($var:pat in $iter:expr $body:block on Err($err:pat) $err_body:block) => {{
-        let mut iter = $iter;
-        loop {
-            let val = iter.next();
-            match val {
-                Ok($var) => $body,
-                Err($err) => $err_body
-            }
-        }
-    }};
-
-    ($var:pat in $iter:expr $body:block) => {
-        pfor!($var in $iter $body on Err(_) {})
-    }
-}
-
 pub mod ethernet;
 pub mod ip;
 pub mod ipv4;

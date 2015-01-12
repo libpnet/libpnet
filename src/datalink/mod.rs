@@ -51,8 +51,8 @@ impl Copy for DataLinkChannelType {}
 /// supported.
 #[inline]
 pub fn datalink_channel(network_interface: &NetworkInterface,
-                        write_buffer_size: uint,
-                        read_buffer_size: uint,
+                        write_buffer_size: usize,
+                        read_buffer_size: usize,
                         channel_type: DataLinkChannelType)
     -> IoResult<(DataLinkSender, DataLinkReceiver)> {
     match backend::datalink_channel(network_interface, write_buffer_size, read_buffer_size,
@@ -76,7 +76,7 @@ impl DataLinkSender {
     /// avoiding the copy required for `send`. If there is not sufficient capacity in the buffer,
     /// None will be returned.
     #[inline]
-    pub fn build_and_send<F>(&mut self, num_packets: uint, packet_size: uint,
+    pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
                           func: &mut F) -> Option<IoResult<()>>
         where F : FnMut(MutableEthernetHeader)
     {

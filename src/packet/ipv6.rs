@@ -29,7 +29,7 @@ impl<'p> fmt::Show for Ipv6Header<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
                "Ipv6Header {{ version: {}, traffic class: {}, flow label: {}, \
-                              payload length: {}, next header: {}, hop limit: {}, source: {}, \
+                              payload length: {}, next header: {:?}, hop limit: {}, source: {}, \
                               destination: {} }}",
                 self.get_version(),
                 self.get_traffic_class(),
@@ -47,7 +47,7 @@ impl<'p> fmt::Show for MutableIpv6Header<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
                "MutableIpv6Header {{ version: {}, traffic class: {}, flow label: {}, \
-                              payload length: {}, next header: {}, hop limit: {}, source: {}, \
+                              payload length: {}, next header: {:?}, hop limit: {}, source: {}, \
                               destination: {} }}",
                 self.get_version(),
                 self.get_traffic_class(),

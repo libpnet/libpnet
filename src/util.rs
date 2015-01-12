@@ -23,13 +23,19 @@ use std::io::net::ip::IpAddr;
 pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
 impl Copy for MacAddr {}
 
-impl fmt::Show for MacAddr {
+impl fmt::String for MacAddr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             MacAddr(a, b, c, d, e, f) =>
                 write!(fmt, "{:x}:{:x}:{:x}:{:x}:{:x}:{:x}",
                        a, b, c, d, e, f)
         }
+    }
+}
+
+impl fmt::Show for MacAddr {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        (self as &fmt::String).fmt(fmt)
     }
 }
 
@@ -130,7 +136,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
             (None, None)
         } else if (*sa).sa_family as libc::c_int == bpf::AF_LINK {
             let sdl: *const bpf::sockaddr_dl = mem::transmute(sa);
-            let nlen = (*sdl).sdl_nlen as uint;
+            let nlen = (*sdl).sdl_nlen as usize;
             let mac = MacAddr((*sdl).sdl_data[nlen + 0] as u8,
                               (*sdl).sdl_data[nlen + 1] as u8,
                               (*sdl).sdl_data[nlen + 2] as u8,
@@ -208,7 +214,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
             _ => new.mac
         };
         match (&mut old.ips, &new.ips) {
-            (&Some(ref mut old_ips), &Some(ref new_ips)) => old_ips.push_all(new_ips.as_slice()),
+            (&mut Some(ref mut old_ips), &Some(ref new_ips)) => old_ips.push_all(new_ips.as_slice()),
             _ => {}
         };
         old.flags = old.flags | new.flags;
@@ -237,7 +243,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
 
     let vec_size = adapters_size / mem::size_of::<winpcap::IP_ADAPTER_INFO>() as u32;
 
-    let mut adapters = Vec::with_capacity(vec_size as uint);
+    let mut adapters = Vec::with_capacity(vec_size as usize);
 
     // FIXME [windows] Check return code
     unsafe {
@@ -246,7 +252,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
 
     // Create a complete list of NetworkInterfaces for the machine
     let mut cursor = adapters.as_mut_ptr();
-    let mut all_ifaces = Vec::with_capacity(vec_size as uint);
+    let mut all_ifaces = Vec::with_capacity(vec_size as usize);
     while cursor.is_not_null() {
         let mac = unsafe {
                     MacAddr((*cursor).Address[0],

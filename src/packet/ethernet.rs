@@ -42,7 +42,7 @@ impl<'p> Eq for EthernetHeader<'p> {}
 impl<'p> fmt::Show for EthernetHeader<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
-               "EthernetHeader {{ destination: {}, source: {}, ethertype: {} }}",
+               "EthernetHeader {{ destination: {}, source: {}, ethertype: {:?} }}",
                self.get_destination(),
                self.get_source(),
                self.get_ethertype())
@@ -53,7 +53,7 @@ impl<'p> fmt::Show for EthernetHeader<'p> {
 impl<'p> fmt::Show for MutableEthernetHeader<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
-               "MutableEthernetHeader {{ destination: {}, source: {}, ethertype: {} }}",
+               "MutableEthernetHeader {{ destination: {}, source: {}, ethertype: {:?} }}",
                self.get_destination(),
                self.get_source(),
                self.get_ethertype())
