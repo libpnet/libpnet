@@ -13,6 +13,8 @@
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 
+use std::fmt;
+
 /// Protocol numbers as defined at:
 /// http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
 /// Above protocol numbers last updated: 2014-01-16
@@ -466,4 +468,11 @@ pub mod IpNextHeaderProtocols {
 #[derive(Show, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IpNextHeaderProtocol(pub u8);
 impl Copy for IpNextHeaderProtocol {}
+
+impl fmt::String for IpNextHeaderProtocol {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+    let IpNextHeaderProtocol(protocol) = *self;
+        write!(fmt, "{}", protocol)
+    }
+}
 

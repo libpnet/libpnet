@@ -33,6 +33,16 @@ impl fmt::Show for MacAddr {
     }
 }
 
+impl fmt::String for MacAddr {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            MacAddr(a, b, c, d, e, f) =>
+                write!(fmt, "{:x}:{:x}:{:x}:{:x}:{:x}:{:x}",
+                       a, b, c, d, e, f)
+        }
+    }
+}
+
 impl FromStr for MacAddr {
     fn from_str(s: &str) -> Option<MacAddr> {
         let mut parts = [0u8; 6];

@@ -39,7 +39,7 @@ impl<'p> PartialEq for EthernetHeader<'p> {
 }
 impl<'p> Eq for EthernetHeader<'p> {}
 
-impl<'p> fmt::Show for EthernetHeader<'p> {
+impl<'p> fmt::String for EthernetHeader<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
                "EthernetHeader {{ destination: {}, source: {}, ethertype: {} }}",
@@ -50,7 +50,7 @@ impl<'p> fmt::Show for EthernetHeader<'p> {
 }
 
 // NOTE Copy/pasted from above.
-impl<'p> fmt::Show for MutableEthernetHeader<'p> {
+impl<'p> fmt::String for MutableEthernetHeader<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
                "MutableEthernetHeader {{ destination: {}, source: {}, ethertype: {} }}",
@@ -221,4 +221,11 @@ pub mod EtherTypes {
 #[derive(Show, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EtherType(pub u16);
 impl Copy for EtherType {}
+
+impl fmt::String for EtherType {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let EtherType(ethertype) = *self;
+        write!(fmt, "{}", ethertype)
+    }
+}
 
