@@ -16,5 +16,14 @@ keywords = ["networking", "transport", "datalink", "packet", "protocol"]
 name = "pnet"
 crate_type = [ "rlib", "dylib" ]
 
+[features]
+
+default = []
+netmap = ["rust-netmap"]
+
+[dependencies.rust-netmap]
+path = "../rust-netmap"
+optional = true
+
 [dev-dependencies]
 time = "*"
