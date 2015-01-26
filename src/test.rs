@@ -42,7 +42,7 @@ const IPV6_DESTINATION: IpAddr = Ipv6Addr(0, 0, 0, 0, 0, 0, 0, 1);
 const TEST_PROTO: IpNextHeaderProtocol = IpNextHeaderProtocols::Test1;
 
 fn build_ipv4_header(packet: &mut [u8], offset: usize) {
-    let mut ip_header = MutableIpv4Header::new(packet.slice_from_mut(offset));
+    let mut ip_header = MutableIpv4Header::new(&mut packet[offset..]);
 
     let total_len = (IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN) as u16;
 
@@ -57,7 +57,7 @@ fn build_ipv4_header(packet: &mut [u8], offset: usize) {
 }
 
 fn build_ipv6_header(packet: &mut [u8], offset: usize) {
-    let mut ip_header = MutableIpv6Header::new(packet.slice_from_mut(offset));
+    let mut ip_header = MutableIpv6Header::new(&mut packet[offset..]);
 
     ip_header.set_version(6);
     ip_header.set_payload_length((UDP_HEADER_LEN + TEST_DATA_LEN) as u16);
@@ -68,7 +68,7 @@ fn build_ipv6_header(packet: &mut [u8], offset: usize) {
 }
 
 fn build_udp_header(packet: &mut [u8], offset: usize) {
-    let mut udp_header = MutableUdpHeader::new(packet.slice_from_mut(offset));
+    let mut udp_header = MutableUdpHeader::new(&mut packet[offset..]);
 
     udp_header.set_source(1234); // Arbitary port number
     udp_header.set_destination(1234);
@@ -85,7 +85,7 @@ fn build_udp4_packet(packet: &mut [u8], start: usize, msg: &str) {
     packet[data_start + 2] = msg.char_at(2) as u8;
     packet[data_start + 3] = msg.char_at(3) as u8;
 
-    let slice = packet.slice_from_mut(start + IPV4_HEADER_LEN as usize);
+    let slice = &mut packet[(start + IPV4_HEADER_LEN as usize)..];
     MutableUdpHeader::new(slice).checksum(IPV4_SOURCE, IPV4_DESTINATION, TEST_PROTO);
 }
 
@@ -99,7 +99,7 @@ fn build_udp6_packet(packet: &mut [u8], start: usize, msg: &str) {
     packet[data_start + 2] = msg.char_at(2) as u8;
     packet[data_start + 3] = msg.char_at(3) as u8;
 
-    let slice = packet.slice_from_mut(start + IPV6_HEADER_LEN as usize);
+    let slice = &mut packet[(start + IPV6_HEADER_LEN as usize)..];
     MutableUdpHeader::new(slice).checksum(IPV6_SOURCE, IPV6_DESTINATION, TEST_PROTO);
 }
 
@@ -151,7 +151,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
         }
     };
 
-    let udp = UdpHeader::new(packet.slice(header_len, packet_len));
+    let udp = UdpHeader::new(&packet[header_len .. packet_len]);
 
     let (tx, rx) = channel();
 
@@ -169,7 +169,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
             match next {
                 Ok((header, addr)) => {
                     assert_eq!(addr, ip);
-                    assert_eq!(header, UdpHeader::new(packet.slice(header_len, packet_len)));
+                    assert_eq!(header, UdpHeader::new(&packet[header_len .. packet_len]));
                     break;
                 },
                 Err(e) => {
@@ -234,12 +234,12 @@ fn layer3_ipv4() {
                 Ok((header, addr)) => {
                     assert_eq!(addr, send_addr);
                     check_ipv4_header(packet.as_slice(), header);
-                    let udp_header = UdpHeader::new(header.packet().slice_from(
-                                                   header.get_header_length() as usize * 4us));
-                    assert_eq!(udp_header, UdpHeader::new(packet.slice_from(IPV4_HEADER_LEN)));
+                    let udp_header = UdpHeader::new(&header.packet()[
+                                                   (header.get_header_length() as usize * 4us) ..]);
+                    assert_eq!(udp_header, UdpHeader::new(&packet[IPV4_HEADER_LEN..]));
 
-                    assert_eq!(udp_header.packet().slice_from(UDP_HEADER_LEN),
-                               packet.slice_from(IPV4_HEADER_LEN + UDP_HEADER_LEN));
+                    assert_eq!(&udp_header.packet()[UDP_HEADER_LEN..],
+                               &packet[IPV4_HEADER_LEN + UDP_HEADER_LEN..]);
                     break;
                 },
                 Err(e) => {

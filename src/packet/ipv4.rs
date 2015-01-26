@@ -36,7 +36,7 @@ impl<'p> PartialEq for Ipv4Header<'p> {
 }
 impl<'p> Eq for Ipv4Header<'p> {}
 
-impl<'p> fmt::Show for Ipv4Header<'p> {
+impl<'p> fmt::Debug for Ipv4Header<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
                "Ipv4Header {{ version: {}, header length: {}, dscp: {}, ecn: {}, \
@@ -60,7 +60,7 @@ impl<'p> fmt::Show for Ipv4Header<'p> {
     }
 }
 
-impl<'p> fmt::Show for MutableIpv4Header<'p> {
+impl<'p> fmt::Debug for MutableIpv4Header<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
                "MutableIpv4Header {{ version: {}, header length: {}, dscp: {}, ecn: {}, \
@@ -94,7 +94,7 @@ impl<'a> Packet for Ipv4Header<'a> {
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet }
 
     #[inline(always)]
-    fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(20) /* FIXME */ }
+    fn payload<'p>(&'p self) -> &'p [u8] { &self.packet[20..] /* FIXME */ }
 }
 
 impl<'a> Packet for MutableIpv4Header<'a> {
@@ -102,7 +102,7 @@ impl<'a> Packet for MutableIpv4Header<'a> {
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet.as_slice() }
 
     #[inline(always)]
-    fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(20) /* FIXME */ }
+    fn payload<'p>(&'p self) -> &'p [u8] { &self.packet[20..] /* FIXME */ }
 }
 
 impl<'a> MutablePacket for MutableIpv4Header<'a> {
@@ -110,7 +110,7 @@ impl<'a> MutablePacket for MutableIpv4Header<'a> {
     fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 
     #[inline(always)]
-    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.slice_from_mut(20) /* FIXME */ }
+    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { &mut self.packet[20..] /* FIXME */ }
 }
 
 /// Trait implemented by anything which provides an interface to read IPv4

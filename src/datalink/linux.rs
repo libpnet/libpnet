@@ -57,7 +57,7 @@ impl DataLinkSenderImpl {
         if len < self.write_buffer.as_slice().len() {
             let min = cmp::min(self.write_buffer.as_slice().len(), len);
             let ref mut mut_slice = self.write_buffer;
-            for chunk in mut_slice.as_mut_slice().slice_to_mut(min)
+            for chunk in mut_slice.as_mut_slice()[.. min]
                                   .chunks_mut(packet_size) {
                 {
                     let eh = MutableEthernetHeader::new(chunk);
@@ -174,7 +174,7 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
         let res = internal::recv_from(self.pc.socket.fd, self.pc.read_buffer.as_mut_slice(), &mut caddr);
         match res {
-            Ok(len) => Ok(EthernetHeader::new(self.pc.read_buffer.as_slice().slice(0, len))),
+            Ok(len) => Ok(EthernetHeader::new(&self.pc.read_buffer.as_slice()[0 .. len])),
             Err(e) => Err(e),
         }
     }

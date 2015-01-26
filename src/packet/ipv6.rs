@@ -25,7 +25,7 @@ pub struct MutableIpv6Header<'p> {
     packet: &'p mut [u8],
 }
 
-impl<'p> fmt::Show for Ipv6Header<'p> {
+impl<'p> fmt::Debug for Ipv6Header<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
                "Ipv6Header {{ version: {}, traffic class: {}, flow label: {}, \
@@ -43,7 +43,7 @@ impl<'p> fmt::Show for Ipv6Header<'p> {
     }
 }
 
-impl<'p> fmt::Show for MutableIpv6Header<'p> {
+impl<'p> fmt::Debug for MutableIpv6Header<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
                "MutableIpv6Header {{ version: {}, traffic class: {}, flow label: {}, \
@@ -66,7 +66,7 @@ impl<'a> Packet for Ipv6Header<'a> {
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet }
 
     #[inline(always)]
-    fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(40) }
+    fn payload<'p>(&'p self) -> &'p [u8] { &self.packet[40..] }
 }
 
 impl<'a> Packet for MutableIpv6Header<'a> {
@@ -74,7 +74,7 @@ impl<'a> Packet for MutableIpv6Header<'a> {
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet.as_slice() }
 
     #[inline(always)]
-    fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(40) }
+    fn payload<'p>(&'p self) -> &'p [u8] { &self.packet[40..] }
 }
 
 impl<'a> MutablePacket for MutableIpv6Header<'a> {
@@ -82,7 +82,7 @@ impl<'a> MutablePacket for MutableIpv6Header<'a> {
     fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 
     #[inline(always)]
-    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.slice_from_mut(40) }
+    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { &mut self.packet[40..] }
 }
 
 /// Trait implemented by anything which provides an interface to read IPv6
