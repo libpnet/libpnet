@@ -30,8 +30,8 @@ const SIZEOF_C_UINT: libc::c_ulong = 4;
 const SIZEOF_C_LONG: libc::c_int = 8;
 
 pub const BIOCSETIF: libc::c_ulong = IOC_IN |
-                                      ((SIZEOF_IFREQ & IOCPARM_MASK) << 16u) |
-                                      (('B' as libc::c_ulong) << 8u) |
+                                      ((SIZEOF_IFREQ & IOCPARM_MASK) << 16us) |
+                                      (('B' as libc::c_ulong) << 8us) |
                                       108;
 pub const BIOCIMMEDIATE: libc::c_ulong = IOC_IN |
                                           ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
@@ -62,7 +62,7 @@ pub const BIOCFEEDBACK: libc::c_ulong = IOC_IN |
                                           124;
 // NOTE Could use BIOCSSEESENT on OS X, though set to 1 by default anyway
 
-pub const DLT_NULL: libc::c_usize = 0;
+pub const DLT_NULL: libc::c_uint = 0;
 
 #[cfg(target_os = "freebsd")]
 const BPF_ALIGNMENT: libc::c_int = SIZEOF_C_LONG;
@@ -99,7 +99,7 @@ pub struct sockaddr_dl {
 }
 
 // See man 4 bpf or /usr/include/net/bpf.h [windows: or Common/Packet32.h]
-#[cfg(any(target_os = "freebsd", all(target_os = "macos", target_word_size = "32"), windows))]
+#[cfg(any(target_os = "freebsd", all(target_os = "macos", target_pointer_width = "32"), windows))]
 pub struct bpf_hdr {
     pub bh_tstamp: libc::timeval,
     pub bh_caplen: u32,
@@ -112,7 +112,7 @@ pub struct timeval32 {
     pub tv_usec: i32,
 }
 
-#[cfg(all(target_os = "macos", target_word_size = "64"))]
+#[cfg(all(target_os = "macos", target_pointer_width = "64"))]
 pub struct bpf_hdr {
     pub bh_tstamp: timeval32,
     pub bh_caplen: u32,

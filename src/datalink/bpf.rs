@@ -10,7 +10,7 @@ extern crate libc;
 
 use std::collections::{RingBuf};
 use std::cmp;
-use std::c_str::ToCStr;
+use std::ffi::CString;
 use std::io::{IoResult, IoError};
 use std::iter::repeat;
 use std::mem;
@@ -33,17 +33,17 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     #[cfg(target_os = "freebsd")]
     fn get_fd() -> libc::c_int {
         unsafe {
-            libc::open("/dev/bpf".to_c_str().as_ptr(), libc::O_RDWR, 0)
+            libc::open(CString::from_slice("/dev/bpf").as_ptr(), libc::O_RDWR, 0)
         }
     }
 
     #[cfg(target_os = "macos")]
     fn get_fd() -> libc::c_int {
         // FIXME This is an arbitrary number of attempts
-        for i in range(0, 1_000i) {
+        for i in range(0, 1_000is) {
             let fd = unsafe {
                 let file_name = format!("/dev/bpf{}", i);
-                libc::open(file_name.to_c_str().as_ptr(), libc::O_RDWR, 0)
+                libc::open(CString::from_slice(file_name.as_bytes()).as_ptr(), libc::O_RDWR, 0)
             };
             if fd != -1 {
                 return fd;
@@ -54,7 +54,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
 
     #[cfg(target_os = "freebsd")]
     fn set_feedback(fd: libc::c_int) -> Result<(), IoError> {
-        let one: libc::c_usize = 1;
+        let one: libc::c_uint = 1;
         if unsafe { bpf::ioctl(fd, bpf::BIOCFEEDBACK, &one) } == -1 {
             let err = IoError::last_error();
             unsafe { libc::close(fd); }
@@ -84,7 +84,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         i += 1;
     }
 
-    let buflen = read_buffer_size as libc::c_usize;
+    let buflen = read_buffer_size as libc::c_uint;
     // NOTE Buffer length must be set before binding to an interface
     //      otherwise this will return Invalid Argument
     if unsafe { bpf::ioctl(fd, bpf::BIOCSBLEN, &buflen) } == -1 {
@@ -101,7 +101,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     }
 
     // Return from read as soon as packets are available - don't wait to fill the buffer
-    let one: libc::c_usize = 1;
+    let one: libc::c_uint = 1;
     if unsafe { bpf::ioctl(fd, bpf::BIOCIMMEDIATE, &one) } == -1 {
         let err = IoError::last_error();
         unsafe { libc::close(fd); }
@@ -111,7 +111,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     let mut header_size = 0;
 
     // Get the device type
-    let mut dlt: libc::c_usize = 0;
+    let mut dlt: libc::c_uint = 0;
     if unsafe { bpf::ioctl(fd, bpf::BIOCGDLT, &mut dlt) } == -1 {
         let err = IoError::last_error();
         unsafe { libc::close(fd); }
@@ -238,16 +238,16 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
                 _ => return Err(IoError::last_error())
             };
             let mut ptr = self.pc.read_buffer.as_mut_ptr();
-            let end = unsafe { self.pc.read_buffer.as_ptr().offset(buflen as int) };
+            let end = unsafe { self.pc.read_buffer.as_ptr().offset(buflen as isize) };
             while (ptr as *const u8) < end {
                 unsafe {
                     let packet: *const bpf::bpf_hdr = mem::transmute(ptr);
-                    let start = ptr as int +
-                                (*packet).bh_hdrlen as int -
-                                self.pc.read_buffer.as_ptr() as int;
+                    let start = ptr as isize +
+                                (*packet).bh_hdrlen as isize -
+                                self.pc.read_buffer.as_ptr() as isize;
                     self.packets.push_back((start as usize + self.pc.header_size,
                                       (*packet).bh_caplen as usize - self.pc.header_size));
-                    let offset = (*packet).bh_hdrlen as int + (*packet).bh_caplen as int;
+                    let offset = (*packet).bh_hdrlen as isize + (*packet).bh_caplen as isize;
                     ptr = ptr.offset(bpf::BPF_WORDALIGN(offset));
                 }
             }
