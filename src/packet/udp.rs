@@ -35,7 +35,7 @@ impl<'p> PartialEq for UdpHeader<'p> {
 }
 impl<'p> Eq for UdpHeader<'p> {}
 
-impl<'p> fmt::Show for UdpHeader<'p> {
+impl<'p> fmt::Debug for UdpHeader<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
                "UdpHeader {{ source: {}, destination: {}, length: {}, checksum: {} }}",
@@ -47,7 +47,7 @@ impl<'p> fmt::Show for UdpHeader<'p> {
     }
 }
 
-impl<'p> fmt::Show for MutableUdpHeader<'p> {
+impl<'p> fmt::Debug for MutableUdpHeader<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
                "MutableUdpHeader {{ source: {}, destination: {}, length: {}, checksum: {} }}",
@@ -69,7 +69,7 @@ impl<'a> Packet for UdpHeader<'a> {
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet }
 
     #[inline(always)]
-    fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(8) }
+    fn payload<'p>(&'p self) -> &'p [u8] { &self.packet[8..] }
 }
 
 impl<'a> Packet for MutableUdpHeader<'a> {
@@ -77,7 +77,7 @@ impl<'a> Packet for MutableUdpHeader<'a> {
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet.as_slice() }
 
     #[inline(always)]
-    fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(8) }
+    fn payload<'p>(&'p self) -> &'p [u8] { &self.packet[8..] }
 }
 
 impl<'a> MutablePacket for MutableUdpHeader<'a> {
@@ -85,7 +85,7 @@ impl<'a> MutablePacket for MutableUdpHeader<'a> {
     fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 
     #[inline(always)]
-    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.slice_from_mut(8) }
+    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { &mut self.packet[8..] }
 }
 
 /// Trait implemented by anything which provides an interface to read UDP
@@ -327,7 +327,7 @@ fn udp_header_ipv4_test() {
     packet[20 + 8 + 3] = 't' as u8;
 
     {
-        let mut udp_header = MutableUdpHeader::new(packet.as_mut_slice().slice_from_mut(20));
+        let mut udp_header = MutableUdpHeader::new(&mut packet.as_mut_slice()[20..]);
         udp_header.set_source(12345);
         assert_eq!(udp_header.get_source(), 12345);
 
@@ -345,7 +345,7 @@ fn udp_header_ipv4_test() {
                      0xd4, 0x31, /* destination */
                      0x00, 0x0c, /* length */
                      0x91, 0x78  /* checksum*/];
-    assert_eq!(ref_packet.as_slice(), packet.slice(20, 28));
+    assert_eq!(ref_packet.as_slice(), &packet[20 .. 28]);
 }
 
 #[test]
@@ -371,7 +371,7 @@ fn udp_header_ipv6_test() {
     packet[40 + 8 + 3] = 't' as u8;
 
     {
-        let mut udp_header = MutableUdpHeader::new(packet.as_mut_slice().slice_from_mut(40));
+        let mut udp_header = MutableUdpHeader::new(&mut packet.as_mut_slice()[40..]);
         udp_header.set_source(12345);
         assert_eq!(udp_header.get_source(), 12345);
 
@@ -389,6 +389,6 @@ fn udp_header_ipv6_test() {
                      0xd4, 0x31, /* destination */
                      0x00, 0x0c, /* length */
                      0x13, 0x90  /* checksum*/];
-    assert_eq!(ref_packet.as_slice(), packet.slice(40, 48));
+    assert_eq!(ref_packet.as_slice(), &packet[40 .. 48]);
 }
 

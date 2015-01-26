@@ -23,7 +23,7 @@ use std::io::net::ip::IpAddr;
 pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
 impl Copy for MacAddr {}
 
-impl fmt::String for MacAddr {
+impl fmt::Display for MacAddr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             MacAddr(a, b, c, d, e, f) =>
@@ -33,9 +33,9 @@ impl fmt::String for MacAddr {
     }
 }
 
-impl fmt::Show for MacAddr {
+impl fmt::Debug for MacAddr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        (self as &fmt::String).fmt(fmt)
+        (self as &fmt::Display).fmt(fmt)
     }
 }
 

@@ -39,7 +39,7 @@ impl<'p> PartialEq for EthernetHeader<'p> {
 }
 impl<'p> Eq for EthernetHeader<'p> {}
 
-impl<'p> fmt::Show for EthernetHeader<'p> {
+impl<'p> fmt::Debug for EthernetHeader<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
                "EthernetHeader {{ destination: {}, source: {}, ethertype: {:?} }}",
@@ -50,7 +50,7 @@ impl<'p> fmt::Show for EthernetHeader<'p> {
 }
 
 // NOTE Copy/pasted from above.
-impl<'p> fmt::Show for MutableEthernetHeader<'p> {
+impl<'p> fmt::Debug for MutableEthernetHeader<'p> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
                "MutableEthernetHeader {{ destination: {}, source: {}, ethertype: {:?} }}",
@@ -70,7 +70,7 @@ impl<'a> Packet for EthernetHeader<'a> {
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet }
 
     #[inline(always)]
-    fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(14) }
+    fn payload<'p>(&'p self) -> &'p [u8] { &self.packet[14..] }
 }
 
 impl<'a> Packet for MutableEthernetHeader<'a> {
@@ -78,7 +78,7 @@ impl<'a> Packet for MutableEthernetHeader<'a> {
     fn packet<'p>(&'p self) -> &'p [u8] { self.packet.as_slice() }
 
     #[inline(always)]
-    fn payload<'p>(&'p self) -> &'p [u8] { self.packet.slice_from(14) }
+    fn payload<'p>(&'p self) -> &'p [u8] { &self.packet[14..] }
 }
 
 impl<'a> MutablePacket for MutableEthernetHeader<'a> {
@@ -86,7 +86,7 @@ impl<'a> MutablePacket for MutableEthernetHeader<'a> {
     fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
 
     #[inline(always)]
-    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.slice_from_mut(14) }
+    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { &mut self.packet[14..] }
 }
 
 /// A trait implemented by anything which provides the ability to retrieve
