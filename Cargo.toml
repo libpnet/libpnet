@@ -15,3 +15,6 @@ keywords = ["networking", "transport", "datalink", "packet", "protocol"]
 
 name = "pnet"
 crate_type = [ "rlib", "dylib" ]
+
+[dev-dependencies]
+time = "*"

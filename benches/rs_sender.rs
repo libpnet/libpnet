@@ -6,9 +6,13 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+// FIXME Remove before 1.0
+#![allow(unstable)]
+
 extern crate pnet;
 
-use pnet::datalink::{datalink_channel, Layer2};
+use pnet::datalink::{datalink_channel};
+use pnet::datalink::DataLinkChannelType::Layer2;
 use pnet::packet::{MutablePacket, Packet};
 use pnet::packet::ethernet::{EtherTypes, MutableEthernetHeader, EthernetHeader};
 use pnet::packet::ip::{IpNextHeaderProtocols};
@@ -19,9 +23,9 @@ use pnet::util::get_network_interfaces;
 use std::io::net::ip::Ipv4Addr;
 use std::os;
 
-static IPV4_HEADER_LEN: uint = 20;
-static UDP_HEADER_LEN: uint = 8;
-static TEST_DATA_LEN: uint = 5;
+static IPV4_HEADER_LEN: usize = 20;
+static UDP_HEADER_LEN: usize = 8;
+static TEST_DATA_LEN: usize = 5;
 
 pub fn build_ipv4_header(packet: &mut [u8]) -> MutableIpv4Header {
     let mut ip_header = MutableIpv4Header::new(packet);
@@ -70,7 +74,7 @@ pub fn build_udp4_packet(packet: &mut [u8], msg: &str) {
 
 fn main() {
     let ref interface_name = os::args()[1];
-    let destination = from_str(os::args()[2].as_slice()).unwrap();
+    let destination = os::args()[2].as_slice().parse().unwrap();
     // Find the network interface with the provided name
     let interfaces = get_network_interfaces();
     let interface = interfaces.iter()
@@ -84,8 +88,8 @@ fn main() {
         Err(e) => panic!("rs_sender: unable to create channel: {}", e)
     };
 
-    let mut buffer = [0u8, ..64];
-    let mut mut_ethernet_header = MutableEthernetHeader::new(buffer);
+    let mut buffer = [0u8; 64];
+    let mut mut_ethernet_header = MutableEthernetHeader::new(buffer.as_mut_slice());
     {
         mut_ethernet_header.set_destination(destination);
         mut_ethernet_header.set_source(interface.mac_address());
