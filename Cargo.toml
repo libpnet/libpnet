@@ -23,6 +23,7 @@ netmap = ["rust-netmap"]
 
 [dependencies.rust-netmap]
 path = "../rust-netmap"
+features = ["netmap_with_libs"]
 optional = true
 
 [dev-dependencies]

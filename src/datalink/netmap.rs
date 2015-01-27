@@ -50,7 +50,7 @@ struct NmDesc {
 
 impl NmDesc {
     fn new(iface: &NetworkInterface) -> IoResult<NmDesc> {
-        let ifname = CString::from_slice(iface.name.as_bytes());
+        let ifname = CString::from_slice(("netmap:".to_string() + iface.name.as_slice()).as_bytes());
         let desc = unsafe {
             nm_open(ifname.as_ptr(), ptr::null(), 0, ptr::null())
         };
