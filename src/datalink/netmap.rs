@@ -37,6 +37,8 @@ struct pollfd {
 
 #[cfg(target_os = "linux")]
 const POLLIN: c_short = 0x0001;
+#[cfg(target_os = "linux")]
+const POLLOUT: c_short = 0x0004;
 
 type nfds_t = c_ulong;
 
@@ -102,7 +104,14 @@ impl DataLinkSenderImpl {
 
     pub fn send_to(&mut self, packet: EthernetHeader, _dst: Option<NetworkInterface>)
         -> Option<IoResult<()>> {
+        let mut fds = pollfd {
+            fd: unsafe { NETMAP_FD(self.desc.desc) },
+            events: POLLOUT,
+            revents: 0,
+        };
+        unsafe { poll(&mut fds, 1, -1) };
         if unsafe {
+
                nm_inject(self.desc.desc,
                          packet.packet().as_ptr() as *const c_void,
                          packet.packet().len() as size_t)
