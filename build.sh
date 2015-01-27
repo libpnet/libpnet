@@ -46,6 +46,7 @@ build_doc() {
 build_test() {
     if [[ -x "$CARGO" ]]; then
         $CARGO test --no-run $CARGO_FLAGS
+        $CARGO bench --no-run $CARGO_FLAGS
     else
         $RUSTC src/lib.rs --test --out-dir ./target/ -C extra-filename=-no-cargo
     fi
