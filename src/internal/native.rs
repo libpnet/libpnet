@@ -17,8 +17,8 @@ use self::InAddr::{In4Addr, In6Addr};
 use std::mem;
 use std::num::{Int, from_i32, SignedInt, FromPrimitive};
 use std::os;
-use std::io::{IoResult, IoError};
-use std::io::net::ip::{SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr};
+use std::old_io::{IoResult, IoError};
+use std::old_io::net::ip::{SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr};
 
 use internal::CSocket;
 

@@ -8,7 +8,7 @@
 
 //! Support for sending and receiving data link layer packets
 
-use std::io::{IoResult};
+use std::old_io::{IoResult};
 use std::iter::Iterator;
 use std::option::{Option};
 

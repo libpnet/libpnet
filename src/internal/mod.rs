@@ -8,7 +8,7 @@
 
 extern crate libc;
 
-use std::io::{IoResult, IoError};
+use std::old_io::{IoResult, IoError};
 use std::mem;
 
 pub use self::native::{close, retry, addr_to_sockaddr, sockaddr_to_addr};

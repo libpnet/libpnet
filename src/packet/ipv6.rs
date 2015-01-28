@@ -9,7 +9,7 @@
 //! IPv6 packet abstraction
 
 use std::fmt;
-use std::io::net::ip::{IpAddr, Ipv6Addr};
+use std::old_io::net::ip::{IpAddr, Ipv6Addr};
 
 use packet::{Packet, MutablePacket};
 use packet::ip::IpNextHeaderProtocol;
