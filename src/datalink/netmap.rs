@@ -11,13 +11,17 @@
 extern crate "rust-netmap" as netmap;
 extern crate libc;
 
-use libc::{c_void, size_t, c_int, c_ulong, c_short};
-use self::netmap::netmap_user::{nm_open, nm_inject, nm_close, nm_nextpkt, nm_desc, nm_pkthdr,
-                                NETMAP_FD};
+use libc::{c_int, c_uint, c_ulong, c_short};
+use self::netmap::netmap_user::{nm_open, nm_close, nm_nextpkt, nm_desc, nm_pkthdr,
+                                nm_ring_next, NETMAP_TXRING, NETMAP_FD, NETMAP_BUF};
+use self::netmap::netmap::{nm_ring_empty, netmap_slot};
 
 use std::ffi::CString;
+use std::path::Path;
+use std::io::fs::File;
 use std::io::{IoResult, IoError};
 use std::mem;
+use std::num;
 use std::ptr;
 use std::raw;
 use std::sync::Arc;
@@ -48,6 +52,7 @@ extern {
 
 struct NmDesc {
     desc: *mut nm_desc,
+    buf_size: c_uint,
 }
 
 impl NmDesc {
@@ -60,8 +65,13 @@ impl NmDesc {
         if desc.is_null() {
             Err(IoError::last_error())
         } else {
+            let mut f = try!(File::open(&Path::new("/sys/module/netmap/parameters/buf_size")));
+            let num_str = try!(f.read_to_string());
+            let buf_size = num_str.trim_right().parse().unwrap();
+
             Ok(NmDesc {
-                desc: desc
+                desc: desc,
+                buf_size: buf_size
             })
         }
     }
@@ -81,21 +91,37 @@ pub struct DataLinkSenderImpl {
 }
 
 impl DataLinkSenderImpl {
-    // FIXME This is incredibly inefficient
     pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
                           func: &mut F) -> Option<IoResult<()>>
         where F : FnMut(MutableEthernetHeader)
     {
-        for _ in range(0, num_packets) {
-            let mut vec: Vec<u8> = Vec::with_capacity(packet_size);
-            {
-                let meh = MutableEthernetHeader::new(vec.as_mut_slice());
-                func(meh);
-            }
-
-            if let None = self.send_to(EthernetHeader::new(vec.as_slice()), None) {
-                // FIXME This is wrong
-                return None;
+        assert!(num::cast::<usize, u16>(packet_size).unwrap() as c_uint <= self.desc.buf_size);
+        let desc = self.desc.desc;
+        let mut fds = pollfd {
+            fd: unsafe { NETMAP_FD(desc) },
+            events: POLLOUT,
+            revents: 0,
+        };
+        let mut packet_idx = 0us;
+        while packet_idx < num_packets {
+            unsafe {
+                if poll(&mut fds, 1, -1) < 0 {
+                    return Some(Err(IoError::last_error()));
+                }
+                let ring = NETMAP_TXRING((*desc).nifp, 0);
+                while !nm_ring_empty(ring) && packet_idx < num_packets {
+                    let i = (*ring).cur;
+                    let slot_ptr: *mut netmap_slot = mem::transmute(&mut (*ring).slot);
+                    let buf = NETMAP_BUF(ring, (*slot_ptr.offset(i as isize)).buf_idx as isize);
+                    let slice = raw::Slice { data: buf, len: packet_size };
+                    let meh = MutableEthernetHeader::new(mem::transmute(slice));
+                    (*slot_ptr.offset(i as isize)).len = packet_size as u16;
+                    func(meh);
+                    let next = nm_ring_next(ring, i);
+                    (*ring).head = next;
+                    (*ring).cur =  next;
+                    packet_idx += 1;
+                }
             }
         }
 
@@ -104,23 +130,10 @@ impl DataLinkSenderImpl {
 
     pub fn send_to(&mut self, packet: EthernetHeader, _dst: Option<NetworkInterface>)
         -> Option<IoResult<()>> {
-        let mut fds = pollfd {
-            fd: unsafe { NETMAP_FD(self.desc.desc) },
-            events: POLLOUT,
-            revents: 0,
-        };
-        unsafe { poll(&mut fds, 1, -1) };
-        if unsafe {
-
-               nm_inject(self.desc.desc,
-                         packet.packet().as_ptr() as *const c_void,
-                         packet.packet().len() as size_t)
-           } > 0 {
-            Some(Ok(()))
-        } else {
-            // FIXME This is wrong
-            None
-        }
+        use packet::MutablePacket;
+        self.build_and_send(1, packet.packet().len(), &mut |&mut:mut eh: MutableEthernetHeader| {
+            eh.clone_from(packet);
+        })
     }
 }
 
@@ -161,20 +174,19 @@ pub struct DataLinkChannelIteratorImpl<'a> {
 
 impl<'a> DataLinkChannelIteratorImpl<'a> {
     pub fn next<'c>(&'c mut self) -> IoResult<EthernetHeader<'c>> {
-        let mut fds = pollfd {
-            fd: unsafe { NETMAP_FD(self.pc.desc.desc) },
-            events: POLLIN,
-            revents: 0,
-        };
-        // FIXME Don't do this with each call
-        // FIXME Check error code
-        // FIXME epoll/kqueue
-        unsafe { poll(&mut fds, 1, -1) };
-        let mut h: nm_pkthdr = unsafe { mem::zeroed() };
-        let buf = unsafe { nm_nextpkt(self.pc.desc.desc, &mut h) };
+        let desc = self.pc.desc.desc;
+        let mut h: nm_pkthdr = unsafe { mem::uninitialized() };
+        let mut buf = unsafe { nm_nextpkt(desc, &mut h) };
         if buf.is_null() {
-            // FIXME Doesn't mean there's an error
-            return Err(IoError::last_error());
+            let mut fds = pollfd {
+                fd: unsafe { NETMAP_FD(desc) },
+                events: POLLIN,
+                revents: 0,
+            };
+            if unsafe { poll(&mut fds, 1, -1) } < 0 {
+                return Err(IoError::last_error());
+            }
+            buf = unsafe { nm_nextpkt(desc, &mut h) };
         }
         Ok(EthernetHeader::new( unsafe {
             mem::transmute(raw::Slice { data: buf, len: h.len as usize })
