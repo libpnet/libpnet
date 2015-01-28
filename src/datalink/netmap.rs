@@ -7,6 +7,7 @@
 // except according to those terms.
 
 #![allow(bad_style)]
+#![unstable]
 
 extern crate "rust-netmap" as netmap;
 extern crate libc;
@@ -18,8 +19,8 @@ use self::netmap::netmap::{nm_ring_empty, netmap_slot};
 
 use std::ffi::CString;
 use std::path::Path;
-use std::io::fs::File;
-use std::io::{IoResult, IoError};
+use std::old_io::fs::File;
+use std::old_io::{IoResult, IoError};
 use std::mem;
 use std::num;
 use std::ptr;
