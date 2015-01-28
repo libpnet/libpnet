@@ -19,12 +19,23 @@ use util::NetworkInterface;
 #[path = "winpcap.rs"]
 mod backend;
 
-#[cfg(target_os = "linux")]
+#[cfg(all(not(feature = "netmap"),
+          target_os = "linux"
+          )
+      )]
 #[path = "linux.rs"]
 mod backend;
 
-#[cfg(any(target_os = "freebsd", target_os = "macos"))]
+#[cfg(all(not(feature = "netmap"),
+          any(target_os = "freebsd",
+              target_os = "macos")
+             )
+     )]
 #[path = "bpf.rs"]
+mod backend;
+
+#[cfg(feature = "netmap")]
+#[path = "netmap.rs"]
 mod backend;
 
 /// Type of data link channel to present

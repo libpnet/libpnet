@@ -8,15 +8,13 @@
 
 extern crate libc;
 
-use std::clone::Clone;
 use std::sync::mpsc::channel;
 use std::thread::Thread;
 use std::old_io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::iter::Iterator;
 
-use datalink::{datalink_channel, DataLinkChannelType};
 use packet::Packet;
-use packet::ethernet::{EtherTypes, EthernetHeader, MutableEthernetHeader, EthernetPacket};
+use packet::ethernet::{EthernetPacket};
 use packet::ip::{IpNextHeaderProtocols, IpNextHeaderProtocol};
 use packet::ipv4::{Ipv4Header, MutableIpv4Header, Ipv4Packet};
 use packet::ipv6::{MutableIpv6Header, Ipv6Packet};
@@ -24,10 +22,7 @@ use packet::udp::{UdpHeader, MutableUdpHeader, UdpPacket};
 use transport::{udp_header_iter, ipv4_header_iter, transport_channel, TransportProtocol,
                 TransportChannelType};
 use transport::TransportProtocol::{Ipv4, Ipv6};
-use util::NetworkInterface;
 
-const MIN_PACKET_SIZE: usize = 64;
-const ETHERNET_HEADER_LEN: usize = 14;
 const IPV4_HEADER_LEN: usize = 20;
 const IPV6_HEADER_LEN: usize = 40;
 const UDP_HEADER_LEN: usize = 8;
@@ -101,23 +96,6 @@ fn build_udp6_packet(packet: &mut [u8], start: usize, msg: &str) {
 
     let slice = &mut packet[(start + IPV6_HEADER_LEN as usize)..];
     MutableUdpHeader::new(slice).checksum(IPV6_SOURCE, IPV6_DESTINATION, TEST_PROTO);
-}
-
-fn get_test_interface() -> NetworkInterface {
-    use std::os::getenv;
-    use util;
-
-    (*util::get_network_interfaces()
-        .as_slice().iter()
-        .filter(|x| {
-            match getenv("PNET_TEST_IFACE") {
-                Some(name) => x.name == name,
-                None => x.is_loopback()
-            }
-        })
-        .next()
-        .unwrap())
-        .clone()
 }
 
 // OSes have a nasty habit of tweaking IP fields, so we only check
@@ -263,8 +241,34 @@ fn layer3_ipv4() {
 
 }
 
+// FIXME Find a way to test this with netmap
+#[cfg(not(feature = "netmap"))]
 #[test]
 fn layer2() {
+    use datalink::{datalink_channel, DataLinkChannelType};
+    use packet::ethernet::{EtherTypes, EthernetHeader, MutableEthernetHeader};
+    use util;
+
+    const MIN_PACKET_SIZE: usize = 64;
+    const ETHERNET_HEADER_LEN: usize = 14;
+
+    fn get_test_interface() -> util::NetworkInterface {
+        use std::clone::Clone;
+        use std::os::getenv;
+
+        (*util::get_network_interfaces()
+            .as_slice().iter()
+            .filter(|x| {
+                match getenv("PNET_TEST_IFACE") {
+                    Some(name) => x.name == name,
+                    None => x.is_loopback()
+                }
+            })
+            .next()
+            .unwrap())
+            .clone()
+    }
+
     let interface = get_test_interface();
 
     let mut packet = [0u8; ETHERNET_HEADER_LEN +
