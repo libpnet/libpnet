@@ -11,7 +11,7 @@ extern crate libc;
 use std::clone::Clone;
 use std::sync::mpsc::channel;
 use std::thread::Thread;
-use std::io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::old_io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::iter::Iterator;
 
 use datalink::{datalink_channel, DataLinkChannelType};

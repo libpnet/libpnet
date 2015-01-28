@@ -14,7 +14,7 @@ use std::fmt;
 use std::str::FromStr;
 use std::mem;
 use std::num::from_str_radix;
-use std::io::net::ip::IpAddr;
+use std::old_io::net::ip::IpAddr;
 
 #[cfg(not(windows))] use internal;
 

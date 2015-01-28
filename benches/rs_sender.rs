@@ -20,7 +20,7 @@ use pnet::packet::ipv4::{Ipv4Packet, MutableIpv4Header};
 use pnet::packet::udp::{MutableUdpHeader};
 use pnet::util::get_network_interfaces;
 
-use std::io::net::ip::Ipv4Addr;
+use std::old_io::net::ip::Ipv4Addr;
 use std::os;
 
 static IPV4_HEADER_LEN: usize = 20;

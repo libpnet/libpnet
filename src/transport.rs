@@ -22,8 +22,8 @@ use self::TransportProtocol::{Ipv4, Ipv6};
 use self::TransportChannelType::{Layer3, Layer4};
 
 use std::iter::{repeat};
-use std::io::{IoResult, IoError};
-use std::io::net::ip;
+use std::old_io::{IoResult, IoError};
+use std::old_io::net::ip;
 use std::mem;
 use std::sync::Arc;
 

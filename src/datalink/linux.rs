@@ -7,7 +7,7 @@
 // except according to those terms.
 
 use std::cmp;
-use std::io::{IoResult, IoError};
+use std::old_io::{IoResult, IoError};
 use std::iter::repeat;
 use std::mem;
 use std::num::Int;

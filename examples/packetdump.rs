@@ -10,7 +10,7 @@
 
 extern crate pnet;
 
-use std::io::net::ip::{IpAddr, Ipv4Addr};
+use std::old_io::net::ip::{IpAddr, Ipv4Addr};
 use std::os;
 
 use pnet::packet::{Packet};

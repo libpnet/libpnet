@@ -9,7 +9,7 @@
 //! UDP packet abstraction
 
 use std::fmt;
-use std::io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::old_io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use packet::{Packet, MutablePacket};
 use packet::ip::{IpNextHeaderProtocol};
