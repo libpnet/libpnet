@@ -6,6 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+// FIXME Remove before 1.0
+#![feature(core, os)]
+
 /// This example shows a basic packet logger using libpnet
 
 extern crate pnet;
@@ -105,9 +108,6 @@ fn handle_packet(interface_name: &str, ethernet: &EthernetHeader) {
     }
 }
 
-
-// FIXME Remove before 1.0
-#[allow(unstable)]
 fn main() {
     let interface_names_match = |&: iface: &NetworkInterface| iface.name == os::args()[1];
 

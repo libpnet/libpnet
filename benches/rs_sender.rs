@@ -7,7 +7,7 @@
 // except according to those terms.
 
 // FIXME Remove before 1.0
-#![allow(unstable)]
+#![feature(core, collections, io, os)]
 
 extern crate pnet;
 
