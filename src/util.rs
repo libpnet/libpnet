@@ -39,48 +39,63 @@ impl fmt::Debug for MacAddr {
     }
 }
 
+// FIXME Is this the right way to do this? Which occurs is an implementation issue rather than
+//       actually defined - is it useful to provide these errors, or would it be better to just
+//       give ()?
+/// Represents an error which occurred whilst parsing a MAC address
+#[derive(Copy, Debug, PartialEq, Eq, Clone)]
+pub enum ParseMacAddrErr {
+    /// The MAC address has too many components, eg. 00:11:22:33:44:55:66
+    TooManyComponents,
+    /// The MAC address has too few components, eg. 00:11
+    TooFewComponents,
+    /// One of the components contains an invalid value, eg. 00:GG:22:33:44:55
+    InvalidComponent,
+}
+
 impl FromStr for MacAddr {
-    fn from_str(s: &str) -> Option<MacAddr> {
+    type Err = ParseMacAddrErr;
+    fn from_str(s: &str) -> Result<MacAddr, ParseMacAddrErr> {
         let mut parts = [0u8; 6];
-        let mut splits = s.split(':');
+        let splits = s.split(':');
         let mut i = 0;
         for split in splits {
             if i == 6 {
-                return None;
+                return Err(ParseMacAddrErr::TooManyComponents);
             }
             match from_str_radix(split, 16) {
-                Some(b) if split.len() != 0 => parts[i] = b,
-                _ => return None,
+                Ok(b) if split.len() != 0 => parts[i] = b,
+                _ => return Err(ParseMacAddrErr::InvalidComponent),
             }
             i += 1;
         }
 
         if i == 6 {
-            Some(MacAddr(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]))
+            Ok(MacAddr(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]))
         } else {
-            None
+            Err(ParseMacAddrErr::TooFewComponents)
         }
     }
 }
 
 #[test]
 fn mac_addr_from_str() {
-    assert_eq!("00:00:00:00:00:00".parse(), Some(MacAddr(0, 0, 0, 0, 0, 0)));
-    assert_eq!("ff:ff:ff:ff:ff:ff".parse(), Some(MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)));
-    assert_eq!("12:34:56:78:90:ab".parse(), Some(MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB)));
-    assert_eq!("::::::".parse::<MacAddr>(), None);
-    assert_eq!("0::::::".parse::<MacAddr>(), None);
-    assert_eq!("::::0::".parse::<MacAddr>(), None);
-    assert_eq!("12:34:56:78".parse::<MacAddr>(), None);
-    assert_eq!("12:34:56:78:".parse::<MacAddr>(), None);
-    assert_eq!("12:34:56:78:90".parse::<MacAddr>(), None);
-    assert_eq!("12:34:56:78:90:".parse::<MacAddr>(), None);
-    assert_eq!("12:34:56:78:90:00:00".parse::<MacAddr>(), None);
-    assert_eq!("xx:xx:xx:xx:xx:xx".parse::<MacAddr>(), None);
+    assert_eq!("00:00:00:00:00:00".parse(), Ok(MacAddr(0, 0, 0, 0, 0, 0)));
+    assert_eq!("ff:ff:ff:ff:ff:ff".parse(), Ok(MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)));
+    assert_eq!("12:34:56:78:90:ab".parse(), Ok(MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB)));
+    assert_eq!("::::::".parse::<MacAddr>(), Err(ParseMacAddrErr::InvalidComponent));
+    assert_eq!("0::::::".parse::<MacAddr>(), Err(ParseMacAddrErr::InvalidComponent));
+    assert_eq!("::::0::".parse::<MacAddr>(), Err(ParseMacAddrErr::InvalidComponent));
+    assert_eq!("12:34:56:78".parse::<MacAddr>(), Err(ParseMacAddrErr::TooFewComponents));
+    assert_eq!("12:34:56:78:".parse::<MacAddr>(), Err(ParseMacAddrErr::InvalidComponent));
+    assert_eq!("12:34:56:78:90".parse::<MacAddr>(), Err(ParseMacAddrErr::TooFewComponents));
+    assert_eq!("12:34:56:78:90:".parse::<MacAddr>(), Err(ParseMacAddrErr::InvalidComponent));
+    assert_eq!("12:34:56:78:90:00:00".parse::<MacAddr>(), Err(ParseMacAddrErr::TooManyComponents));
+    assert_eq!("xx:xx:xx:xx:xx:xx".parse::<MacAddr>(), Err(ParseMacAddrErr::InvalidComponent));
 }
 
 /// Represents a network interface and its associated addresses
-#[derive(Clone, PartialEq, Eq, Show)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct NetworkInterface {
     /// The name of the interface
     pub name: String,
