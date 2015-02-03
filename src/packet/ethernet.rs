@@ -218,7 +218,7 @@ pub mod EtherTypes {
 }
 
 /// Represents the Ethernet ethertype field.
-#[derive(Show, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EtherType(pub u16);
 impl Copy for EtherType {}
 
