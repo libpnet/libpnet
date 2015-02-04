@@ -11,8 +11,8 @@
 use std::fmt;
 use std::old_io::net::ip::{IpAddr, Ipv4Addr};
 
-use packet::{Packet, MutablePacket};
-use packet::ip::IpNextHeaderProtocol;
+use old_packet::{Packet, MutablePacket};
+use old_packet::ip::IpNextHeaderProtocol;
 
 /// Structure representing an IPv4 header
 pub struct Ipv4Header<'p> {
@@ -333,7 +333,7 @@ impl<'p> MutableIpv4Header<'p> {
 
 #[test]
 fn ipv4_header_test() {
-    use packet::ip::IpNextHeaderProtocols;
+    use old_packet::ip::IpNextHeaderProtocols;
 
     let mut packet = [0u8; 20];
     {

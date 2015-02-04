@@ -16,12 +16,12 @@ extern crate pnet;
 use std::old_io::net::ip::{IpAddr, Ipv4Addr};
 use std::os;
 
-use pnet::packet::{Packet};
-use pnet::packet::ethernet::{EthernetHeader, EthernetPacket, EtherTypes};
-use pnet::packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
-use pnet::packet::ipv4::{Ipv4Header, Ipv4Packet};
-use pnet::packet::ipv6::{Ipv6Header, Ipv6Packet};
-use pnet::packet::udp::{UdpHeader, UdpPacket};
+use pnet::old_packet::{Packet};
+use pnet::old_packet::ethernet::{EthernetHeader, EthernetPacket, EtherTypes};
+use pnet::old_packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
+use pnet::old_packet::ipv4::{Ipv4Header, Ipv4Packet};
+use pnet::old_packet::ipv6::{Ipv6Header, Ipv6Packet};
+use pnet::old_packet::udp::{UdpHeader, UdpPacket};
 
 use pnet::datalink::{datalink_channel};
 use pnet::datalink::DataLinkChannelType::{Layer2};

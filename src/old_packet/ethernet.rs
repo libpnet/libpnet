@@ -9,7 +9,7 @@
 //! Ethernet packet abstraction
 
 use std::fmt;
-use packet::{Packet, MutablePacket};
+use old_packet::{Packet, MutablePacket};
 use util::MacAddr;
 
 /// A structure which represents an Ethernet header
@@ -208,7 +208,7 @@ fn ethernet_header_test() {
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod EtherTypes {
-    use packet::ethernet::EtherType;
+    use old_packet::ethernet::EtherType;
 
     pub const Ipv4: EtherType      = EtherType(0x0800);
     pub const Arp: EtherType       = EtherType(0x0806);

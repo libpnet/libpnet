@@ -12,7 +12,7 @@ use std::old_io::{IoResult};
 use std::iter::Iterator;
 use std::option::{Option};
 
-use packet::ethernet::{EtherType, EthernetHeader, MutableEthernetHeader};
+use old_packet::ethernet::{EtherType, EthernetHeader, MutableEthernetHeader};
 use util::NetworkInterface;
 
 #[cfg(windows)]
