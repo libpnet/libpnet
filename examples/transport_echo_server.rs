@@ -12,9 +12,9 @@ extern crate pnet;
 
 use std::iter::repeat;
 
-use pnet::packet::{MutablePacket, Packet};
-use pnet::packet::ip::IpNextHeaderProtocols;
-use pnet::packet::udp::{MutableUdpHeader, UdpPacket};
+use pnet::old_packet::{MutablePacket, Packet};
+use pnet::old_packet::ip::IpNextHeaderProtocols;
+use pnet::old_packet::udp::{MutableUdpHeader, UdpPacket};
 use pnet::transport::{transport_channel, udp_header_iter};
 use pnet::transport::TransportProtocol::{Ipv4};
 use pnet::transport::TransportChannelType::{Layer4};

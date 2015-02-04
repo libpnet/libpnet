@@ -1,10 +1,17 @@
 # libpnet [![Build Status](https://travis-ci.org/libpnet/libpnet.svg)](https://travis-ci.org/libpnet/libpnet)
 
+<table>
+<tr><td>
+<em>The `pnet::packet` module has been moved to `pnet::old_packet`, you will
+need to update your code accordingly.</em>
+</td></tr>
+</table>
+
 `libpnet` provides a cross-platform API for low level networking using Rust.
 
 There are three key components:
 
- * The packet module, allowing safe construction and manipulation of packets
+ * The old_packet module, allowing safe construction and manipulation of packets
  * The transport module, which allows implementation of transport protocols
  * The datalink module, which allows sending and receiving data link packets directly
 

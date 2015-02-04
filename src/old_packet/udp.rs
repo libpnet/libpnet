@@ -11,8 +11,8 @@
 use std::fmt;
 use std::old_io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
 
-use packet::{Packet, MutablePacket};
-use packet::ip::{IpNextHeaderProtocol};
+use old_packet::{Packet, MutablePacket};
+use old_packet::ip::{IpNextHeaderProtocol};
 
 /// Structure representing a UDP header
 pub struct UdpHeader<'p> {
@@ -306,8 +306,8 @@ impl<'p> MutableUdpHeader<'p> {
 
 #[test]
 fn udp_header_ipv4_test() {
-    use packet::ip::{IpNextHeaderProtocols};
-    use packet::ipv4::{MutableIpv4Header, Ipv4Packet};
+    use old_packet::ip::{IpNextHeaderProtocols};
+    use old_packet::ipv4::{MutableIpv4Header, Ipv4Packet};
 
     let mut packet = [0u8; 20 + 8 + 4];
     let ipv4_source = Ipv4Addr(192, 168, 0, 1);
@@ -350,8 +350,8 @@ fn udp_header_ipv4_test() {
 
 #[test]
 fn udp_header_ipv6_test() {
-    use packet::ip::{IpNextHeaderProtocols};
-    use packet::ipv6::{MutableIpv6Header, Ipv6Packet};
+    use old_packet::ip::{IpNextHeaderProtocols};
+    use old_packet::ipv6::{MutableIpv6Header, Ipv6Packet};
 
     let mut packet = [0u8; 40 + 8 + 4];
     let next_header = IpNextHeaderProtocols::Udp;

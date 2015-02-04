@@ -7,7 +7,7 @@
 // except according to those terms.
 
 // FIXME Remove after 1.0
-#![feature(collections, os)]
+#![feature(core, collections, os)]
 
 extern crate pnet;
 extern crate time;

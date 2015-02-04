@@ -29,10 +29,10 @@ use std::sync::Arc;
 
 use bindings::libc;
 
-use packet::Packet;
-use packet::ip::{IpNextHeaderProtocol};
-use packet::ipv4::{Ipv4Header, Ipv4Packet};
-use packet::udp::{UdpHeader};
+use old_packet::Packet;
+use old_packet::ip::{IpNextHeaderProtocol};
+use old_packet::ipv4::{Ipv4Header, Ipv4Packet};
+use old_packet::udp::{UdpHeader};
 
 use internal;
 

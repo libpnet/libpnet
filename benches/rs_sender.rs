@@ -13,11 +13,11 @@ extern crate pnet;
 
 use pnet::datalink::{datalink_channel};
 use pnet::datalink::DataLinkChannelType::Layer2;
-use pnet::packet::{MutablePacket, Packet};
-use pnet::packet::ethernet::{EtherTypes, MutableEthernetHeader, EthernetHeader};
-use pnet::packet::ip::{IpNextHeaderProtocols};
-use pnet::packet::ipv4::{Ipv4Packet, MutableIpv4Header};
-use pnet::packet::udp::{MutableUdpHeader};
+use pnet::old_packet::{MutablePacket, Packet};
+use pnet::old_packet::ethernet::{EtherTypes, MutableEthernetHeader, EthernetHeader};
+use pnet::old_packet::ip::{IpNextHeaderProtocols};
+use pnet::old_packet::ipv4::{Ipv4Packet, MutableIpv4Header};
+use pnet::old_packet::udp::{MutableUdpHeader};
 use pnet::util::get_network_interfaces;
 
 use std::old_io::net::ip::Ipv4Addr;

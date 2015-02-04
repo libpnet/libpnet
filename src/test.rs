@@ -13,12 +13,12 @@ use std::thread::Thread;
 use std::old_io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::iter::Iterator;
 
-use packet::Packet;
-use packet::ethernet::{EthernetPacket};
-use packet::ip::{IpNextHeaderProtocols, IpNextHeaderProtocol};
-use packet::ipv4::{Ipv4Header, MutableIpv4Header, Ipv4Packet};
-use packet::ipv6::{MutableIpv6Header, Ipv6Packet};
-use packet::udp::{UdpHeader, MutableUdpHeader, UdpPacket};
+use old_packet::Packet;
+use old_packet::ethernet::{EthernetPacket};
+use old_packet::ip::{IpNextHeaderProtocols, IpNextHeaderProtocol};
+use old_packet::ipv4::{Ipv4Header, MutableIpv4Header, Ipv4Packet};
+use old_packet::ipv6::{MutableIpv6Header, Ipv6Packet};
+use old_packet::udp::{UdpHeader, MutableUdpHeader, UdpPacket};
 use transport::{udp_header_iter, ipv4_header_iter, transport_channel, TransportProtocol,
                 TransportChannelType};
 use transport::TransportProtocol::{Ipv4, Ipv6};
@@ -246,7 +246,7 @@ fn layer3_ipv4() {
 #[test]
 fn layer2() {
     use datalink::{datalink_channel, DataLinkChannelType};
-    use packet::ethernet::{EtherTypes, EthernetHeader, MutableEthernetHeader};
+    use old_packet::ethernet::{EtherTypes, EthernetHeader, MutableEthernetHeader};
     use util;
 
     const MIN_PACKET_SIZE: usize = 64;

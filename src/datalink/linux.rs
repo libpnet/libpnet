@@ -18,8 +18,8 @@ use bindings::linux;
 use datalink::DataLinkChannelType;
 use datalink::DataLinkChannelType::{Layer2, Layer3};
 use internal;
-use packet::Packet;
-use packet::ethernet::{EtherType, EthernetHeader, MutableEthernetHeader};
+use old_packet::Packet;
+use old_packet::ethernet::{EtherType, EthernetHeader, MutableEthernetHeader};
 use util::{NetworkInterface, MacAddr};
 
 fn network_addr_to_sockaddr(ni: &NetworkInterface,

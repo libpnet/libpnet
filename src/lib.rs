@@ -12,7 +12,7 @@
 //!
 //! There are three key components:
 //!
-//!  * The packet module, allowing safe construction and manipulation of packets
+//!  * The old_packet module, allowing safe construction and manipulation of packets
 //!  * The transport module, which allows implementation of transport protocols
 //!  * The datalink module, which allows sending and receiving data link packets directly
 //!
@@ -42,8 +42,8 @@
 //!
 //! use pnet::datalink::{datalink_channel};
 //! use pnet::datalink::DataLinkChannelType::{Layer2};
-//! use pnet::packet::{MutablePacket, Packet};
-//! use pnet::packet::ethernet::EthernetPacket;
+//! use pnet::old_packet::{MutablePacket, Packet};
+//! use pnet::old_packet::ethernet::EthernetPacket;
 //! use pnet::util::{NetworkInterface, get_network_interfaces};
 //!
 //! use std::os;
@@ -107,7 +107,7 @@
 extern crate libc;
 
 pub mod datalink;
-pub mod packet;
+pub mod old_packet;
 pub mod transport;
 pub mod util;
 

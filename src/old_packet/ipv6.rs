@@ -11,8 +11,8 @@
 use std::fmt;
 use std::old_io::net::ip::{IpAddr, Ipv6Addr};
 
-use packet::{Packet, MutablePacket};
-use packet::ip::IpNextHeaderProtocol;
+use old_packet::{Packet, MutablePacket};
+use old_packet::ip::IpNextHeaderProtocol;
 
 /// Structure representing an IPv6 header
 pub struct Ipv6Header<'p> {
@@ -265,7 +265,7 @@ impl<'p> MutableIpv6Header<'p> {
 
 #[test]
 fn ipv6_header_test() {
-    use packet::ip::IpNextHeaderProtocols;
+    use old_packet::ip::IpNextHeaderProtocols;
     let mut packet = [0u8; 40];
     {
         let mut ip_header = MutableIpv6Header::new(packet.as_mut_slice());
