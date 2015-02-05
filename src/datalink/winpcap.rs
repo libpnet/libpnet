@@ -10,7 +10,8 @@ extern crate libc;
 
 use std::cmp;
 use std::collections::{RingBuf};
-use std::io::{IoResult, IoError};
+use std::ffi::CString;
+use std::old_io::{IoResult, IoError};
 use std::mem;
 use std::raw::Slice;
 use std::sync::Arc;
@@ -50,11 +51,15 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
            write_buffer_size: usize,
            channel_type: DataLinkChannelType)
     -> IoResult<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
-    let mut read_buffer = Vec::from_elem(read_buffer_size, 0u8);
-    let mut write_buffer = Vec::from_elem(read_buffer_size, 0u8);
+    let mut read_buffer = Vec::new();
+    read_buffer.resize(read_buffer_size, 0u8);
+
+    let mut write_buffer = Vec::new();
+    write_buffer.resize(write_buffer_size, 0u8);
 
     let adapter = unsafe {
-        winpcap::PacketOpenAdapter(network_interface.name.to_c_str().as_mut_ptr())
+        let net_if_str = CString::from_slice(network_interface.name.as_bytes());
+        winpcap::PacketOpenAdapter(net_if_str.as_ptr() as *mut libc::c_char)
     };
     if adapter.is_null() {
         return Err(IoError::last_error());
@@ -75,6 +80,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         return Err(IoError::last_error());
     }
 
+    // FIXME [windows] causes "os error 31: a device atteched to the system is not functioning"
     // FIXME [windows] This shouldn't be here - on Win32 reading seems to block indefinitely
     //       currently.
     let ret = unsafe {
@@ -193,11 +199,14 @@ impl DataLinkSenderImpl {
     pub fn send_to(&mut self, packet: EthernetHeader, _dst: Option<NetworkInterface>)
         -> Option<IoResult<()>> {
         use old_packet::MutablePacket;
-        self.build_and_send(1, packet.packet().len(), |mut eh| {
+        self.build_and_send(1, packet.packet().len(), &mut |mut eh| {
             eh.clone_from(packet);
         })
     }
 }
+
+unsafe impl Send for DataLinkSenderImpl {}
+unsafe impl Sync for DataLinkSenderImpl {}
 
 impl DataLinkReceiverImpl {
     pub fn iter<'a>(&'a mut self) -> DataLinkChannelIteratorImpl<'a> {
@@ -209,6 +218,9 @@ impl DataLinkReceiverImpl {
         }
     }
 }
+
+unsafe impl Send for DataLinkReceiverImpl {}
+unsafe impl Sync for DataLinkReceiverImpl {}
 
 pub struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
@@ -227,15 +239,15 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
                 _ => unsafe { (*self.pc.packet.packet).ulBytesReceived },
             };
             let mut ptr = unsafe { (*self.pc.packet.packet).Buffer };
-            let end = unsafe { (*self.pc.packet.packet).Buffer.offset(buflen as int) };
+            let end = unsafe { (*self.pc.packet.packet).Buffer.offset(buflen as isize) };
             while ptr < end {
                 unsafe {
                     let packet: *const bpf::bpf_hdr = mem::transmute(ptr);
-                    let start = ptr as int +
-                                (*packet).bh_hdrlen as int -
-                                (*self.pc.packet.packet).Buffer as int;
-                    self.packets.push((start as usize, (*packet).bh_caplen as usize));
-                    let offset = (*packet).bh_hdrlen as int + (*packet).bh_caplen as int;
+                    let start = ptr as isize +
+                                (*packet).bh_hdrlen as isize -
+                                (*self.pc.packet.packet).Buffer as isize;
+                    self.packets.push_back((start as usize, (*packet).bh_caplen as usize));
+                    let offset = (*packet).bh_hdrlen as isize + (*packet).bh_caplen as isize;
                     ptr = ptr.offset(bpf::BPF_WORDALIGN(offset));
                 }
             }

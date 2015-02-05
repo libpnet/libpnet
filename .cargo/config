@@ -1,0 +1,4 @@
+[target.x86_64-pc-windows-gnu.packet]
+rustc-flags = "-L C:\\Windows\\System32 -L C:\\Windows\\SysWOW64"
+root = "C:\\Windows\\SysWOW64"
+key = "packet"

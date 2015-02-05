@@ -11,6 +11,8 @@ description = "Cross-platform, low level networking using the Rust programming l
 readme = "README.md"
 keywords = ["networking", "transport", "datalink", "packet", "protocol"]
 
+links = "packet"
+build = "build.rs"
 [lib]
 
 name = "pnet"

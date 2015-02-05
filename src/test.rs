@@ -8,6 +8,7 @@
 
 extern crate libc;
 
+use std::boxed::BoxAny;
 use std::sync::mpsc::channel;
 use std::thread::Thread;
 use std::old_io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
@@ -327,7 +328,7 @@ fn layer2() {
     }
 
     match res.join() {
-        Err(e) => panic!(e),
+        Err(e) => { e.downcast::<String>().map(|s| panic!("layer2 test thread panicked! {}", s)); },
         _ => ()
     }
 }
