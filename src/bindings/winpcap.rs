@@ -37,7 +37,7 @@ pub type PTSTR = *mut TCHAR;
 pub type PVOID = *mut libc::c_void;
 pub type PCHAR = *mut win::CHAR;
 pub type PWCHAR = *mut win::WCHAR;
-pub type UINT = libc::c_usize;
+pub type UINT = libc::c_uint;
 pub type ULONG = libc::c_ulong;
 pub type PULONG = *mut ULONG;
 pub type ULONG64 = u64;
@@ -55,7 +55,7 @@ pub const NDIS_PACKET_TYPE_PROMISCUOUS: ULONG = 0x00000020;
 // from IPTypes.h
 #[repr(C)]
 struct _IP_ADDRESS_STRING {
-    pub String: [libc::c_char; ..4 * 4],
+    pub String: [libc::c_char; 4 * 4],
 }
 
 pub type IP_ADDRESS_STRING = _IP_ADDRESS_STRING;
@@ -79,10 +79,10 @@ pub type PIP_ADDR_STRING = *mut _IP_ADDR_STRING;
 struct _IP_ADAPTER_INFO {
     pub Next: *mut _IP_ADAPTER_INFO,
     pub ComboIndex: win::DWORD,
-    pub AdapterName: [libc::c_char; ..MAX_ADAPTER_NAME_LENGTH + 4],
-    pub Description: [libc::c_char; ..MAX_ADAPTER_DESCRIPTION_LENGTH + 4],
+    pub AdapterName: [libc::c_char; MAX_ADAPTER_NAME_LENGTH + 4],
+    pub Description: [libc::c_char; MAX_ADAPTER_DESCRIPTION_LENGTH + 4],
     pub AddressLength: UINT,
-    pub Address: [win::BYTE; ..MAX_ADAPTER_ADDRESS_LENGTH],
+    pub Address: [win::BYTE; MAX_ADAPTER_ADDRESS_LENGTH],
     pub Index: win::DWORD,
     pub Type: UINT,
     pub DhcpEnabled: UINT,
@@ -287,7 +287,7 @@ pub type PTUNNEL_TYPE = *mut TUNNEL_TYPE;
 #[repr(C)]
 struct _IP_ADAPTER_DNS_SUFFIX {
     pub Next: *mut _IP_ADAPTER_DNS_SUFFIX,
-    pub String: [win::WCHAR; ..MAX_DNS_SUFFIX_STRING_LENGTH],
+    pub String: [win::WCHAR; MAX_DNS_SUFFIX_STRING_LENGTH],
 }
 
 pub type IP_ADAPTER_DNS_SUFFIX = _IP_ADAPTER_DNS_SUFFIX;
@@ -306,14 +306,14 @@ struct _IP_ADAPTER_ADDRESSES {
     pub DnsSuffix: PWCHAR,
     pub Description: PWCHAR,
     pub FriendlyName: PWCHAR,
-    pub PhysicalAddress: [win::BYTE; ..MAX_ADAPTER_ADDRESS_LENGTH],
+    pub PhysicalAddress: [win::BYTE; MAX_ADAPTER_ADDRESS_LENGTH],
     pub PhysicalAddressLength: libc::DWORD,
     pub Flags: libc::DWORD,
     pub Mtu: libc::DWORD,
     pub IfType: libc::DWORD,
     pub OperStatus: IF_OPER_STATUS,
     pub Ipv6IfIndex: libc::DWORD,
-    pub ZoneIndices: [libc::DWORD; ..16],
+    pub ZoneIndices: [libc::DWORD; 16],
     pub FirstPrefix: PIP_ADAPTER_PREFIX,
     pub TransmitLinkSpeed: ULONG64,
     pub ReceiveLinkSpeed: ULONG64,
@@ -328,7 +328,7 @@ struct _IP_ADAPTER_ADDRESSES {
     pub ConnectionType: NET_IF_CONNECTION_TYPE,
     pub TunnelType: TUNNEL_TYPE,
     pub Dhcpv6Server: SOCKET_ADDRESS,
-    pub Dhcpv6ClientDuid: [win::BYTE; ..MAX_DHCPV6_DUID_LENGTH],
+    pub Dhcpv6ClientDuid: [win::BYTE; MAX_DHCPV6_DUID_LENGTH],
     pub Dhcpv6ClientDuidLength: ULONG,
     pub Dhcpv6Iaid: ULONG,
     pub FirstDnsSuffix: PIP_ADAPTER_DNS_SUFFIX,
@@ -347,7 +347,7 @@ extern "system" {
         -> libc::DWORD;
 }
 
-//#[link(name = "C:\\Windows\\SysWOW64\\packet.dll")]
+#[link(name = ":Packet.dll")]
 extern {
     // from Packet32.h
     pub fn PacketSendPacket(AdapterObject: LPADAPTER, pPacket: LPPACKET, Sync: win::BOOLEAN)
