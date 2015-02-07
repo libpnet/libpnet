@@ -102,7 +102,7 @@
 #![deny(missing_docs)]
 
 // FIXME Remove this once the std lib has stabilised
-#![feature(collections, core, io, libc, os, std_misc)]
+#![feature(collections, core, env, io, libc, os, std_misc)]
 
 extern crate libc;
 
