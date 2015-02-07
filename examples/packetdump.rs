@@ -7,14 +7,14 @@
 // except according to those terms.
 
 // FIXME Remove before 1.0
-#![feature(core, os)]
+#![feature(core, env, os)]
 
 /// This example shows a basic packet logger using libpnet
 
 extern crate pnet;
 
+use std::env;
 use std::old_io::net::ip::{IpAddr, Ipv4Addr};
-use std::os;
 
 use pnet::old_packet::{Packet};
 use pnet::old_packet::ethernet::{EthernetHeader, EthernetPacket, EtherTypes};
@@ -109,7 +109,8 @@ fn handle_packet(interface_name: &str, ethernet: &EthernetHeader) {
 }
 
 fn main() {
-    let interface_names_match = |&: iface: &NetworkInterface| iface.name == os::args()[1];
+    let iface_name = env::args().nth(1).unwrap().into_string().ok().unwrap();
+    let interface_names_match = |&: iface: &NetworkInterface| iface.name == iface_name;
 
     // Find the network interface with the provided name
     let interfaces = get_network_interfaces();

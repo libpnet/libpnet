@@ -7,7 +7,7 @@
 // except according to those terms.
 
 // FIXME Remove before 1.0
-#![feature(core, collections, io, os)]
+#![feature(core, collections, env, io, os)]
 
 extern crate pnet;
 
@@ -20,8 +20,8 @@ use pnet::old_packet::ipv4::{Ipv4Packet, MutableIpv4Header};
 use pnet::old_packet::udp::{MutableUdpHeader};
 use pnet::util::get_network_interfaces;
 
+use std::env;
 use std::old_io::net::ip::Ipv4Addr;
-use std::os;
 
 static IPV4_HEADER_LEN: usize = 20;
 static UDP_HEADER_LEN: usize = 8;
@@ -73,12 +73,13 @@ pub fn build_udp4_packet(packet: &mut [u8], msg: &str) {
 }
 
 fn main() {
-    let ref interface_name = os::args()[1];
-    let destination = os::args()[2].as_slice().parse().unwrap();
+    let interface_name = env::args().nth(1).unwrap().into_string().ok().unwrap();
+    let destination = env::args().nth(2).unwrap().into_string().ok().unwrap()
+                                 .as_slice().parse().unwrap();
     // Find the network interface with the provided name
     let interfaces = get_network_interfaces();
     let interface = interfaces.iter()
-                              .filter(|iface| iface.name == *interface_name)
+                              .filter(|iface| iface.name == interface_name)
                               .next()
                               .unwrap();
 

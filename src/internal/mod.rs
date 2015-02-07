@@ -52,7 +52,7 @@ pub fn send_to(socket: CSocket, buffer: &[u8], dst: *const libc::sockaddr, slen:
 pub fn recv_from(socket: CSocket, buffer: &mut [u8], caddr: *mut libc::sockaddr_storage)
     -> IoResult<usize> {
     let mut caddrlen = mem::size_of::<libc::sockaddr_storage>() as libc::socklen_t;
-    let len = retry(&mut |&mut:| unsafe {
+    let len = retry(&mut || unsafe {
         libc::recvfrom(socket, buffer.as_ptr() as *mut libc::c_void, buffer.len() as BufLen,
                        0, caddr as *mut libc::sockaddr, &mut caddrlen)
     });

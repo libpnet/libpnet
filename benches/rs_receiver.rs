@@ -7,7 +7,7 @@
 // except according to those terms.
 
 // FIXME Remove after 1.0
-#![feature(core, collections, os)]
+#![feature(core, collections, env, os)]
 
 extern crate pnet;
 extern crate time;
@@ -16,10 +16,11 @@ use pnet::datalink::{datalink_channel};
 use pnet::datalink::DataLinkChannelType::Layer2;
 use pnet::util::{NetworkInterface, get_network_interfaces};
 
-use std::os;
+use std::env;
 
 fn main() {
-    let interface_names_match = |&: iface: &NetworkInterface| iface.name == os::args()[1];
+    let iface_name = env::args().nth(1).unwrap().into_string().ok().unwrap();
+    let interface_names_match = |&: iface: &NetworkInterface| iface.name == iface_name;
 
     // Find the network interface with the provided name
     let interfaces = get_network_interfaces();

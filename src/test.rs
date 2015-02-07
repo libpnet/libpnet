@@ -255,13 +255,13 @@ fn layer2() {
 
     fn get_test_interface() -> util::NetworkInterface {
         use std::clone::Clone;
-        use std::os::getenv;
+        use std::env;
 
         (*util::get_network_interfaces()
             .as_slice().iter()
             .filter(|x| {
-                match getenv("PNET_TEST_IFACE") {
-                    Some(name) => x.name == name,
+                match env::var("PNET_TEST_IFACE") {
+                    Some(name) => x.name == name.into_string().ok().unwrap(),
                     None => x.is_loopback()
                 }
             })
@@ -328,16 +328,18 @@ fn layer2() {
     }
 
     match res.join() {
-        Err(e) => { e.downcast::<String>().map(|s| panic!("layer2 test thread panicked! {}", s)); },
+        Err(e) => {
+            let _ = e.downcast::<String>().map(|s| panic!("layer2 test thread panicked! {}", s));
+        },
         _ => ()
     }
 }
 
 #[test]
 fn check_test_environment() {
-    use std::os;
-    let tasks = os::getenv("RUST_TEST_TASKS");
-    if !tasks.is_some() || tasks.unwrap().as_slice() != "1" {
+    use std::env;
+    let tasks = env::var("RUST_TEST_TASKS");
+    if !tasks.is_some() || tasks.unwrap().into_string().ok().unwrap().as_slice() != "1" {
         panic!("Tests must be run with environment variable RUST_TEST_TASKS=1");
     }
 
@@ -345,7 +347,7 @@ fn check_test_environment() {
 
     #[cfg(not(target_os = "linux"))]
     fn test_iface() {
-        let iface = os::getenv("PNET_TEST_IFACE");
+        let iface = env::var("PNET_TEST_IFACE");
         if !iface.is_some() {
             panic!("The environment variable PNET_TEST_IFACE must be set.");
         }
