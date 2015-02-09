@@ -11,7 +11,7 @@ extern crate libc;
 use std::collections::{RingBuf};
 use std::cmp;
 use std::ffi::CString;
-use std::io::{IoResult, IoError};
+use std::old_io::{IoResult, IoError};
 use std::iter::repeat;
 use std::mem;
 use std::sync::Arc;
@@ -169,7 +169,7 @@ impl DataLinkSenderImpl {
             None
         } else {
             let min = cmp::min(self.write_buffer.len(), len);
-            for chunk in self.write_buffer.slice_to_mut(min)
+            for chunk in self.write_buffer[..min]
                                           .chunks_mut(packet_size + self.header_size) {
                 // If we're sending on the loopback device, the first 4 bytes must be set to
                 // AF_INET
@@ -179,7 +179,7 @@ impl DataLinkSenderImpl {
                     }
                 }
                 {
-                    let eh = MutableEthernetHeader::new(chunk.slice_from_mut(self.header_size));
+                    let eh = MutableEthernetHeader::new(&mut chunk[self.header_size..]);
                     func(eh);
                 }
                 match unsafe { libc::write(self.fd.fd,
@@ -253,7 +253,7 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
             }
         }
         let (start, len) = self.packets.pop_front().unwrap();
-        Ok(EthernetHeader::new(self.pc.read_buffer.slice(start, start + len)))
+        Ok(EthernetHeader::new(&self.pc.read_buffer[start .. start + len]))
     }
 }
 
