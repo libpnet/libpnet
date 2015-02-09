@@ -16,6 +16,9 @@ build: src/*.rs src/*/*.rs
 test:
 	bash build.sh test
 
+travis_script:
+	bash build.sh travis_script
+
 doc:
 	bash build.sh doc
 

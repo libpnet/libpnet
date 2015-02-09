@@ -91,6 +91,31 @@ benchmarks() {
     $RUSTC -O benches/rs_sender.rs --out-dir target/benches -L target/release
 }
 
+travis_script() {
+    case "$SYSTEM" in
+        Linux)
+            $SUDO sed -i 's/secure_path="/secure_path="\/home\/travis\/rust\/bin:/' /etc/sudoers
+            export RUST_TEST_TASKS=1
+            $SUDO -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH sh -c "cargo build $CARGO_FLAGS --release && \
+                                                             cargo test $CARGO_FLAGS && \
+                                                             cargo bench --no-run $CARGO_FLAGS && \
+                                                             cargo doc $CARGO_FLAGS"
+        ;;
+        Darwin)
+            echo Defaults secure_path = \"$PATH\" | $SUDO tee -a /etc/sudoers
+            export RUST_TEST_TASKS=1
+            export PNET_TEST_IFACE
+            $SUDO -E DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH bash -c "cargo build $CARGO_FLAGS && \
+                                                                   cargo test $CARGO_FLAGS && \
+                                                                   cargo bench --no-run $CARGO_FLAGS && \
+                                                                   cargo doc $CARGO_FLAGS"
+        ;;
+        *)
+            echo "Unsupported travis platform"
+        ;;
+    esac
+}
+
 mkdir -p target/doc
 mkdir -p target/benches
 
@@ -115,6 +140,9 @@ case "$1" in
     ;;
     benchmarks)
         benchmarks
+    ;;
+    travis_script)
+        travis_script
     ;;
     *)
         build
