@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -12,10 +12,10 @@ extern crate pnet;
 
 use std::iter::repeat;
 
-use pnet::old_packet::{MutablePacket, Packet};
-use pnet::old_packet::ip::IpNextHeaderProtocols;
-use pnet::old_packet::udp::{MutableUdpHeader, UdpPacket};
-use pnet::transport::{transport_channel, udp_header_iter};
+use pnet::packet::{MutablePacket, Packet};
+use pnet::packet::ip::IpNextHeaderProtocols;
+use pnet::packet::udp::{MutableUdpPacket};
+use pnet::transport::{transport_channel, udp_packet_iter};
 use pnet::transport::TransportProtocol::{Ipv4};
 use pnet::transport::TransportChannelType::{Layer4};
 
@@ -30,16 +30,16 @@ fn main() {
     };
 
     // We treat received packets as if they were UDP packets
-    let mut iter = udp_header_iter(&mut rx);
+    let mut iter = udp_packet_iter(&mut rx);
     loop {
         match iter.next() {
             Ok((packet, addr)) => {
                 // Allocate enough space for a new packet
                 let mut vec: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
-                let mut new_packet = MutableUdpHeader::new(&mut vec[..]);
+                let mut new_packet = MutableUdpPacket::new(&mut vec[..]);
 
                 // Create a clone of the original packet
-                new_packet.clone_from(packet);
+                new_packet.clone_from(&packet);
 
                 // Switch the source and destination ports
                 new_packet.set_source(packet.get_destination());

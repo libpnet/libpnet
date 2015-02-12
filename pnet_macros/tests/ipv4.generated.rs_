@@ -1,0 +1,1404 @@
+#![feature(no_std)]
+#![no_std]
+// Copyright (c) 2015 Robert Clipsham <robert@octarineparrot.com>
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
+#![feature(custom_attribute, plugin)]
+#![plugin(pnet_macros)]
+#[prelude_import]
+use std::prelude::v1::*;
+#[macro_use]
+extern crate "std" as std;
+
+extern crate pnet;
+extern crate pnet_macros;
+
+use pnet::packet::ip::IpNextHeaderProtocol;
+
+use pnet_macros::types::*;
+
+use std::net::Ipv4Addr;
+
+#[_packet_lint]
+pub struct Ipv4 {
+    version: u4,
+    header_length: u4,
+    dscp: u6,
+    ecn: u2,
+    total_length: u16be,
+    identification: u16be,
+    flags: u3,
+    fragment_offset: u13be,
+    ttl: u8,
+    //protocol: u8,
+    #[construct_with(u8)]
+    next_level_protocol: IpNextHeaderProtocol,
+    //#[checksum(ipv4_checksum)]
+    checksum: u16be,
+    #[construct_with(u8, u8, u8, u8)]
+    source: Ipv4Addr,
+    #[construct_with(u8, u8, u8, u8)]
+    destination: Ipv4Addr,
+    //source: u32be,
+    //destination: u32be,
+    #[length_fn = "ipv4_options_length"]
+    options: Vec<Ipv4Option>,
+    #[payload]
+    payload: Vec<u8>,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ /* ver/ihl */
+ /* dscp/ecn */
+ /* total len */
+ /* identification */
+ /* flags/frag offset */
+ /* ttl */
+ /* proto */
+ /* checksum */
+ /* source ip */
+/* dest ip */
+pub struct Ipv4Packet<'p> {
+    packet: &'p [u8],
+}
+pub struct MutableIpv4Packet<'p> {
+    packet: &'p mut [u8],
+}
+impl <'a> Ipv4Packet<'a> {
+    #[inline]
+    pub fn new<'p>(packet: &'p [u8]) -> Ipv4Packet<'p> {
+        Ipv4Packet{packet: packet,}
+    }
+    #[inline]
+    pub fn to_immutable<'p>(&'p self) -> Ipv4Packet<'p> {
+        match *self {
+            Ipv4Packet { ref packet } => Ipv4Packet{packet: packet,},
+        }
+    }
+    #[inline]
+    pub fn get_version(&self) -> u4 {
+        let self_ = self;
+        (self_.packet[0] & 240) >> 4
+    }
+    #[inline]
+    pub fn get_header_length(&self) -> u4 {
+        let self_ = self;
+        (self_.packet[0] & 15)
+    }
+    #[inline]
+    pub fn get_dscp(&self) -> u6 {
+        let self_ = self;
+        (self_.packet[1] & 252) >> 2
+    }
+    #[inline]
+    pub fn get_ecn(&self) -> u2 { let self_ = self; (self_.packet[1] & 3) }
+    #[inline]
+    pub fn get_total_length(&self) -> u16be {
+        let self_ = self;
+        let b0 = (self_.packet[2 + 0] << 8) as u16be;
+        let b1 = (self_.packet[2 + 1]) as u16be;
+        b0 | b1
+    }
+    #[inline]
+    pub fn get_identification(&self) -> u16be {
+        let self_ = self;
+        let b0 = (self_.packet[4 + 0] << 8) as u16be;
+        let b1 = (self_.packet[4 + 1]) as u16be;
+        b0 | b1
+    }
+    #[inline]
+    pub fn get_flags(&self) -> u3 {
+        let self_ = self;
+        (self_.packet[6] & 224) >> 5
+    }
+    #[inline]
+    pub fn get_fragment_offset(&self) -> u13be {
+        let self_ = self;
+        let b0 = ((self_.packet[6 + 0] & 31) << 8) as u13be;
+        let b1 = (self_.packet[6 + 1]) as u13be;
+        b0 | b1
+    }
+    #[inline]
+    pub fn get_ttl(&self) -> u8 { let self_ = self; self_.packet[8] }
+    #[inline]
+    fn get_next_level_protocol(&self) -> IpNextHeaderProtocol {
+        #[inline]
+        fn get_arg0(self_: &Ipv4Packet) -> u8 { self_.packet[9] }
+        IpNextHeaderProtocol::new(get_arg0(&self))
+    }
+    #[inline]
+    pub fn get_checksum(&self) -> u16be {
+        let self_ = self;
+        let b0 = (self_.packet[10 + 0] << 8) as u16be;
+        let b1 = (self_.packet[10 + 1]) as u16be;
+        b0 | b1
+    }
+    #[inline]
+    fn get_source(&self) -> Ipv4Addr {
+        #[inline]
+        fn get_arg0(self_: &Ipv4Packet) -> u8 { self_.packet[12] }
+        #[inline]
+        fn get_arg1(self_: &Ipv4Packet) -> u8 { self_.packet[13] }
+        #[inline]
+        fn get_arg2(self_: &Ipv4Packet) -> u8 { self_.packet[14] }
+        #[inline]
+        fn get_arg3(self_: &Ipv4Packet) -> u8 { self_.packet[15] }
+        Ipv4Addr::new(get_arg0(&self), get_arg1(&self), get_arg2(&self),
+                      get_arg3(&self))
+    }
+    #[inline]
+    fn get_destination(&self) -> Ipv4Addr {
+        #[inline]
+        fn get_arg0(self_: &Ipv4Packet) -> u8 { self_.packet[16] }
+        #[inline]
+        fn get_arg1(self_: &Ipv4Packet) -> u8 { self_.packet[17] }
+        #[inline]
+        fn get_arg2(self_: &Ipv4Packet) -> u8 { self_.packet[18] }
+        #[inline]
+        fn get_arg3(self_: &Ipv4Packet) -> u8 { self_.packet[19] }
+        Ipv4Addr::new(get_arg0(&self), get_arg1(&self), get_arg2(&self),
+                      get_arg3(&self))
+    }
+    #[inline]
+    pub fn get_options_raw(&self) -> &[u8] {
+        let current_offset = 20;
+        let len = ipv4_options_length(&self.to_immutable());
+        &self.packet[current_offset..len]
+    }
+    #[inline]
+    pub fn get_options(&self) -> Vec<Ipv4Option> {
+        use pnet::packet::FromPacket;
+        let current_offset = 20;
+        let len = ipv4_options_length(&self.to_immutable());
+        Ipv4OptionIterable{buf:
+                               &self.packet[current_offset..len],}.map(|packet|
+                                                                           packet.from_packet()).collect::<Vec<_>>()
+    }
+}
+impl <'a> ::pnet::packet::PacketSize for Ipv4Packet<'a> {
+    fn packet_size(&self) -> usize {
+        20 + ipv4_options_length(&self.to_immutable())
+    }
+}
+impl <'a> MutableIpv4Packet<'a> {
+    #[inline]
+    pub fn new<'p>(packet: &'p mut [u8]) -> MutableIpv4Packet<'p> {
+        MutableIpv4Packet{packet: packet,}
+    }
+    #[inline]
+    pub fn to_immutable<'p>(&'p self) -> Ipv4Packet<'p> {
+        match *self {
+            MutableIpv4Packet { ref packet } => Ipv4Packet{packet: packet,},
+        }
+    }
+    #[inline]
+    pub fn populate(str: MutableIpv4Packet) { }
+    #[inline]
+    pub fn get_version(&self) -> u4 {
+        let self_ = self;
+        (self_.packet[0] & 240) >> 4
+    }
+    #[inline]
+    pub fn get_header_length(&self) -> u4 {
+        let self_ = self;
+        (self_.packet[0] & 15)
+    }
+    #[inline]
+    pub fn get_dscp(&self) -> u6 {
+        let self_ = self;
+        (self_.packet[1] & 252) >> 2
+    }
+    #[inline]
+    pub fn get_ecn(&self) -> u2 { let self_ = self; (self_.packet[1] & 3) }
+    #[inline]
+    pub fn get_total_length(&self) -> u16be {
+        let self_ = self;
+        let b0 = (self_.packet[2 + 0] << 8) as u16be;
+        let b1 = (self_.packet[2 + 1]) as u16be;
+        b0 | b1
+    }
+    #[inline]
+    pub fn get_identification(&self) -> u16be {
+        let self_ = self;
+        let b0 = (self_.packet[4 + 0] << 8) as u16be;
+        let b1 = (self_.packet[4 + 1]) as u16be;
+        b0 | b1
+    }
+    #[inline]
+    pub fn get_flags(&self) -> u3 {
+        let self_ = self;
+        (self_.packet[6] & 224) >> 5
+    }
+    #[inline]
+    pub fn get_fragment_offset(&self) -> u13be {
+        let self_ = self;
+        let b0 = ((self_.packet[6 + 0] & 31) << 8) as u13be;
+        let b1 = (self_.packet[6 + 1]) as u13be;
+        b0 | b1
+    }
+    #[inline]
+    pub fn get_ttl(&self) -> u8 { let self_ = self; self_.packet[8] }
+    #[inline]
+    fn get_next_level_protocol(&self) -> IpNextHeaderProtocol {
+        #[inline]
+        fn get_arg0(self_: &MutableIpv4Packet) -> u8 { self_.packet[9] }
+        IpNextHeaderProtocol::new(get_arg0(&self))
+    }
+    #[inline]
+    pub fn get_checksum(&self) -> u16be {
+        let self_ = self;
+        let b0 = (self_.packet[10 + 0] << 8) as u16be;
+        let b1 = (self_.packet[10 + 1]) as u16be;
+        b0 | b1
+    }
+    #[inline]
+    fn get_source(&self) -> Ipv4Addr {
+        #[inline]
+        fn get_arg0(self_: &MutableIpv4Packet) -> u8 { self_.packet[12] }
+        #[inline]
+        fn get_arg1(self_: &MutableIpv4Packet) -> u8 { self_.packet[13] }
+        #[inline]
+        fn get_arg2(self_: &MutableIpv4Packet) -> u8 { self_.packet[14] }
+        #[inline]
+        fn get_arg3(self_: &MutableIpv4Packet) -> u8 { self_.packet[15] }
+        Ipv4Addr::new(get_arg0(&self), get_arg1(&self), get_arg2(&self),
+                      get_arg3(&self))
+    }
+    #[inline]
+    fn get_destination(&self) -> Ipv4Addr {
+        #[inline]
+        fn get_arg0(self_: &MutableIpv4Packet) -> u8 { self_.packet[16] }
+        #[inline]
+        fn get_arg1(self_: &MutableIpv4Packet) -> u8 { self_.packet[17] }
+        #[inline]
+        fn get_arg2(self_: &MutableIpv4Packet) -> u8 { self_.packet[18] }
+        #[inline]
+        fn get_arg3(self_: &MutableIpv4Packet) -> u8 { self_.packet[19] }
+        Ipv4Addr::new(get_arg0(&self), get_arg1(&self), get_arg2(&self),
+                      get_arg3(&self))
+    }
+    #[inline]
+    pub fn get_options_raw(&self) -> &[u8] {
+        let current_offset = 20;
+        let len = ipv4_options_length(&self.to_immutable());
+        &self.packet[current_offset..len]
+    }
+    #[inline]
+    pub fn get_options(&self) -> Vec<Ipv4Option> {
+        use pnet::packet::FromPacket;
+        let current_offset = 20;
+        let len = ipv4_options_length(&self.to_immutable());
+        Ipv4OptionIterable{buf:
+                               &self.packet[current_offset..len],}.map(|packet|
+                                                                           packet.from_packet()).collect::<Vec<_>>()
+    }
+    #[inline]
+    pub fn set_version(&mut self, val: u4) {
+        self.packet[0 + 0] =
+            ((self.packet[0 + 0] & 15) | ((val & 15) << 4) as u8) as u8;
+    }
+    #[inline]
+    pub fn set_header_length(&mut self, val: u4) {
+        self.packet[0 + 0] =
+            ((self.packet[0 + 0] & 240) | ((val & 15)) as u8) as u8;
+    }
+    #[inline]
+    pub fn set_dscp(&mut self, val: u6) {
+        self.packet[1 + 0] =
+            ((self.packet[1 + 0] & 3) | ((val & 63) << 2) as u8) as u8;
+    }
+    #[inline]
+    pub fn set_ecn(&mut self, val: u2) {
+        self.packet[1 + 0] =
+            ((self.packet[1 + 0] & 252) | ((val & 3)) as u8) as u8;
+    }
+    #[inline]
+    pub fn set_total_length(&mut self, val: u16be) {
+        self.packet[2 + 0] = ((val & 65280) >> 8) as u8;
+        self.packet[2 + 1] = (val) as u8;
+    }
+    #[inline]
+    pub fn set_identification(&mut self, val: u16be) {
+        self.packet[4 + 0] = ((val & 65280) >> 8) as u8;
+        self.packet[4 + 1] = (val) as u8;
+    }
+    #[inline]
+    pub fn set_flags(&mut self, val: u3) {
+        self.packet[6 + 0] =
+            ((self.packet[6 + 0] & 31) | ((val & 7) << 5) as u8) as u8;
+    }
+    #[inline]
+    pub fn set_fragment_offset(&mut self, val: u13be) {
+        self.packet[6 + 0] =
+            ((self.packet[6 + 0] & 224) | ((val & 7936) >> 8) as u8) as u8;
+        self.packet[6 + 1] = (val) as u8;
+    }
+    #[inline]
+    pub fn set_ttl(&mut self, val: u8) { self.packet[8 + 0] = (val) as u8; }
+    #[inline]
+    fn set_next_level_protocol(&mut self, val: IpNextHeaderProtocol) {
+        let current_offset = 10;
+    }
+    #[inline]
+    pub fn set_checksum(&mut self, val: u16be) {
+        self.packet[10 + 0] = ((val & 65280) >> 8) as u8;
+        self.packet[10 + 1] = (val) as u8;
+    }
+    #[inline]
+    fn set_source(&mut self, val: Ipv4Addr) { let current_offset = 16; }
+    #[inline]
+    fn set_destination(&mut self, val: Ipv4Addr) { let current_offset = 20; }
+}
+impl <'a> ::pnet::packet::Packet for Ipv4Packet<'a> {
+    #[inline]
+    fn packet<'p>(&'p self) -> &'p [u8] { &self.packet[..] }
+    #[inline]
+    fn payload<'p>(&'p self) -> &'p [u8] {
+        let start = 20 + ipv4_options_length(&self.to_immutable());
+        &self.packet[start..]
+    }
+}
+impl <'a> ::pnet::packet::Packet for MutableIpv4Packet<'a> {
+    #[inline]
+    fn packet<'p>(&'p self) -> &'p [u8] { &self.packet[..] }
+    #[inline]
+    fn payload<'p>(&'p self) -> &'p [u8] {
+        let start = 20 + ipv4_options_length(&self.to_immutable());
+        &self.packet[start..]
+    }
+}
+impl <'a> ::pnet::packet::MutablePacket for MutableIpv4Packet<'a> {
+    #[inline]
+    fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { &mut self.packet[..] }
+    #[inline]
+    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] {
+        let start = 20 + ipv4_options_length(&self.to_immutable());
+        &mut self.packet[start..]
+    }
+}
+pub struct Ipv4Iterable<'a> {
+    buf: &'a [u8],
+}
+impl <'a> Iterator for Ipv4Iterable<'a> {
+    type
+    Item
+    =
+    Ipv4Packet<'a>;
+    fn next(&mut self) -> Option<Ipv4Packet<'a>> {
+        use pnet::packet::PacketSize;
+        if self.buf.len() > 0 {
+            let ret = Ipv4Packet::new(self.buf);
+            self.buf = &self.buf[ret.packet_size()..];
+            return Some(ret);
+        }
+        None
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) { (0, None) }
+}
+impl <'p> ::pnet::packet::FromPacket for Ipv4Packet<'p> {
+    type
+    T
+    =
+    Ipv4;
+    #[inline]
+    fn from_packet(&self) -> Ipv4 {
+        use pnet::packet::Packet;
+        Ipv4{version: self.get_version(),
+             header_length: self.get_header_length(),
+             dscp: self.get_dscp(),
+             ecn: self.get_ecn(),
+             total_length: self.get_total_length(),
+             identification: self.get_identification(),
+             flags: self.get_flags(),
+             fragment_offset: self.get_fragment_offset(),
+             ttl: self.get_ttl(),
+             next_level_protocol: self.get_next_level_protocol(),
+             checksum: self.get_checksum(),
+             source: self.get_source(),
+             destination: self.get_destination(),
+             options: self.get_options(),
+             payload:
+                 {
+                     let payload = self.payload();
+                     let mut vec = Vec::with_capacity(payload.len());
+                     vec.push_all(payload);
+                     vec
+                 },}
+    }
+}
+impl <'p> ::pnet::packet::FromPacket for MutableIpv4Packet<'p> {
+    type
+    T
+    =
+    Ipv4;
+    #[inline]
+    fn from_packet(&self) -> Ipv4 {
+        use pnet::packet::Packet;
+        Ipv4{version: self.get_version(),
+             header_length: self.get_header_length(),
+             dscp: self.get_dscp(),
+             ecn: self.get_ecn(),
+             total_length: self.get_total_length(),
+             identification: self.get_identification(),
+             flags: self.get_flags(),
+             fragment_offset: self.get_fragment_offset(),
+             ttl: self.get_ttl(),
+             next_level_protocol: self.get_next_level_protocol(),
+             checksum: self.get_checksum(),
+             source: self.get_source(),
+             destination: self.get_destination(),
+             options: self.get_options(),
+             payload:
+                 {
+                     let payload = self.payload();
+                     let mut vec = Vec::with_capacity(payload.len());
+                     vec.push_all(payload);
+                     vec
+                 },}
+    }
+}
+#[automatically_derived]
+impl ::std::fmt::Debug for Ipv4 {
+    fn fmt(&self, __arg_0: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match *self {
+            Ipv4 {
+            version: ref __self_0_0,
+            header_length: ref __self_0_1,
+            dscp: ref __self_0_2,
+            ecn: ref __self_0_3,
+            total_length: ref __self_0_4,
+            identification: ref __self_0_5,
+            flags: ref __self_0_6,
+            fragment_offset: ref __self_0_7,
+            ttl: ref __self_0_8,
+            next_level_protocol: ref __self_0_9,
+            checksum: ref __self_0_10,
+            source: ref __self_0_11,
+            destination: ref __self_0_12,
+            options: ref __self_0_13,
+            payload: ref __self_0_14 } =>
+            __arg_0.debug_struct("Ipv4").field("version",
+                                               &(*__self_0_0)).field("header_length",
+                                                                     &(*__self_0_1)).field("dscp",
+                                                                                           &(*__self_0_2)).field("ecn",
+                                                                                                                 &(*__self_0_3)).field("total_length",
+                                                                                                                                       &(*__self_0_4)).field("identification",
+                                                                                                                                                             &(*__self_0_5)).field("flags",
+                                                                                                                                                                                   &(*__self_0_6)).field("fragment_offset",
+                                                                                                                                                                                                         &(*__self_0_7)).field("ttl",
+                                                                                                                                                                                                                               &(*__self_0_8)).field("next_level_protocol",
+                                                                                                                                                                                                                                                     &(*__self_0_9)).field("checksum",
+                                                                                                                                                                                                                                                                           &(*__self_0_10)).field("source",
+                                                                                                                                                                                                                                                                                                  &(*__self_0_11)).field("destination",
+                                                                                                                                                                                                                                                                                                                         &(*__self_0_12)).field("options",
+                                                                                                                                                                                                                                                                                                                                                &(*__self_0_13)).field("payload",
+                                                                                                                                                                                                                                                                                                                                                                       &(*__self_0_14)).finish(),
+        }
+    }
+}
+#[automatically_derived]
+impl ::std::clone::Clone for Ipv4 {
+    #[inline]
+    fn clone(&self) -> Ipv4 {
+        match *self {
+            Ipv4 {
+            version: ref __self_0_0,
+            header_length: ref __self_0_1,
+            dscp: ref __self_0_2,
+            ecn: ref __self_0_3,
+            total_length: ref __self_0_4,
+            identification: ref __self_0_5,
+            flags: ref __self_0_6,
+            fragment_offset: ref __self_0_7,
+            ttl: ref __self_0_8,
+            next_level_protocol: ref __self_0_9,
+            checksum: ref __self_0_10,
+            source: ref __self_0_11,
+            destination: ref __self_0_12,
+            options: ref __self_0_13,
+            payload: ref __self_0_14 } =>
+            Ipv4{version: ::std::clone::Clone::clone(&(*__self_0_0)),
+                 header_length: ::std::clone::Clone::clone(&(*__self_0_1)),
+                 dscp: ::std::clone::Clone::clone(&(*__self_0_2)),
+                 ecn: ::std::clone::Clone::clone(&(*__self_0_3)),
+                 total_length: ::std::clone::Clone::clone(&(*__self_0_4)),
+                 identification: ::std::clone::Clone::clone(&(*__self_0_5)),
+                 flags: ::std::clone::Clone::clone(&(*__self_0_6)),
+                 fragment_offset: ::std::clone::Clone::clone(&(*__self_0_7)),
+                 ttl: ::std::clone::Clone::clone(&(*__self_0_8)),
+                 next_level_protocol:
+                     ::std::clone::Clone::clone(&(*__self_0_9)),
+                 checksum: ::std::clone::Clone::clone(&(*__self_0_10)),
+                 source: ::std::clone::Clone::clone(&(*__self_0_11)),
+                 destination: ::std::clone::Clone::clone(&(*__self_0_12)),
+                 options: ::std::clone::Clone::clone(&(*__self_0_13)),
+                 payload: ::std::clone::Clone::clone(&(*__self_0_14)),},
+        }
+    }
+}
+pub fn ipv4_checksum<'a>(ipv4: &Ipv4Packet<'a>) -> u16be {
+    {
+        ::std::rt::begin_unwind("not yet implemented",
+                                {
+                                    static _FILE_LINE: (&'static str, usize) =
+                                        ("tests/ipv4.rs", 50u32 as usize);
+                                    &_FILE_LINE
+                                })
+    };
+}
+pub fn ipv4_options_length<'a>(ipv4: &Ipv4Packet<'a>) -> usize {
+    ipv4.get_header_length() as usize - 4
+}
+#[_packet_lint]
+pub struct Ipv4Option {
+    copied: u1,
+    class: u2,
+    number: u5,
+    length: u8,
+    #[payload]
+    data: Vec<u8>,
+}
+pub struct Ipv4OptionPacket<'p> {
+    packet: &'p [u8],
+}
+pub struct MutableIpv4OptionPacket<'p> {
+    packet: &'p mut [u8],
+}
+impl <'a> Ipv4OptionPacket<'a> {
+    #[inline]
+    pub fn new<'p>(packet: &'p [u8]) -> Ipv4OptionPacket<'p> {
+        Ipv4OptionPacket{packet: packet,}
+    }
+    #[inline]
+    pub fn to_immutable<'p>(&'p self) -> Ipv4OptionPacket<'p> {
+        match *self {
+            Ipv4OptionPacket { ref packet } =>
+            Ipv4OptionPacket{packet: packet,},
+        }
+    }
+    #[inline]
+    pub fn get_copied(&self) -> u1 {
+        let self_ = self;
+        (self_.packet[0] & 128) >> 7
+    }
+    #[inline]
+    pub fn get_class(&self) -> u2 {
+        let self_ = self;
+        (self_.packet[0] & 96) >> 5
+    }
+    #[inline]
+    pub fn get_number(&self) -> u5 {
+        let self_ = self;
+        (self_.packet[0] & 31)
+    }
+    #[inline]
+    pub fn get_length(&self) -> u8 { let self_ = self; self_.packet[1] }
+}
+impl <'a> ::pnet::packet::PacketSize for Ipv4OptionPacket<'a> {
+    fn packet_size(&self) -> usize { 2 }
+}
+impl <'a> MutableIpv4OptionPacket<'a> {
+    #[inline]
+    pub fn new<'p>(packet: &'p mut [u8]) -> MutableIpv4OptionPacket<'p> {
+        MutableIpv4OptionPacket{packet: packet,}
+    }
+    #[inline]
+    pub fn to_immutable<'p>(&'p self) -> Ipv4OptionPacket<'p> {
+        match *self {
+            MutableIpv4OptionPacket { ref packet } =>
+            Ipv4OptionPacket{packet: packet,},
+        }
+    }
+    #[inline]
+    pub fn populate(str: MutableIpv4OptionPacket) { }
+    #[inline]
+    pub fn get_copied(&self) -> u1 {
+        let self_ = self;
+        (self_.packet[0] & 128) >> 7
+    }
+    #[inline]
+    pub fn get_class(&self) -> u2 {
+        let self_ = self;
+        (self_.packet[0] & 96) >> 5
+    }
+    #[inline]
+    pub fn get_number(&self) -> u5 {
+        let self_ = self;
+        (self_.packet[0] & 31)
+    }
+    #[inline]
+    pub fn get_length(&self) -> u8 { let self_ = self; self_.packet[1] }
+    #[inline]
+    pub fn set_copied(&mut self, val: u1) {
+        self.packet[0 + 0] =
+            ((self.packet[0 + 0] & 127) | ((val & 1) << 7) as u8) as u8;
+    }
+    #[inline]
+    pub fn set_class(&mut self, val: u2) {
+        self.packet[0 + 0] =
+            ((self.packet[0 + 0] & 159) | ((val & 3) << 5) as u8) as u8;
+    }
+    #[inline]
+    pub fn set_number(&mut self, val: u5) {
+        self.packet[0 + 0] =
+            ((self.packet[0 + 0] & 224) | ((val & 31)) as u8) as u8;
+    }
+    #[inline]
+    pub fn set_length(&mut self, val: u8) {
+        self.packet[1 + 0] = (val) as u8;
+    }
+}
+impl <'a> ::pnet::packet::Packet for Ipv4OptionPacket<'a> {
+    #[inline]
+    fn packet<'p>(&'p self) -> &'p [u8] { &self.packet[..] }
+    #[inline]
+    fn payload<'p>(&'p self) -> &'p [u8] {
+        let start = 2;
+        &self.packet[start..]
+    }
+}
+impl <'a> ::pnet::packet::Packet for MutableIpv4OptionPacket<'a> {
+    #[inline]
+    fn packet<'p>(&'p self) -> &'p [u8] { &self.packet[..] }
+    #[inline]
+    fn payload<'p>(&'p self) -> &'p [u8] {
+        let start = 2;
+        &self.packet[start..]
+    }
+}
+impl <'a> ::pnet::packet::MutablePacket for MutableIpv4OptionPacket<'a> {
+    #[inline]
+    fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { &mut self.packet[..] }
+    #[inline]
+    fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] {
+        let start = 2;
+        &mut self.packet[start..]
+    }
+}
+pub struct Ipv4OptionIterable<'a> {
+    buf: &'a [u8],
+}
+impl <'a> Iterator for Ipv4OptionIterable<'a> {
+    type
+    Item
+    =
+    Ipv4OptionPacket<'a>;
+    fn next(&mut self) -> Option<Ipv4OptionPacket<'a>> {
+        use pnet::packet::PacketSize;
+        if self.buf.len() > 0 {
+            let ret = Ipv4OptionPacket::new(self.buf);
+            self.buf = &self.buf[ret.packet_size()..];
+            return Some(ret);
+        }
+        None
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) { (0, None) }
+}
+impl <'p> ::pnet::packet::FromPacket for Ipv4OptionPacket<'p> {
+    type
+    T
+    =
+    Ipv4Option;
+    #[inline]
+    fn from_packet(&self) -> Ipv4Option {
+        use pnet::packet::Packet;
+        Ipv4Option{copied: self.get_copied(),
+                   class: self.get_class(),
+                   number: self.get_number(),
+                   length: self.get_length(),
+                   data:
+                       {
+                           let payload = self.payload();
+                           let mut vec = Vec::with_capacity(payload.len());
+                           vec.push_all(payload);
+                           vec
+                       },}
+    }
+}
+impl <'p> ::pnet::packet::FromPacket for MutableIpv4OptionPacket<'p> {
+    type
+    T
+    =
+    Ipv4Option;
+    #[inline]
+    fn from_packet(&self) -> Ipv4Option {
+        use pnet::packet::Packet;
+        Ipv4Option{copied: self.get_copied(),
+                   class: self.get_class(),
+                   number: self.get_number(),
+                   length: self.get_length(),
+                   data:
+                       {
+                           let payload = self.payload();
+                           let mut vec = Vec::with_capacity(payload.len());
+                           vec.push_all(payload);
+                           vec
+                       },}
+    }
+}
+#[automatically_derived]
+impl ::std::fmt::Debug for Ipv4Option {
+    fn fmt(&self, __arg_0: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        match *self {
+            Ipv4Option {
+            copied: ref __self_0_0,
+            class: ref __self_0_1,
+            number: ref __self_0_2,
+            length: ref __self_0_3,
+            data: ref __self_0_4 } =>
+            __arg_0.debug_struct("Ipv4Option").field("copied",
+                                                     &(*__self_0_0)).field("class",
+                                                                           &(*__self_0_1)).field("number",
+                                                                                                 &(*__self_0_2)).field("length",
+                                                                                                                       &(*__self_0_3)).field("data",
+                                                                                                                                             &(*__self_0_4)).finish(),
+        }
+    }
+}
+#[automatically_derived]
+impl ::std::clone::Clone for Ipv4Option {
+    #[inline]
+    fn clone(&self) -> Ipv4Option {
+        match *self {
+            Ipv4Option {
+            copied: ref __self_0_0,
+            class: ref __self_0_1,
+            number: ref __self_0_2,
+            length: ref __self_0_3,
+            data: ref __self_0_4 } =>
+            Ipv4Option{copied: ::std::clone::Clone::clone(&(*__self_0_0)),
+                       class: ::std::clone::Clone::clone(&(*__self_0_1)),
+                       number: ::std::clone::Clone::clone(&(*__self_0_2)),
+                       length: ::std::clone::Clone::clone(&(*__self_0_3)),
+                       data: ::std::clone::Clone::clone(&(*__self_0_4)),},
+        }
+    }
+}
+#[test]
+pub fn ipv4_header_test() {
+    use pnet::packet::ip::IpNextHeaderProtocols;
+    let mut packet = [0u8; 20];
+    {
+        let mut ip_header = MutableIpv4Packet::new(packet.as_mut_slice());
+        ip_header.set_version(4);
+        {
+            match (&(ip_header.get_version()), &(4)) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 75u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+        ip_header.set_header_length(5);
+        {
+            match (&(ip_header.get_header_length()), &(5)) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 78u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+        ip_header.set_dscp(4);
+        {
+            match (&(ip_header.get_dscp()), &(4)) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 81u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+        ip_header.set_ecn(1);
+        {
+            match (&(ip_header.get_ecn()), &(1)) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 84u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+        ip_header.set_total_length(115);
+        {
+            match (&(ip_header.get_total_length()), &(115)) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 87u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+        ip_header.set_identification(257);
+        {
+            match (&(ip_header.get_identification()), &(257)) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 90u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+        ip_header.set_flags(2);
+        {
+            match (&(ip_header.get_flags()), &(2)) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 93u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+        ip_header.set_fragment_offset(257);
+        {
+            match (&(ip_header.get_fragment_offset()), &(257)) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 96u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+        ip_header.set_ttl(64);
+        {
+            match (&(ip_header.get_ttl()), &(64)) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 99u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+        ip_header.set_next_level_protocol(IpNextHeaderProtocols::Udp);
+        {
+            match (&(ip_header.get_next_level_protocol()),
+                   &(IpNextHeaderProtocols::Udp)) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 102u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+        ip_header.set_source(Ipv4Addr::new(192, 168, 0, 1));
+        {
+            match (&(ip_header.get_source()),
+                   &(Ipv4Addr::new(192, 168, 0, 1))) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 105u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+        ip_header.set_destination(Ipv4Addr::new(192, 168, 0, 199));
+        {
+            match (&(ip_header.get_destination()),
+                   &(Ipv4Addr::new(192, 168, 0, 199))) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 108u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+        let imm_header = ipv4_checksum(&ip_header.to_immutable());
+        ip_header.set_checksum(imm_header);
+        {
+            match (&(ip_header.get_checksum()), &(46670)) {
+                (left_val, right_val) => {
+                    if !((*left_val == *right_val) &&
+                             (*right_val == *left_val)) {
+                        {
+                            ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                          static __STATIC_FMTSTR:
+                                                                                                 &'static [&'static str]
+                                                                                                 =
+                                                                                              &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                                "`, right: `",
+                                                                                                "`)"];
+                                                                                          __STATIC_FMTSTR
+                                                                                      },
+                                                                                      &match (&*left_val,
+                                                                                              &*right_val)
+                                                                                           {
+                                                                                           (__arg0,
+                                                                                            __arg1)
+                                                                                           =>
+                                                                                           [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                        ::std::fmt::Debug::fmt),
+                                                                                            ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                        ::std::fmt::Debug::fmt)],
+                                                                                       }),
+                                                        {
+                                                            static _FILE_LINE:
+                                                                   (&'static str,
+                                                                    usize) =
+                                                                ("tests/ipv4.rs",
+                                                                 112u32 as
+                                                                     usize);
+                                                            &_FILE_LINE
+                                                        })
+                        }
+                    }
+                }
+            }
+        };
+    }
+    let ref_packet =
+        [69, 17, 0, 115, 1, 1, 65, 1, 64, 17, 182, 78, 192, 168, 0, 1, 192,
+         168, 0, 199];
+    {
+        match (&(ref_packet.as_slice()), &(packet.as_slice())) {
+            (left_val, right_val) => {
+                if !((*left_val == *right_val) && (*right_val == *left_val)) {
+                    {
+                        ::std::rt::begin_unwind_fmt(::std::fmt::Arguments::new_v1({
+                                                                                      static __STATIC_FMTSTR:
+                                                                                             &'static [&'static str]
+                                                                                             =
+                                                                                          &["assertion failed: `(left == right) && (right == left)` (left: `",
+                                                                                            "`, right: `",
+                                                                                            "`)"];
+                                                                                      __STATIC_FMTSTR
+                                                                                  },
+                                                                                  &match (&*left_val,
+                                                                                          &*right_val)
+                                                                                       {
+                                                                                       (__arg0,
+                                                                                        __arg1)
+                                                                                       =>
+                                                                                       [::std::fmt::ArgumentV1::new(__arg0,
+                                                                                                                    ::std::fmt::Debug::fmt),
+                                                                                        ::std::fmt::ArgumentV1::new(__arg1,
+                                                                                                                    ::std::fmt::Debug::fmt)],
+                                                                                   }),
+                                                    {
+                                                        static _FILE_LINE:
+                                                               (&'static str,
+                                                                usize) =
+                                                            ("tests/ipv4.rs",
+                                                             125u32 as usize);
+                                                        &_FILE_LINE
+                                                    })
+                    }
+                }
+            }
+        }
+    };
+}
+pub mod __test_reexports {
+    #[prelude_import]
+    use std::prelude::v1::*;
+    pub use super::ipv4_header_test;
+}
+pub mod __test {
+    #[prelude_import]
+    use std::prelude::v1::*;
+    extern crate test;
+    #[main]
+    pub fn main() -> () { test::test_main_static(::std::env::args(), TESTS); }
+    const TESTS: &'static [self::test::TestDescAndFn] =
+        &[self::test::TestDescAndFn{desc:
+                                        self::test::TestDesc{name:
+                                                                 self::test::StaticTestName("ipv4_header_test"),
+                                                             ignore: false,
+                                                             should_panic:
+                                                                 self::test::ShouldPanic::No,},
+                                    testfn:
+                                        self::test::StaticTestFn(::__test_reexports::ipv4_header_test),}];
+}

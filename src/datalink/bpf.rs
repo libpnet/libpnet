@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -11,14 +11,14 @@ extern crate libc;
 use std::collections::{VecDeque};
 use std::cmp;
 use std::ffi::CString;
-use std::old_io::{IoResult, IoError};
+use std::io;
 use std::iter::repeat;
 use std::mem;
 use std::sync::Arc;
 
 use bindings::bpf;
-use old_packet::Packet;
-use old_packet::ethernet::{EthernetHeader, MutableEthernetHeader};
+use packet::Packet;
+use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use datalink::DataLinkChannelType;
 use datalink::DataLinkChannelType::{Layer2, Layer3};
 use internal;
@@ -29,7 +29,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
                         write_buffer_size: usize,
                         read_buffer_size: usize,
                         channel_type: DataLinkChannelType)
-    -> IoResult<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
+    -> io::Result<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
     #[cfg(target_os = "freebsd")]
     fn get_fd() -> libc::c_int {
         unsafe {
@@ -53,10 +53,10 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     }
 
     #[cfg(target_os = "freebsd")]
-    fn set_feedback(fd: libc::c_int) -> Result<(), IoError> {
+    fn set_feedback(fd: libc::c_int) -> io::Result<()> {
         let one: libc::c_uint = 1;
         if unsafe { bpf::ioctl(fd, bpf::BIOCFEEDBACK, &one) } == -1 {
-            let err = IoError::last_error();
+            let err = io::Error::last_os_error();
             unsafe { libc::close(fd); }
             return Err(err);
         }
@@ -64,7 +64,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     }
 
     #[cfg(target_os = "macos")]
-    fn set_feedback(_fd: libc::c_int) -> Result<(), IoError> {
+    fn set_feedback(_fd: libc::c_int) -> io::Result<()> {
         Ok(())
     }
 
@@ -75,7 +75,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
 
     let fd = get_fd();
     if fd == -1 {
-        return Err(IoError::last_error());
+        return Err(io::Error::last_os_error());
     }
     let mut iface: bpf::ifreq = unsafe { mem::zeroed() };
     let mut i = 0;
@@ -88,14 +88,14 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     // NOTE Buffer length must be set before binding to an interface
     //      otherwise this will return Invalid Argument
     if unsafe { bpf::ioctl(fd, bpf::BIOCSBLEN, &buflen) } == -1 {
-        let err = IoError::last_error();
+        let err = io::Error::last_os_error();
         unsafe { libc::close(fd); }
         return Err(err);
     }
 
     // Set the interface to use
     if unsafe { bpf::ioctl(fd, bpf::BIOCSETIF, &iface) } == -1 {
-        let err = IoError::last_error();
+        let err = io::Error::last_os_error();
         unsafe { libc::close(fd); }
         return Err(err);
     }
@@ -103,7 +103,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     // Return from read as soon as packets are available - don't wait to fill the buffer
     let one: libc::c_uint = 1;
     if unsafe { bpf::ioctl(fd, bpf::BIOCIMMEDIATE, &one) } == -1 {
-        let err = IoError::last_error();
+        let err = io::Error::last_os_error();
         unsafe { libc::close(fd); }
         return Err(err);
     }
@@ -113,12 +113,12 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     // Get the device type
     let mut dlt: libc::c_uint = 0;
     if unsafe { bpf::ioctl(fd, bpf::BIOCGDLT, &mut dlt) } == -1 {
-        let err = IoError::last_error();
+        let err = io::Error::last_os_error();
         unsafe { libc::close(fd); }
         return Err(err);
     }
 
-    // The loopback IoError::last_error()device does weird things
+    // The loopback device does weird things
     // FIXME This should really just be another L2 packet header type
     if dlt == bpf::DLT_NULL {
         header_size = 4;
@@ -132,7 +132,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     } else {
         // Don't fill in source MAC
         if unsafe { bpf::ioctl(fd, bpf::BIOCSHDRCMPLT, &one) } == -1 {
-            let err = IoError::last_error();
+            let err = io::Error::last_os_error();
             unsafe { libc::close(fd); }
             return Err(err);
         }
@@ -161,8 +161,8 @@ pub struct DataLinkSenderImpl {
 
 impl DataLinkSenderImpl {
     pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
-                          func: &mut F) -> Option<IoResult<()>>
-        where F : FnMut(MutableEthernetHeader)
+                          func: &mut F) -> Option<io::Result<()>>
+        where F : FnMut(MutableEthernetPacket)
     {
         let len = num_packets * (packet_size + self.header_size);
         if len >= self.write_buffer.len() {
@@ -179,13 +179,13 @@ impl DataLinkSenderImpl {
                     }
                 }
                 {
-                    let eh = MutableEthernetHeader::new(&mut chunk[self.header_size..]);
+                    let eh = MutableEthernetPacket::new(&mut chunk[self.header_size..]);
                     func(eh);
                 }
                 match unsafe { libc::write(self.fd.fd,
                                            chunk.as_ptr() as *const libc::c_void,
                                            chunk.len() as libc::size_t) } {
-                    len if len == -1 => return Some(Err(IoError::last_error())),
+                    len if len == -1 => return Some(Err(io::Error::last_os_error())),
                     _ => ()
                 }
             }
@@ -193,12 +193,12 @@ impl DataLinkSenderImpl {
         }
     }
 
-    pub fn send_to(&mut self, packet: EthernetHeader, _dst: Option<NetworkInterface>)
-        -> Option<IoResult<()>> {
+    pub fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
+        -> Option<io::Result<()>> {
         match unsafe { libc::write(self.fd.fd,
                                    packet.packet().as_ptr() as *const libc::c_void,
                                    packet.packet().len() as libc::size_t) } {
-            len if len == -1 => Some(Err(IoError::last_error())),
+            len if len == -1 => Some(Err(io::Error::last_os_error())),
             _ => Some(Ok(()))
         }
     }
@@ -227,7 +227,7 @@ pub struct DataLinkChannelIteratorImpl<'a> {
 }
 
 impl<'a> DataLinkChannelIteratorImpl<'a> {
-    pub fn next<'c>(&'c mut self) -> IoResult<EthernetHeader<'c>> {
+    pub fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
         if self.packets.is_empty() {
             let buflen = match unsafe {
                 libc::read(self.pc.fd.fd,
@@ -235,7 +235,7 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
                            self.pc.read_buffer.len() as libc::size_t)
             } {
                 len if len > 0 => len,
-                _ => return Err(IoError::last_error())
+                _ => return Err(io::Error::last_os_error())
             };
             let mut ptr = self.pc.read_buffer.as_mut_ptr();
             let end = unsafe { self.pc.read_buffer.as_ptr().offset(buflen as isize) };
@@ -253,7 +253,7 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
             }
         }
         let (start, len) = self.packets.pop_front().unwrap();
-        Ok(EthernetHeader::new(&self.pc.read_buffer[start .. start + len]))
+        Ok(EthernetPacket::new(&self.pc.read_buffer[start .. start + len]))
     }
 }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -18,8 +18,8 @@ use std::sync::Arc;
 
 use bindings::{bpf, winpcap};
 use datalink::{DataLinkChannelType};
-use old_packet::Packet;
-use old_packet::ethernet::{EthernetHeader, MutableEthernetHeader};
+use packet::Packet;
+use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use util::NetworkInterface;
 
 struct WinPcapAdapter {
@@ -157,7 +157,7 @@ pub struct DataLinkReceiverImpl {
 impl DataLinkSenderImpl {
     pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
                           func: &mut F) -> Option<IoResult<()>>
-        where F : FnMut(MutableEthernetHeader)
+        where F : FnMut(MutableEthernetPacket)
     {
         use std::raw::Slice;
         let len = num_packets * packet_size;
@@ -175,7 +175,7 @@ impl DataLinkSenderImpl {
             };
             for chunk in slice.chunks_mut(packet_size) {
                 {
-                    let eh = MutableEthernetHeader::new(chunk);
+                    let eh = MutableEthernetPacket::new(chunk);
                     func(eh);
                 }
 
@@ -196,7 +196,7 @@ impl DataLinkSenderImpl {
         }
     }
 
-    pub fn send_to(&mut self, packet: EthernetHeader, _dst: Option<NetworkInterface>)
+    pub fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
         -> Option<IoResult<()>> {
         use old_packet::MutablePacket;
         self.build_and_send(1, packet.packet().len(), &mut |mut eh| {
@@ -228,7 +228,7 @@ pub struct DataLinkChannelIteratorImpl<'a> {
 }
 
 impl<'a> DataLinkChannelIteratorImpl<'a> {
-    pub fn next<'c>(&'c mut self) -> IoResult<EthernetHeader<'c>> {
+    pub fn next<'c>(&'c mut self) -> IoResult<EthernetPacket<'c>> {
         // NOTE Most of the logic here is identical to FreeBSD/OS X
         if self.packets.is_empty() {
             let ret = unsafe {
@@ -257,7 +257,7 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
             let data = (*self.pc.packet.packet).Buffer as usize + start;
             mem::transmute(Slice { data: data as *const u8, len: len } )
         };
-        Ok(EthernetHeader::new(slice))
+        Ok(EthernetPacket::new(slice))
     }
 }
 

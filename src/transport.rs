@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -21,18 +21,19 @@
 use self::TransportProtocol::{Ipv4, Ipv6};
 use self::TransportChannelType::{Layer3, Layer4};
 
+use std::io;
+use std::io::Error;
 use std::iter::{repeat};
-use std::old_io::{IoResult, IoError};
-use std::old_io::net::ip;
+use std::net;
 use std::mem;
 use std::sync::Arc;
 
 use bindings::libc;
 
-use old_packet::Packet;
-use old_packet::ip::{IpNextHeaderProtocol};
-use old_packet::ipv4::{Ipv4Header, Ipv4Packet};
-use old_packet::udp::{UdpHeader};
+use packet::Packet;
+use packet::ip::{IpNextHeaderProtocol};
+use packet::ipv4::{Ipv4Packet};
+use packet::udp::{UdpPacket};
 
 use internal;
 
@@ -78,7 +79,7 @@ pub struct TransportReceiver {
 /// would include the IPv4 Header in received values, and require manual construction of an IP
 /// header when sending.
 pub fn transport_channel(buffer_size: usize, channel_type: TransportChannelType)
-    -> IoResult<(TransportSender, TransportReceiver)> {
+    -> io::Result<(TransportSender, TransportReceiver)> {
     let socket = unsafe {
         match channel_type {
             Layer4(Ipv4(IpNextHeaderProtocol(proto))) | Layer3(IpNextHeaderProtocol(proto))
@@ -98,9 +99,9 @@ pub fn transport_channel(buffer_size: usize, channel_type: TransportChannelType)
                                  mem::size_of::<libc::c_int>() as libc::socklen_t)
             };
             if res == -1 {
-                let err = IoError::last_error();
+                let err = Error::last_os_error();
                 unsafe { internal::close(socket); }
-                return Err(err)
+                return Err(err);
             }
         }
 
@@ -117,14 +118,14 @@ pub fn transport_channel(buffer_size: usize, channel_type: TransportChannelType)
 
         Ok((sender, receiver))
     } else {
-        Err(IoError::last_error())
+        Err(Error::last_os_error())
     }
 }
 
 impl TransportSender {
-    fn send<T : Packet>(&mut self, packet: T, dst: ip::IpAddr) -> IoResult<usize> {
+    fn send<T : Packet>(&mut self, packet: T, dst: net::IpAddr) -> io::Result<usize> {
         let mut caddr = unsafe { mem::zeroed() };
-        let slen = internal::addr_to_sockaddr(ip::SocketAddr { ip: dst, port: 0 }, &mut caddr);
+        let slen = internal::addr_to_sockaddr(net::SocketAddr::new(dst, 0), &mut caddr);
         let caddr_ptr = (&caddr as *const libc::sockaddr_storage) as *const libc::sockaddr;
 
         internal::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen)
@@ -132,19 +133,19 @@ impl TransportSender {
 
     /// Send a packet to the provided desination
     #[inline]
-    pub fn send_to<T : Packet>(&mut self, packet: T, destination: ip::IpAddr) -> IoResult<usize> {
+    pub fn send_to<T : Packet>(&mut self, packet: T, destination: net::IpAddr) -> io::Result<usize> {
         self.send_to_impl(packet, destination)
     }
 
     #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]
-    fn send_to_impl<T : Packet>(&mut self, packet: T, dst: ip::IpAddr) -> IoResult<usize> {
+    fn send_to_impl<T : Packet>(&mut self, packet: T, dst: net::IpAddr) -> io::Result<usize> {
         self.send(packet, dst)
     }
 
     #[cfg(any(target_os = "freebsd", target_os = "macos"))]
-    fn send_to_impl<T : Packet>(&mut self, packet: T, dst: ip::IpAddr) -> IoResult<usize> {
+    fn send_to_impl<T : Packet>(&mut self, packet: T, dst: net::IpAddr) -> io::Result<usize> {
         use std::num::Int;
-        use old_packet::ipv4::MutableIpv4Header;
+        use packet::ipv4::MutableIpv4Packet;
 
         // FreeBSD and OS X expect total length and fragment offset fields of IPv4 packets to be in
         // host byte order rather than network byte order (man 4 ip/Raw IP Sockets)
@@ -152,7 +153,7 @@ impl TransportSender {
             let mut mut_slice: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
             mut_slice.as_mut_slice().clone_from_slice(packet.packet());
 
-            let mut new_packet = MutableIpv4Header::new(&mut mut_slice[..]);
+            let mut new_packet = MutableIpv4Packet::new(&mut mut_slice[..]);
             let length = new_packet.get_total_length().to_be();
             new_packet.set_total_length(length);
             let offset = new_packet.get_fragment_offset().to_be();
@@ -169,9 +170,9 @@ impl TransportSender {
 ///
 /// Usage:
 /// ```
-/// transport_channel_iterator!(Ipv4Header, // Type to iterate over
+/// transport_channel_iterator!(Ipv4Packet, // Type to iterate over
 ///                             Ipv4TransportChannelIterator, // Name for iterator struct
-///                             ipv4_header_iter) // Name of function to create iterator
+///                             ipv4_packet_iter) // Name of function to create iterator
 /// ```
 #[macro_export]
 macro_rules! transport_channel_iterator {
@@ -188,13 +189,13 @@ macro_rules! transport_channel_iterator {
         }
         impl<'a> $iter<'a> {
             /// Get the next ($ty, IpAddr) pair for the given channel
-            pub fn next<'c>(&'c mut self) -> IoResult<($ty, ip::IpAddr)> {
+            pub fn next<'c>(&'c mut self) -> io::Result<($ty, net::IpAddr)> {
                 let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
                 let res = internal::recv_from(self.tr.socket.fd, &mut self.tr.buffer[..], &mut caddr);
 
                 let offset = match self.tr.channel_type {
                     Layer4(Ipv4(_)) => {
-                        let ip_header = Ipv4Header::new(&self.tr.buffer[..]);
+                        let ip_header = Ipv4Packet::new(&self.tr.buffer[..]);
 
                         ip_header.get_header_length() as usize * 4usize
                     },
@@ -212,7 +213,7 @@ macro_rules! transport_channel_iterator {
                                         &caddr,
                                         mem::size_of::<libc::sockaddr_storage>()
                                    );
-                        Ok((packet, addr.unwrap().ip))
+                        Ok((packet, addr.unwrap().ip()))
                     },
                     Err(e) => Err(e),
                 };
@@ -220,10 +221,10 @@ macro_rules! transport_channel_iterator {
                 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
                 fn fixup_packet(buffer: &mut [u8]) {
                     use std::num::Int;
-                    use old_packet::ipv4::MutableIpv4Header;
+                    use packet::ipv4::MutableIpv4Packet;
 
                     let buflen = buffer.len();
-                    let mut new_packet = MutableIpv4Header::new(buffer);
+                    let mut new_packet = MutableIpv4Packet::new(buffer);
 
                     let length = Int::from_be(new_packet.get_total_length());
                     new_packet.set_total_length(length);
@@ -247,11 +248,11 @@ macro_rules! transport_channel_iterator {
     )
 }
 
-transport_channel_iterator!(Ipv4Header,
+transport_channel_iterator!(Ipv4Packet,
                             Ipv4TransportChannelIterator,
-                            ipv4_header_iter);
+                            ipv4_packet_iter);
 
-transport_channel_iterator!(UdpHeader,
+transport_channel_iterator!(UdpPacket,
                             UdpTransportChannelIterator,
-                            udp_header_iter);
+                            udp_packet_iter);
 

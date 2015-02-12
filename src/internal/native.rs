@@ -12,13 +12,10 @@
 
 extern crate libc;
 
-use self::InAddr::{In4Addr, In6Addr};
-
-use std::io::Error;
+use std::io;
 use std::mem;
 use std::num::{Int, from_i32, SignedInt, FromPrimitive};
-use std::old_io::{IoResult, IoError};
-use std::old_io::net::ip::{SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr};
 
 use internal::CSocket;
 
@@ -28,7 +25,7 @@ pub unsafe fn close(sock: CSocket) { let _ = libc::closesocket(sock); }
 pub unsafe fn close(sock: CSocket) { let _ = libc::close(sock); }
 
 fn errno() -> i32 {
-    Error::last_os_error().raw_os_error().unwrap()
+    io::Error::last_os_error().raw_os_error().unwrap()
 }
 
 #[cfg(windows)]
@@ -72,55 +69,75 @@ fn ntohs(u: u16) -> u16 {
     Int::from_be(u)
 }
 
-enum InAddr {
-    In4Addr(libc::in_addr),
-    In6Addr(libc::in6_addr),
-}
-
-fn ip_to_inaddr(ip: IpAddr) -> InAddr {
-    match ip {
-        Ipv4Addr(a, b, c, d) => {
-            let ip = ((a as u32) << 24) |
-                     ((b as u32) << 16) |
-                     ((c as u32) <<  8) |
-                     ((d as u32) <<  0);
-            In4Addr(libc::in_addr {
-                s_addr: Int::from_be(ip)
-            })
-        }
-        Ipv6Addr(a, b, c, d, e, f, g, h) => {
-            In6Addr(libc::in6_addr {
-                s6_addr: [
-                    htons(a),
-                    htons(b),
-                    htons(c),
-                    htons(d),
-                    htons(e),
-                    htons(f),
-                    htons(g),
-                    htons(h),
-                ]
-            })
-        }
-    }
-}
+//enum InAddr {
+//    In4Addr(libc::in_addr),
+//    In6Addr(libc::in6_addr),
+//}
+//
+//fn ip_to_inaddr(ip: IpAddr) -> InAddr {
+//    match ip {
+//        Ipv4Addr(a, b, c, d) => {
+//            let ip = ((a as u32) << 24) |
+//                     ((b as u32) << 16) |
+//                     ((c as u32) <<  8) |
+//                     ((d as u32) <<  0);
+//            In4Addr(libc::in_addr {
+//                s_addr: Int::from_be(ip)
+//            })
+//        }
+//        Ipv6Addr(a, b, c, d, e, f, g, h) => {
+//            In6Addr(libc::in6_addr {
+//                s6_addr: [
+//                    htons(a),
+//                    htons(b),
+//                    htons(c),
+//                    htons(d),
+//                    htons(e),
+//                    htons(f),
+//                    htons(g),
+//                    htons(h),
+//                ]
+//            })
+//        }
+//    }
+//}
 
 pub fn addr_to_sockaddr(addr: SocketAddr,
                     storage: &mut libc::sockaddr_storage)
                     -> libc::socklen_t {
     unsafe {
-        let len = match ip_to_inaddr(addr.ip) {
-            In4Addr(inaddr) => {
+        let len = match addr.ip() {
+            IpAddr::V4(ip_addr) => {
+                let [a, b, c, d] = ip_addr.octets();
+                let inaddr = libc::in_addr {
+                    s_addr: Int::from_be(((a as u32) << 24) |
+                                         ((b as u32) << 16) |
+                                         ((c as u32) <<  8) |
+                                         ((d as u32) <<  0))
+                };
                 let storage = storage as *mut _ as *mut libc::sockaddr_in;
                 (*storage).sin_family = libc::AF_INET as libc::sa_family_t;
-                (*storage).sin_port = htons(addr.port);
+                (*storage).sin_port = htons(addr.port());
                 (*storage).sin_addr = inaddr;
                 mem::size_of::<libc::sockaddr_in>()
             }
-            In6Addr(inaddr) => {
+            IpAddr::V6(ip_addr) => {
+                let [a, b, c, d, e, f, g, h] = ip_addr.segments();
+                let inaddr = libc::in6_addr {
+                    s6_addr: [
+                        htons(a),
+                        htons(b),
+                        htons(c),
+                        htons(d),
+                        htons(e),
+                        htons(f),
+                        htons(g),
+                        htons(h),
+                    ],
+                };
                 let storage = storage as *mut _ as *mut libc::sockaddr_in6;
                 (*storage).sin6_family = libc::AF_INET6 as libc::sa_family_t;
-                (*storage).sin6_port = htons(addr.port);
+                (*storage).sin6_port = htons(addr.port());
                 (*storage).sin6_addr = inaddr;
                 mem::size_of::<libc::sockaddr_in6>()
             }
@@ -130,7 +147,7 @@ pub fn addr_to_sockaddr(addr: SocketAddr,
 }
 
 pub fn sockaddr_to_addr(storage: &libc::sockaddr_storage,
-                        len: usize) -> IoResult<SocketAddr> {
+                        len: usize) -> io::Result<SocketAddr> {
     match storage.ss_family as libc::c_int {
         libc::AF_INET => {
             assert!(len as usize >= mem::size_of::<libc::sockaddr_in>());
@@ -142,10 +159,7 @@ pub fn sockaddr_to_addr(storage: &libc::sockaddr_storage,
             let b = (ip >> 16) as u8;
             let c = (ip >>  8) as u8;
             let d = (ip >>  0) as u8;
-            Ok(SocketAddr {
-                ip: Ipv4Addr(a, b, c, d),
-                port: ntohs(storage.sin_port),
-            })
+            Ok(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(a, b, c, d)), ntohs(storage.sin_port)))
         }
         libc::AF_INET6 => {
             assert!(len as usize >= mem::size_of::<libc::sockaddr_in6>());
@@ -160,15 +174,13 @@ pub fn sockaddr_to_addr(storage: &libc::sockaddr_storage,
             let f = ntohs(storage.sin6_addr.s6_addr[5]);
             let g = ntohs(storage.sin6_addr.s6_addr[6]);
             let h = ntohs(storage.sin6_addr.s6_addr[7]);
-            Ok(SocketAddr {
-                ip: Ipv6Addr(a, b, c, d, e, f, g, h),
-                port: ntohs(storage.sin6_port),
-            })
+            let ip = IpAddr::V6(Ipv6Addr::new(a, b, c, d, e, f, g, h));
+            Ok(SocketAddr::new(ip, ntohs(storage.sin6_port)))
         }
         _ => {
             #[cfg(unix)] use libc::EINVAL as ERROR;
             #[cfg(windows)] use libc::WSAEINVAL as ERROR;
-            Err(IoError::from_errno(ERROR, true))
+            Err(io::Error::from_os_error(ERROR))
         }
     }
 }

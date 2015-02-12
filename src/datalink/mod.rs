@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -8,11 +8,11 @@
 
 //! Support for sending and receiving data link layer packets
 
-use std::old_io::{IoResult};
+use std::io;
 use std::iter::Iterator;
 use std::option::{Option};
 
-use old_packet::ethernet::{EtherType, EthernetHeader, MutableEthernetHeader};
+use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
 use util::NetworkInterface;
 
 #[cfg(windows)]
@@ -65,7 +65,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
                         write_buffer_size: usize,
                         read_buffer_size: usize,
                         channel_type: DataLinkChannelType)
-    -> IoResult<(DataLinkSender, DataLinkReceiver)> {
+    -> io::Result<(DataLinkSender, DataLinkReceiver)> {
     match backend::datalink_channel(network_interface, write_buffer_size, read_buffer_size,
                                              channel_type) {
         Ok((tx, rx)) => Ok((DataLinkSender { dlsi: tx }, DataLinkReceiver { dlri: rx })),
@@ -88,8 +88,8 @@ impl DataLinkSender {
     /// None will be returned.
     #[inline]
     pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
-                          func: &mut F) -> Option<IoResult<()>>
-        where F : FnMut(MutableEthernetHeader)
+                          func: &mut F) -> Option<io::Result<()>>
+        where F : FnMut(MutableEthernetPacket)
     {
         self.dlsi.build_and_send(num_packets, packet_size, func)
     }
@@ -100,8 +100,8 @@ impl DataLinkSender {
     /// operating system being used. The second parameter is currently ignored, however `None`
     /// should be passed.
     #[inline]
-    pub fn send_to(&mut self, packet: EthernetHeader, dst: Option<NetworkInterface>)
-        -> Option<IoResult<()>> {
+    pub fn send_to(&mut self, packet: &EthernetPacket, dst: Option<NetworkInterface>)
+        -> Option<io::Result<()>> {
         self.dlsi.send_to(packet, dst)
     }
 }
@@ -113,7 +113,7 @@ pub struct DataLinkReceiver {
 }
 
 impl DataLinkReceiver {
-    /// Returns an iterator over `EthernetHeader`s.
+    /// Returns an iterator over `EthernetPacket`s.
     ///
     /// This will likely be removed once other layer two types are supported.
     #[inline]
@@ -131,9 +131,9 @@ pub struct DataLinkChannelIterator<'a> {
 }
 
 impl<'a> DataLinkChannelIterator<'a> {
-    /// Get the next EthernetHeader in the channel
+    /// Get the next EthernetPacket in the channel
     #[inline]
-    pub fn next<'c>(&'c mut self) -> IoResult<EthernetHeader<'c>> {
+    pub fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
         self.imp.next()
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -8,16 +8,17 @@
 
 //! Defines the type and constants for IP next header/next level protocol fields.
 
-// NOTE Everything here is pretending to be an enum, but with namespacing by default, so we allow
-//      breaking style guidelines.
-#[allow(non_snake_case)]
-#[allow(non_upper_case_globals)]
+use packet::PrimitiveValues;
 
 /// Protocol numbers as defined at:
 /// http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
 /// Above protocol numbers last updated: 2014-01-16
 /// These values should be used in either the IPv4 Next Level Protocol field
 /// or the IPv6 Next Header field.
+// NOTE Everything here is pretending to be an enum, but with namespacing by default, so we allow
+//      breaking style guidelines.
+#[allow(non_snake_case)]
+#[allow(non_upper_case_globals)]
 pub mod IpNextHeaderProtocols {
     use super::IpNextHeaderProtocol;
 
@@ -465,4 +466,18 @@ pub mod IpNextHeaderProtocols {
 /// see `IpNextHeaderProtocols` for a list of values.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IpNextHeaderProtocol(pub u8);
+
+impl IpNextHeaderProtocol {
+    /// Create a new IpNextHeaderProtocol
+    pub fn new(value: u8) -> IpNextHeaderProtocol {
+        IpNextHeaderProtocol(value)
+    }
+}
+
+impl PrimitiveValues for IpNextHeaderProtocol {
+    type T = (u8,);
+    fn to_primitive_values(&self) -> (u8,) {
+        (self.0,)
+    }
+}
 
