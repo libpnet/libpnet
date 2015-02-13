@@ -7,7 +7,7 @@
 // except according to those terms.
 
 // FIXME Remove before 1.0
-#![feature(core, env, os)]
+#![feature(core, env, io)]
 
 /// This example shows a basic packet logger using libpnet
 
@@ -109,7 +109,7 @@ fn handle_packet(interface_name: &str, ethernet: &EthernetHeader) {
 }
 
 fn main() {
-    let iface_name = env::args().nth(1).unwrap().into_string().ok().unwrap();
+    let iface_name = env::args().nth(1).unwrap();
     let interface_names_match = |&: iface: &NetworkInterface| iface.name == iface_name;
 
     // Find the network interface with the provided name

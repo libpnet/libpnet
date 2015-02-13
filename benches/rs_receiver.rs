@@ -19,7 +19,7 @@ use pnet::util::{NetworkInterface, get_network_interfaces};
 use std::env;
 
 fn main() {
-    let iface_name = env::args().nth(1).unwrap().into_string().ok().unwrap();
+    let iface_name = env::args().nth(1).unwrap();
     let interface_names_match = |&: iface: &NetworkInterface| iface.name == iface_name;
 
     // Find the network interface with the provided name

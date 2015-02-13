@@ -73,9 +73,8 @@ pub fn build_udp4_packet(packet: &mut [u8], msg: &str) {
 }
 
 fn main() {
-    let interface_name = env::args().nth(1).unwrap().into_string().ok().unwrap();
-    let destination = env::args().nth(2).unwrap().into_string().ok().unwrap()
-                                 .as_slice().parse().unwrap();
+    let interface_name = env::args().nth(1).unwrap();
+    let destination = env::args().nth(2).unwrap().as_slice().parse().unwrap();
     // Find the network interface with the provided name
     let interfaces = get_network_interfaces();
     let interface = interfaces.iter()

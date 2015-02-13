@@ -261,8 +261,8 @@ fn layer2() {
             .as_slice().iter()
             .filter(|x| {
                 match env::var("PNET_TEST_IFACE") {
-                    Some(name) => x.name == name.into_string().ok().unwrap(),
-                    None => x.is_loopback()
+                    Ok(name) => x.name == name,
+                    Err(_) => x.is_loopback()
                 }
             })
             .next()
@@ -339,7 +339,7 @@ fn layer2() {
 fn check_test_environment() {
     use std::env;
     let tasks = env::var("RUST_TEST_TASKS");
-    if !tasks.is_some() || tasks.unwrap().into_string().ok().unwrap().as_slice() != "1" {
+    if !tasks.is_ok() || tasks.unwrap().as_slice() != "1" {
         panic!("Tests must be run with environment variable RUST_TEST_TASKS=1");
     }
 
@@ -348,7 +348,7 @@ fn check_test_environment() {
     #[cfg(not(target_os = "linux"))]
     fn test_iface() {
         let iface = env::var("PNET_TEST_IFACE");
-        if !iface.is_some() {
+        if !iface.is_ok() {
             panic!("The environment variable PNET_TEST_IFACE must be set.");
         }
     }
