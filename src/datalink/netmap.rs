@@ -18,7 +18,7 @@ use self::netmap::netmap_user::{nm_open, nm_close, nm_nextpkt, nm_desc, nm_pkthd
 use self::netmap::netmap::{nm_ring_empty, netmap_slot};
 
 use std::ffi::CString;
-use std::path::Path;
+use std::old_path::Path;
 use std::old_io::fs::File;
 use std::old_io::{IoResult, IoError};
 use std::mem;
