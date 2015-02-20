@@ -174,7 +174,7 @@ impl TransportSender {
 ///                             ipv4_header_iter) // Name of function to create iterator
 /// ```
 #[macro_export]
-pub macro_rules! transport_channel_iterator {
+macro_rules! transport_channel_iterator {
     ($ty:ident, $iter:ident, $func:ident) => (
         /// An iterator over packets of type $ty
         pub struct $iter<'a> {
