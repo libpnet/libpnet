@@ -8,9 +8,8 @@
 
 extern crate libc;
 
-use std::boxed::BoxAny;
 use std::sync::mpsc::channel;
-use std::thread::Thread;
+use std::thread::scoped;
 use std::old_io::net::ip::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::iter::Iterator;
 
@@ -140,7 +139,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
         Err(e) => panic!("layer4: unable to create channel: {}", e),
     };
 
-    let res = Thread::scoped( move || {
+    let res = scoped( move || {
         tx.send(()).unwrap();
         let mut iter = udp_header_iter(&mut trx);
         loop {
@@ -172,10 +171,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
         }
     }
 
-    match res.join() {
-        Err(e) => panic!(e),
-        _ => ()
-    }
+    res.join();
 }
 
 #[test]
@@ -204,7 +200,7 @@ fn layer3_ipv4() {
         Err(e) => panic!("layer3: unable to create channel: {}", e),
     };
 
-    let res = Thread::scoped( move || {
+    let res = scoped( move || {
         tx.send(()).unwrap();
         let mut iter = ipv4_header_iter(&mut trx);
         loop {
@@ -214,7 +210,7 @@ fn layer3_ipv4() {
                     assert_eq!(addr, send_addr);
                     check_ipv4_header(packet.as_slice(), header);
                     let udp_header = UdpHeader::new(&header.packet()[
-                                                   (header.get_header_length() as usize * 4us) ..]);
+                                                   (header.get_header_length() as usize * 4usize) ..]);
                     assert_eq!(udp_header, UdpHeader::new(&packet[IPV4_HEADER_LEN..]));
 
                     assert_eq!(&udp_header.packet()[UDP_HEADER_LEN..],
@@ -235,11 +231,7 @@ fn layer3_ipv4() {
         Err(e) => panic!("layer3_ipv4_test failed: {}", e)
     }
 
-    match res.join() {
-        Err(e) => panic!(e),
-        _ => ()
-    }
-
+    res.join();
 }
 
 // FIXME Find a way to test this with netmap
@@ -297,9 +289,9 @@ fn layer2() {
         Err(e) => panic!("layer2: unable to create channel: {}", e)
     };
 
-    let res = Thread::scoped( move || {
+    let res = scoped( move || {
         tx.send(()).unwrap();
-        let mut i = 0us;
+        let mut i = 0usize;
         let mut iter = dlrx.iter();
         loop {
             let next = iter.next();
@@ -327,12 +319,7 @@ fn layer2() {
         None => panic!("Provided buffer too small")
     }
 
-    match res.join() {
-        Err(e) => {
-            let _ = e.downcast::<String>().map(|s| panic!("layer2 test thread panicked! {}", s));
-        },
-        _ => ()
-    }
+    res.join();
 }
 
 #[test]

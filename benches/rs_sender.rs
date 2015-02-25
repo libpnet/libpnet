@@ -7,7 +7,7 @@
 // except according to those terms.
 
 // FIXME Remove before 1.0
-#![feature(core, collections, env, io, os)]
+#![feature(core, collections, env, old_io, os)]
 
 extern crate pnet;
 
