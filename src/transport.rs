@@ -196,7 +196,7 @@ macro_rules! transport_channel_iterator {
                     Layer4(Ipv4(_)) => {
                         let ip_header = Ipv4Header::new(self.tr.buffer.as_slice());
 
-                        ip_header.get_header_length() as usize * 4us
+                        ip_header.get_header_length() as usize * 4usize
                     },
                     Layer3(_) => {
                         fixup_packet(self.tr.buffer.as_mut_slice());
@@ -231,7 +231,7 @@ macro_rules! transport_channel_iterator {
                     // OS X does this awesome thing where it removes the header length
                     // from the total length sometimes.
                     let length = new_packet.get_total_length() as usize +
-                                 (new_packet.get_header_length() as usize * 4us);
+                                 (new_packet.get_header_length() as usize * 4usize);
                     if length == buflen {
                         new_packet.set_total_length(length as u16)
                     }

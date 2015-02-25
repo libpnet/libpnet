@@ -35,7 +35,7 @@ fn main() {
         Err(e) => panic!("rs_benchmark: unable to create channel: {}", e)
     };
 
-    let mut i = 0us;
+    let mut i = 0usize;
     let mut timestamps = Vec::with_capacity(201);
     timestamps.push(time::precise_time_ns() / 1_000);
 

@@ -179,7 +179,7 @@ pub fn get_network_interfaces() -> Vec<NetworkInterface> {
 
 #[cfg(not(windows))]
 fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
-    use std::ffi::{c_str_to_bytes, CString};
+    use std::ffi::{CStr, CString};
     use std::str::from_utf8_unchecked;
 
     let mut ifaces: Vec<NetworkInterface> = Vec::new();
@@ -190,8 +190,8 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
         }
         let mut addr = addrs;
         while !addr.is_null() {
-            let c_str = &((*addr).ifa_name as *const i8);
-            let bytes = c_str_to_bytes(c_str);
+            let c_str = (*addr).ifa_name as *const i8;
+            let bytes = CStr::from_ptr(c_str).to_bytes();
             let name = from_utf8_unchecked(bytes).to_string();
             let (mac, ip) = sockaddr_to_network_addr((*addr).ifa_addr as *const libc::sockaddr);
             let ni = NetworkInterface {
@@ -217,8 +217,8 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
         libc::freeifaddrs(addrs);
 
         for iface in ifaces.iter_mut() {
-            let name = CString::from_slice(iface.name.as_bytes());
-            iface.index = libc::if_nametoindex(name.as_ptr());
+            let name = CString::new(iface.name.as_bytes());
+            iface.index = libc::if_nametoindex(name.unwrap().as_ptr());
         }
         return ifaces;
     }

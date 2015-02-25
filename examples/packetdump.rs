@@ -7,7 +7,7 @@
 // except according to those terms.
 
 // FIXME Remove before 1.0
-#![feature(core, env, io)]
+#![feature(core, env, old_io)]
 
 /// This example shows a basic packet logger using libpnet
 
