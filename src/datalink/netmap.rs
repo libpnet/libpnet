@@ -58,9 +58,9 @@ struct NmDesc {
 
 impl NmDesc {
     fn new(iface: &NetworkInterface) -> IoResult<NmDesc> {
-        let ifname = CString::from_slice(("netmap:".to_string() + iface.name.as_slice()).as_bytes());
+        let ifname = CString::new(("netmap:".to_string() + iface.name.as_slice()).as_bytes());
         let desc = unsafe {
-            nm_open(ifname.as_ptr(), ptr::null(), 0, ptr::null())
+            nm_open(ifname.unwrap().as_ptr(), ptr::null(), 0, ptr::null())
         };
 
         if desc.is_null() {
@@ -103,7 +103,7 @@ impl DataLinkSenderImpl {
             events: POLLOUT,
             revents: 0,
         };
-        let mut packet_idx = 0us;
+        let mut packet_idx = 0usize;
         while packet_idx < num_packets {
             unsafe {
                 if poll(&mut fds, 1, -1) < 0 {

@@ -103,6 +103,7 @@
 
 // FIXME Remove this once the std lib has stabilised
 #![feature(alloc, core, collections, env, old_io, libc, os, std_misc)]
+#![cfg_attr(feature = "netmap", feature(old_path))]
 
 extern crate libc;
 
