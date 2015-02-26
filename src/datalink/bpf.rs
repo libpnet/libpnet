@@ -8,7 +8,7 @@
 
 extern crate libc;
 
-use std::collections::{RingBuf};
+use std::collections::{VecDeque};
 use std::cmp;
 use std::ffi::CString;
 use std::old_io::{IoResult, IoError};
@@ -216,14 +216,14 @@ impl DataLinkReceiverImpl {
         DataLinkChannelIteratorImpl {
             pc: self,
             // Enough room for minimally sized packets without reallocating
-            packets: RingBuf::with_capacity(buflen / 64)
+            packets: VecDeque::with_capacity(buflen / 64)
         }
     }
 }
 
 pub struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
-    packets: RingBuf<(usize, usize)>,
+    packets: VecDeque<(usize, usize)>,
 }
 
 impl<'a> DataLinkChannelIteratorImpl<'a> {
