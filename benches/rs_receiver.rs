@@ -20,7 +20,7 @@ use std::env;
 
 fn main() {
     let iface_name = env::args().nth(1).unwrap();
-    let interface_names_match = |&: iface: &NetworkInterface| iface.name == iface_name;
+    let interface_names_match = |iface: &NetworkInterface| iface.name == iface_name;
 
     // Find the network interface with the provided name
     let interfaces = get_network_interfaces();

@@ -52,7 +52,7 @@
 //! // FIXME Remove before 1.0
 //! #[allow(unstable)]
 //! fn main() {
-//!     let interface_names_match = |&: iface: &NetworkInterface| iface.name == os::args()[1];
+//!     let interface_names_match = |iface: &NetworkInterface| iface.name == os::args()[1];
 //!
 //!     // Find the network interface with the provided name
 //!     let interfaces = get_network_interfaces();
@@ -102,7 +102,7 @@
 #![deny(missing_docs)]
 
 // FIXME Remove this once the std lib has stabilised
-#![feature(alloc, core, collections, env, old_io, libc, os, std_misc)]
+#![feature(alloc, core, collections, old_io, libc, os, std_misc)]
 #![cfg_attr(feature = "netmap", feature(old_path))]
 
 extern crate libc;
