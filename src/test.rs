@@ -22,6 +22,7 @@ use old_packet::udp::{UdpHeader, MutableUdpHeader, UdpPacket};
 use transport::{udp_header_iter, ipv4_header_iter, transport_channel, TransportProtocol,
                 TransportChannelType};
 use transport::TransportProtocol::{Ipv4, Ipv6};
+use util;
 
 const IPV4_HEADER_LEN: usize = 20;
 const IPV6_HEADER_LEN: usize = 40;
@@ -234,33 +235,33 @@ fn layer3_ipv4() {
     res.join();
 }
 
+fn get_test_interface() -> util::NetworkInterface {
+    use std::clone::Clone;
+    use std::env;
+
+    (*util::get_network_interfaces()
+        .as_slice().iter()
+        .filter(|x| {
+            match env::var("PNET_TEST_IFACE") {
+                Ok(name) => x.name == name,
+                Err(_) => x.is_loopback()
+            }
+        })
+        .next()
+        .unwrap())
+        .clone()
+}
+
+
 // FIXME Find a way to test this with netmap
 #[cfg(not(feature = "netmap"))]
 #[test]
 fn layer2() {
     use datalink::{datalink_channel, DataLinkChannelType};
     use old_packet::ethernet::{EtherTypes, EthernetHeader, MutableEthernetHeader};
-    use util;
 
     const MIN_PACKET_SIZE: usize = 64;
     const ETHERNET_HEADER_LEN: usize = 14;
-
-    fn get_test_interface() -> util::NetworkInterface {
-        use std::clone::Clone;
-        use std::env;
-
-        (*util::get_network_interfaces()
-            .as_slice().iter()
-            .filter(|x| {
-                match env::var("PNET_TEST_IFACE") {
-                    Ok(name) => x.name == name,
-                    Err(_) => x.is_loopback()
-                }
-            })
-            .next()
-            .unwrap())
-            .clone()
-    }
 
     let interface = get_test_interface();
 
@@ -342,4 +343,21 @@ fn check_test_environment() {
 
     #[cfg(target_os = "linux")]
     fn test_iface() {}
+}
+
+#[test]
+fn test_get_network_interfaces_ips() {
+    test_iface_ips();
+
+    #[cfg(not(target_os = "linux"))]
+    fn test_iface_ips() {
+        let interface = get_test_interface();
+        match interface.ips {
+            Some(ips) => assert!(ips.len() > 0),
+            None => panic!("Could not get any IPs from test interface")
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    fn test_iface_ips() {}
 }

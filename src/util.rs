@@ -228,10 +228,15 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
             None => old.mac,
             _ => new.mac
         };
-        match (&mut old.ips, &new.ips) {
-            (&mut Some(ref mut old_ips), &Some(ref new_ips)) => old_ips.push_all(new_ips.as_slice()),
-            _ => {}
-        };
+        if match (&old.ips, &new.ips) { (&None, &Some(_)) => true, _ => false } {
+            old.ips = new.ips.clone();
+        }
+        else {
+            match (&mut old.ips, &new.ips) {
+                (&mut Some(ref mut old_ips), &Some(ref new_ips)) => old_ips.push_all(new_ips.as_slice()),
+                _ => {}
+            };
+        }
         old.flags = old.flags | new.flags;
     }
 
