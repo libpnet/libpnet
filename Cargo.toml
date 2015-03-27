@@ -21,10 +21,10 @@ crate_type = [ "rlib", "dylib" ]
 [features]
 
 default = []
-netmap = ["rust-netmap"]
+netmap = ["netmap_sys"]
 
-[dependencies.rust-netmap]
-git = "https://github.com/libpnet/rust-netmap.git"
+[dependencies.netmap_sys]
+git = "https://github.com/libpnet/netmap_sys.git"
 features = ["netmap_with_libs"]
 optional = true
 

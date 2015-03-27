@@ -58,7 +58,8 @@ run_test() {
     case "$SYSTEM" in
         Linux)
             if [[ "$(id -u)" != "0" ]]; then
-                $SUDO setcap cap_net_raw+ep target/pnet-*;
+                $SUDO setcap cap_net_raw+ep target/debug/pnet-*;
+                $SUDO setcap cap_net_raw+ep target/release/pnet-*;
             fi
             RUST_TEST_TASKS=1 $TESTER
         ;;
