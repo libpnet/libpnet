@@ -9,18 +9,18 @@
 #![allow(bad_style)]
 #![unstable]
 
-extern crate "rust-netmap" as netmap;
+extern crate netmap_sys;
 extern crate libc;
 
 use libc::{c_int, c_uint, c_ulong, c_short};
-use self::netmap::netmap_user::{nm_open, nm_close, nm_nextpkt, nm_desc, nm_pkthdr,
+use self::netmap_sys::netmap_user::{nm_open, nm_close, nm_nextpkt, nm_desc, nm_pkthdr,
                                 nm_ring_next, NETMAP_TXRING, NETMAP_FD, NETMAP_BUF};
-use self::netmap::netmap::{nm_ring_empty, netmap_slot};
+use self::netmap_sys::netmap::{nm_ring_empty, netmap_slot};
 
 use std::ffi::CString;
 use std::old_path::Path;
 use std::old_io::fs::File;
-use std::old_io::{IoResult, IoError};
+use std::old_io::{IoResult, IoError, Reader};
 use std::mem;
 use std::num;
 use std::ptr;
