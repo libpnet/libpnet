@@ -30,7 +30,7 @@ pub trait MutablePacket {
     /// Initialize this packet by cloning another
     fn clone_from<'p, T : Packet>(&'p mut self, other: T) {
         use std::slice::bytes::copy_memory;
-        copy_memory(self.packet_mut(), other.packet())
+        copy_memory(other.packet(), self.packet_mut())
     }
 }
 
