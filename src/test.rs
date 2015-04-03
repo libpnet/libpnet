@@ -122,10 +122,10 @@ fn layer4(ip: IpAddr, header_len: usize) {
 
     match ip {
         Ipv4Addr(..) => {
-            build_udp4_packet(packet.as_mut_slice(), 0, "l4i4")
+            build_udp4_packet(&mut packet[..], 0, "l4i4")
         },
         Ipv6Addr(..) => {
-            build_udp6_packet(packet.as_mut_slice(), 0, "l4i6")
+            build_udp6_packet(&mut packet[..], 0, "l4i6")
         }
     };
 
@@ -189,7 +189,7 @@ fn layer3_ipv4() {
     let send_addr = Ipv4Addr(127, 0, 0, 1);
     let mut packet = [0u8; IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN];
 
-    build_udp4_packet(packet.as_mut_slice(), 0, "l3i4");
+    build_udp4_packet(&mut packet[..], 0, "l3i4");
 
     let (tx, rx) = channel();
 
@@ -270,13 +270,13 @@ fn layer2() {
                            TEST_DATA_LEN];
 
     {
-        let mut ethernet_header = MutableEthernetHeader::new(packet.as_mut_slice());
+        let mut ethernet_header = MutableEthernetHeader::new(&mut packet[..]);
         ethernet_header.set_source(interface.mac_address());
         ethernet_header.set_destination(interface.mac_address());
         ethernet_header.set_ethertype(EtherTypes::Ipv4);
     }
 
-    build_udp4_packet(packet.as_mut_slice(), ETHERNET_HEADER_LEN as usize, "l2tt");
+    build_udp4_packet(&mut packet[..], ETHERNET_HEADER_LEN as usize, "l2tt");
 
     let (tx, rx) = channel();
 

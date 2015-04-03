@@ -89,7 +89,7 @@ fn main() {
     };
 
     let mut buffer = [0u8; 64];
-    let mut mut_ethernet_header = MutableEthernetHeader::new(buffer.as_mut_slice());
+    let mut mut_ethernet_header = MutableEthernetHeader::new(&mut buffer[..]);
     {
         mut_ethernet_header.set_destination(destination);
         mut_ethernet_header.set_source(interface.mac_address());

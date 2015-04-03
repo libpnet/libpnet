@@ -14,9 +14,9 @@ extern crate libc;
 
 use self::InAddr::{In4Addr, In6Addr};
 
+use std::io::Error;
 use std::mem;
 use std::num::{Int, from_i32, SignedInt, FromPrimitive};
-use std::os;
 use std::old_io::{IoResult, IoError};
 use std::old_io::net::ip::{SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr};
 
@@ -27,6 +27,10 @@ pub unsafe fn close(sock: CSocket) { let _ = libc::closesocket(sock); }
 #[cfg(unix)]
 pub unsafe fn close(sock: CSocket) { let _ = libc::close(sock); }
 
+fn errno() -> i32 {
+    Error::last_os_error().raw_os_error().unwrap()
+}
+
 #[cfg(windows)]
 #[inline]
 pub fn retry<T, F>(f: &mut F) -> T
@@ -36,7 +40,7 @@ pub fn retry<T, F>(f: &mut F) -> T
     loop {
         let minus1: T = from_i32(-1).unwrap();
         let ret = f();
-        if ret != minus1 || os::errno() as isize != libc::WSAEINTR as isize {
+        if ret != minus1 || errno() as isize != libc::WSAEINTR as isize {
             return ret
         }
     }
@@ -51,7 +55,7 @@ pub fn retry<T, F>(f: &mut F) -> T
     loop {
         let minus1: T = from_i32(-1).unwrap();
         let ret = f();
-        if ret != minus1 || os::errno() as isize != libc::EINTR as isize {
+        if ret != minus1 || errno() as isize != libc::EINTR as isize {
             return ret
         }
     }

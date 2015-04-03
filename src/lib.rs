@@ -103,7 +103,7 @@
 #![deny(missing_docs)]
 
 // FIXME Remove this once the std lib has stabilised
-#![feature(alloc, core, collections, old_io, libc, os, std_misc)]
+#![feature(alloc, core, collections, convert, old_io, libc, os, std_misc)]
 #![cfg_attr(test, feature(str_char))]
 #![cfg_attr(feature = "netmap", feature(old_path))]
 

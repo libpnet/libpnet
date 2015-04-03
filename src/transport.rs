@@ -152,7 +152,7 @@ impl TransportSender {
             let mut mut_slice: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
             mut_slice.as_mut_slice().clone_from_slice(packet.packet());
 
-            let mut new_packet = MutableIpv4Header::new(mut_slice.as_mut_slice());
+            let mut new_packet = MutableIpv4Header::new(&mut mut_slice[..]);
             let length = new_packet.get_total_length().to_be();
             new_packet.set_total_length(length);
             let offset = new_packet.get_fragment_offset().to_be();
@@ -190,16 +190,16 @@ macro_rules! transport_channel_iterator {
             /// Get the next ($ty, IpAddr) pair for the given channel
             pub fn next<'c>(&'c mut self) -> IoResult<($ty, ip::IpAddr)> {
                 let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
-                let res = internal::recv_from(self.tr.socket.fd, self.tr.buffer.as_mut_slice(), &mut caddr);
+                let res = internal::recv_from(self.tr.socket.fd, &mut self.tr.buffer[..], &mut caddr);
 
                 let offset = match self.tr.channel_type {
                     Layer4(Ipv4(_)) => {
-                        let ip_header = Ipv4Header::new(self.tr.buffer.as_slice());
+                        let ip_header = Ipv4Header::new(&self.tr.buffer[..]);
 
                         ip_header.get_header_length() as usize * 4usize
                     },
                     Layer3(_) => {
-                        fixup_packet(self.tr.buffer.as_mut_slice());
+                        fixup_packet(&mut self.tr.buffer[..]);
 
                         0
                     },
@@ -207,7 +207,7 @@ macro_rules! transport_channel_iterator {
                 };
                 return match res {
                     Ok(len) => {
-                        let packet = $ty::new(self.tr.buffer.slice(offset, len));
+                        let packet = $ty::new(&self.tr.buffer[offset..len]);
                         let addr = internal::sockaddr_to_addr(
                                         &caddr,
                                         mem::size_of::<libc::sockaddr_storage>()
