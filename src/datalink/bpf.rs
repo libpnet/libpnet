@@ -33,7 +33,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     #[cfg(target_os = "freebsd")]
     fn get_fd() -> libc::c_int {
         unsafe {
-            libc::open(CString::from_slice("/dev/bpf").as_ptr(), libc::O_RDWR, 0)
+            libc::open(CString::new(&b"/dev/bpf"[..]).unwrap().as_ptr(), libc::O_RDWR, 0)
         }
     }
 
@@ -43,7 +43,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         for i in (0..1_000is) {
             let fd = unsafe {
                 let file_name = format!("/dev/bpf{}", i);
-                libc::open(CString::from_slice(file_name.as_bytes()).as_ptr(), libc::O_RDWR, 0)
+                libc::open(CString::new(file_name.as_bytes()).unwrap().as_ptr(), libc::O_RDWR, 0)
             };
             if fd != -1 {
                 return fd;

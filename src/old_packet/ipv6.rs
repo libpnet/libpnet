@@ -79,7 +79,7 @@ impl<'a> Packet for MutableIpv6Header<'a> {
 
 impl<'a> MutablePacket for MutableIpv6Header<'a> {
     #[inline(always)]
-    fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
+    fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { &mut self.packet[..] }
 
     #[inline(always)]
     fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { &mut self.packet[40..] }
@@ -268,7 +268,7 @@ fn ipv6_header_test() {
     use old_packet::ip::IpNextHeaderProtocols;
     let mut packet = [0u8; 40];
     {
-        let mut ip_header = MutableIpv6Header::new(packet.as_mut_slice());
+        let mut ip_header = MutableIpv6Header::new(&mut packet[..]);
         ip_header.set_version(6);
         assert_eq!(ip_header.get_version(), 6);
 

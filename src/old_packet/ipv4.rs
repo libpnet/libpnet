@@ -107,7 +107,7 @@ impl<'a> Packet for MutableIpv4Header<'a> {
 
 impl<'a> MutablePacket for MutableIpv4Header<'a> {
     #[inline(always)]
-    fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
+    fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { &mut self.packet[..] }
 
     #[inline(always)]
     fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { &mut self.packet[20..] /* FIXME */ }
@@ -337,7 +337,7 @@ fn ipv4_header_test() {
 
     let mut packet = [0u8; 20];
     {
-        let mut ip_header = MutableIpv4Header::new(packet.as_mut_slice());
+        let mut ip_header = MutableIpv4Header::new(&mut packet[..]);
         ip_header.set_version(4);
         assert_eq!(ip_header.get_version(), 4);
 

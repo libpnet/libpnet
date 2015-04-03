@@ -83,7 +83,7 @@ impl<'a> Packet for MutableEthernetHeader<'a> {
 
 impl<'a> MutablePacket for MutableEthernetHeader<'a> {
     #[inline(always)]
-    fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { self.packet.as_mut_slice() }
+    fn packet_mut<'p>(&'p mut self) -> &'p mut [u8] { &mut self.packet[..] }
 
     #[inline(always)]
     fn payload_mut<'p>(&'p mut self) -> &'p mut [u8] { &mut self.packet[14..] }
@@ -179,7 +179,7 @@ impl<'p> MutableEthernetHeader<'p> {
 fn ethernet_header_test() {
     let mut packet = [0u8; 14];
     {
-        let mut ethernet_header = MutableEthernetHeader::new(packet.as_mut_slice());
+        let mut ethernet_header = MutableEthernetHeader::new(&mut packet[..]);
 
         let source = MacAddr(0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc);
         ethernet_header.set_source(source);

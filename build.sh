@@ -61,13 +61,13 @@ run_test() {
                 $SUDO setcap cap_net_raw+ep target/debug/pnet-*;
                 $SUDO setcap cap_net_raw+ep target/release/pnet-*;
             fi
-            RUST_TEST_TASKS=1 $TESTER
+            RUST_TEST_THREADS=1 $TESTER
         ;;
         FreeBSD|Darwin)
-            $SUDO PNET_TEST_IFACE=$PNET_TEST_IFACE RUST_TEST_TASKS=1 $TESTER
+            $SUDO PNET_TEST_IFACE=$PNET_TEST_IFACE RUST_TEST_THREADS=1 $TESTER
         ;;
         MINGW*|MSYS*)
-            PNET_TEST_IFACE=$PNET_TEST_IFACE RUST_TEST_TASKS=1 $TESTER
+            PNET_TEST_IFACE=$PNET_TEST_IFACE RUST_TEST_THREADS=1 $TESTER
         ;;
         *)
             echo "Unsupported testing platform"
@@ -96,7 +96,7 @@ travis_script() {
     case "$SYSTEM" in
         Linux)
             $SUDO sed -i 's/secure_path="/secure_path="\/home\/travis\/rust\/bin:/' /etc/sudoers
-            export RUST_TEST_TASKS=1
+            export RUST_TEST_THREADS=1
             $SUDO -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH sh -c "cargo build $CARGO_FLAGS --release && \
                                                              cargo test $CARGO_FLAGS && \
                                                              cargo bench --no-run $CARGO_FLAGS && \
@@ -104,7 +104,7 @@ travis_script() {
         ;;
         Darwin)
             echo Defaults secure_path = \"$PATH\" | $SUDO tee -a /etc/sudoers
-            export RUST_TEST_TASKS=1
+            export RUST_TEST_THREADS=1
             export PNET_TEST_IFACE
             $SUDO -E DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH bash -c "cargo build $CARGO_FLAGS && \
                                                                    cargo test $CARGO_FLAGS && \
