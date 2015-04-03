@@ -325,9 +325,9 @@ fn layer2() {
 #[test]
 fn check_test_environment() {
     use std::env;
-    let tasks = env::var("RUST_TEST_TASKS");
+    let tasks = env::var("RUST_TEST_THREADS");
     if !tasks.is_ok() || tasks.unwrap().as_slice() != "1" {
-        panic!("Tests must be run with environment variable RUST_TEST_TASKS=1");
+        panic!("Tests must be run with environment variable RUST_TEST_THREADS=1");
     }
 
     test_iface();
