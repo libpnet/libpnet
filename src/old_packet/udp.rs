@@ -15,10 +15,10 @@ use old_packet::{Packet, MutablePacket};
 use old_packet::ip::{IpNextHeaderProtocol};
 
 /// Structure representing a UDP header
+#[derive(Clone, Copy)]
 pub struct UdpHeader<'p> {
     packet: &'p [u8],
 }
-impl<'p> Copy for UdpHeader<'p> {}
 
 impl<'p> PartialEq for UdpHeader<'p> {
     fn eq(&self, other: &UdpHeader) -> bool {

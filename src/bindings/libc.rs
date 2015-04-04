@@ -45,6 +45,7 @@ pub struct ifaddrs {
 
 #[cfg(target_os = "linux")]
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct sockaddr_ll {
     pub sll_family: c_ushort,
     pub sll_protocol: c_ushort,
@@ -54,8 +55,6 @@ pub struct sockaddr_ll {
     pub sll_halen: c_uchar,
     pub sll_addr: [c_uchar; 8]
 }
-#[cfg(target_os = "linux")]
-impl Copy for sockaddr_ll {}
 
 #[cfg(windows)]
 pub const SOCK_RAW: c_int = 3;

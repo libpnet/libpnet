@@ -13,10 +13,10 @@ use old_packet::{Packet, MutablePacket};
 use util::MacAddr;
 
 /// A structure which represents an Ethernet header
+#[derive(Clone, Copy)]
 pub struct EthernetHeader<'p> {
     packet: &'p [u8],
 }
-impl<'p> Copy for EthernetHeader<'p> {}
 
 // FIXME This should probably be a macro
 // FIXME What should be the proper behaviour of this?
@@ -218,7 +218,6 @@ pub mod EtherTypes {
 }
 
 /// Represents the Ethernet ethertype field.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EtherType(pub u16);
-impl Copy for EtherType {}
 

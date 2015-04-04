@@ -463,7 +463,6 @@ pub mod IpNextHeaderProtocols {
 
 /// Represents an IPv4 next level protocol, or an IPv6 next header protocol,
 /// see `IpNextHeaderProtocols` for a list of values.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IpNextHeaderProtocol(pub u8);
-impl Copy for IpNextHeaderProtocol {}
 

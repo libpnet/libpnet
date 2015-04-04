@@ -39,6 +39,7 @@ mod backend;
 mod backend;
 
 /// Type of data link channel to present
+#[derive(Clone, Copy)]
 pub enum DataLinkChannelType {
     /// Send and receive layer 2 packets directly, including headers
     Layer2,
@@ -46,7 +47,6 @@ pub enum DataLinkChannelType {
     /// FIXME Currently unimplemented
     Layer3(EtherType)
 }
-impl Copy for DataLinkChannelType {}
 
 /// Create a new (DataLinkSender, DataLinkReceiver) pair
 ///
