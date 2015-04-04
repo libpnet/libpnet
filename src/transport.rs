@@ -37,22 +37,22 @@ use old_packet::udp::{UdpHeader};
 use internal;
 
 /// Represents a transport layer protocol
+#[derive(Clone, Copy)]
 pub enum TransportProtocol {
     /// Represents a transport protocol built on top of IPv4
     Ipv4(IpNextHeaderProtocol),
     /// Represents a transport protocol built on top of IPv6
     Ipv6(IpNextHeaderProtocol)
 }
-impl Copy for TransportProtocol {}
 
 /// Type of transport channel to present
+#[derive(Clone, Copy)]
 pub enum TransportChannelType {
     /// The application will send and receive transport layer packets
     Layer4(TransportProtocol),
     /// The application will send and receive IPv4 packets, with the specified transport protocol
     Layer3(IpNextHeaderProtocol)
 }
-impl Copy for TransportChannelType {}
 
 /// Structure used for sending at the transport layer. Should be created with transport_channel()
 pub struct TransportSender {

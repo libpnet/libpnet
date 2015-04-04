@@ -15,10 +15,10 @@ use old_packet::{Packet, MutablePacket};
 use old_packet::ip::IpNextHeaderProtocol;
 
 /// Structure representing an IPv4 header
+#[derive(Clone, Copy)]
 pub struct Ipv4Header<'p> {
     packet: &'p [u8],
 }
-impl<'p> Copy for Ipv4Header<'p> {}
 
 // FIXME This should probably be a macro
 impl<'p> PartialEq for Ipv4Header<'p> {

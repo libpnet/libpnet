@@ -15,10 +15,10 @@ use old_packet::{Packet, MutablePacket};
 use old_packet::ip::IpNextHeaderProtocol;
 
 /// Structure representing an IPv6 header
+#[derive(Clone, Copy)]
 pub struct Ipv6Header<'p> {
     packet: &'p [u8],
 }
-impl<'p> Copy for Ipv6Header<'p> {}
 
 /// Structure representing a mutable IPv6 header
 pub struct MutableIpv6Header<'p> {
