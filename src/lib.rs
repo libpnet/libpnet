@@ -10,9 +10,10 @@
 //!
 //! `libpnet` provides a cross-platform API for low level networking using Rust.
 //!
-//! There are three key components:
+//! There are four key components:
 //!
-//!  * The old_packet module, allowing safe construction and manipulation of packets
+//!  * The packet module, allowing safe construction and manipulation of packets
+//! * The pnet_packet crate, providing infrastructure for the packet module
 //!  * The transport module, which allows implementation of transport protocols
 //!  * The datalink module, which allows sending and receiving data link packets directly
 //!
@@ -37,21 +38,17 @@
 //! This (fairly useless) code implements an Ethernet echo server. Whenever a packet is received on
 //! an interface, it echo's the packet back; reversing the source and destination addresses.
 //!
-//! ```rust,no_run
-//! #![feature(os)]
+//! ```no_run
 //! extern crate pnet;
 //!
 //! use pnet::datalink::{datalink_channel};
 //! use pnet::datalink::DataLinkChannelType::{Layer2};
-//! use pnet::old_packet::{MutablePacket, Packet};
-//! use pnet::old_packet::ethernet::EthernetPacket;
+//! use pnet::packet::{Packet, MutablePacket};
 //! use pnet::util::{NetworkInterface, get_network_interfaces};
 //!
 //! use std::env;
 //!
 //! // Invoke as echo <interface name>
-//! // FIXME Remove before 1.0
-//! #[allow(unstable)]
 //! fn main() {
 //!     let interface_name = env::args().nth(1).unwrap();
 //!     let interface_names_match = |iface: &NetworkInterface| iface.name == interface_name;
@@ -81,7 +78,7 @@
 //!                 // The packet is sent once the closure has finished executing.
 //!                 tx.build_and_send(1, packet.packet().len(), &mut |mut new_packet| {
 //!                     // Create a clone of the original packet
-//!                     new_packet.clone_from(packet);
+//!                     new_packet.clone_from(&packet);
 //!
 //!                     // Switch the source and destination
 //!                     new_packet.set_source(packet.get_destination());
