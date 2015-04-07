@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -7,28 +7,30 @@
 // except according to those terms.
 
 // FIXME Remove before 1.0
-#![feature(core, collections, env, old_io, os, str_char)]
+#![feature(str_char)]
 
 extern crate pnet;
 
 use pnet::datalink::{datalink_channel};
 use pnet::datalink::DataLinkChannelType::Layer2;
-use pnet::old_packet::{MutablePacket, Packet};
-use pnet::old_packet::ethernet::{EtherTypes, MutableEthernetHeader, EthernetHeader};
-use pnet::old_packet::ip::{IpNextHeaderProtocols};
-use pnet::old_packet::ipv4::{Ipv4Packet, MutableIpv4Header};
-use pnet::old_packet::udp::{MutableUdpHeader};
+use pnet::packet::{MutablePacket, Packet};
+use pnet::packet::ethernet::{EtherTypes, MutableEthernetPacket, EthernetPacket};
+use pnet::packet::ip::{IpNextHeaderProtocols};
+use pnet::packet::ipv4::{MutableIpv4Packet};
+use pnet::packet::ipv4;
+use pnet::packet::udp::{MutableUdpPacket};
+use pnet::packet::udp;
 use pnet::util::get_network_interfaces;
 
 use std::env;
-use std::old_io::net::ip::Ipv4Addr;
+use std::net::Ipv4Addr;
 
 static IPV4_HEADER_LEN: usize = 20;
 static UDP_HEADER_LEN: usize = 8;
 static TEST_DATA_LEN: usize = 5;
 
-pub fn build_ipv4_header(packet: &mut [u8]) -> MutableIpv4Header {
-    let mut ip_header = MutableIpv4Header::new(packet);
+pub fn build_ipv4_header(packet: &mut [u8]) -> MutableIpv4Packet {
+    let mut ip_header = MutableIpv4Packet::new(packet);
 
     let total_len = (IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN) as u16;
 
@@ -37,15 +39,17 @@ pub fn build_ipv4_header(packet: &mut [u8]) -> MutableIpv4Header {
     ip_header.set_total_length(total_len);
     ip_header.set_ttl(4);
     ip_header.set_next_level_protocol(IpNextHeaderProtocols::Udp);
-    ip_header.set_source(Ipv4Addr(127, 0, 0, 1));
-    ip_header.set_destination(Ipv4Addr(127, 0, 0, 1));
-    ip_header.checksum();
+    ip_header.set_source(Ipv4Addr::new(127, 0, 0, 1));
+    ip_header.set_destination(Ipv4Addr::new(127, 0, 0, 1));
+
+    let checksum = ipv4::checksum(&ip_header.to_immutable());
+    ip_header.set_checksum(checksum);
 
     ip_header
 }
 
-pub fn build_udp_header(packet: &mut [u8]) -> MutableUdpHeader {
-    let mut udp_header = MutableUdpHeader::new(packet);
+pub fn build_udp_header(packet: &mut [u8]) -> MutableUdpPacket {
+    let mut udp_header = MutableUdpPacket::new(packet);
 
     udp_header.set_source(1234); // Arbitary port number
     udp_header.set_destination(1234);
@@ -69,12 +73,14 @@ pub fn build_udp4_packet(packet: &mut [u8], msg: &str) {
         data[4] = msg.char_at(4) as u8;
     }
 
-    udp_header.checksum(source, destination, IpNextHeaderProtocols::Udp);
+    let checksum = udp::ipv4_checksum(&udp_header.to_immutable(),
+                                      source, destination, IpNextHeaderProtocols::Udp);
+    udp_header.set_checksum(checksum);
 }
 
 fn main() {
     let interface_name = env::args().nth(1).unwrap();
-    let destination = env::args().nth(2).unwrap().as_slice().parse().unwrap();
+    let destination = (&env::args().nth(2).unwrap()[..]).parse().unwrap();
     // Find the network interface with the provided name
     let interfaces = get_network_interfaces();
     let interface = interfaces.iter()
@@ -89,7 +95,7 @@ fn main() {
     };
 
     let mut buffer = [0u8; 64];
-    let mut mut_ethernet_header = MutableEthernetHeader::new(&mut buffer[..]);
+    let mut mut_ethernet_header = MutableEthernetPacket::new(&mut buffer[..]);
     {
         mut_ethernet_header.set_destination(destination);
         mut_ethernet_header.set_source(interface.mac_address());
@@ -97,10 +103,10 @@ fn main() {
         build_udp4_packet(mut_ethernet_header.payload_mut(), "rmesg");
     }
 
-    let ethernet_header = EthernetHeader::new(mut_ethernet_header.packet());
+    let ethernet_header = EthernetPacket::new(mut_ethernet_header.packet());
 
     loop {
-        tx.send_to(ethernet_header, None);
+        tx.send_to(&ethernet_header, None);
     }
 }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -7,7 +7,7 @@
 // except according to those terms.
 
 // FIXME Remove after 1.0
-#![feature(core, collections, env, os)]
+#![feature(collections)]
 
 extern crate pnet;
 extern crate time;

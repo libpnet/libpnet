@@ -13,6 +13,7 @@ keywords = ["networking", "transport", "datalink", "packet", "protocol"]
 
 links = "packet"
 build = "build.rs"
+
 [lib]
 
 name = "pnet"
@@ -27,6 +28,9 @@ netmap = ["netmap_sys"]
 git = "https://github.com/libpnet/netmap_sys.git"
 features = ["netmap_with_libs"]
 optional = true
+
+[dependencies.pnet_macros]
+path = "pnet_macros"
 
 [dev-dependencies]
 time = "*"

@@ -4,18 +4,31 @@ Linux ∪ OS X Build Status: [![Linux ∪ OS X Build Status](https://travis-ci.o
 
 Windows Build Status: [![Windows Build Status](https://ci.appveyor.com/api/projects/status/9gq1dekigj03u1ym?svg=true)](https://ci.appveyor.com/project/mrmonday/libpnet)
 
+Discussion and support: [#libpnet on freenode](http://webchat.freenode.net/?channels=%23libpnet) /
+[#rust on irc.mozilla.org](http://chat.mibbit.com/?server=irc.mozilla.org&channel=%23rust).
+
 <table>
 <tr><td>
-<em>The `pnet::packet` module has been moved to `pnet::old_packet`, you will
-need to update your code accordingly.</em>
+<em>The `pnet::old_packet` module has been removed.To migrate code relying on `pnet::old_packet`:</em>
+<ul>
+ <li>Remove *Packet trait imports - these traits have been removed
+ <li>Replace Mutable*Header and *Header with Mutable*Packet and *Packet
+   respectively
+ <li>Checksum functions are now free-standing functions, taking &*Packet.
+ <li>If a *Packet is needed, but you have a Mutable*Packet, the `to_immutable()`
+   may be used
+ <li>In places where the old traits were accepted, references are now required.
+</ul>
+Please file bugs for any unexpected or broken functionality.
 </td></tr>
 </table>
 
 `libpnet` provides a cross-platform API for low level networking using Rust.
 
-There are three key components:
+There are four key components:
 
- * The old_packet module, allowing safe construction and manipulation of packets
+ * The packet module, allowing safe construction and manipulation of packets
+ * The pnet_packet crate, providing infrastructure for the packet module
  * The transport module, which allows implementation of transport protocols
  * The datalink module, which allows sending and receiving data link packets directly
 
@@ -66,11 +79,6 @@ There are lots of uses for this, including network diagnostics, packet capture a
 API documentation for the lastest build can be found here:
 http://octarineparrot.com/assets/libpnet/doc/pnet/.
 
-## Support
-
-Find us on IRC in [#libpnet on freenode](http://webchat.freenode.net/?channels=%23libpnet), or
-[#rust on irc.mozilla.org](http://chat.mibbit.com/?server=irc.mozilla.org&channel=%23rust).
-
 ## Usage
 
 To use `libpnet` in your project, add the following to your Cargo.toml:
@@ -82,4 +90,6 @@ git = "https://github.com/libpnet/libpnet.git"
 
 When developing, use the provided Makefile, which does weird things to make the
 tests work properly. Note that root/administrator access is usually required for libpnet.
+
+You must use the *nightly* channel of Rust to use `libpnet`.
 

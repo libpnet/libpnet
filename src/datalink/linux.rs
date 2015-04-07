@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -7,10 +7,9 @@
 // except according to those terms.
 
 use std::cmp;
-use std::old_io::{IoResult, IoError};
+use std::io;
 use std::iter::repeat;
 use std::mem;
-use std::num::Int;
 use std::sync::Arc;
 
 use bindings::libc;
@@ -18,8 +17,8 @@ use bindings::linux;
 use datalink::DataLinkChannelType;
 use datalink::DataLinkChannelType::{Layer2, Layer3};
 use internal;
-use old_packet::Packet;
-use old_packet::ethernet::{EtherType, EthernetHeader, MutableEthernetHeader};
+use packet::Packet;
+use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
 use util::{NetworkInterface, MacAddr};
 
 fn network_addr_to_sockaddr(ni: &NetworkInterface,
@@ -50,8 +49,8 @@ pub struct DataLinkSenderImpl {
 impl DataLinkSenderImpl {
     // FIXME Layer 3
     pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
-                          func: &mut F) -> Option<IoResult<()>>
-        where F : FnMut(MutableEthernetHeader)
+                          func: &mut F) -> Option<io::Result<()>>
+        where F : FnMut(MutableEthernetPacket)
     {
         let len = num_packets * packet_size;
         if len < self.write_buffer.as_slice().len() {
@@ -60,7 +59,7 @@ impl DataLinkSenderImpl {
             for chunk in mut_slice.as_mut_slice()[.. min]
                                   .chunks_mut(packet_size) {
                 {
-                    let eh = MutableEthernetHeader::new(chunk);
+                    let eh = MutableEthernetPacket::new(chunk);
                     func(eh);
                 }
                 let send_addr = (&self.send_addr as *const libc::sockaddr_ll)
@@ -77,8 +76,8 @@ impl DataLinkSenderImpl {
         }
     }
 
-    pub fn send_to(&mut self, packet: EthernetHeader, _dst: Option<NetworkInterface>)
-        -> Option<IoResult<()>> {
+    pub fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
+        -> Option<io::Result<()>> {
         match internal::send_to(self.socket.fd,
                                 packet.packet(),
                                 (&self.send_addr as *const libc::sockaddr_ll) as *const _,
@@ -108,7 +107,7 @@ pub fn datalink_channel (network_interface: &NetworkInterface,
                          write_buffer_size: usize,
                          read_buffer_size: usize,
                          channel_type: DataLinkChannelType)
-    -> IoResult<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
+    -> io::Result<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
     let eth_p_all = 0x0003;
     let (typ, proto) = match channel_type {
         Layer2 => (libc::SOCK_RAW, eth_p_all),
@@ -125,7 +124,7 @@ pub fn datalink_channel (network_interface: &NetworkInterface,
 
         // Bind to interface
         if unsafe { libc::bind(socket, send_addr, len as libc::socklen_t) } == -1 {
-            let err = IoError::last_error();
+            let err = io::Error::last_os_error();
             unsafe { internal::close(socket); }
             return Err(err);
         }
@@ -141,7 +140,7 @@ pub fn datalink_channel (network_interface: &NetworkInterface,
                                      (&pmr as *const linux::packet_mreq)
                                            as *const libc::c_void,
                                      mem::size_of::<linux::packet_mreq>() as u32) } == -1 {
-            let err = IoError::last_error();
+            let err = io::Error::last_os_error();
             unsafe { internal::close(socket); }
             return Err(err);
         }
@@ -161,7 +160,7 @@ pub fn datalink_channel (network_interface: &NetworkInterface,
         };
         Ok((sender, receiver))
     } else {
-        Err(IoError::last_error())
+        Err(io::Error::last_os_error())
     }
 }
 
@@ -170,11 +169,11 @@ pub struct DataLinkChannelIteratorImpl<'a> {
 }
 
 impl<'a> DataLinkChannelIteratorImpl<'a> {
-    pub fn next<'c>(&'c mut self) -> IoResult<EthernetHeader<'c>> {
+    pub fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
         let res = internal::recv_from(self.pc.socket.fd, self.pc.read_buffer.as_mut_slice(), &mut caddr);
         match res {
-            Ok(len) => Ok(EthernetHeader::new(&self.pc.read_buffer.as_slice()[0 .. len])),
+            Ok(len) => Ok(EthernetPacket::new(&self.pc.read_buffer.as_slice()[0 .. len])),
             Err(e) => Err(e),
         }
     }

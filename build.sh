@@ -22,6 +22,7 @@ CC=$(which clang || which gcc)
 CARGO_FLAGS=
 
 # FIXME Need to get interface differently on Windows
+# FIXME Needs to with with iproute2 too
 PNET_TEST_IFACE=$(ifconfig | egrep 'UP| active' | \
                   perl -pe '/^[A-z0-9]+:([^\n]|\n\t)*status: active/' | \
                   grep active -B1 | head -n1 | cut -f1 -d:)
@@ -52,7 +53,16 @@ build_test() {
     fi
 }
 
+run_macro_tests() {
+    # FIXME blocked on https://github.com/rust-lang/cargo/issues/1474
+    #cd pnet_macros &&
+    #make test &&
+    #cd ..
+    true
+}
+
 run_test() {
+    run_macro_tests &&
     build_test &&
     echo "Setting permissions for test suite - enter sudo password if prompted" &&
     case "$SYSTEM" in
