@@ -102,8 +102,7 @@
 #![allow(plugin_as_library)]
 
 // FIXME Remove this once the std lib has stabilised
-#![feature(convert, core, collections, custom_attribute, ip_addr, libc, io,
-           plugin, slice_patterns)]
+#![feature(convert, core, collections, custom_attribute, ip_addr, libc, plugin, slice_patterns)]
 #![plugin(pnet_macros)]
 #![cfg_attr(test, feature(str_char))]
 

@@ -10,7 +10,7 @@ extern crate libc;
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::mpsc::channel;
-use std::thread::scoped;
+use std::thread;
 use std::iter::Iterator;
 
 use packet::Packet;
@@ -160,7 +160,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
         Err(e) => panic!("layer4: unable to create channel: {}", e),
     };
 
-    let res = scoped( move || {
+    let res = thread::scoped( move || {
         tx.send(()).unwrap();
         let mut iter = udp_packet_iter(&mut trx);
         loop {
@@ -221,7 +221,7 @@ fn layer3_ipv4() {
         Err(e) => panic!("layer3: unable to create channel: {}", e),
     };
 
-    let res = scoped( move || {
+    let res = thread::scoped( move || {
         tx.send(()).unwrap();
         let mut iter = ipv4_packet_iter(&mut trx);
         loop {
@@ -309,7 +309,7 @@ fn layer2() {
         Err(e) => panic!("layer2: unable to create channel: {}", e)
     };
 
-    let res = scoped( move || {
+    let res = thread::scoped( move || {
         tx.send(()).unwrap();
         let mut i = 0usize;
         let mut iter = dlrx.iter();

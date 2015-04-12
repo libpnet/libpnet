@@ -180,7 +180,7 @@ pub fn sockaddr_to_addr(storage: &libc::sockaddr_storage,
         _ => {
             #[cfg(unix)] use libc::EINVAL as ERROR;
             #[cfg(windows)] use libc::WSAEINVAL as ERROR;
-            Err(io::Error::from_os_error(ERROR))
+            Err(io::Error::from_raw_os_error(ERROR))
         }
     }
 }
