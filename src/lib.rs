@@ -104,7 +104,7 @@
 // FIXME Remove this once the std lib has stabilised
 #![feature(convert, core, collections, custom_attribute, ip_addr, libc, plugin, slice_patterns)]
 #![plugin(pnet_macros)]
-#![cfg_attr(test, feature(str_char))]
+#![cfg_attr(test, feature(str_char, scoped))]
 
 extern crate libc;
 extern crate pnet_macros;

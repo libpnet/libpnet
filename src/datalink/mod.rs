@@ -117,7 +117,6 @@ impl DataLinkReceiver {
     ///
     /// This will likely be removed once other layer two types are supported.
     #[inline]
-    #[unstable]
     pub fn iter<'a>(&'a mut self) -> DataLinkChannelIterator<'a> {
         DataLinkChannelIterator {
             imp: self.dlri.iter()

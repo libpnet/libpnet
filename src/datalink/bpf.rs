@@ -79,7 +79,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     }
     let mut iface: bpf::ifreq = unsafe { mem::zeroed() };
     let mut i = 0;
-    for c in network_interface.name.as_slice().bytes() {
+    for c in network_interface.name.bytes() {
         iface.ifr_name[i] = c as i8;
         i += 1;
     }
