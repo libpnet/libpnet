@@ -30,8 +30,8 @@ const SIZEOF_C_UINT: libc::c_ulong = 4;
 const SIZEOF_C_LONG: libc::c_int = 8;
 
 pub const BIOCSETIF: libc::c_ulong = IOC_IN |
-                                      ((SIZEOF_IFREQ & IOCPARM_MASK) << 16us) |
-                                      (('B' as libc::c_ulong) << 8us) |
+                                      ((SIZEOF_IFREQ & IOCPARM_MASK) << 16usize) |
+                                      (('B' as libc::c_ulong) << 8usize) |
                                       108;
 pub const BIOCIMMEDIATE: libc::c_ulong = IOC_IN |
                                           ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |

@@ -40,7 +40,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     #[cfg(target_os = "macos")]
     fn get_fd() -> libc::c_int {
         // FIXME This is an arbitrary number of attempts
-        for i in (0..1_000is) {
+        for i in (0..1_000isize) {
             let fd = unsafe {
                 let file_name = format!("/dev/bpf{}", i);
                 libc::open(CString::new(file_name.as_bytes()).unwrap().as_ptr(), libc::O_RDWR, 0)
