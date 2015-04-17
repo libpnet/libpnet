@@ -12,7 +12,6 @@
 extern crate netmap_sys;
 extern crate libc;
 
-use libc::{c_int, c_uint, c_ulong, c_short};
 use self::netmap_sys::netmap_user::{nm_open, nm_close, nm_nextpkt, nm_desc, nm_pkthdr,
                                 nm_ring_next, NETMAP_TXRING, NETMAP_FD, NETMAP_BUF};
 use self::netmap_sys::netmap::{nm_ring_empty, netmap_slot};
@@ -33,28 +32,31 @@ use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use util::{NetworkInterface};
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
 #[repr(C)]
 struct pollfd {
-    fd: c_int,
-    events: c_short,
-    revents: c_short
+    fd: libc::c_int,
+    events: libc::c_short,
+    revents: libc::c_short
 }
 
-#[cfg(target_os = "linux")]
-const POLLIN: c_short = 0x0001;
-#[cfg(target_os = "linux")]
-const POLLOUT: c_short = 0x0004;
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+const POLLIN: libc::c_short = 0x0001;
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+const POLLOUT: libc::c_short = 0x0004;
 
-type nfds_t = c_ulong;
+#[cfg(target_os = "freebsd")]
+type nfds_t = libc::c_uint;
+#[cfg(target_os = "linux")]
+type nfds_t = libc::c_ulong;
 
 extern {
-    fn poll(fds: *mut pollfd, nfds: nfds_t, timeout: c_int) -> c_int;
+    fn poll(fds: *mut pollfd, nfds: nfds_t, timeout: libc::c_int) -> libc::c_int;
 }
 
 struct NmDesc {
     desc: *mut nm_desc,
-    buf_size: c_uint,
+    buf_size: libc::c_uint,
 }
 
 impl NmDesc {
@@ -98,7 +100,7 @@ impl DataLinkSenderImpl {
                           func: &mut F) -> Option<io::Result<()>>
         where F : FnMut(MutableEthernetPacket)
     {
-        assert!(num::cast::<usize, u16>(packet_size).unwrap() as c_uint <= self.desc.buf_size);
+        assert!(num::cast::<usize, u16>(packet_size).unwrap() as libc::c_uint <= self.desc.buf_size);
         let desc = self.desc.desc;
         let mut fds = pollfd {
             fd: unsafe { NETMAP_FD(desc) },

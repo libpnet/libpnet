@@ -9,7 +9,7 @@
 // NOTE Remove this once the next rust nightly is out.
 pub mod libc;
 
-#[cfg(all(not(feature = "netmap"), any(target_os = "freebsd", target_os = "macos", windows)))]
+#[cfg(any(target_os = "freebsd", target_os = "macos", windows))]
 pub mod bpf;
 
 #[cfg(all(not(feature = "netmap"), target_os = "linux"))]
