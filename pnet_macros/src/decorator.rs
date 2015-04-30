@@ -14,7 +14,8 @@ use syntax::ast;
 use syntax::codemap::{Span};
 use syntax::ext::base::{ExtCtxt};
 use syntax::ext::build::AstBuilder;
-use syntax::ext::quote::rt::{ExtParseUtils, ToSource};
+use syntax::ext::quote::rt::{ExtParseUtils};
+use syntax::print::pprust::ty_to_string;
 use syntax::ptr::P;
 
 use util::{Endianness, GetOperation, SetOperation, to_little_endian, operations, to_mutator};
@@ -161,7 +162,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
             return None;
         }
 
-        let ty = match make_type(field.node.ty.to_source()) {
+        let ty = match make_type(ty_to_string(&*field.node.ty)) {
             Ok(ty) => ty,
             Err(e) => {
                 ecx.span_err(field.span, &e);

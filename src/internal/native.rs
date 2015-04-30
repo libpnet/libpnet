@@ -14,7 +14,6 @@ extern crate libc;
 
 use std::io;
 use std::mem;
-use std::num::{Int, from_i32, SignedInt, FromPrimitive};
 use std::net::{SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr};
 
 use internal::CSocket;
@@ -30,12 +29,11 @@ fn errno() -> i32 {
 
 #[cfg(windows)]
 #[inline]
-pub fn retry<T, F>(f: &mut F) -> T
-    where T : SignedInt + FromPrimitive,
-          F : FnMut() -> T
+pub fn retry<F>(f: &mut F) -> libc::ssize_t
+    where F : FnMut() -> libc::ssize_t
 {
     loop {
-        let minus1: T = from_i32(-1).unwrap();
+        let minus1 = -1;
         let ret = f();
         if ret != minus1 || errno() as isize != libc::WSAEINTR as isize {
             return ret
@@ -45,12 +43,11 @@ pub fn retry<T, F>(f: &mut F) -> T
 
 #[cfg(unix)]
 #[inline]
-pub fn retry<T, F>(f: &mut F) -> T
-    where T : SignedInt + FromPrimitive,
-          F : FnMut() -> T
+pub fn retry<F>(f: &mut F) -> libc::ssize_t
+    where F : FnMut() -> libc::ssize_t
 {
     loop {
-        let minus1: T = from_i32(-1).unwrap();
+        let minus1 = -1;
         let ret = f();
         if ret != minus1 || errno() as isize != libc::EINTR as isize {
             return ret
@@ -66,7 +63,7 @@ fn htons(u: u16) -> u16 {
     u.to_be()
 }
 fn ntohs(u: u16) -> u16 {
-    Int::from_be(u)
+    u16::from_be(u)
 }
 
 //enum InAddr {
@@ -110,7 +107,7 @@ pub fn addr_to_sockaddr(addr: SocketAddr,
             IpAddr::V4(ip_addr) => {
                 let [a, b, c, d] = ip_addr.octets();
                 let inaddr = libc::in_addr {
-                    s_addr: Int::from_be(((a as u32) << 24) |
+                    s_addr: u32::from_be(((a as u32) << 24) |
                                          ((b as u32) << 16) |
                                          ((c as u32) <<  8) |
                                          ((d as u32) <<  0))
