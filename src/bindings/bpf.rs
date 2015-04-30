@@ -12,8 +12,6 @@
 
 extern crate libc;
 
-use std::num::{Int, ToPrimitive, FromPrimitive};
-
 pub const AF_LINK: libc::c_int = 18;
 
 const IF_NAMESIZE: usize = 16;
@@ -69,10 +67,10 @@ const BPF_ALIGNMENT: libc::c_int = SIZEOF_C_LONG;
 #[cfg(any(target_os = "macos", windows))]
 const BPF_ALIGNMENT: libc::c_int = 4;
 
-pub fn BPF_WORDALIGN<T : Int + ToPrimitive + FromPrimitive>(x: T) -> T {
-    use std::num::{from_i32};
-    let bpf_alignment: T = from_i32(BPF_ALIGNMENT).unwrap();
-    let one: T = from_i32(1).unwrap();
+//pub fn BPF_WORDALIGN<T : Int + ToPrimitive + FromPrimitive>(x: T) -> T {
+pub fn BPF_WORDALIGN(x: isize) -> isize {
+    let bpf_alignment = BPF_ALIGNMENT as isize;
+    let one = 1;
 
     (x + (bpf_alignment - one)) & !(bpf_alignment - one)
 }
