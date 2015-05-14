@@ -614,6 +614,12 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
         "".to_string()
     };
 
+    let byte_size = if bit_offset % 8 == 0 {
+        bit_offset / 8
+    } else {
+        (bit_offset / 8) + 1
+    };
+
     cx.push_item_from_string(format!("impl<'a> {name}<'a> {{
         /// Constructs a new {name}
         #[inline]
@@ -631,6 +637,13 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
             }}
         }}
 
+        /// The minimum size (in bytes) a packet of this type can be. It's based on the total size
+        /// of the fixed-size fields.
+        #[inline]
+        pub fn minimum_packet_size() -> usize {{
+            {byte_size}
+        }}
+
         {populate}
 
         {accessors}
@@ -639,6 +652,7 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
     }}", name = name,
     imm_name = packet.packet_name(),
     mut = if mutable { "mut" } else { "" },
+    byte_size = byte_size,
     accessors = accessors,
     mutators = if mutable { &mutators[..] } else { "" },
     populate = populate
