@@ -58,7 +58,15 @@ pub fn checksum<'a>(packet: &Ipv4Packet<'a>) -> u16be {
 }
 
 fn ipv4_options_length<'a>(ipv4: &Ipv4Packet<'a>) -> usize {
-    ipv4.get_header_length() as usize - 4
+    ipv4.get_header_length() as usize - 5
+}
+
+#[test]
+fn ipv4_options_length_test() {
+    let mut packet = [0u8; 20];
+    let mut ip_header = MutableIpv4Packet::new(&mut packet[..]);
+    ip_header.set_header_length(5);
+    assert_eq!(ipv4_options_length(&ip_header.to_immutable()), 0);
 }
 
 /// Represents the IPv4 Option field
