@@ -42,7 +42,7 @@ struct Field {
     name: String,
     span: Span,
     ty: Type,
-    length_fn: Option<String>,
+    packet_length: Option<String>,
     is_payload: bool,
     construct_with: Option<Vec<Type>>
 }
@@ -91,7 +91,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
             }
         };
         let mut is_payload = false;
-        let mut length_fn = None;
+        let mut packet_length = None;
         let mut construct_with = Vec::new();
         let mut seen = Vec::new();
         for attr in field.node.attrs.iter() {
@@ -143,7 +143,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
                     if &s[..] == "length_fn" {
                         let ref node = lit.node;
                         if let &ast::LitStr(ref s, _) = node {
-                            length_fn = Some(s.to_string());
+                            packet_length = Some(s.to_string() + "(&self.to_immutable())");
                         } else {
                             ecx.span_err(field.span, "#[length_fn] should be used as #[length_fn = \"name_of_function\"]");
                             return None;
@@ -172,7 +172,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
 
         match ty {
             Type::Vector(_) => {
-                if !is_payload && length_fn.is_none() {
+                if !is_payload && packet_length.is_none() {
                     ecx.span_err(field.span,
                                  "variable length field must have #[length_fn = \"\"] attribute");
                     return None;
@@ -192,7 +192,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
             name: field_name,
             span: field.span,
             ty: ty,
-            length_fn: length_fn,
+            packet_length: packet_length,
             is_payload: is_payload,
             construct_with: Some(construct_with),
         });
@@ -395,7 +395,7 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                     #[allow(trivial_numeric_casts)]
                                     pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
                                         let current_offset = {co};
-                                        let len = {length_fn}(&self.to_immutable());
+                                        let len = {packet_length};
 
                                         let packet = &self.packet[current_offset..len];
                                         let mut vec = Vec::with_capacity(packet.len());
@@ -407,13 +407,13 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                     accessors = accessors,
                                     name = field.name,
                                     co = co,
-                                    length_fn = field.length_fn.as_ref().unwrap(),
+                                    packet_length = field.packet_length.as_ref().unwrap(),
                                     inner_ty_str = inner_ty_str);
         }
-        let check_len = if field.length_fn.is_some() {
-            format!("let len = {length_fn}(&self.to_immutable());
+        let check_len = if field.packet_length.is_some() {
+            format!("let len = {packet_length};
                                              assert!(vals.len() <= len);",
-                                             length_fn = field.length_fn.as_ref().unwrap())
+                                             packet_length = field.packet_length.as_ref().unwrap())
         } else {
             String::new()
         };
@@ -449,7 +449,7 @@ fn handle_vector_field(cx: &mut GenContext,
                        inner_ty: &Box<Type>,
                        co: &mut String)
 {
-    if !field.is_payload && !field.length_fn.is_some() {
+    if !field.is_payload && !field.packet_length.is_some() {
         cx.ecx.span_err(field.span, "variable length field must have #[length_fn = \"\"] attribute");
         *error = true;
     }
@@ -460,7 +460,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 #[allow(trivial_numeric_casts)]
                                 pub fn get_{name}_raw(&self) -> &[u8] {{
                                     let current_offset = {co};
-                                    let len = {length_fn}(&self.to_immutable());
+                                    let len = {packet_length};
 
                                     &self.packet[current_offset..len]
                                 }}
@@ -468,14 +468,14 @@ fn handle_vector_field(cx: &mut GenContext,
                                 accessors = accessors,
                                 name = field.name,
                                 co = co,
-                                length_fn = field.length_fn.as_ref().unwrap());
+                                packet_length = field.packet_length.as_ref().unwrap());
         *mutators = format!("{mutators}
                                 /// Get the raw &mut [u8] value of the {name} field, without copying
                                 #[inline]
                                 #[allow(trivial_numeric_casts)]
                                 pub fn get_{name}_raw_mut(&mut self) -> &mut [u8] {{
                                     let current_offset = {co};
-                                    let len = {length_fn}(&self.to_immutable());
+                                    let len = {packet_length};
 
                                     &mut self.packet[current_offset..len]
                                 }}
@@ -483,7 +483,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 mutators = mutators,
                                 name = field.name,
                                 co = co,
-                                length_fn = field.length_fn.as_ref().unwrap());
+                                packet_length = field.packet_length.as_ref().unwrap());
     }
     match **inner_ty {
         Type::Primitive(ref inner_ty_str, _size, _endianness) => {
@@ -501,7 +501,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
                                     use pnet::packet::FromPacket;
                                     let current_offset = {co};
-                                    let len = {length_fn}(&self.to_immutable());
+                                    let len = {packet_length};
 
                                     {inner_ty_str}Iterable {{
                                         buf: &self.packet[current_offset..len]
@@ -512,7 +512,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 accessors = accessors,
                                 name = field.name,
                                 co = co,
-                                length_fn = field.length_fn.as_ref().unwrap(),
+                                packet_length = field.packet_length.as_ref().unwrap(),
                                 inner_ty_str = inner_ty_str);
             *mutators = format!("{mutators}
                                 /// Set the value of the {name} field (copies contents)
@@ -521,7 +521,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 pub fn set_{name}(&mut self, vals: Vec<{inner_ty_str}>) {{
                                     use pnet::packet::PacketSize;
                                     let mut current_offset = {co};
-                                    let len = {length_fn}(&self.to_immutable());
+                                    let len = {packet_length};
                                     for val in vals.into_iter() {{
                                         let mut packet = Mutable{inner_ty_str}Packet::new(&mut self.packet[current_offset..]);
                                         packet.populate(val);
@@ -533,7 +533,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 mutators = mutators,
                                 name = field.name,
                                 co = co,
-                                length_fn = field.length_fn.as_ref().unwrap(),
+                                packet_length = field.packet_length.as_ref().unwrap(),
                                 inner_ty_str = inner_ty_str);
         }
     }
@@ -553,10 +553,10 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
 
         if field.is_payload {
             let mut upper_bound_str = "".to_string();
-            if field.length_fn.is_some() {
-                upper_bound_str = format!("{} + {}(&self.to_immutable())",
+            if field.packet_length.is_some() {
+                upper_bound_str = format!("{} + {}",
                 co.clone(),
-                field.length_fn.as_ref().unwrap());
+                field.packet_length.as_ref().unwrap());
             } else {
                 if idx != packet.fields.len() - 1 {
                     cx.ecx.span_err(field.span,
@@ -590,8 +590,8 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
                                   &mut co, &name, &mut mutators, &mut accessors, &ty_str)
             }
         }
-        if field.length_fn.is_some() {
-            offset_fns.push(field.length_fn.as_ref().unwrap().clone());
+        if field.packet_length.is_some() {
+            offset_fns.push(field.packet_length.as_ref().unwrap().clone());
         }
     }
 
@@ -945,7 +945,7 @@ fn current_offset(bit_offset: usize, offset_fns: &[String]) -> String {
     let base_offset = bit_offset / 8;
 
     offset_fns.iter().fold(base_offset.to_string(), |a, b| {
-        a + " + " + &b[..] + "(&self.to_immutable())"
+        a + " + " + &b[..]
     })
 }
 
