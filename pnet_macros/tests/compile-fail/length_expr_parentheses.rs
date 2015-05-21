@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-// error-pattern: Only field names, integers, basic arithmetic expressions (+ - * / %) and parentheses are allowed in the "length" attribute
+// error-pattern: error: this file contains an un-closed delimiter
 
 #![feature(custom_attribute, plugin)]
 #![plugin(pnet_macros)]
@@ -16,7 +16,7 @@ extern crate pnet;
 #[packet]
 pub struct PacketWithPayload {
     banana: u8,
-    #[length = "banana + 7.5"]
+    #[length = "banana * (7 + 3"]
     var_length: Vec<u8>,
     #[payload]
     payload: Vec<u8>

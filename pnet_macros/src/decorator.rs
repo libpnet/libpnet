@@ -9,9 +9,11 @@
 //! Implements the #[packet] decorator
 
 use regex::Regex;
+use std::rc::Rc;
 
 use syntax::ast;
-use syntax::ast::TokenTree::{TtDelimited, TtSequence, TtToken};
+use syntax::ast::Delimited;
+use syntax::ast::TokenTree::{self, TtDelimited, TtSequence, TtToken};
 use syntax::codemap::{Span};
 use syntax::ext::base::{ExtCtxt};
 use syntax::ext::build::AstBuilder;
@@ -155,7 +157,9 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
                         "length" => {
                             let ref node = lit.node;
                             if let &ast::LitStr(ref s, _) = node {
-                                let parsed = parse_length_expr(ecx, s.to_string());
+                                let tt_tokens = ecx.parse_tts(s.to_string());
+                                let tokens_packet = parse_length_expr(ecx, &tt_tokens);
+                                let parsed = tts_to_string(&tokens_packet[..]);
                                 packet_length = Some(parsed);
                             } else {
                                 ecx.span_err(field.span, "#[length] should be used as #[length = \"field_name and/or arithmetic expression\"]");
@@ -270,11 +274,10 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &ast::Item) -> Option<Vec<P
 }
 
 //// Return the processed length expression for the packet
-fn parse_length_expr(ecx: &mut ExtCtxt, expr: String) -> String {
-    let tt_tokens = ecx.parse_tts(expr);
-    let error_msg = "Only field names, integers and basic arithmetic expressions (+ - * / %) \
-                     are allowed in the \"length\" attribute";
-    let tokens_packet = tt_tokens.iter().fold(Vec::new(), |mut acc_packet, tt_token| {
+fn parse_length_expr(ecx: &mut ExtCtxt, tts: &Vec<TokenTree>) -> Vec<TokenTree> {
+    let error_msg = "Only field names, integers, basic arithmetic expressions (+ - * / %) \
+                     and parentheses are allowed in the \"length\" attribute";
+    let tokens_packet = tts.iter().fold(Vec::new(), |mut acc_packet, tt_token| {
         match *tt_token {
             TtToken(_, token::Ident(name, _)) => {
                 let mut modified_packet_tokens = ecx.parse_tts(
@@ -297,7 +300,15 @@ fn parse_length_expr(ecx: &mut ExtCtxt, expr: String) -> String {
             TtToken(span, _) => {
                 ecx.span_err(span, error_msg);
             },
-            TtDelimited(_, _) => {
+            TtDelimited(span, ref delimited) => {
+                let tts = parse_length_expr(ecx, &delimited.tts);
+                let tt_delimited = Delimited {
+                    delim: delimited.delim,
+                    open_span: delimited.open_span,
+                    tts: tts,
+                    close_span: delimited.close_span
+                };
+                acc_packet.push(TtDelimited(span, Rc::new(tt_delimited)));
             },
             TtSequence(span, _) => {
                 ecx.span_err(span, error_msg);
@@ -305,7 +316,7 @@ fn parse_length_expr(ecx: &mut ExtCtxt, expr: String) -> String {
         };
         acc_packet
     });
-    tts_to_string(&tokens_packet[..])
+    tokens_packet
 }
 
 
@@ -1039,9 +1050,10 @@ mod tests {
         let mut ecx = ExtCtxt::new(&sess,
                                    CrateConfig::default(),
                                    ExpansionConfig::default("parse_length_expr".to_string()));
-        let parsed = super::parse_length_expr(&mut ecx, expr.to_string());
+        let expr_tokens = ecx.parse_tts(expr.to_string());
+        let parsed = super::parse_length_expr(&mut ecx, &expr_tokens);
         let expected_tokens = ecx.parse_tts(expected.to_string());
-        assert_eq!(parsed, tts_to_string(&expected_tokens[..]));
+        assert_eq!(tts_to_string(&parsed), tts_to_string(&expected_tokens));
     }
 
     #[test]
@@ -1070,5 +1082,16 @@ mod tests {
         assert_parse_length_expr("another_key - 7 + 8 * 2 / 1 % 2",
                                  "self.get_another_key() as usize - 7 + 8 * 2 / 1 % 2");
         assert_parse_length_expr("2 * key - 4", "2 * self.get_key() as usize - 4");
+    }
+
+    #[test]
+    fn test_parse_expr_parentheses() {
+        assert_parse_length_expr("()", "()");
+        assert_parse_length_expr("(key)", "(self.get_key() as usize)");
+        assert_parse_length_expr("(key + 5)", "(self.get_key() as usize + 5)");
+        assert_parse_length_expr(
+            "key + 5 * (10 - another_key)",
+            "self.get_key() as usize + 5 * (10 - self.get_another_key() as usize)");
+        assert_parse_length_expr("4 + 2 / (3 * (7 - 5))", "4 + 2 / (3 * (7 - 5))");
     }
 }
