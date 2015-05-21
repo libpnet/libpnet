@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+// error-pattern: Only field names, integers and basic arithmetic expressions (+ - * / %) are allowed in the "length" attribute
+
 #![feature(custom_attribute, plugin)]
 #![plugin(pnet_macros)]
 
@@ -14,7 +16,8 @@ extern crate pnet;
 #[packet]
 pub struct PacketWithPayload {
     banana: u8,
-    var_length: Vec<u8>, //~ ERROR: variable length field must have #[length = ""] or #[length_fn = ""] attribute
+    #[length = "banana + 7.5"]
+    var_length: Vec<u8>,
     #[payload]
     payload: Vec<u8>
 }

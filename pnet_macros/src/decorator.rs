@@ -11,11 +11,13 @@
 use regex::Regex;
 
 use syntax::ast;
+use syntax::ast::TokenTree::{TtDelimited, TtSequence, TtToken};
 use syntax::codemap::{Span};
 use syntax::ext::base::{ExtCtxt};
 use syntax::ext::build::AstBuilder;
 use syntax::ext::quote::rt::{ExtParseUtils};
-use syntax::print::pprust::ty_to_string;
+use syntax::parse::token;
+use syntax::print::pprust::{tts_to_string, ty_to_string};
 use syntax::ptr::P;
 
 use util::{Endianness, GetOperation, SetOperation, to_little_endian, operations, to_mutator};
@@ -140,17 +142,30 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
                 },
                 &ast::MetaNameValue(ref s, ref lit) => {
                     seen.push(s.to_string());
-                    if &s[..] == "length_fn" {
-                        let ref node = lit.node;
-                        if let &ast::LitStr(ref s, _) = node {
-                            packet_length = Some(s.to_string() + "(&self.to_immutable())");
-                        } else {
-                            ecx.span_err(field.span, "#[length_fn] should be used as #[length_fn = \"name_of_function\"]");
+                    match &s[..] {
+                        "length_fn" => {
+                            let ref node = lit.node;
+                            if let &ast::LitStr(ref s, _) = node {
+                                packet_length = Some(s.to_string() + "(&self.to_immutable())");
+                            } else {
+                                ecx.span_err(field.span, "#[length_fn] should be used as #[length_fn = \"name_of_function\"]");
+                                return None;
+                            }
+                        },
+                        "length" => {
+                            let ref node = lit.node;
+                            if let &ast::LitStr(ref s, _) = node {
+                                let parsed = parse_length_expr(ecx, s.to_string());
+                                packet_length = Some(parsed);
+                            } else {
+                                ecx.span_err(field.span, "#[length] should be used as #[length = \"field_name and/or arithmetic expression\"]");
+                                return None;
+                            }
+                        },
+                        _ => {
+                            ecx.span_err(field.span, &format!("unknown attribute: {}", s)[..]);
                             return None;
                         }
-                    } else {
-                        ecx.span_err(field.span, &format!("unknown attribute: {}", s)[..]);
-                        return None;
                     }
                 }
             }
@@ -174,7 +189,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
             Type::Vector(_) => {
                 if !is_payload && packet_length.is_none() {
                     ecx.span_err(field.span,
-                                 "variable length field must have #[length_fn = \"\"] attribute");
+                                 "variable length field must have #[length = \"\"] or #[length_fn = \"\"] attribute");
                     return None;
                 }
             },
@@ -253,6 +268,46 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &ast::Item) -> Option<Vec<P
         }
     }
 }
+
+//// Return the processed length expression for the packet
+fn parse_length_expr(ecx: &mut ExtCtxt, expr: String) -> String {
+    let tt_tokens = ecx.parse_tts(expr);
+    let error_msg = "Only field names, integers and basic arithmetic expressions (+ - * / %) \
+                     are allowed in the \"length\" attribute";
+    let tokens_packet = tt_tokens.iter().fold(Vec::new(), |mut acc_packet, tt_token| {
+        match *tt_token {
+            TtToken(_, token::Ident(name, _)) => {
+                let mut modified_packet_tokens = ecx.parse_tts(
+                    format!("self.get_{}() as usize", name).to_string());
+                acc_packet.append(&mut modified_packet_tokens);
+            },
+            TtToken(span, token::BinOp(binop)) => {
+                match binop {
+                    token::Plus | token::Minus | token::Star | token::Slash | token::Percent => {
+                        acc_packet.push(tt_token.clone());
+                    },
+                    _ => {
+                        ecx.span_err(span, error_msg);
+                    }
+                };
+            },
+            TtToken(_, token::Literal(token::Integer(_), None)) => {
+                acc_packet.push(tt_token.clone());
+            },
+            TtToken(span, _) => {
+                ecx.span_err(span, error_msg);
+            },
+            TtDelimited(_, _) => {
+            },
+            TtSequence(span, _) => {
+                ecx.span_err(span, error_msg);
+            }
+        };
+        acc_packet
+    });
+    tts_to_string(&tokens_packet[..])
+}
+
 
 struct GenContext<'a, 'b : 'a, 'c> {
     ecx: &'a mut ExtCtxt<'b>,
@@ -967,4 +1022,53 @@ fn generate_get_fields(packet: &Packet) -> String {
     }
 
     gets
+}
+
+
+#[cfg(test)]
+mod tests {
+    use syntax::ast::CrateConfig;
+    use syntax::ext::base::ExtCtxt;
+    use syntax::ext::expand::ExpansionConfig;
+    use syntax::ext::quote::rt::ExtParseUtils;
+    use syntax::parse::ParseSess;
+    use syntax::print::pprust::tts_to_string;
+
+    fn assert_parse_length_expr(expr: &str, expected: &str) {
+        let sess = ParseSess::new();
+        let mut ecx = ExtCtxt::new(&sess,
+                                   CrateConfig::default(),
+                                   ExpansionConfig::default("parse_length_expr".to_string()));
+        let parsed = super::parse_length_expr(&mut ecx, expr.to_string());
+        let expected_tokens = ecx.parse_tts(expected.to_string());
+        assert_eq!(parsed, tts_to_string(&expected_tokens[..]));
+    }
+
+    #[test]
+    fn test_parse_expr_key() {
+        assert_parse_length_expr("key", "self.get_key() as usize");
+        assert_parse_length_expr("another_key", "self.get_another_key() as usize");
+        assert_parse_length_expr("get_something", "self.get_get_something() as usize");
+    }
+
+    #[test]
+    fn test_parse_expr_numbers() {
+        assert_parse_length_expr("3", "3");
+        assert_parse_length_expr("1 + 2", "1 + 2");
+        assert_parse_length_expr("3 - 4", "3 - 4");
+        assert_parse_length_expr("5 * 6", "5 * 6");
+        assert_parse_length_expr("7 / 8", "7 / 8");
+        assert_parse_length_expr("9 % 10", "9 % 10");
+        assert_parse_length_expr("5 * 4 + 1 % 2 - 6 / 9", "5 * 4 + 1 % 2 - 6 / 9");
+        assert_parse_length_expr("5*4+1%2-6/9", "5*4+1%2-6/9");
+        assert_parse_length_expr("5* 4+1%   2-6/ 9", "5* 4+1%   2-6/ 9");
+    }
+
+    #[test]
+    fn test_parse_expr_key_and_numbers() {
+        assert_parse_length_expr("key + 4", "self.get_key() as usize + 4");
+        assert_parse_length_expr("another_key - 7 + 8 * 2 / 1 % 2",
+                                 "self.get_another_key() as usize - 7 + 8 * 2 / 1 % 2");
+        assert_parse_length_expr("2 * key - 4", "2 * self.get_key() as usize - 4");
+    }
 }
