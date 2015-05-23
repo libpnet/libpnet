@@ -287,20 +287,34 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &ast::Item) -> Option<Vec<P
 //// Return the processed length expression for the packet
 fn parse_length_expr(ecx: &mut ExtCtxt, tts: &Vec<TokenTree>, field_names: &Vec<String>)
                      -> Vec<TokenTree> {
-    let error_msg = "Only field names, integers, basic arithmetic expressions (+ - * / %) \
-                     and parentheses are allowed in the \"length\" attribute";
+    let error_msg = "Only field names, constants, integers, basic arithmetic expressions \
+                     (+ - * / %) and parentheses are allowed in the \"length\" attribute";
     let tokens_packet = tts.iter().fold(Vec::new(), |mut acc_packet, tt_token| {
         match *tt_token {
-            TtToken(span, token::Ident(name, _)) => {
-                if field_names.contains(&name.to_string()) {
-                    let mut modified_packet_tokens = ecx.parse_tts(
-                        format!("self.get_{}() as usize", name).to_string());
-                    acc_packet.append(&mut modified_packet_tokens);
-                } else {
-                    ecx.span_err(
-                        span,
-                        "Field name must be a member of the struct and not the field itself");
+            TtToken(span, token::Ident(name, token::IdentStyle::Plain)) => {
+                if token::get_ident(name).chars().any(|c| c.is_lowercase()) {
+                    if field_names.contains(&name.to_string()) {
+                        let mut modified_packet_tokens = ecx.parse_tts(
+                            format!("self.get_{}() as usize", name).to_string());
+                        acc_packet.append(&mut modified_packet_tokens);
+                    } else {
+                        ecx.span_err(
+                            span,
+                            "Field name must be a member of the struct and not the field itself");
+                    }
                 }
+                // Constants are only recongized if they are all uppercase
+                else {
+                    let mut modified_packet_tokens = ecx.parse_tts(
+                        format!("{} as usize", name).to_string());
+                    acc_packet.append(&mut modified_packet_tokens);
+                }
+            },
+            TtToken(_, token::Ident(_, token::IdentStyle::ModName)) => {
+                acc_packet.push(tt_token.clone());
+            },
+            TtToken(_, token::ModSep) => {
+                acc_packet.push(tt_token.clone());
             },
             TtToken(span, token::BinOp(binop)) => {
                 match binop {
@@ -1114,5 +1128,13 @@ mod tests {
             "key + 5 * (10 - another_key)", &["key", "another_key"],
             "self.get_key() as usize + 5 * (10 - self.get_another_key() as usize)");
         assert_parse_length_expr("4 + 2 / (3 * (7 - 5))", &[], "4 + 2 / (3 * (7 - 5))");
+    }
+
+    #[test]
+    fn test_parse_expr_constants() {
+        assert_parse_length_expr("CONSTANT", &[], "CONSTANT as usize");
+        assert_parse_length_expr("std::u32::MIN", &[], "std::u32::MIN as usize");
+        assert_parse_length_expr("key * (4 + std::u32::MIN)", &["key"],
+                                 "self.get_key() as usize * (4 + std::u32::MIN as usize)");
     }
 }
