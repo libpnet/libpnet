@@ -213,6 +213,10 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
 fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &ast::Item) -> Option<Vec<Packet>> {
     match item.node {
         ast::ItemEnum(ref ed, ref _gs) => {
+            if item.vis != ast::Visibility::Public {
+                ecx.span_err(item.span, "#[packet] enums must be public");
+                return None;
+            }
             let mut vec = vec![];
             for ref variant in &ed.variants {
                 if let ast::StructVariantKind(ref sd) = variant.node.kind {
@@ -231,6 +235,10 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &ast::Item) -> Option<Vec<P
             Some(vec)
         },
         ast::ItemStruct(ref sd, ref _gs) => {
+            if item.vis != ast::Visibility::Public {
+                ecx.span_err(item.span, "#[packet] structs must be public");
+                return None;
+            }
             let name = item.ident.as_str().to_string();
             if let Some(packet) = make_packet(ecx, span, name, sd) {
                 Some(vec![packet])
