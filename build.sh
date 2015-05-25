@@ -54,11 +54,9 @@ build_test() {
 }
 
 run_macro_tests() {
-    # FIXME blocked on https://github.com/rust-lang/cargo/issues/1474
-    #cd pnet_macros &&
-    #make test &&
-    #cd ..
-    true
+    cd pnet_macros &&
+    $CARGO test $CARGO_FLAGS &&
+    cd ..
 }
 
 run_test() {
@@ -103,6 +101,7 @@ benchmarks() {
 }
 
 travis_script() {
+    run_macro_tests
     case "$SYSTEM" in
         Linux)
             $SUDO sed -i 's/secure_path="/secure_path="\/home\/travis\/rust\/bin:/' /etc/sudoers
