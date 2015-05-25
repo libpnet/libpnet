@@ -6,6 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+// ignore-test
+// ignored as this error message isn't implemented yet
+
 #![feature(custom_attribute, plugin)]
 #![plugin(pnet_macros)]
 

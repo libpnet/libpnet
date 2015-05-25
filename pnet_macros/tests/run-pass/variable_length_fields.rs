@@ -14,7 +14,14 @@ extern crate pnet;
 #[packet]
 pub struct PacketWithPayload {
     banana: u8,
+    #[length_fn = "length_fn"]
+    var_length: Vec<u8>,
     #[payload]
     payload: Vec<u8>
 }
 
+fn length_fn(_: &PacketWithPayloadPacket) -> usize {
+    unimplemented!()
+}
+
+fn main() {}
