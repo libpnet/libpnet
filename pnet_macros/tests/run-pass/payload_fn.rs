@@ -18,3 +18,4 @@ pub struct PacketWithPayload {
     payload: Vec<u8>
 }
 
+fn main() {}

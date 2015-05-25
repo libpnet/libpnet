@@ -23,3 +23,5 @@ pub struct PacketWithPayload {
 fn length_fn(_: &PacketWithPayloadPacket) -> usize {
     unimplemented!()
 }
+
+fn main() {}
