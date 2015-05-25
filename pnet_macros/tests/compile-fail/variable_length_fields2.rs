@@ -12,7 +12,7 @@
 extern crate pnet;
 
 #[packet]
-struct PacketWithPayload {
+pub struct PacketWithPayload {
     banana: u8,
     #[length_fn = "length_fn"]
     var_length: Vec<u8>, //~ ERROR: length_fn must be of type &PacketWithPayloadHeader -> usize

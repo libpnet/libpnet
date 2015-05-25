@@ -12,7 +12,7 @@
 extern crate pnet;
 
 #[packet]
-struct PacketWithPayload {
+pub struct PacketWithPayload {
     #[length_fn = ""]
     #[payload]
     payload1: Vec<u8>,  //~ NOTE first payload defined here

@@ -12,7 +12,7 @@
 extern crate pnet;
 
 #[packet]
-struct PacketWithPayload {
+pub struct PacketWithPayload {
     banana: u8,
     var_length: Vec<u8>, //~ ERROR: variable length field must have #[length_fn = ""] attribute
     #[payload]

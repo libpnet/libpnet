@@ -18,3 +18,4 @@ struct MustBePub { //~ ERROR #[packet] structs must be public
     payload: Vec<u8>
 }
 
+fn main() {}
