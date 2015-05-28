@@ -88,12 +88,25 @@
 //!  * \#[length_fn = "function_name"]
 //!
 //!    This attribute is used to enable variable length fields. To specify a variable length field,
-//!    it should have the type `Vec<T>`. It must have the `#[length_fn]` attribute, which specifies
-//!    a function name to calculate the length of the field. The signature for the length function
-//!    should be `fn {function_name}<'a>(example_packet: &ExamplePacket<'a>) -> usize`,
-//!    substituting `&ExamplePacket<'a>` for the appropriately named packet type for your
-//!    structure. You may access whichever fields are required to calculate the length of the
-//!    field. The returned value should be a number of bytes that the field uses.
+//!    it should have the type `Vec<T>`. It must have the `#[length_fn]` (or #[length]) attribute,
+//!    which specifies a function name to calculate the length of the field. The signature for the
+//!    length function should be
+//!    `fn {function_name}<'a>(example_packet: &ExamplePacket<'a>) -> usize`, substituting
+//!    `&ExamplePacket<'a>` for the appropriately named packet type for your structure. You may
+//!    access whichever fields are required to calculate the length of the field. The returned
+//!    value should be a number of bytes that the field uses.
+//!
+//!    The type contained in the vector may either be one of the primitive types specified in
+//!    `pnet_macros::types`, or another structure marked with #[packet], for example
+//!    `Vec<Example>`.
+//!
+//!  * \#[length = "arithmetic expression"]
+//!
+//!    This attribute is used to enable variable length fields. To specify a variable length field,
+//!    it should have the type `Vec<T>`. It must have the `#[length]` (or #[length_fn]) attribute,
+//!    which specifies an arithmetic expression to calculate the length of the field. Only field
+//!    names, constants, integers, basic arithmetic expressions (+ - * / %) and parentheses are
+//!    in the expression. An example would be `#[length = "field_name + CONSTANT - 4]`.
 //!
 //!    The type contained in the vector may either be one of the primitive types specified in
 //!    `pnet_macros::types`, or another structure marked with #[packet], for example
