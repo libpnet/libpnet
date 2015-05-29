@@ -151,7 +151,7 @@ use rustc::plugin::Registry;
 use syntax::ast;
 use syntax::codemap::{Span};
 use syntax::parse::token;
-use syntax::ext::base::{Decorator, ExtCtxt, Modifier};
+use syntax::ext::base::{Annotatable, MultiDecorator, ExtCtxt, MultiModifier};
 use syntax::ptr::P;
 
 mod decorator;
@@ -168,7 +168,8 @@ pub mod types;
 fn packet_modifier(ecx: &mut ExtCtxt,
                    _span: Span,
                    _meta_item: &ast::MetaItem,
-                   item: P<ast::Item>) -> P<ast::Item> {
+                   item: Annotatable) -> Annotatable {
+    let item = item.expect_item();
     let mut new_item = (*item).clone();
 
     new_item.attrs.push(quote_attr!(ecx, #[_packet_lint]));
@@ -176,7 +177,7 @@ fn packet_modifier(ecx: &mut ExtCtxt,
     new_item.attrs.push(quote_attr!(ecx, #[derive(Clone, Debug)]));
     new_item.attrs.push(quote_attr!(ecx, #[allow(unused_attributes)]));
 
-    P(new_item)
+    Annotatable::Item(P(new_item))
 }
 
 /// The entry point for the syntax extension
@@ -188,9 +189,9 @@ fn packet_modifier(ecx: &mut ExtCtxt,
 #[plugin_registrar]
 pub fn plugin_registrar(registry: &mut Registry) {
     registry.register_syntax_extension(token::intern("packet"),
-                                       Modifier(Box::new(packet_modifier)));
+                                       MultiModifier(Box::new(packet_modifier)));
     registry.register_syntax_extension(token::intern("_packet_generator"),
-                                       Decorator(Box::new(decorator::generate_packet)));
+                                       MultiDecorator(Box::new(decorator::generate_packet)));
 
     registry.register_lint_pass(Box::new(lint::PacketPass) as LintPassObject);
 }
