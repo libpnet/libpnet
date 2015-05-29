@@ -152,7 +152,7 @@ impl TransportSender {
             let mut mut_slice: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
             mut_slice.as_mut_slice().clone_from_slice(packet.packet());
 
-            let mut new_packet = MutableIpv4Packet::new(&mut mut_slice[..]);
+            let mut new_packet = MutableIpv4Packet::new(&mut mut_slice[..]).unwrap();
             let length = new_packet.get_total_length().to_be();
             new_packet.set_total_length(length);
             let offset = new_packet.get_fragment_offset().to_be();
@@ -194,7 +194,7 @@ macro_rules! transport_channel_iterator {
 
                 let offset = match self.tr.channel_type {
                     Layer4(Ipv4(_)) => {
-                        let ip_header = Ipv4Packet::new(&self.tr.buffer[..]);
+                        let ip_header = Ipv4Packet::new(&self.tr.buffer[..]).unwrap();
 
                         ip_header.get_header_length() as usize * 4usize
                     },
@@ -207,7 +207,7 @@ macro_rules! transport_channel_iterator {
                 };
                 return match res {
                     Ok(len) => {
-                        let packet = $ty::new(&self.tr.buffer[offset..len]);
+                        let packet = $ty::new(&self.tr.buffer[offset..len]).unwrap();
                         let addr = internal::sockaddr_to_addr(
                                         &caddr,
                                         mem::size_of::<libc::sockaddr_storage>()
@@ -222,7 +222,7 @@ macro_rules! transport_channel_iterator {
                     use packet::ipv4::MutableIpv4Packet;
 
                     let buflen = buffer.len();
-                    let mut new_packet = MutableIpv4Packet::new(buffer);
+                    let mut new_packet = MutableIpv4Packet::new(buffer).unwrap();
 
                     let length = u16::from_be(new_packet.get_total_length());
                     new_packet.set_total_length(length);

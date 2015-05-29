@@ -36,7 +36,7 @@ fn main() {
             Ok((packet, addr)) => {
                 // Allocate enough space for a new packet
                 let mut vec: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
-                let mut new_packet = MutableUdpPacket::new(&mut vec[..]);
+                let mut new_packet = MutableUdpPacket::new(&mut vec[..]).unwrap();
 
                 // Create a clone of the original packet
                 new_packet.clone_from(&packet);

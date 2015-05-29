@@ -627,7 +627,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                     let mut current_offset = {co};
                                     let len = {packet_length};
                                     for val in vals.into_iter() {{
-                                        let mut packet = Mutable{inner_ty_str}Packet::new(&mut self.packet[current_offset..]);
+                                        let mut packet = Mutable{inner_ty_str}Packet::new(&mut self.packet[current_offset..]).unwrap();
                                         packet.populate(val);
                                         current_offset += packet.packet_size();
                                         assert!(current_offset <= len);
@@ -733,12 +733,15 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
     };
 
     cx.push_item_from_string(format!("impl<'a> {name}<'a> {{
-        /// Constructs a new {name}
+        /// Constructs a new {name}. If the provided buffer is less than the minimum required
+        /// packet size, this will return None.
         #[inline]
-        pub fn new<'p>(packet: &'p {mut} [u8]) -> {name}<'p> {{
-            // TODO This should ensure the provided buffer is at least a minimum size so we can avoid
-            //      bounds checking in accessors/mutators
-            {name} {{ packet: packet }}
+        pub fn new<'p>(packet: &'p {mut} [u8]) -> Option<{name}<'p>> {{
+            if packet.len() >= {name}::minimum_packet_size() {{
+                Some({name} {{ packet: packet }})
+            }} else {{
+                None
+            }}
         }}
 
         /// Maps from a {name} to a {imm_name}
@@ -849,7 +852,7 @@ fn generate_iterables(cx: &mut GenContext, packet: &Packet) {
         fn next(&mut self) -> Option<{name}Packet<'a>> {{
             use pnet::packet::PacketSize;
             if self.buf.len() > 0 {{
-                let ret = {name}Packet::new(self.buf);
+                let ret = {name}Packet::new(self.buf).unwrap();
                 self.buf = &self.buf[ret.packet_size()..];
 
                 return Some(ret);

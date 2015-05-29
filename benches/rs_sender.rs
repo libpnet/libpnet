@@ -30,7 +30,7 @@ static UDP_HEADER_LEN: usize = 8;
 static TEST_DATA_LEN: usize = 5;
 
 pub fn build_ipv4_header(packet: &mut [u8]) -> MutableIpv4Packet {
-    let mut ip_header = MutableIpv4Packet::new(packet);
+    let mut ip_header = MutableIpv4Packet::new(packet).unwrap();
 
     let total_len = (IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN) as u16;
 
@@ -49,7 +49,7 @@ pub fn build_ipv4_header(packet: &mut [u8]) -> MutableIpv4Packet {
 }
 
 pub fn build_udp_header(packet: &mut [u8]) -> MutableUdpPacket {
-    let mut udp_header = MutableUdpPacket::new(packet);
+    let mut udp_header = MutableUdpPacket::new(packet).unwrap();
 
     udp_header.set_source(1234); // Arbitary port number
     udp_header.set_destination(1234);
@@ -95,7 +95,7 @@ fn main() {
     };
 
     let mut buffer = [0u8; 64];
-    let mut mut_ethernet_header = MutableEthernetPacket::new(&mut buffer[..]);
+    let mut mut_ethernet_header = MutableEthernetPacket::new(&mut buffer[..]).unwrap();
     {
         mut_ethernet_header.set_destination(destination);
         mut_ethernet_header.set_source(interface.mac_address());
@@ -103,7 +103,7 @@ fn main() {
         build_udp4_packet(mut_ethernet_header.payload_mut(), "rmesg");
     }
 
-    let ethernet_header = EthernetPacket::new(mut_ethernet_header.packet());
+    let ethernet_header = EthernetPacket::new(mut_ethernet_header.packet()).unwrap();
 
     loop {
         tx.send_to(&ethernet_header, None);

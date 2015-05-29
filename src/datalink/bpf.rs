@@ -179,7 +179,7 @@ impl DataLinkSenderImpl {
                     }
                 }
                 {
-                    let eh = MutableEthernetPacket::new(&mut chunk[self.header_size..]);
+                    let eh = MutableEthernetPacket::new(&mut chunk[self.header_size..]).unwrap();
                     func(eh);
                 }
                 match unsafe { libc::write(self.fd.fd,
@@ -253,7 +253,7 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
             }
         }
         let (start, len) = self.packets.pop_front().unwrap();
-        Ok(EthernetPacket::new(&self.pc.read_buffer[start .. start + len]))
+        Ok(EthernetPacket::new(&self.pc.read_buffer[start .. start + len]).unwrap())
     }
 }
 
