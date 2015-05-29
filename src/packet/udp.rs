@@ -88,7 +88,7 @@ fn udp_header_ipv4_test() {
     let ipv4_destination = Ipv4Addr::new(192, 168, 0, 199);
     let next_level_protocol = IpNextHeaderProtocols::Udp;
     {
-        let mut ip_header = MutableIpv4Packet::new(&mut packet[..]);
+        let mut ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
         ip_header.set_next_level_protocol(next_level_protocol);
         ip_header.set_source(ipv4_source);
         ip_header.set_destination(ipv4_destination);
@@ -101,7 +101,7 @@ fn udp_header_ipv4_test() {
     packet[20 + 8 + 3] = 't' as u8;
 
     {
-        let mut udp_header = MutableUdpPacket::new(&mut packet[20..]);
+        let mut udp_header = MutableUdpPacket::new(&mut packet[20..]).unwrap();
         udp_header.set_source(12345);
         assert_eq!(udp_header.get_source(), 12345);
 
@@ -200,7 +200,7 @@ fn udp_header_ipv6_test() {
     let ipv6_source = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
     let ipv6_destination = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
     {
-        let mut ip_header = MutableIpv6Packet::new(&mut packet[..]);
+        let mut ip_header = MutableIpv6Packet::new(&mut packet[..]).unwrap();
         ip_header.set_next_header(next_header);
         ip_header.set_source(ipv6_source);
         ip_header.set_destination(ipv6_destination);
@@ -213,7 +213,7 @@ fn udp_header_ipv6_test() {
     packet[40 + 8 + 3] = 't' as u8;
 
     {
-        let mut udp_header = MutableUdpPacket::new(&mut packet[40..]);
+        let mut udp_header = MutableUdpPacket::new(&mut packet[40..]).unwrap();
         udp_header.set_source(12345);
         assert_eq!(udp_header.get_source(), 12345);
 

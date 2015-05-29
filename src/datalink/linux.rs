@@ -59,7 +59,7 @@ impl DataLinkSenderImpl {
             for chunk in mut_slice.as_mut_slice()[.. min]
                                   .chunks_mut(packet_size) {
                 {
-                    let eh = MutableEthernetPacket::new(chunk);
+                    let eh = MutableEthernetPacket::new(chunk).unwrap();
                     func(eh);
                 }
                 let send_addr = (&self.send_addr as *const libc::sockaddr_ll)
@@ -173,7 +173,7 @@ impl<'a> DataLinkChannelIteratorImpl<'a> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
         let res = internal::recv_from(self.pc.socket.fd, self.pc.read_buffer.as_mut_slice(), &mut caddr);
         match res {
-            Ok(len) => Ok(EthernetPacket::new(&self.pc.read_buffer.as_slice()[0 .. len])),
+            Ok(len) => Ok(EthernetPacket::new(&self.pc.read_buffer.as_slice()[0 .. len]).unwrap()),
             Err(e) => Err(e),
         }
     }

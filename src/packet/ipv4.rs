@@ -64,7 +64,7 @@ fn ipv4_options_length<'a>(ipv4: &Ipv4Packet<'a>) -> usize {
 #[test]
 fn ipv4_options_length_test() {
     let mut packet = [0u8; 20];
-    let mut ip_header = MutableIpv4Packet::new(&mut packet[..]);
+    let mut ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
     ip_header.set_header_length(5);
     assert_eq!(ipv4_options_length(&ip_header.to_immutable()), 0);
 }
@@ -86,7 +86,7 @@ fn ipv4_packet_test() {
 
     let mut packet = [0u8; 20];
     {
-        let mut ip_header = MutableIpv4Packet::new(&mut packet[..]);
+        let mut ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
         ip_header.set_version(4);
         assert_eq!(ip_header.get_version(), 4);
 

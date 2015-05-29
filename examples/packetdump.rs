@@ -31,11 +31,11 @@ use pnet::util::{NetworkInterface, get_network_interfaces};
 fn handle_udp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8]) {
     let udp = UdpPacket::new(packet);
 
-    if packet.len() < 8 {
-        println!("[{}]: Malformed UDP Packet", interface_name);
-    } else {
+    if let Some(udp) = udp {
         println!("[{}]: UDP Packet: {}:{} > {}:{}; length: {}", interface_name, source,
                         udp.get_source(), destination, udp.get_destination(), udp.get_length());
+    } else {
+        println!("[{}]: Malformed UDP Packet", interface_name);
     }
 }
 
@@ -43,11 +43,11 @@ fn handle_tcp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, 
     // Since we only look at source and destination ports, and these are located in the same
     // place in both TCP and UDP headers, we cheat here
     let udp = UdpPacket::new(packet);
-    if packet.len() < 8 {
-        println!("[{}]: Malformed TCP Packet", interface_name);
-    } else {
+    if let Some(udp) = udp {
         println!("[{}]: TCP Packet: {}:{} > {}:{}; length: {}", interface_name, source,
                     udp.get_source(), destination, udp.get_destination(), packet.len());
+    } else {
+        println!("[{}]: Malformed TCP Packet", interface_name);
     }
 }
 
@@ -69,20 +69,28 @@ fn handle_transport_protocol(interface_name: &str, source: IpAddr, destination: 
 
 fn handle_ipv4_packet(interface_name: &str, ethernet: &EthernetPacket) {
     let header = Ipv4Packet::new(ethernet.payload());
-    handle_transport_protocol(interface_name,
-                              IpAddr::V4(header.get_source()),
-                              IpAddr::V4(header.get_destination()),
-                              header.get_next_level_protocol(),
-                              header.payload());
+    if let Some(header) = header {
+        handle_transport_protocol(interface_name,
+                                  IpAddr::V4(header.get_source()),
+                                  IpAddr::V4(header.get_destination()),
+                                  header.get_next_level_protocol(),
+                                  header.payload());
+    } else {
+        println!("[{}]: Malformed IPv4 Packet", interface_name);
+    }
 }
 
 fn handle_ipv6_packet(interface_name: &str, ethernet: &EthernetPacket) {
     let header = Ipv6Packet::new(ethernet.payload());
-    handle_transport_protocol(interface_name,
-                              IpAddr::V6(header.get_source()),
-                              IpAddr::V6(header.get_destination()),
-                              header.get_next_header(),
-                              header.payload());
+    if let Some(header) = header {
+        handle_transport_protocol(interface_name,
+                                  IpAddr::V6(header.get_source()),
+                                  IpAddr::V6(header.get_destination()),
+                                  header.get_next_header(),
+                                  header.payload());
+    } else {
+        println!("[{}]: Malformed IPv6 Packet", interface_name);
+    }
 }
 
 fn handle_arp_packet(interface_name: &str, ethernet: &EthernetPacket) {

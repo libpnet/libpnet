@@ -37,7 +37,7 @@ fn ipv6_header_test() {
     use packet::ip::IpNextHeaderProtocols;
     let mut packet = [0u8; 40];
     {
-        let mut ip_header = MutableIpv6Packet::new(&mut packet[..]);
+        let mut ip_header = MutableIpv6Packet::new(&mut packet[..]).unwrap();
         ip_header.set_version(6);
         assert_eq!(ip_header.get_version(), 6);
 
