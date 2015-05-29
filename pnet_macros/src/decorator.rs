@@ -9,13 +9,17 @@
 //! Implements the #[packet] decorator
 
 use regex::Regex;
+use std::rc::Rc;
 
 use syntax::ast;
+use syntax::ast::Delimited;
+use syntax::ast::TokenTree::{self, TtDelimited, TtSequence, TtToken};
 use syntax::codemap::{Span};
 use syntax::ext::base::{ExtCtxt};
 use syntax::ext::build::AstBuilder;
 use syntax::ext::quote::rt::{ExtParseUtils};
-use syntax::print::pprust::ty_to_string;
+use syntax::parse::token;
+use syntax::print::pprust::{tts_to_string, ty_to_string};
 use syntax::ptr::P;
 
 use util::{Endianness, GetOperation, SetOperation, to_little_endian, operations, to_mutator};
@@ -42,7 +46,7 @@ struct Field {
     name: String,
     span: Span,
     ty: Type,
-    length_fn: Option<String>,
+    packet_length: Option<String>,
     is_payload: bool,
     construct_with: Option<Vec<Type>>
 }
@@ -91,7 +95,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
             }
         };
         let mut is_payload = false;
-        let mut length_fn = None;
+        let mut packet_length = None;
         let mut construct_with = Vec::new();
         let mut seen = Vec::new();
         for attr in field.node.attrs.iter() {
@@ -140,17 +144,43 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
                 },
                 &ast::MetaNameValue(ref s, ref lit) => {
                     seen.push(s.to_string());
-                    if &s[..] == "length_fn" {
-                        let ref node = lit.node;
-                        if let &ast::LitStr(ref s, _) = node {
-                            length_fn = Some(s.to_string());
-                        } else {
-                            ecx.span_err(field.span, "#[length_fn] should be used as #[length_fn = \"name_of_function\"]");
+                    match &s[..] {
+                        "length_fn" => {
+                            let ref node = lit.node;
+                            if let &ast::LitStr(ref s, _) = node {
+                                packet_length = Some(s.to_string() + "(&self.to_immutable())");
+                            } else {
+                                ecx.span_err(field.span, "#[length_fn] should be used as #[length_fn = \"name_of_function\"]");
+                                return None;
+                            }
+                        },
+                        "length" => {
+                            let ref node = lit.node;
+                            if let &ast::LitStr(ref s, _) = node {
+                                let field_names: Vec<String> = sd.fields.iter().filter_map(|field| {
+                                    field.node.ident()
+                                        .map(|name| name.to_string())
+                                        .and_then(|name| {
+                                            if name == field_name {
+                                                None
+                                            } else {
+                                                Some(name)
+                                            }
+                                        })
+                                }).collect();
+                                let tt_tokens = ecx.parse_tts(s.to_string());
+                                let tokens_packet = parse_length_expr(ecx, &tt_tokens, &field_names);
+                                let parsed = tts_to_string(&tokens_packet[..]);
+                                packet_length = Some(parsed);
+                            } else {
+                                ecx.span_err(field.span, "#[length] should be used as #[length = \"field_name and/or arithmetic expression\"]");
+                                return None;
+                            }
+                        },
+                        _ => {
+                            ecx.span_err(field.span, &format!("unknown attribute: {}", s)[..]);
                             return None;
                         }
-                    } else {
-                        ecx.span_err(field.span, &format!("unknown attribute: {}", s)[..]);
-                        return None;
                     }
                 }
             }
@@ -172,9 +202,9 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
 
         match ty {
             Type::Vector(_) => {
-                if !is_payload && length_fn.is_none() {
+                if !is_payload && packet_length.is_none() {
                     ecx.span_err(field.span,
-                                 "variable length field must have #[length_fn = \"\"] attribute");
+                                 "variable length field must have #[length = \"\"] or #[length_fn = \"\"] attribute");
                     return None;
                 }
             },
@@ -192,7 +222,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
             name: field_name,
             span: field.span,
             ty: ty,
-            length_fn: length_fn,
+            packet_length: packet_length,
             is_payload: is_payload,
             construct_with: Some(construct_with),
         });
@@ -253,6 +283,74 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &ast::Item) -> Option<Vec<P
         }
     }
 }
+
+//// Return the processed length expression for the packet
+fn parse_length_expr(ecx: &mut ExtCtxt, tts: &Vec<TokenTree>, field_names: &Vec<String>)
+                     -> Vec<TokenTree> {
+    let error_msg = "Only field names, constants, integers, basic arithmetic expressions \
+                     (+ - * / %) and parentheses are allowed in the \"length\" attribute";
+    let tokens_packet = tts.iter().fold(Vec::new(), |mut acc_packet, tt_token| {
+        match *tt_token {
+            TtToken(span, token::Ident(name, token::IdentStyle::Plain)) => {
+                if token::get_ident(name).chars().any(|c| c.is_lowercase()) {
+                    if field_names.contains(&name.to_string()) {
+                        let mut modified_packet_tokens = ecx.parse_tts(
+                            format!("self.get_{}() as usize", name).to_string());
+                        acc_packet.append(&mut modified_packet_tokens);
+                    } else {
+                        ecx.span_err(
+                            span,
+                            "Field name must be a member of the struct and not the field itself");
+                    }
+                }
+                // Constants are only recongized if they are all uppercase
+                else {
+                    let mut modified_packet_tokens = ecx.parse_tts(
+                        format!("{} as usize", name).to_string());
+                    acc_packet.append(&mut modified_packet_tokens);
+                }
+            },
+            TtToken(_, token::Ident(_, token::IdentStyle::ModName)) => {
+                acc_packet.push(tt_token.clone());
+            },
+            TtToken(_, token::ModSep) => {
+                acc_packet.push(tt_token.clone());
+            },
+            TtToken(span, token::BinOp(binop)) => {
+                match binop {
+                    token::Plus | token::Minus | token::Star | token::Slash | token::Percent => {
+                        acc_packet.push(tt_token.clone());
+                    },
+                    _ => {
+                        ecx.span_err(span, error_msg);
+                    }
+                };
+            },
+            TtToken(_, token::Literal(token::Integer(_), None)) => {
+                acc_packet.push(tt_token.clone());
+            },
+            TtToken(span, _) => {
+                ecx.span_err(span, error_msg);
+            },
+            TtDelimited(span, ref delimited) => {
+                let tts = parse_length_expr(ecx, &delimited.tts, &field_names);
+                let tt_delimited = Delimited {
+                    delim: delimited.delim,
+                    open_span: delimited.open_span,
+                    tts: tts,
+                    close_span: delimited.close_span
+                };
+                acc_packet.push(TtDelimited(span, Rc::new(tt_delimited)));
+            },
+            TtSequence(span, _) => {
+                ecx.span_err(span, error_msg);
+            }
+        };
+        acc_packet
+    });
+    tokens_packet
+}
+
 
 struct GenContext<'a, 'b : 'a, 'c> {
     ecx: &'a mut ExtCtxt<'b>,
@@ -395,7 +493,7 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                     #[allow(trivial_numeric_casts)]
                                     pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
                                         let current_offset = {co};
-                                        let len = {length_fn}(&self.to_immutable());
+                                        let len = {packet_length};
 
                                         let packet = &self.packet[current_offset..len];
                                         let mut vec = Vec::with_capacity(packet.len());
@@ -407,13 +505,13 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                     accessors = accessors,
                                     name = field.name,
                                     co = co,
-                                    length_fn = field.length_fn.as_ref().unwrap(),
+                                    packet_length = field.packet_length.as_ref().unwrap(),
                                     inner_ty_str = inner_ty_str);
         }
-        let check_len = if field.length_fn.is_some() {
-            format!("let len = {length_fn}(&self.to_immutable());
+        let check_len = if field.packet_length.is_some() {
+            format!("let len = {packet_length};
                                              assert!(vals.len() <= len);",
-                                             length_fn = field.length_fn.as_ref().unwrap())
+                                             packet_length = field.packet_length.as_ref().unwrap())
         } else {
             String::new()
         };
@@ -449,7 +547,7 @@ fn handle_vector_field(cx: &mut GenContext,
                        inner_ty: &Box<Type>,
                        co: &mut String)
 {
-    if !field.is_payload && !field.length_fn.is_some() {
+    if !field.is_payload && !field.packet_length.is_some() {
         cx.ecx.span_err(field.span, "variable length field must have #[length_fn = \"\"] attribute");
         *error = true;
     }
@@ -460,7 +558,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 #[allow(trivial_numeric_casts)]
                                 pub fn get_{name}_raw(&self) -> &[u8] {{
                                     let current_offset = {co};
-                                    let len = {length_fn}(&self.to_immutable());
+                                    let len = {packet_length};
 
                                     &self.packet[current_offset..len]
                                 }}
@@ -468,14 +566,14 @@ fn handle_vector_field(cx: &mut GenContext,
                                 accessors = accessors,
                                 name = field.name,
                                 co = co,
-                                length_fn = field.length_fn.as_ref().unwrap());
+                                packet_length = field.packet_length.as_ref().unwrap());
         *mutators = format!("{mutators}
                                 /// Get the raw &mut [u8] value of the {name} field, without copying
                                 #[inline]
                                 #[allow(trivial_numeric_casts)]
                                 pub fn get_{name}_raw_mut(&mut self) -> &mut [u8] {{
                                     let current_offset = {co};
-                                    let len = {length_fn}(&self.to_immutable());
+                                    let len = {packet_length};
 
                                     &mut self.packet[current_offset..len]
                                 }}
@@ -483,7 +581,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 mutators = mutators,
                                 name = field.name,
                                 co = co,
-                                length_fn = field.length_fn.as_ref().unwrap());
+                                packet_length = field.packet_length.as_ref().unwrap());
     }
     match **inner_ty {
         Type::Primitive(ref inner_ty_str, _size, _endianness) => {
@@ -501,7 +599,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
                                     use pnet::packet::FromPacket;
                                     let current_offset = {co};
-                                    let len = {length_fn}(&self.to_immutable());
+                                    let len = {packet_length};
 
                                     {inner_ty_str}Iterable {{
                                         buf: &self.packet[current_offset..len]
@@ -512,7 +610,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 accessors = accessors,
                                 name = field.name,
                                 co = co,
-                                length_fn = field.length_fn.as_ref().unwrap(),
+                                packet_length = field.packet_length.as_ref().unwrap(),
                                 inner_ty_str = inner_ty_str);
             *mutators = format!("{mutators}
                                 /// Set the value of the {name} field (copies contents)
@@ -521,7 +619,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 pub fn set_{name}(&mut self, vals: Vec<{inner_ty_str}>) {{
                                     use pnet::packet::PacketSize;
                                     let mut current_offset = {co};
-                                    let len = {length_fn}(&self.to_immutable());
+                                    let len = {packet_length};
                                     for val in vals.into_iter() {{
                                         let mut packet = Mutable{inner_ty_str}Packet::new(&mut self.packet[current_offset..]);
                                         packet.populate(val);
@@ -533,7 +631,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 mutators = mutators,
                                 name = field.name,
                                 co = co,
-                                length_fn = field.length_fn.as_ref().unwrap(),
+                                packet_length = field.packet_length.as_ref().unwrap(),
                                 inner_ty_str = inner_ty_str);
         }
     }
@@ -553,10 +651,10 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
 
         if field.is_payload {
             let mut upper_bound_str = "".to_string();
-            if field.length_fn.is_some() {
-                upper_bound_str = format!("{} + {}(&self.to_immutable())",
+            if field.packet_length.is_some() {
+                upper_bound_str = format!("{} + {}",
                 co.clone(),
-                field.length_fn.as_ref().unwrap());
+                field.packet_length.as_ref().unwrap());
             } else {
                 if idx != packet.fields.len() - 1 {
                     cx.ecx.span_err(field.span,
@@ -590,8 +688,8 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
                                   &mut co, &name, &mut mutators, &mut accessors, &ty_str)
             }
         }
-        if field.length_fn.is_some() {
-            offset_fns.push(field.length_fn.as_ref().unwrap().clone());
+        if field.packet_length.is_some() {
+            offset_fns.push(field.packet_length.as_ref().unwrap().clone());
         }
     }
 
@@ -945,7 +1043,7 @@ fn current_offset(bit_offset: usize, offset_fns: &[String]) -> String {
     let base_offset = bit_offset / 8;
 
     offset_fns.iter().fold(base_offset.to_string(), |a, b| {
-        a + " + " + &b[..] + "(&self.to_immutable())"
+        a + " + " + &b[..]
     })
 }
 
@@ -967,4 +1065,76 @@ fn generate_get_fields(packet: &Packet) -> String {
     }
 
     gets
+}
+
+
+#[cfg(test)]
+mod tests {
+    use syntax::ast::CrateConfig;
+    use syntax::ext::base::ExtCtxt;
+    use syntax::ext::expand::ExpansionConfig;
+    use syntax::ext::quote::rt::ExtParseUtils;
+    use syntax::parse::ParseSess;
+    use syntax::print::pprust::tts_to_string;
+
+    fn assert_parse_length_expr(expr: &str, field_names: &[&str], expected: &str) {
+        let sess = ParseSess::new();
+        let mut ecx = ExtCtxt::new(&sess,
+                                   CrateConfig::default(),
+                                   ExpansionConfig::default("parse_length_expr".to_string()));
+        let expr_tokens = ecx.parse_tts(expr.to_string());
+        let field_names_vec = field_names.iter().map(|field_name| field_name.to_string()).collect();
+        let parsed = super::parse_length_expr(&mut ecx, &expr_tokens, &field_names_vec);
+        let expected_tokens = ecx.parse_tts(expected.to_string());
+        assert_eq!(tts_to_string(&parsed), tts_to_string(&expected_tokens));
+    }
+
+    #[test]
+    fn test_parse_expr_key() {
+        assert_parse_length_expr("key", &["key"], "self.get_key() as usize");
+        assert_parse_length_expr("another_key", &["another_key"],
+                                 "self.get_another_key() as usize");
+        assert_parse_length_expr("get_something", &["get_something"],
+                                 "self.get_get_something() as usize");
+    }
+
+    #[test]
+    fn test_parse_expr_numbers() {
+        assert_parse_length_expr("3", &[], "3");
+        assert_parse_length_expr("1 + 2", &[], "1 + 2");
+        assert_parse_length_expr("3 - 4", &[], "3 - 4");
+        assert_parse_length_expr("5 * 6", &[], "5 * 6");
+        assert_parse_length_expr("7 / 8", &[], "7 / 8");
+        assert_parse_length_expr("9 % 10", &[], "9 % 10");
+        assert_parse_length_expr("5 * 4 + 1 % 2 - 6 / 9", &[], "5 * 4 + 1 % 2 - 6 / 9");
+        assert_parse_length_expr("5*4+1%2-6/9", &[], "5*4+1%2-6/9");
+        assert_parse_length_expr("5* 4+1%   2-6/ 9", &[], "5* 4+1%   2-6/ 9");
+    }
+
+    #[test]
+    fn test_parse_expr_key_and_numbers() {
+        assert_parse_length_expr("key + 4", &["key"], "self.get_key() as usize + 4");
+        assert_parse_length_expr("another_key - 7 + 8 * 2 / 1 % 2", &["another_key"],
+                                 "self.get_another_key() as usize - 7 + 8 * 2 / 1 % 2");
+        assert_parse_length_expr("2 * key - 4", &["key"], "2 * self.get_key() as usize - 4");
+    }
+
+    #[test]
+    fn test_parse_expr_parentheses() {
+        assert_parse_length_expr("()", &[], "()");
+        assert_parse_length_expr("(key)", &["key"], "(self.get_key() as usize)");
+        assert_parse_length_expr("(key + 5)", &["key"], "(self.get_key() as usize + 5)");
+        assert_parse_length_expr(
+            "key + 5 * (10 - another_key)", &["key", "another_key"],
+            "self.get_key() as usize + 5 * (10 - self.get_another_key() as usize)");
+        assert_parse_length_expr("4 + 2 / (3 * (7 - 5))", &[], "4 + 2 / (3 * (7 - 5))");
+    }
+
+    #[test]
+    fn test_parse_expr_constants() {
+        assert_parse_length_expr("CONSTANT", &[], "CONSTANT as usize");
+        assert_parse_length_expr("std::u32::MIN", &[], "std::u32::MIN as usize");
+        assert_parse_length_expr("key * (4 + std::u32::MIN)", &["key"],
+                                 "self.get_key() as usize * (4 + std::u32::MIN as usize)");
+    }
 }
