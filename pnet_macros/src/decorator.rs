@@ -15,7 +15,7 @@ use syntax::ast;
 use syntax::ast::Delimited;
 use syntax::ast::TokenTree::{self, TtDelimited, TtSequence, TtToken};
 use syntax::codemap::{Span};
-use syntax::ext::base::{ExtCtxt};
+use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
 use syntax::ext::quote::rt::{ExtParseUtils};
 use syntax::parse::token;
@@ -240,47 +240,53 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
 
 }
 
-fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &ast::Item) -> Option<Vec<Packet>> {
-    match item.node {
-        ast::ItemEnum(ref ed, ref _gs) => {
-            if item.vis != ast::Visibility::Public {
-                ecx.span_err(item.span, "#[packet] enums must be public");
-                return None;
-            }
-            let mut vec = vec![];
-            for ref variant in &ed.variants {
-                if let ast::StructVariantKind(ref sd) = variant.node.kind {
-                    let name = variant.node.name.as_str().to_string();
-                    if let Some(packet) = make_packet(ecx, span, name, sd) {
-                        vec.push(packet);
-                    } else {
-                        return None;
-                    }
-                } else {
-                    ecx.span_err(variant.span, "");
+fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &Annotatable) -> Option<Vec<Packet>> {
+    if let &Annotatable::Item(ref item) = item {
+        match item.node {
+            ast::ItemEnum(ref ed, ref _gs) => {
+                if item.vis != ast::Visibility::Public {
+                    ecx.span_err(item.span, "#[packet] enums must be public");
                     return None;
                 }
-            }
+                let mut vec = vec![];
+                for ref variant in &ed.variants {
+                    if let ast::StructVariantKind(ref sd) = variant.node.kind {
+                        let name = variant.node.name.as_str().to_string();
+                        if let Some(packet) = make_packet(ecx, span, name, sd) {
+                            vec.push(packet);
+                        } else {
+                            return None;
+                        }
+                    } else {
+                        ecx.span_err(variant.span, "");
+                        return None;
+                    }
+                }
 
-            Some(vec)
-        },
-        ast::ItemStruct(ref sd, ref _gs) => {
-            if item.vis != ast::Visibility::Public {
-                ecx.span_err(item.span, "#[packet] structs must be public");
-                return None;
-            }
-            let name = item.ident.as_str().to_string();
-            if let Some(packet) = make_packet(ecx, span, name, sd) {
-                Some(vec![packet])
-            } else {
+                Some(vec)
+            },
+            ast::ItemStruct(ref sd, ref _gs) => {
+                if item.vis != ast::Visibility::Public {
+                    ecx.span_err(item.span, "#[packet] structs must be public");
+                    return None;
+                }
+                let name = item.ident.as_str().to_string();
+                if let Some(packet) = make_packet(ecx, span, name, sd) {
+                    Some(vec![packet])
+                } else {
+                    None
+                }
+            },
+            _ => {
+                ecx.span_err(span, "#[packet] may only be used with enums and structs");
+
                 None
             }
-        },
-        _ => {
-            ecx.span_err(span, "#[packet] may only be used with enums and structs");
-
-            None
         }
+    } else {
+        ecx.span_err(span, "#[packet] may only be used with enums and structs");
+
+        None
     }
 }
 
@@ -366,12 +372,12 @@ impl<'a, 'b, 'c> GenContext<'a, 'b, 'c> {
 pub fn generate_packet(ecx: &mut ExtCtxt,
                    span: Span,
                    _meta_item: &ast::MetaItem,
-                   item: &ast::Item,
-                   mut push: &mut FnMut(P<ast::Item>)) {
+                   item: &Annotatable,
+                   push: &mut FnMut(Annotatable)) {
     if let Some(packets) = make_packets(ecx, span, item) {
         let mut cx = GenContext {
             ecx: ecx,
-            push: push
+            push: &mut |item| push(Annotatable::Item(item))
         };
 
         for packet in &packets {
