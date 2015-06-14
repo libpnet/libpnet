@@ -7,22 +7,6 @@ Windows Build Status: [![Windows Build Status](https://ci.appveyor.com/api/proje
 Discussion and support: [#libpnet on freenode](http://webchat.freenode.net/?channels=%23libpnet) /
 [#rust on irc.mozilla.org](http://chat.mibbit.com/?server=irc.mozilla.org&channel=%23rust).
 
-<table>
-<tr><td>
-<em>The `pnet::old_packet` module has been removed.To migrate code relying on `pnet::old_packet`:</em>
-<ul>
- <li>Remove *Packet trait imports - these traits have been removed
- <li>Replace Mutable*Header and *Header with Mutable*Packet and *Packet
-   respectively
- <li>Checksum functions are now free-standing functions, taking &*Packet.
- <li>If a *Packet is needed, but you have a Mutable*Packet, the `to_immutable()`
-   may be used
- <li>In places where the old traits were accepted, references are now required.
-</ul>
-Please file bugs for any unexpected or broken functionality.
-</td></tr>
-</table>
-
 `libpnet` provides a cross-platform API for low level networking using Rust.
 
 There are four key components:
