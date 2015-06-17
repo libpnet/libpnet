@@ -71,7 +71,7 @@ fn make_type(ty_str: String) -> Result<Type, String> {
     if let Some((size, endianness)) = parse_ty(&ty_str[..]) {
         Ok(Type::Primitive(ty_str, size, endianness))
     } else if ty_str.starts_with("Vec<") {
-        let ty = make_type(String::from_str(&ty_str[4..ty_str.len()-1]));
+        let ty = make_type(String::from(&ty_str[4..ty_str.len()-1]));
         match ty {
             Ok(ty) => Ok(Type::Vector(Box::new(ty))),
             Err(e) => Err(e),
