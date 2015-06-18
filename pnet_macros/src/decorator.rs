@@ -47,6 +47,7 @@ struct Field {
     span: Span,
     ty: Type,
     packet_length: Option<String>,
+    struct_length: Option<String>,
     is_payload: bool,
     construct_with: Option<Vec<Type>>
 }
@@ -96,6 +97,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
         };
         let mut is_payload = false;
         let mut packet_length = None;
+        let mut struct_length = None;
         let mut construct_with = Vec::new();
         let mut seen = Vec::new();
         for attr in field.node.attrs.iter() {
@@ -202,6 +204,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
 
         match ty {
             Type::Vector(_) => {
+                struct_length = Some(format!("_packet.{}.len()", field_name).to_string());
                 if !is_payload && packet_length.is_none() {
                     ecx.span_err(field.span,
                                  "variable length field must have #[length = \"\"] or #[length_fn = \"\"] attribute");
@@ -223,6 +226,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
             span: field.span,
             ty: ty,
             packet_length: packet_length,
+            struct_length: struct_length,
             is_payload: is_payload,
             construct_with: Some(construct_with),
         });
@@ -647,13 +651,14 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
     -> Option<(PayloadBounds, String)>
 {
     let mut bit_offset = 0;
-    let mut offset_fns = Vec::new();
+    let mut offset_fns_packet = Vec::new();
+    let mut offset_fns_struct = Vec::new();
     let mut accessors = "".to_string();
     let mut mutators = "".to_string();
     let mut error = false;
     let mut payload_bounds = None;
     for (idx, ref field) in packet.fields.iter().enumerate() {
-        let mut co = current_offset(bit_offset, &offset_fns[..]);
+        let mut co = current_offset(bit_offset, &offset_fns_packet[..]);
 
         if field.is_payload {
             let mut upper_bound_str = "".to_string();
@@ -690,12 +695,15 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
                 handle_vector_field(cx, &mut error, &field, &mut accessors, &mut mutators, inner_ty, &mut co)
             },
             Type::Misc(ref ty_str) => {
-                handle_misc_field(cx, &mut error, &field, &mut bit_offset, &offset_fns[..],
+                handle_misc_field(cx, &mut error, &field, &mut bit_offset, &offset_fns_packet[..],
                                   &mut co, &name, &mut mutators, &mut accessors, &ty_str)
             }
         }
         if field.packet_length.is_some() {
-            offset_fns.push(field.packet_length.as_ref().unwrap().clone());
+            offset_fns_packet.push(field.packet_length.as_ref().unwrap().clone());
+        }
+        if field.struct_length.is_some() {
+            offset_fns_struct.push(field.struct_length.as_ref().unwrap().clone());
         }
     }
 
@@ -725,6 +733,18 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
     } else {
         "".to_string()
     };
+
+    // If there are no variable length fields defined, then `_packet` is not used, hence
+    // the leading underscore
+    let packet_size_struct = format!(
+           "/// The size (in bytes) of a {base_name} instance when converted into
+            /// a byte-array
+            #[inline]
+            pub fn packet_size(_packet: &{base_name}) -> usize {{
+                {struct_size}
+            }}",
+            base_name = packet.base_name,
+            struct_size = current_offset(bit_offset, &offset_fns_struct[..]));
 
     let byte_size = if bit_offset % 8 == 0 {
         bit_offset / 8
@@ -759,6 +779,8 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
             {byte_size}
         }}
 
+        {packet_size_struct}
+
         {populate}
 
         {accessors}
@@ -770,10 +792,11 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
     byte_size = byte_size,
     accessors = accessors,
     mutators = if mutable { &mutators[..] } else { "" },
-    populate = populate
+    populate = populate,
+    packet_size_struct = packet_size_struct
         ));
 
-    Some((payload_bounds.unwrap(), current_offset(bit_offset, &offset_fns[..])))
+    Some((payload_bounds.unwrap(), current_offset(bit_offset, &offset_fns_packet[..])))
 }
 
 
