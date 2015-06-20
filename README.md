@@ -1,6 +1,6 @@
 # libpnet
 
-Linux ∪ OS X Build Status: [![Linux ∪ OS X Build Status](https://travis-ci.org/libpnet/libpnet.svg)](https://travis-ci.org/libpnet/libpnet)
+Linux ∪ OS X Build Status: [![Linux ∪ OS X Build Status](https://travis-ci.org/libpnet/libpnet.svg?branch=master)](https://travis-ci.org/libpnet/libpnet)
 
 Windows Build Status: [![Windows Build Status](https://ci.appveyor.com/api/projects/status/9gq1dekigj03u1ym?svg=true)](https://ci.appveyor.com/project/mrmonday/libpnet)
 
