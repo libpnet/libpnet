@@ -171,12 +171,9 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
                                         })
                                 }).collect();
                                 let tt_tokens = ecx.parse_tts(s.to_string());
-                                let (tokens_packet, tokens_struct) = parse_length_expr(
-                                    ecx, &tt_tokens, &field_names);
-                                let parsed_packet = tts_to_string(&tokens_packet[..]);
-                                let parsed_struct = tts_to_string(&tokens_struct[..]);
-                                packet_length = Some(parsed_packet);
-                                struct_length = Some(parsed_struct);
+                                let tokens_packet = parse_length_expr(ecx, &tt_tokens, &field_names);
+                                let parsed = tts_to_string(&tokens_packet[..]);
+                                packet_length = Some(parsed);
                             } else {
                                 ecx.span_err(field.span, "#[length] should be used as #[length = \"field_name and/or arithmetic expression\"]");
                                 return None;
@@ -207,6 +204,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
 
         match ty {
             Type::Vector(_) => {
+                struct_length = Some(format!("_packet.{}.len()", field_name).to_string());
                 if !is_payload && packet_length.is_none() {
                     ecx.span_err(field.span,
                                  "variable length field must have #[length = \"\"] or #[length_fn = \"\"] attribute");
@@ -296,22 +294,19 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &Annotatable) -> Option<Vec
     }
 }
 
-//// Return the processed length expression for the packet and the struct
+//// Return the processed length expression for the packet
 fn parse_length_expr(ecx: &mut ExtCtxt, tts: &Vec<TokenTree>, field_names: &Vec<String>)
-                     -> (Vec<TokenTree>, Vec<TokenTree>) {
+                     -> Vec<TokenTree> {
     let error_msg = "Only field names, constants, integers, basic arithmetic expressions \
                      (+ - * / %) and parentheses are allowed in the \"length\" attribute";
-    tts.iter().fold((Vec::new(), Vec::new()), |(mut acc_packet, mut acc_struct), tt_token| {
+    let tokens_packet = tts.iter().fold(Vec::new(), |mut acc_packet, tt_token| {
         match *tt_token {
             TtToken(span, token::Ident(name, token::IdentStyle::Plain)) => {
                 if token::get_ident(name).chars().any(|c| c.is_lowercase()) {
                     if field_names.contains(&name.to_string()) {
                         let mut modified_packet_tokens = ecx.parse_tts(
                             format!("self.get_{}() as usize", name).to_string());
-                        let mut modified_struct_tokens = ecx.parse_tts(
-                            format!("_packet.{} as usize", name).to_string());
                         acc_packet.append(&mut modified_packet_tokens);
-                        acc_struct.append(&mut modified_struct_tokens);
                     } else {
                         ecx.span_err(
                             span,
@@ -320,25 +315,21 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &Vec<TokenTree>, field_names: &Vec<
                 }
                 // Constants are only recongized if they are all uppercase
                 else {
-                    let modified_tokens = ecx.parse_tts(
+                    let mut modified_packet_tokens = ecx.parse_tts(
                         format!("{} as usize", name).to_string());
-                    acc_packet.append(&mut modified_tokens.clone());
-                    acc_struct.append(&mut modified_tokens.clone());
+                    acc_packet.append(&mut modified_packet_tokens);
                 }
             },
             TtToken(_, token::Ident(_, token::IdentStyle::ModName)) => {
                 acc_packet.push(tt_token.clone());
-                acc_struct.push(tt_token.clone());
             },
             TtToken(_, token::ModSep) => {
                 acc_packet.push(tt_token.clone());
-                acc_struct.push(tt_token.clone());
             },
             TtToken(span, token::BinOp(binop)) => {
                 match binop {
                     token::Plus | token::Minus | token::Star | token::Slash | token::Percent => {
                         acc_packet.push(tt_token.clone());
-                        acc_struct.push(tt_token.clone());
                     },
                     _ => {
                         ecx.span_err(span, error_msg);
@@ -347,34 +338,27 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &Vec<TokenTree>, field_names: &Vec<
             },
             TtToken(_, token::Literal(token::Integer(_), None)) => {
                 acc_packet.push(tt_token.clone());
-                acc_struct.push(tt_token.clone());
             },
             TtToken(span, _) => {
                 ecx.span_err(span, error_msg);
             },
             TtDelimited(span, ref delimited) => {
-                let (tts_packet, tts_struct) = parse_length_expr(ecx, &delimited.tts, &field_names);
-                let tt_delimited_packet = Delimited {
+                let tts = parse_length_expr(ecx, &delimited.tts, &field_names);
+                let tt_delimited = Delimited {
                     delim: delimited.delim,
                     open_span: delimited.open_span,
-                    tts: tts_packet,
+                    tts: tts,
                     close_span: delimited.close_span
                 };
-                let tt_delimited_struct = Delimited {
-                    delim: delimited.delim,
-                    open_span: delimited.open_span,
-                    tts: tts_struct,
-                    close_span: delimited.close_span
-                };
-                acc_packet.push(TtDelimited(span, Rc::new(tt_delimited_packet)));
-                acc_struct.push(TtDelimited(span, Rc::new(tt_delimited_struct)));
+                acc_packet.push(TtDelimited(span, Rc::new(tt_delimited)));
             },
             TtSequence(span, _) => {
                 ecx.span_err(span, error_msg);
             }
         };
-        (acc_packet, acc_struct)
-    })
+        acc_packet
+    });
+    tokens_packet
 }
 
 
@@ -750,22 +734,17 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
         "".to_string()
     };
 
-    // Calculating the size based on a struct with variable length fields is not possible if
-    // the lengths are defined with a length function. It's only possible with length expressions
-    let packet_size_struct = if offset_fns_struct.len() == offset_fns_packet.len() {
-        // If there are no variable length fields defined, then `_packet` is not used, hence
-        // the leading underscore
-        format!("/// The size (in bytes) of a {base_name} instance when converted into
+    // If there are no variable length fields defined, then `_packet` is not used, hence
+    // the leading underscore
+    let packet_size_struct = format!(
+           "/// The size (in bytes) of a {base_name} instance when converted into
             /// a byte-array
             #[inline]
             pub fn packet_size(_packet: &{base_name}) -> usize {{
                 {struct_size}
             }}",
             base_name = packet.base_name,
-            struct_size = current_offset(bit_offset, &offset_fns_struct[..]))
-    } else {
-        "".to_string()
-    };
+            struct_size = current_offset(bit_offset, &offset_fns_struct[..]));
 
     let byte_size = if bit_offset % 8 == 0 {
         bit_offset / 8
@@ -821,8 +800,7 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
 }
 
 
-fn generate_packet_impls(cx: &mut GenContext, packet: &Packet) -> Option<(PayloadBounds, String)>
-{
+fn generate_packet_impls(cx: &mut GenContext, packet: &Packet) -> Option<(PayloadBounds, String)> {
     let mut ret = None;
     for (mutable, name) in vec![(false, packet.packet_name()),
                                 (true, packet.packet_name_mut())] {
@@ -1131,80 +1109,64 @@ mod tests {
     use syntax::parse::ParseSess;
     use syntax::print::pprust::tts_to_string;
 
-    fn assert_parse_length_expr(expr: &str, field_names: &[&str], expected_packet: &str,
-                                expected_struct: &str) {
+    fn assert_parse_length_expr(expr: &str, field_names: &[&str], expected: &str) {
         let sess = ParseSess::new();
         let mut ecx = ExtCtxt::new(&sess,
                                    CrateConfig::default(),
                                    ExpansionConfig::default("parse_length_expr".to_string()));
         let expr_tokens = ecx.parse_tts(expr.to_string());
         let field_names_vec = field_names.iter().map(|field_name| field_name.to_string()).collect();
-        let (parsed_packet, parsed_struct) = super::parse_length_expr(&mut ecx, &expr_tokens,
-                                                                     &field_names_vec);
-        let expected_packet_tokens = ecx.parse_tts(expected_packet.to_string());
-        let expected_struct_tokens = ecx.parse_tts(expected_struct.to_string());
-        assert_eq!(tts_to_string(&parsed_packet), tts_to_string(&expected_packet_tokens));
-        assert_eq!(tts_to_string(&parsed_struct), tts_to_string(&expected_struct_tokens));
+        let parsed = super::parse_length_expr(&mut ecx, &expr_tokens, &field_names_vec);
+        let expected_tokens = ecx.parse_tts(expected.to_string());
+        assert_eq!(tts_to_string(&parsed), tts_to_string(&expected_tokens));
     }
 
     #[test]
     fn test_parse_expr_key() {
-        assert_parse_length_expr("key", &["key"], "self.get_key() as usize", "_packet.key as usize");
+        assert_parse_length_expr("key", &["key"], "self.get_key() as usize");
         assert_parse_length_expr("another_key", &["another_key"],
-                                 "self.get_another_key() as usize",
-                                 "_packet.another_key as usize");
+                                 "self.get_another_key() as usize");
         assert_parse_length_expr("get_something", &["get_something"],
-                                 "self.get_get_something() as usize",
-                                 "_packet.get_something as usize");
+                                 "self.get_get_something() as usize");
     }
 
     #[test]
     fn test_parse_expr_numbers() {
-        assert_parse_length_expr("3", &[], "3", "3");
-        assert_parse_length_expr("1 + 2", &[], "1 + 2", "1 + 2");
-        assert_parse_length_expr("3 - 4", &[], "3 - 4", "3 - 4");
-        assert_parse_length_expr("5 * 6", &[], "5 * 6", "5 * 6");
-        assert_parse_length_expr("7 / 8", &[], "7 / 8", "7 / 8");
-        assert_parse_length_expr("9 % 10", &[], "9 % 10", "9 % 10");
-        assert_parse_length_expr("5 * 4 + 1 % 2 - 6 / 9", &[], "5 * 4 + 1 % 2 - 6 / 9",
-                                 "5 * 4 + 1 % 2 - 6 / 9");
-        assert_parse_length_expr("5*4+1%2-6/9", &[], "5*4+1%2-6/9", "5*4+1%2-6/9");
-        assert_parse_length_expr("5* 4+1%   2-6/ 9", &[], "5* 4+1%   2-6/ 9", "5* 4+1%   2-6/ 9");
+        assert_parse_length_expr("3", &[], "3");
+        assert_parse_length_expr("1 + 2", &[], "1 + 2");
+        assert_parse_length_expr("3 - 4", &[], "3 - 4");
+        assert_parse_length_expr("5 * 6", &[], "5 * 6");
+        assert_parse_length_expr("7 / 8", &[], "7 / 8");
+        assert_parse_length_expr("9 % 10", &[], "9 % 10");
+        assert_parse_length_expr("5 * 4 + 1 % 2 - 6 / 9", &[], "5 * 4 + 1 % 2 - 6 / 9");
+        assert_parse_length_expr("5*4+1%2-6/9", &[], "5*4+1%2-6/9");
+        assert_parse_length_expr("5* 4+1%   2-6/ 9", &[], "5* 4+1%   2-6/ 9");
     }
 
     #[test]
     fn test_parse_expr_key_and_numbers() {
-        assert_parse_length_expr("key + 4", &["key"], "self.get_key() as usize + 4",
-                                 "_packet.key as usize + 4");
+        assert_parse_length_expr("key + 4", &["key"], "self.get_key() as usize + 4");
         assert_parse_length_expr("another_key - 7 + 8 * 2 / 1 % 2", &["another_key"],
-                                 "self.get_another_key() as usize - 7 + 8 * 2 / 1 % 2",
-                                 "_packet.another_key as usize - 7 + 8 * 2 / 1 % 2");
-        assert_parse_length_expr("2 * key - 4", &["key"], "2 * self.get_key() as usize - 4",
-                                 "2 * _packet.key as usize - 4");
+                                 "self.get_another_key() as usize - 7 + 8 * 2 / 1 % 2");
+        assert_parse_length_expr("2 * key - 4", &["key"], "2 * self.get_key() as usize - 4");
     }
 
     #[test]
     fn test_parse_expr_parentheses() {
-        assert_parse_length_expr("()", &[], "()", "()");
-        assert_parse_length_expr("(key)", &["key"], "(self.get_key() as usize)",
-                                 "(_packet.key as usize)");
-        assert_parse_length_expr("(key + 5)", &["key"], "(self.get_key() as usize + 5)",
-                                 "(_packet.key as usize + 5)");
+        assert_parse_length_expr("()", &[], "()");
+        assert_parse_length_expr("(key)", &["key"], "(self.get_key() as usize)");
+        assert_parse_length_expr("(key + 5)", &["key"], "(self.get_key() as usize + 5)");
         assert_parse_length_expr(
             "key + 5 * (10 - another_key)", &["key", "another_key"],
-            "self.get_key() as usize + 5 * (10 - self.get_another_key() as usize)",
-            "_packet.key as usize + 5 * (10 - _packet.another_key as usize)");
-        assert_parse_length_expr("4 + 2 / (3 * (7 - 5))", &[], "4 + 2 / (3 * (7 - 5))",
-                                 "4 + 2 / (3 * (7 - 5))");
+            "self.get_key() as usize + 5 * (10 - self.get_another_key() as usize)");
+        assert_parse_length_expr("4 + 2 / (3 * (7 - 5))", &[], "4 + 2 / (3 * (7 - 5))");
     }
 
     #[test]
     fn test_parse_expr_constants() {
-        assert_parse_length_expr("CONSTANT", &[], "CONSTANT as usize", "CONSTANT as usize");
-        assert_parse_length_expr("std::u32::MIN", &[], "std::u32::MIN as usize",
-                                 "std::u32::MIN as usize");
+        assert_parse_length_expr("CONSTANT", &[], "CONSTANT as usize");
+        assert_parse_length_expr("std::u32::MIN", &[], "std::u32::MIN as usize");
         assert_parse_length_expr("key * (4 + std::u32::MIN)", &["key"],
-                                 "self.get_key() as usize * (4 + std::u32::MIN as usize)",
-                                 "_packet.key as usize * (4 + std::u32::MIN as usize)");
+                                 "self.get_key() as usize * (4 + std::u32::MIN as usize)");
     }
 }

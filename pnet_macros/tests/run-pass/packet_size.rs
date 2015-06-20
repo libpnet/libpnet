@@ -27,6 +27,14 @@ pub struct AnotherKey {
     payload: Vec<u8>
 }
 
+#[packet]
+pub struct NoLength {
+    banana: u8,
+    #[payload]
+    payload: Vec<u8>
+}
+
+
 fn main() {
     let key_payload = vec![1, 2, 3, 4];
     let key = Key {
@@ -35,11 +43,16 @@ fn main() {
     };
     assert_eq!(KeyPacket::packet_size(&key), 5);
 
-
     let another_key_payload = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     let another_key = AnotherKey {
         banana: (another_key_payload.len() - 7) as u8,
         payload: another_key_payload
     };
     assert_eq!(AnotherKeyPacket::packet_size(&another_key), 11);
+
+    let no_length = NoLength {
+        banana: 123,
+        payload: vec![1, 2, 3, 4, 5, 6]
+    };
+    assert_eq!(NoLengthPacket::packet_size(&no_length), 7);
 }
