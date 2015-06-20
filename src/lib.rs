@@ -102,9 +102,11 @@
 #![allow(plugin_as_library)]
 
 // FIXME Remove this once the std lib has stabilised
-#![feature(convert, core, collections, custom_attribute, ip_addr, libc, plugin, slice_patterns)]
+#![feature(convert, custom_attribute, ip_addr, libc, plugin, slice_bytes,
+           slice_patterns, vec_push_all)]
 #![plugin(pnet_macros)]
 #![cfg_attr(test, feature(str_char, scoped))]
+#![cfg_attr(any(target_os = "freebsd", target_os = "macos"), feature(clone_from_slice))]
 
 extern crate libc;
 extern crate pnet_macros;
