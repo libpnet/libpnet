@@ -503,12 +503,11 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                     #[allow(trivial_numeric_casts)]
                                     pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
                                         let current_offset = {co};
-                                        let len = {packet_length};
+                                        let end = current_offset + {packet_length};
 
-                                        let packet = &self.packet[current_offset..len];
+                                        let packet = &self.packet[current_offset..end];
                                         let mut vec = Vec::with_capacity(packet.len());
                                         vec.push_all(packet);
-
                                         vec
                                     }}
                                     ",
