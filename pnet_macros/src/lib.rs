@@ -137,7 +137,7 @@
 //!        which must return a tuple of the primitive types specified in the parameters to the
 //!        `#[construct_with(...)]` attribute, and in the `new` method.
 
-#![warn(missing_docs)]
+#![deny(missing_docs)]
 
 #![feature(append, fmt_radix, plugin_registrar, quote, rustc_private)]
 
