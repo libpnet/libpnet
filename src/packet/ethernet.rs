@@ -60,10 +60,15 @@ fn ethernet_header_test() {
 pub mod EtherTypes {
     use packet::ethernet::EtherType;
 
+    /// Internet Protocol version 4 (IPv4) [RFC7042]
     pub const Ipv4: EtherType      = EtherType(0x0800);
+    /// Address Resolution Protocol (ARP) [RFC7042]
     pub const Arp: EtherType       = EtherType(0x0806);
+    /// Wake on Lan
     pub const WakeOnLan: EtherType = EtherType(0x0842);
+    /// Reverse Address Resolution Protocol (RARP) [RFC903]
     pub const Rarp: EtherType      = EtherType(0x8035);
+    /// Internet Protocol version 6 (IPv6) [RFC7042]
     pub const Ipv6: EtherType      = EtherType(0x86DD);
 }
 
