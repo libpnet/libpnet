@@ -22,6 +22,12 @@ pub struct Tcp {
     destination: u16be,
     sequence: u32be,
     acknowledgement: u32be,
+    data_offset_reserved: u8, // data offset field & reserved field
+    control_bits: u8, // the first 5 bits are used; the rest is reserved
+    window: u16be,
+    checksum: u16be,
+    urgent_pointer: u16be,
+    simple_no_options: u8, // XXX replace with something more complex later
     #[payload]
     payload: Vec<u8>
 }
@@ -33,7 +39,7 @@ fn tcp_header_ipv4_test() {
     use pnet::packet::ipv4::MutableIpv4Packet;
 
     const IPV4_HEADER_LEN: usize = 20;
-    const TCP_HEADER_LEN: usize = 12;
+    const TCP_HEADER_LEN: usize = 21;
     const PAYLOAD_LEN: usize = 4;
 
     let mut packet = [0u8; IPV4_HEADER_LEN + TCP_HEADER_LEN + PAYLOAD_LEN];
@@ -67,6 +73,9 @@ fn tcp_header_ipv4_test() {
 
         tcp_header.set_acknowledgement(7799);
         assert_eq!(tcp_header.get_acknowledgement(), 7799);
+
+        tcp_header.set_data_offset_reserved(0x80);
+        assert_eq!(tcp_header.get_data_offset_reserved(), 0x80);
     }
 
     let ref_packet = [0x30, 0x39,  // source
@@ -74,7 +83,13 @@ fn tcp_header_ipv4_test() {
                       0x00, 0x00,  // sequence
                       0x0d, 0x80,
                       0x00, 0x00,  // acknowledgement
-                      0x1e, 0x77];
+                      0x1e, 0x77,
+                      0x80,        // header length + reserved
+                      0x00,        // control bits
+                      0x00, 0x00,  // window
+                      0x00, 0x00,  // checksum
+                      0x00, 0x00,  // urgent pointer
+                      0x00];       // simple no tcp header options
 
     assert_eq!(&ref_packet[..], &packet[IPV4_HEADER_LEN .. IPV4_HEADER_LEN + TCP_HEADER_LEN]);
 }
@@ -85,7 +100,7 @@ fn tcp_header_ipv6_test() {
     use packet::ipv6::{MutableIpv6Packet};
 
     const IPV6_HEADER_LEN: usize = 40;
-    const TCP_HEADER_LEN: usize = 12;
+    const TCP_HEADER_LEN: usize = 21;
     const PAYLOAD_LEN: usize = 4;
 
     let mut packet = [0u8; IPV6_HEADER_LEN + TCP_HEADER_LEN + PAYLOAD_LEN];
@@ -119,6 +134,9 @@ fn tcp_header_ipv6_test() {
 
         tcp_header.set_acknowledgement(7799);
         assert_eq!(tcp_header.get_acknowledgement(), 7799);
+
+        tcp_header.set_data_offset_reserved(0x80);
+        assert_eq!(tcp_header.get_data_offset_reserved(), 0x80);
     }
 
     let ref_packet = [0x30, 0x39,  // source
@@ -126,7 +144,13 @@ fn tcp_header_ipv6_test() {
                       0x00, 0x00,  // sequence
                       0x0d, 0x80,
                       0x00, 0x00,  // acknowledgement
-                      0x1e, 0x77];
+                      0x1e, 0x77,
+                      0x80,        // header length + reserved
+                      0x00,        // control bits
+                      0x00, 0x00,  // window
+                      0x00, 0x00,  // checksum
+                      0x00, 0x00,  // urgent pointer
+                      0x00];       // simple no tcp header options
 
     assert_eq!(&ref_packet[..], &packet[IPV6_HEADER_LEN .. IPV6_HEADER_LEN + TCP_HEADER_LEN]);
 }
