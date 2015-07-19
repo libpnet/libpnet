@@ -20,6 +20,8 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 pub struct Tcp {
     source: u16be,
     destination: u16be,
+    sequence: u32be,
+    acknowledgement: u32be,
     #[payload]
     payload: Vec<u8>
 }
@@ -30,7 +32,12 @@ fn tcp_header_ipv4_test() {
     use pnet::packet::ip::IpNextHeaderProtocols;
     use pnet::packet::ipv4::MutableIpv4Packet;
 
-    let mut packet = [0u8; 20 + 8 + 4];
+    const IPV4_HEADER_LEN: usize = 20;
+    const TCP_HEADER_LEN: usize = 12;
+    const PAYLOAD_LEN: usize = 4;
+
+    let mut packet = [0u8; IPV4_HEADER_LEN + TCP_HEADER_LEN + PAYLOAD_LEN];
+
     let ipv4_source = Ipv4Addr::new(192, 168, 0, 1);
     let ipv4_destination = Ipv4Addr::new(192, 168, 0, 199);
     let next_level_protocol = IpNextHeaderProtocols::Tcp;
@@ -42,10 +49,10 @@ fn tcp_header_ipv4_test() {
     }
 
     // Set data
-    packet[20 + 8 + 0] = 't' as u8;
-    packet[20 + 8 + 1] = 'e' as u8;
-    packet[20 + 8 + 2] = 's' as u8;
-    packet[20 + 8 + 3] = 't' as u8;
+    packet[IPV4_HEADER_LEN + TCP_HEADER_LEN + 0] = 't' as u8;
+    packet[IPV4_HEADER_LEN + TCP_HEADER_LEN + 1] = 'e' as u8;
+    packet[IPV4_HEADER_LEN + TCP_HEADER_LEN + 2] = 's' as u8;
+    packet[IPV4_HEADER_LEN + TCP_HEADER_LEN + 3] = 't' as u8;
 
     {
         let mut tcp_header = MutableTcpPacket::new(&mut packet[20..]).unwrap();
@@ -55,11 +62,21 @@ fn tcp_header_ipv4_test() {
         tcp_header.set_destination(54321);
         assert_eq!(tcp_header.get_destination(), 54321);
 
+        tcp_header.set_sequence(3456);
+        assert_eq!(tcp_header.get_sequence(), 3456);
+
+        tcp_header.set_acknowledgement(7799);
+        assert_eq!(tcp_header.get_acknowledgement(), 7799);
     }
 
-    let ref_packet = [0x30, 0x39, /* source */
-                     0xd4, 0x31];  /* destination */
-    assert_eq!(&ref_packet[..], &packet[20 .. 24]);
+    let ref_packet = [0x30, 0x39,  // source
+                      0xd4, 0x31,  // destination
+                      0x00, 0x00,  // sequence
+                      0x0d, 0x80,
+                      0x00, 0x00,  // acknowledgement
+                      0x1e, 0x77];
+
+    assert_eq!(&ref_packet[..], &packet[IPV4_HEADER_LEN .. IPV4_HEADER_LEN + TCP_HEADER_LEN]);
 }
 
 #[test]
@@ -67,7 +84,12 @@ fn tcp_header_ipv6_test() {
     use packet::ip::{IpNextHeaderProtocols};
     use packet::ipv6::{MutableIpv6Packet};
 
-    let mut packet = [0u8; 40 + 8 + 4];
+    const IPV6_HEADER_LEN: usize = 40;
+    const TCP_HEADER_LEN: usize = 12;
+    const PAYLOAD_LEN: usize = 4;
+
+    let mut packet = [0u8; IPV6_HEADER_LEN + TCP_HEADER_LEN + PAYLOAD_LEN];
+
     let next_header = IpNextHeaderProtocols::Tcp;
     let ipv6_source = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
     let ipv6_destination = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
@@ -79,21 +101,32 @@ fn tcp_header_ipv6_test() {
     }
 
     // Set data
-    packet[40 + 8 + 0] = 't' as u8;
-    packet[40 + 8 + 1] = 'e' as u8;
-    packet[40 + 8 + 2] = 's' as u8;
-    packet[40 + 8 + 3] = 't' as u8;
+    packet[IPV6_HEADER_LEN + TCP_HEADER_LEN + 0] = 't' as u8;
+    packet[IPV6_HEADER_LEN + TCP_HEADER_LEN + 1] = 'e' as u8;
+    packet[IPV6_HEADER_LEN + TCP_HEADER_LEN + 2] = 's' as u8;
+    packet[IPV6_HEADER_LEN + TCP_HEADER_LEN + 3] = 't' as u8;
 
     {
-        let mut tcp_header = MutableTcpPacket::new(&mut packet[40..]).unwrap();
+        let mut tcp_header = MutableTcpPacket::new(&mut packet[IPV6_HEADER_LEN..]).unwrap();
         tcp_header.set_source(12345);
         assert_eq!(tcp_header.get_source(), 12345);
 
         tcp_header.set_destination(54321);
         assert_eq!(tcp_header.get_destination(), 54321);
+
+        tcp_header.set_sequence(3456);
+        assert_eq!(tcp_header.get_sequence(), 3456);
+
+        tcp_header.set_acknowledgement(7799);
+        assert_eq!(tcp_header.get_acknowledgement(), 7799);
     }
 
-    let ref_packet = [0x30, 0x39,  /* source */
-                     0xd4, 0x31];  /* destination */
-    assert_eq!(&ref_packet[..], &packet[40 .. 44]);
+    let ref_packet = [0x30, 0x39,  // source
+                      0xd4, 0x31,  // destination
+                      0x00, 0x00,  // sequence
+                      0x0d, 0x80,
+                      0x00, 0x00,  // acknowledgement
+                      0x1e, 0x77];
+
+    assert_eq!(&ref_packet[..], &packet[IPV6_HEADER_LEN .. IPV6_HEADER_LEN + TCP_HEADER_LEN]);
 }
