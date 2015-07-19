@@ -21,61 +21,8 @@ pub struct Tcp {
     source: u16be,
     destination: u16be,
     length: u16be,
-    checksum: u16be,
     #[payload]
     payload: Vec<u8>
-}
-
-/// Calculate the checksum for a packet built on IPv4
-pub fn ipv4_checksum<'a>(packet: &TcpPacket<'a>,
-                         ipv4_source: Ipv4Addr,
-                         ipv4_destination: Ipv4Addr,
-                         next_level_protocol: IpNextHeaderProtocol)
--> u16be {
-    let IpNextHeaderProtocol(next_level_protocol) = next_level_protocol;
-    let mut sum = 0u32;
-
-    // Checksum pseudo-header
-    // IPv4 source
-    match ipv4_source.octets() {
-        [a, b, c, d] => {
-            sum = sum + ((a as u32) << 8 | b as u32);
-            sum = sum + ((c as u32) << 8 | d as u32);
-        }
-    }
-
-    // IPv4 destination
-    match ipv4_destination.octets() {
-        [a, b, c, d] => {
-            sum = sum + ((a as u32) << 8 | b as u32);
-            sum = sum + ((c as u32) << 8 | d as u32);
-        }
-    }
-
-    // IPv4 Next level protocol
-    sum = sum + next_level_protocol as u32;
-
-    // TCP Length
-    sum = sum + ((packet.packet()[4] as u32) << 8 |
-                  packet.packet()[5] as u32);
-
-    // Checksum TCP header/packet
-    let mut i = 0;
-    let len = packet.get_length() as usize;
-    while i < len && i + 1 < packet.packet().len() {
-        let word = (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        sum = sum + word;
-        i = i + 2;
-    }
-    // If the length is odd, make sure to checksum the final byte
-    if len & 1 != 0 && len <= packet.packet().len() {
-        sum = sum + ((packet.packet()[len - 1] as u32) << 8);
-    }
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
-
-    return !sum as u16;
 }
 
 
@@ -111,86 +58,13 @@ fn tcp_header_ipv4_test() {
 
         tcp_header.set_length(8 + 4);
         assert_eq!(tcp_header.get_length(), 8 + 4);
-
-        let checksum = ipv4_checksum(&tcp_header.to_immutable(),
-                                     ipv4_source,
-                                     ipv4_destination,
-                                     next_level_protocol);
-        tcp_header.set_checksum(checksum);
-        assert_eq!(tcp_header.get_checksum(), 0x9183);
     }
 
     let ref_packet = [0x30, 0x39, /* source */
-                     0xd4, 0x31, /* destination */
-                     0x00, 0x0c, /* length */
-                     0x91, 0x83  /* checksum*/];
-    assert_eq!(&ref_packet[..], &packet[20 .. 28]);
+                     0xd4, 0x31,  /* destination */
+                     0x00, 0x0c]; /* length */
+    assert_eq!(&ref_packet[..], &packet[20 .. 26]);
 }
-
-
-/// Calculate the checksum for a packet built on IPv6
-pub fn ipv6_checksum<'a>(packet: &TcpPacket<'a>,
-                         ipv6_source: Ipv6Addr,
-                         ipv6_destination: Ipv6Addr,
-                         next_header: IpNextHeaderProtocol) -> u16be {
-    let IpNextHeaderProtocol(next_header) = next_header;
-    let mut sum = 0u32;
-
-    // Checksum pseudo-header
-    // IPv6 source
-    match ipv6_source.segments() {
-        [a, b, c, d, e, f, g, h] => {
-            sum = sum + a as u32;
-            sum = sum + b as u32;
-            sum = sum + c as u32;
-            sum = sum + d as u32;
-            sum = sum + e as u32;
-            sum = sum + f as u32;
-            sum = sum + g as u32;
-            sum = sum + h as u32;
-        }
-    }
-
-    // IPv6 destination
-    match ipv6_destination.segments() {
-        [a, b, c, d, e, f, g, h] => {
-            sum = sum + a as u32;
-            sum = sum + b as u32;
-            sum = sum + c as u32;
-            sum = sum + d as u32;
-            sum = sum + e as u32;
-            sum = sum + f as u32;
-            sum = sum + g as u32;
-            sum = sum + h as u32;
-        }
-    }
-
-    // IPv6 Next header
-    sum = sum + next_header as u32;
-
-    // TCPP Length
-    sum = sum + packet.get_length() as u32;
-
-    // Checksum TCP header/packet
-    let mut i = 0;
-    let len = packet.get_length() as usize;
-    while i < len && i + 1 < packet.packet().len() {
-        let word = (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        sum = sum + word;
-        i = i + 2;
-    }
-    // If the length is odd, make sure to checksum the final byte
-    if len & 1 != 0 && len <= packet.packet().len() {
-        sum = sum + (packet.packet()[len - 1] as u32) << 8;
-    }
-
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
-
-    return !sum as u16;
-}
-
 
 #[test]
 fn tcp_header_ipv6_test() {
@@ -224,18 +98,10 @@ fn tcp_header_ipv6_test() {
 
         tcp_header.set_length(8 + 4);
         assert_eq!(tcp_header.get_length(), 8 + 4);
-
-        let checksum = ipv6_checksum(&tcp_header.to_immutable(),
-                                     ipv6_source,
-                                     ipv6_destination,
-                                     next_header);
-        tcp_header.set_checksum(checksum);
-        assert_eq!(tcp_header.get_checksum(), 0x139b);
     }
 
     let ref_packet = [0x30, 0x39, /* source */
-                     0xd4, 0x31, /* destination */
-                     0x00, 0x0c, /* length */
-                     0x13, 0x9b  /* checksum*/];
-    assert_eq!(&ref_packet[..], &packet[40 .. 48]);
+                     0xd4, 0x31,  /* destination */
+                     0x00, 0x0c]; /* length */
+    assert_eq!(&ref_packet[..], &packet[40 .. 46]);
 }
