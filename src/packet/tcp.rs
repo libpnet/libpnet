@@ -20,7 +20,6 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 pub struct Tcp {
     source: u16be,
     destination: u16be,
-    length: u16be,
     #[payload]
     payload: Vec<u8>
 }
@@ -56,14 +55,11 @@ fn tcp_header_ipv4_test() {
         tcp_header.set_destination(54321);
         assert_eq!(tcp_header.get_destination(), 54321);
 
-        tcp_header.set_length(8 + 4);
-        assert_eq!(tcp_header.get_length(), 8 + 4);
     }
 
     let ref_packet = [0x30, 0x39, /* source */
-                     0xd4, 0x31,  /* destination */
-                     0x00, 0x0c]; /* length */
-    assert_eq!(&ref_packet[..], &packet[20 .. 26]);
+                     0xd4, 0x31];  /* destination */
+    assert_eq!(&ref_packet[..], &packet[20 .. 24]);
 }
 
 #[test]
@@ -95,13 +91,9 @@ fn tcp_header_ipv6_test() {
 
         tcp_header.set_destination(54321);
         assert_eq!(tcp_header.get_destination(), 54321);
-
-        tcp_header.set_length(8 + 4);
-        assert_eq!(tcp_header.get_length(), 8 + 4);
     }
 
-    let ref_packet = [0x30, 0x39, /* source */
-                     0xd4, 0x31,  /* destination */
-                     0x00, 0x0c]; /* length */
-    assert_eq!(&ref_packet[..], &packet[40 .. 46]);
+    let ref_packet = [0x30, 0x39,  /* source */
+                     0xd4, 0x31];  /* destination */
+    assert_eq!(&ref_packet[..], &packet[40 .. 44]);
 }
