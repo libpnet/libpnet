@@ -76,6 +76,18 @@ fn tcp_header_ipv4_test() {
 
         tcp_header.set_data_offset_reserved(0x80);
         assert_eq!(tcp_header.get_data_offset_reserved(), 0x80);
+
+        tcp_header.set_control_bits(0x03);
+        assert_eq!(tcp_header.get_control_bits(), 0x03);
+
+        tcp_header.set_window(0x4566);
+        assert_eq!(tcp_header.get_window(), 0x4566);
+
+        tcp_header.set_checksum(0x6699);
+        assert_eq!(tcp_header.get_checksum(), 0x6699);
+
+        tcp_header.set_urgent_pointer(0x1122);
+        assert_eq!(tcp_header.get_urgent_pointer(), 0x1122);
     }
 
     let ref_packet = [0x30, 0x39,  // source
@@ -85,17 +97,11 @@ fn tcp_header_ipv4_test() {
                       0x00, 0x00,  // acknowledgement
                       0x1e, 0x77,
                       0x80,        // header length + reserved
-                      0x00,        // control bits
-                      0x00, 0x00,  // window
-                      0x00, 0x00,  // checksum
-                      0x00, 0x00  // urgent pointer
+                      0x03,        // control bits
+                      0x45, 0x66,  // window
+                      0x66, 0x99,  // checksum
+                      0x11, 0x22   // urgent pointer
                       ];
-                      //0x01, 0x01,  // simple no tcp header options
-                      //0x01, 0x00];
-
-    //[48, 57, 212, 49, 0, 0, 13, 128, 0, 0, 30, 119, 128, 0, 0, 0, 0, 0, 0, 0]`, right: `
-    //[48, 57, 212, 49, 0, 0, 13, 128, 0, 0, 30, 119, 128, 0, 0, 0, 0, 0, 0, 0, 0]
-
     assert_eq!(&ref_packet[..], &packet[IPV4_HEADER_LEN .. IPV4_HEADER_LEN + TCP_HEADER_LEN]);
 }
 
@@ -142,6 +148,18 @@ fn tcp_header_ipv6_test() {
 
         tcp_header.set_data_offset_reserved(0x80);
         assert_eq!(tcp_header.get_data_offset_reserved(), 0x80);
+
+        tcp_header.set_control_bits(0x03);
+        assert_eq!(tcp_header.get_control_bits(), 0x03);
+
+        tcp_header.set_window(0x4566);
+        assert_eq!(tcp_header.get_window(), 0x4566);
+
+        tcp_header.set_checksum(0x6699);
+        assert_eq!(tcp_header.get_checksum(), 0x6699);
+
+        tcp_header.set_urgent_pointer(0x1122);
+        assert_eq!(tcp_header.get_urgent_pointer(), 0x1122);
     }
 
     let ref_packet = [0x30, 0x39,  // source
@@ -151,13 +169,10 @@ fn tcp_header_ipv6_test() {
                       0x00, 0x00,  // acknowledgement
                       0x1e, 0x77,
                       0x80,        // header length + reserved
-                      0x00,        // control bits
-                      0x00, 0x00,  // window
-                      0x00, 0x00,  // checksum
-                      0x00, 0x00  // urgent pointer
+                      0x03,        // control bits
+                      0x45, 0x66,  // window
+                      0x66, 0x99,  // checksum
+                      0x11, 0x22  // urgent pointer
                       ];
-                      //0x01, 0x01,  // simple no tcp header options
-                      //0x01, 0x00];
-
     assert_eq!(&ref_packet[..], &packet[IPV6_HEADER_LEN .. IPV6_HEADER_LEN + TCP_HEADER_LEN]);
 }
