@@ -27,7 +27,7 @@ pub struct Tcp {
     window: u16be,
     checksum: u16be,
     urgent_pointer: u16be,
-    simple_no_options: u8, // XXX replace with something more complex later
+    // 16+16+32+32+8+8+16+16+16 == 20
     #[payload]
     payload: Vec<u8>
 }
@@ -39,7 +39,7 @@ fn tcp_header_ipv4_test() {
     use pnet::packet::ipv4::MutableIpv4Packet;
 
     const IPV4_HEADER_LEN: usize = 20;
-    const TCP_HEADER_LEN: usize = 21;
+    const TCP_HEADER_LEN: usize = 20;
     const PAYLOAD_LEN: usize = 4;
 
     let mut packet = [0u8; IPV4_HEADER_LEN + TCP_HEADER_LEN + PAYLOAD_LEN];
@@ -88,8 +88,13 @@ fn tcp_header_ipv4_test() {
                       0x00,        // control bits
                       0x00, 0x00,  // window
                       0x00, 0x00,  // checksum
-                      0x00, 0x00,  // urgent pointer
-                      0x00];       // simple no tcp header options
+                      0x00, 0x00  // urgent pointer
+                      ];
+                      //0x01, 0x01,  // simple no tcp header options
+                      //0x01, 0x00];
+
+    //[48, 57, 212, 49, 0, 0, 13, 128, 0, 0, 30, 119, 128, 0, 0, 0, 0, 0, 0, 0]`, right: `
+    //[48, 57, 212, 49, 0, 0, 13, 128, 0, 0, 30, 119, 128, 0, 0, 0, 0, 0, 0, 0, 0]
 
     assert_eq!(&ref_packet[..], &packet[IPV4_HEADER_LEN .. IPV4_HEADER_LEN + TCP_HEADER_LEN]);
 }
@@ -100,7 +105,7 @@ fn tcp_header_ipv6_test() {
     use packet::ipv6::{MutableIpv6Packet};
 
     const IPV6_HEADER_LEN: usize = 40;
-    const TCP_HEADER_LEN: usize = 21;
+    const TCP_HEADER_LEN: usize = 20;
     const PAYLOAD_LEN: usize = 4;
 
     let mut packet = [0u8; IPV6_HEADER_LEN + TCP_HEADER_LEN + PAYLOAD_LEN];
@@ -149,8 +154,10 @@ fn tcp_header_ipv6_test() {
                       0x00,        // control bits
                       0x00, 0x00,  // window
                       0x00, 0x00,  // checksum
-                      0x00, 0x00,  // urgent pointer
-                      0x00];       // simple no tcp header options
+                      0x00, 0x00  // urgent pointer
+                      ];
+                      //0x01, 0x01,  // simple no tcp header options
+                      //0x01, 0x00];
 
     assert_eq!(&ref_packet[..], &packet[IPV6_HEADER_LEN .. IPV6_HEADER_LEN + TCP_HEADER_LEN]);
 }
