@@ -121,6 +121,9 @@ mod tests {
             tcp_header.set_data_offset(0x5);
             assert_eq!(tcp_header.get_data_offset(), 0x5);
 
+            tcp_header.set_reserved(0x0);
+            assert_eq!(tcp_header.get_reserved(), 0x0);
+
             tcp_header.set_control_bits(0x03);
             assert_eq!(tcp_header.get_control_bits(), 0x03);
 
