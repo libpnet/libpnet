@@ -8,7 +8,7 @@
 
 //! TCP packet abstraction
 
-use packet::Packet;
+//use packet::Packet;
 use packet::ip::IpNextHeaderProtocol;
 
 use pnet_macros::types::*;
@@ -22,16 +22,17 @@ pub struct Tcp {
     destination: u16be,
     sequence: u32be,
     acknowledgement: u32be,
-    data_offset_reserved: u8, // data offset field & reserved field
+    data_offset: u4,
+    reserved: u4,
     control_bits: u8, // the first 5 bits are used; the rest is reserved
     window: u16be,
     checksum: u16be,
     urgent_pointer: u16be,
-    // 16+16+32+32+8+8+16+16+16 == 20
+    #[length = "data_offset"]
+    options: Vec<u32>,
     #[payload]
     payload: Vec<u8>
 }
-
 
 #[test]
 fn tcp_header_ipv4_test() {
