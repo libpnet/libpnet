@@ -50,18 +50,18 @@ mod tests {
     use super::*;
 
     const TCP_HEADER_LEN: usize = 20;
+    const TCP_OPTIONS_LEN: usize = 4;
     const PAYLOAD_LEN: usize = 4;
-    
+
     #[test]
     fn tcp_header_ipv4_test() {
         use pnet::packet::ip::IpNextHeaderProtocols;
         use pnet::packet::ipv4::MutableIpv4Packet;
-        use pnet::packet::tcp::MutableTcpOptionPacket;
         use std::net::{Ipv4Addr};
 
         const IPV4_HEADER_LEN: usize = 20;
 
-        let mut packet = [0u8; IPV4_HEADER_LEN + TCP_HEADER_LEN + PAYLOAD_LEN];
+        let mut packet = [0u8; IPV4_HEADER_LEN + TCP_HEADER_LEN + PAYLOAD_LEN + TCP_OPTIONS_LEN];
         let ipv4_source = Ipv4Addr::new(192, 168, 0, 1);
         let ipv4_destination = Ipv4Addr::new(192, 168, 0, 199);
         let next_level_protocol = IpNextHeaderProtocols::Tcp;
@@ -84,7 +84,7 @@ mod tests {
 
         const IPV6_HEADER_LEN: usize = 40;
 
-        let mut packet = [0u8; IPV6_HEADER_LEN + TCP_HEADER_LEN + PAYLOAD_LEN];
+        let mut packet = [0u8; IPV6_HEADER_LEN + TCP_HEADER_LEN + PAYLOAD_LEN + TCP_OPTIONS_LEN];
         let next_header = IpNextHeaderProtocols::Tcp;
         let ipv6_source = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
         let ipv6_destination = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
@@ -164,20 +164,21 @@ mod tests {
         assert_eq!(tcp_header.get_urgent_pointer(), 0x1122);
 
         /*
-          attempt to compose a TCP header with the optional section...
+           compose a TCP header with the options section set
          */
-        let opts: Vec<MutableTcpOptionPacket> = Vec::new();
-        let mut option_buffer = [0u8; 0];
-        let tcp_option = MutableTcpOptionPacket::new(&mut option_buffer).unwrap();
+        let mut opts: Vec<TcpOption> = Vec::new();
+        let tcp_option = TcpOption{
+            kind: 0x0,
+            data: vec![0x01,0x01,0x01],
+        };
         opts.push(tcp_option);
-        tcp_option.set_kind(0x00);
-        tcp_header.set_options(tcp_option);
+        tcp_header.set_options(opts);
     }
 
     fn generate_tcp_and_payload(packet: &mut [u8]) {
         generate_tcp(packet);
 
-        // Set data
+        // Set payload data
         packet[TCP_HEADER_LEN + 0] = 't' as u8;
         packet[TCP_HEADER_LEN + 1] = 'e' as u8;
         packet[TCP_HEADER_LEN + 2] = 's' as u8;
@@ -210,9 +211,9 @@ mod tests {
                           0x45, 0x66,  // window
                           0x66, 0x99,  // checksum
                           0x11, 0x22,  // urgent pointer
-                          0x00, 0x00,  // TCP Options
-                          0x00, 0x00];
+                          0x00, 0x01,  // TCP Options
+                          0x01, 0x01];
 
-        assert_eq!(&ref_packet[..], &packet[.. TCP_HEADER_LEN]);
+        assert_eq!(&ref_packet[..], &packet[.. TCP_HEADER_LEN + TCP_OPTIONS_LEN]);
     }
 }
