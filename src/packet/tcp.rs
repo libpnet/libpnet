@@ -24,7 +24,9 @@ pub struct Tcp {
     checksum: u16be,
     urgent_pointer: u16be,
     #[length_fn = "tcp_options_length"]
-    options: Vec<TcpOption>,
+    options: Vec<TcpOptions>,
+    #[length_fn = "tcp_padding_length"]
+    padding: Vec<TcpPadding>,
     #[payload]
     payload: Vec<u8>
 }
@@ -34,13 +36,28 @@ fn tcp_options_length<'a>(tcp: &TcpPacket<'a>) -> usize {
        in 32-bit words. The minimum size of a TCP header is 20 bytes and thus
        TCP headers must have data offset set to 5 or more.
      */
-    tcp.get_data_offset() as usize * 4 - 5
+    let size = tcp.get_data_offset() as usize;
+    return (size - 5) * 4
 }
 
-/// Represents the TCP Option field
+/// Represents the TCP Option fields
 #[packet]
-pub struct TcpOption {
+pub struct TcpOptions {
     kind: u8,
+    #[payload]
+    data: Vec<u8>
+}
+
+fn tcp_padding_length<'a>(tcp: &TcpPacket<'a>) -> usize {
+    /* The TCP header padding is used to ensure that the entire header
+       ends on a 32 bit boundary.
+     */
+    return tcp.get_data_offset() as usize % 4;
+}
+
+/// Represents the TCP header padding
+#[packet]
+pub struct TcpPadding {
     #[payload]
     data: Vec<u8>
 }
@@ -83,8 +100,9 @@ mod tests {
         use std::net::{Ipv6Addr};
 
         const IPV6_HEADER_LEN: usize = 40;
+        const OPTIONS_LEN: usize = 2;
 
-        let mut packet = [0u8; IPV6_HEADER_LEN + TCP_HEADER_LEN + PAYLOAD_LEN + TCP_OPTIONS_LEN];
+        let mut packet = [0u8; IPV6_HEADER_LEN + TCP_HEADER_LEN + OPTIONS_LEN + PAYLOAD_LEN];
         let next_header = IpNextHeaderProtocols::Tcp;
         let ipv6_source = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
         let ipv6_destination = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
@@ -98,76 +116,39 @@ mod tests {
         generate_tcp_and_payload(&mut packet[IPV6_HEADER_LEN..]);
     }
 
-    fn generate_tcp(packet: &mut [u8]) {
-        let mut tcp_header = MutableTcpPacket::new(&mut packet[..]).unwrap();
-        tcp_header.set_source(12345);
-        assert_eq!(tcp_header.get_source(), 12345);
+    #[test]
+    fn tcp_padding_test() {
+        const OPTIONS_LEN: usize = 2;
+        const PADDING_LEN: usize = 2;
 
-        tcp_header.set_destination(54321);
-        assert_eq!(tcp_header.get_destination(), 54321);
+        let mut packet = [0u8; TCP_HEADER_LEN + TCP_OPTIONS_LEN + PADDING_LEN];
+        generate_tcp_with_options_and_padding(&mut packet[..]);
 
-        tcp_header.set_sequence(3456);
-        assert_eq!(tcp_header.get_sequence(), 3456);
+        let ref_packet = [0x30, 0x39,  // source
+                          0xd4, 0x31,  // destination
+                          0x00, 0x00,  // sequence
+                          0x0d, 0x80,
+                          0x00, 0x00,  // acknowledgement
+                          0x1e, 0x77,
+                          0x70,        // header length + reserved
+                          0x03,        // control bits
+                          0x45, 0x66,  // window
+                          0x66, 0x99,  // checksum
+                          0x11, 0x22,  // urgent pointer
+                          0x00, 0x00,  // TCP Options + padding
+                          0x00, 0x00];
 
-        tcp_header.set_acknowledgement(7799);
-        assert_eq!(tcp_header.get_acknowledgement(), 7799);
-
-        tcp_header.set_data_offset(0x5);
-        assert_eq!(tcp_header.get_data_offset(), 0x5);
-
-        tcp_header.set_reserved(0x0);
-        assert_eq!(tcp_header.get_reserved(), 0x0);
-
-        tcp_header.set_control_bits(0x03);
-        assert_eq!(tcp_header.get_control_bits(), 0x03);
-
-        tcp_header.set_window(0x4566);
-        assert_eq!(tcp_header.get_window(), 0x4566);
-
-        tcp_header.set_checksum(0x6699);
-        assert_eq!(tcp_header.get_checksum(), 0x6699);
-
-        tcp_header.set_urgent_pointer(0x1122);
-        assert_eq!(tcp_header.get_urgent_pointer(), 0x1122);
+        assert_eq!(&ref_packet[..], &packet[.. TCP_HEADER_LEN + OPTIONS_LEN + PADDING_LEN]);
     }
 
     fn generate_tcp_with_options(packet: &mut [u8]) {
-        let mut tcp_header = MutableTcpPacket::new(&mut packet[..]).unwrap();
-        tcp_header.set_source(12345);
-        assert_eq!(tcp_header.get_source(), 12345);
 
-        tcp_header.set_destination(54321);
-        assert_eq!(tcp_header.get_destination(), 54321);
-
-        tcp_header.set_sequence(3456);
-        assert_eq!(tcp_header.get_sequence(), 3456);
-
-        tcp_header.set_acknowledgement(7799);
-        assert_eq!(tcp_header.get_acknowledgement(), 7799);
-
-        tcp_header.set_data_offset(0x7);
-        assert_eq!(tcp_header.get_data_offset(), 0x7);
-
-        tcp_header.set_reserved(0x0);
-        assert_eq!(tcp_header.get_reserved(), 0x0);
-
-        tcp_header.set_control_bits(0x03);
-        assert_eq!(tcp_header.get_control_bits(), 0x03);
-
-        tcp_header.set_window(0x4566);
-        assert_eq!(tcp_header.get_window(), 0x4566);
-
-        tcp_header.set_checksum(0x6699);
-        assert_eq!(tcp_header.get_checksum(), 0x6699);
-
-        tcp_header.set_urgent_pointer(0x1122);
-        assert_eq!(tcp_header.get_urgent_pointer(), 0x1122);
-
+        let mut packet, tcp_header = generate_simple_tcp_header(packet);
         /*
            compose a TCP header with the options section set
          */
-        let mut opts: Vec<TcpOption> = Vec::new();
-        let tcp_option = TcpOption{
+        let mut opts: Vec<TcpOptions> = Vec::new();
+        let tcp_option = TcpOptions{
             kind: 0x0,
             data: vec![0x01,0x01,0x01],
         };
@@ -176,7 +157,7 @@ mod tests {
     }
 
     fn generate_tcp_and_payload(packet: &mut [u8]) {
-        generate_tcp(packet);
+        let mut packet, tcp_header = generate_simple_tcp_header(packet);
 
         // Set payload data
         packet[TCP_HEADER_LEN + 0] = 't' as u8;
@@ -215,5 +196,63 @@ mod tests {
                           0x01, 0x01];
 
         assert_eq!(&ref_packet[..], &packet[.. TCP_HEADER_LEN + TCP_OPTIONS_LEN]);
+    }
+
+    fn generate_tcp_with_options_and_padding(packet: &mut [u8]) {
+
+        let mut packet, tcp_header = generate_simple_tcp_header(packet);
+        /*
+           compose a TCP header with the options section set
+           with non-32bit boundary... so that padding is required.
+         */
+        let mut opts: Vec<TcpOptions> = Vec::new();
+        let tcp_option = TcpOptions{
+            kind: 0x0,
+            data: vec![0x01],
+        };
+        opts.push(tcp_option);
+        tcp_header.set_options(opts);
+
+        let mut padding: Vec<TcpPadding> = Vec::new();
+        let tcp_padding = TcpPadding{
+            data: vec![0x00,0x00],
+        };
+        padding.push(tcp_padding);
+        tcp_header.set_padding(padding);
+    }
+
+    fn generate_simple_tcp_header(packet: &mut [u8]) -> &mut MutableTcpPacket {
+        let mut tcp_header = MutableTcpPacket::new(&mut packet[..]).unwrap();
+        tcp_header.set_source(12345);
+        assert_eq!(tcp_header.get_source(), 12345);
+
+        tcp_header.set_destination(54321);
+        assert_eq!(tcp_header.get_destination(), 54321);
+
+        tcp_header.set_sequence(3456);
+        assert_eq!(tcp_header.get_sequence(), 3456);
+
+        tcp_header.set_acknowledgement(7799);
+        assert_eq!(tcp_header.get_acknowledgement(), 7799);
+
+        tcp_header.set_data_offset(0x7);
+        assert_eq!(tcp_header.get_data_offset(), 0x7);
+
+        tcp_header.set_reserved(0x0);
+        assert_eq!(tcp_header.get_reserved(), 0x0);
+
+        tcp_header.set_control_bits(0x03);
+        assert_eq!(tcp_header.get_control_bits(), 0x03);
+
+        tcp_header.set_window(0x4566);
+        assert_eq!(tcp_header.get_window(), 0x4566);
+
+        tcp_header.set_checksum(0x6699);
+        assert_eq!(tcp_header.get_checksum(), 0x6699);
+
+        tcp_header.set_urgent_pointer(0x1122);
+        assert_eq!(tcp_header.get_urgent_pointer(), 0x1122);
+
+        packet, tcp_header
     }
 }
