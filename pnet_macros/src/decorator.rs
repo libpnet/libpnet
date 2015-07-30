@@ -255,7 +255,7 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &Annotatable) -> Option<Vec
                 let mut vec = vec![];
                 for ref variant in &ed.variants {
                     if let ast::StructVariantKind(ref sd) = variant.node.kind {
-                        let name = variant.node.name.as_str().to_string();
+                        let name = variant.node.name.to_string();
                         if let Some(packet) = make_packet(ecx, span, name, sd) {
                             vec.push(packet);
                         } else {
@@ -274,7 +274,7 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &Annotatable) -> Option<Vec
                     ecx.span_err(item.span, "#[packet] structs must be public");
                     return None;
                 }
-                let name = item.ident.as_str().to_string();
+                let name = item.ident.to_string();
                 if let Some(packet) = make_packet(ecx, span, name, sd) {
                     Some(vec![packet])
                 } else {
@@ -302,7 +302,7 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &Vec<TokenTree>, field_names: &Vec<
     let tokens_packet = tts.iter().fold(Vec::new(), |mut acc_packet, tt_token| {
         match *tt_token {
             TtToken(span, token::Ident(name, token::IdentStyle::Plain)) => {
-                if token::get_ident(name).chars().any(|c| c.is_lowercase()) {
+                if name.to_string().chars().any(|c| c.is_lowercase()) {
                     if field_names.contains(&name.to_string()) {
                         let mut modified_packet_tokens = ecx.parse_tts(
                             format!("self.get_{}() as usize", name).to_string());
