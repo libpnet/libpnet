@@ -25,7 +25,6 @@ default = []
 netmap = ["netmap_sys"]
 
 [dependencies.netmap_sys]
-git = "https://github.com/libpnet/netmap_sys.git"
 features = ["netmap_with_libs"]
 optional = true
 
