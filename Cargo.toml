@@ -27,9 +27,11 @@ netmap = ["netmap_sys"]
 [dependencies.netmap_sys]
 features = ["netmap_with_libs"]
 optional = true
+version = "*"
 
 [dependencies.pnet_macros]
 path = "pnet_macros"
+version = "*"
 
 [dev-dependencies]
 time = "*"
