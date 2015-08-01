@@ -34,6 +34,11 @@ pub trait MutablePacket : Packet {
     }
 }
 
+/// Used to help compute checksum value of packet
+pub trait HasPseudoheader {
+    fn pseudoheaderChecksum(&self) -> u32;
+}
+
 /// Used to convert on-the-wire packets to their #[packet] equivalent
 pub trait FromPacket : Packet {
     /// The type of the packet to convert from
@@ -78,6 +83,7 @@ impl PrimitiveValues for ::std::net::Ipv6Addr {
     }
 }
 
+pub mod checksum;
 pub mod ethernet;
 pub mod ip;
 pub mod ipv4;

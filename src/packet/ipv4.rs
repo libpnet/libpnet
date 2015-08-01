@@ -9,7 +9,7 @@
 //! IPv4 packet abstraction
 
 use packet::ip::IpNextHeaderProtocol;
-
+use packet::HasPseudoheader;
 use pnet_macros::types::*;
 
 use std::net::Ipv4Addr;
@@ -37,6 +37,33 @@ pub struct Ipv4 {
     options: Vec<Ipv4Option>,
     #[payload]
     payload: Vec<u8>,
+}
+
+impl HasPseudoheader for Ipv4Packet {
+    fn pseudoheaderChecksum<'a>(&'a self) -> u32 {
+        let mut sum = 0u32;
+
+        // Checksum pseudo-header
+        // IPv4 source
+        match self.source.octets() {
+            [a, b, c, d] => {
+                sum = sum + ((a as u32) << 8 | b as u32);
+                sum = sum + ((c as u32) << 8 | d as u32);
+            }
+        }
+
+        // IPv4 destination
+        match self.destination.octets() {
+            [a, b, c, d] => {
+                sum = sum + ((a as u32) << 8 | b as u32);
+                sum = sum + ((c as u32) << 8 | d as u32);
+            }
+        }
+
+        // IPv4 Next level protocol
+        sum = sum + self.next_level_protocol as u32;
+        return sum;
+    }
 }
 
 /// Calculates the checksum of an IPv4 packet
