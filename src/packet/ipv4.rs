@@ -8,8 +8,10 @@
 
 //! IPv4 packet abstraction
 
-use packet::ip::IpNextHeaderProtocol;
 use packet::HasPseudoheader;
+use packet::PrimitiveValues;
+use packet::ip::IpNextHeaderProtocol;
+
 use pnet_macros::types::*;
 
 use std::net::Ipv4Addr;
@@ -39,13 +41,15 @@ pub struct Ipv4 {
     payload: Vec<u8>,
 }
 
-impl HasPseudoheader for Ipv4Packet {
-    fn pseudoheaderChecksum<'a>(&'a self) -> u32 {
+
+impl <'p> HasPseudoheader for Ipv4Packet <'p> {
+    fn pseudoheader_checksum(&self) -> u32 {
         let mut sum = 0u32;
 
         // Checksum pseudo-header
         // IPv4 source
-        match self.source.octets() {
+        let source = self.get_source();
+        match source.octets() {
             [a, b, c, d] => {
                 sum = sum + ((a as u32) << 8 | b as u32);
                 sum = sum + ((c as u32) << 8 | d as u32);
@@ -53,7 +57,8 @@ impl HasPseudoheader for Ipv4Packet {
         }
 
         // IPv4 destination
-        match self.destination.octets() {
+        let destination = self.get_destination();
+        match destination.octets() {
             [a, b, c, d] => {
                 sum = sum + ((a as u32) << 8 | b as u32);
                 sum = sum + ((c as u32) << 8 | d as u32);
@@ -61,7 +66,9 @@ impl HasPseudoheader for Ipv4Packet {
         }
 
         // IPv4 Next level protocol
-        sum = sum + self.next_level_protocol as u32;
+        let next_level_protocol = self.get_next_level_protocol();
+        let (fu,) = next_level_protocol.to_primitive_values();
+        sum = sum + fu as u32;
         return sum;
     }
 }

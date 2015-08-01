@@ -36,7 +36,8 @@ pub trait MutablePacket : Packet {
 
 /// Used to help compute checksum value of packet
 pub trait HasPseudoheader {
-    fn pseudoheaderChecksum(&self) -> u32;
+    /// Converts IPv4 or IPv6 specific fields to a checksum value
+    fn pseudoheader_checksum(&self) -> u32;
 }
 
 /// Used to convert on-the-wire packets to their #[packet] equivalent
