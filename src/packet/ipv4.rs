@@ -11,7 +11,7 @@
 use packet::HasPseudoheader;
 use packet::PrimitiveValues;
 use packet::ip::IpNextHeaderProtocol;
-use packet::checksum::compute_checksum;
+use packet::checksum::rfc1071_checksum;
 use pnet_macros::types::*;
 
 use std::net::Ipv4Addr;
@@ -77,7 +77,7 @@ impl <'p> HasPseudoheader for Ipv4Packet <'p> {
 pub fn checksum<'a>(packet: &Ipv4Packet<'a>) -> u16be {
     use packet::Packet;
 
-    return compute_checksum(packet.packet());
+    return rfc1071_checksum(packet.packet(), 0);
 }
 
 fn ipv4_options_length<'a>(ipv4: &Ipv4Packet<'a>) -> usize {

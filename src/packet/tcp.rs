@@ -8,6 +8,9 @@
 
 //! TCP packet abstraction
 
+use packet::Packet;
+use packet::HasPseudoheader;
+use packet::checksum::rfc1071_checksum;
 use pnet_macros::types::*;
 
 /// Represents a TCP Packet
@@ -60,6 +63,16 @@ fn tcp_padding_length<'a>(tcp: &TcpPacket<'a>) -> usize {
 pub struct TcpPadding {
     #[payload]
     data: Vec<u8>
+}
+
+/// Calculates the checksum of a TCP packet
+pub fn checksum<'a, T: HasPseudoheader>(packet: &mut MutableTcpPacket<'a>, encapsulating_packet: T) -> u16be {
+    let mut sum = encapsulating_packet.pseudoheader_checksum();
+    let length = packet.packet().len() as u32;
+    sum = sum + length & 0xffff;
+    sum = sum + length >> 16;
+    packet.set_checksum(0);
+    return rfc1071_checksum(packet.packet(), sum);
 }
 
 #[cfg(test)]
