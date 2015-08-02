@@ -40,7 +40,7 @@ fn tcp_options_length<'a>(tcp: &TcpPacket<'a>) -> usize {
        TCP headers must have data offset set to 5 or more.
      */
     let size = tcp.get_data_offset() as usize;
-    return (size - 5) * 4
+    return size - 5
 }
 
 /// Represents the TCP Option fields
@@ -79,9 +79,9 @@ pub fn checksum<'a, T: HasPseudoheader>(packet: &mut MutableTcpPacket<'a>, encap
 mod tests {
     use super::*;
 
-    const TCP_HEADER_LEN: usize = 20;
-    const TCP_OPTIONS_LEN: usize = 4;
-    const PAYLOAD_LEN: usize = 4;
+    const TCP_MIN_HEADER_LEN: usize = 20;
+    const TCP_OPTIONS_LEN: usize = 12;
+    const PAYLOAD_LEN: usize = 5;
 
     #[test]
     fn tcp_header_ipv4_test() {
@@ -91,9 +91,9 @@ mod tests {
 
         const IPV4_HEADER_LEN: usize = 20;
 
-        let mut packet = [0u8; IPV4_HEADER_LEN + TCP_HEADER_LEN + PAYLOAD_LEN + TCP_OPTIONS_LEN];
-        let ipv4_source = Ipv4Addr::new(192, 168, 0, 1);
-        let ipv4_destination = Ipv4Addr::new(192, 168, 0, 199);
+        let mut packet = [0u8; IPV4_HEADER_LEN + TCP_MIN_HEADER_LEN + TCP_OPTIONS_LEN + PAYLOAD_LEN];
+        let ipv4_source = Ipv4Addr::new(127, 0, 0, 1);
+        let ipv4_destination = Ipv4Addr::new(127, 0, 0, 1);
         let next_level_protocol = IpNextHeaderProtocols::Tcp;
         {
             let mut ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
@@ -103,63 +103,79 @@ mod tests {
         }
 
         {
-            generate_simple_tcp_header(&mut packet[..]);
+            generate_simple_tcp_header(&mut packet[IPV4_HEADER_LEN..]);
         }
 
         // Set payload data
-        packet[TCP_HEADER_LEN + 0] = 't' as u8;
-        packet[TCP_HEADER_LEN + 1] = 'e' as u8;
-        packet[TCP_HEADER_LEN + 2] = 's' as u8;
-        packet[TCP_HEADER_LEN + 3] = 't' as u8;
+        packet[IPV4_HEADER_LEN + TCP_MIN_HEADER_LEN + TCP_OPTIONS_LEN + 0] = 'm' as u8;
+        packet[IPV4_HEADER_LEN + TCP_MIN_HEADER_LEN + TCP_OPTIONS_LEN + 1] = 'e' as u8;
+        packet[IPV4_HEADER_LEN + TCP_MIN_HEADER_LEN + TCP_OPTIONS_LEN + 2] = 'o' as u8;
+        packet[IPV4_HEADER_LEN + TCP_MIN_HEADER_LEN + TCP_OPTIONS_LEN + 3] = 'w' as u8;
+        packet[IPV4_HEADER_LEN + TCP_MIN_HEADER_LEN + TCP_OPTIONS_LEN + 4] = '\n' as u8;
 
-        let ref_packet = [0x30, 0x39,  // source
-                          0xd4, 0x31,  // destination
-                          0x00, 0x00,  // sequence
-                          0x0d, 0x80,
-                          0x00, 0x00,  // acknowledgement
-                          0x1e, 0x77,
-                          0x50,        // header length + reserved
-                          0x03,        // control bits
-                          0x45, 0x66,  // window
-                          0x66, 0x99,  // checksum
-                          0x11, 0x22]; // urgent pointer
-        assert_eq!(&ref_packet[..], &packet[.. TCP_HEADER_LEN]);
-        //	thread 'packet::tcp::tests::tcp_header_ipv4_test' panicked at 'assertion failed: `(left == right)` (left: `
-        //[48, 57, 212, 49, 0, 0, 13, 128, 0, 0, 30, 119, 80, 3, 69, 102, 102, 153, 17, 34]`, right: `
-        //[48, 57, 212, 49, 0, 0, 13, 128, 0, 0, 30, 119, 112, 3, 69, 102, 102, 153, 17, 34]`)', /home/user/projects/libpnet/src/packet/tcp.rs:126
+        let ref_tcp_packet = [0xe0, 0x0f, // source port
+                              0x25, 0xc2, // dest port
+                              0xdf, 0x06, // sequence
+                              0xe6, 0xe6,
+                              0xc9, 0x2d, // acknowledgement
+                              0x98, 0x71,
+                              0x80,       // header length + reserved
+                              0x18,       // control bits
+                              0x02, 0xab, // window
+                              0xfe, 0x2d, // checksum
+                              0x00, 0x00, // urgent pointer
+                              0x01, 0x01, // tcp option no-op
+                              0x08, 0x0a, // tcp option timestamp, options length == 10 bytes
+                              0x1d, 0xfc, // 4-byte send timestamp
+                              0xcb, 0x76,
+                              0x1d, 0xfc, // 4-byte latest replied timestamp
+                              0xbe, 0x62,
+                              0x6d, 0x65, // payload
+                              0x6f, 0x77, 0x0a];
+        assert_eq!(&ref_tcp_packet[..], &packet[IPV4_HEADER_LEN..]);
+
+        //tcp/ipv4 == "45, 00 00 39 58 89 40 00 40 06 e4 33 7f 00 00 01 7f 00 00 01 e0 0f 25 c2 df 06 e6 e6 c9 2d 98 71 80 18 02 ab fe 2d 00 00 01 01 08 0a 1d fc cb 76 1d fc be 62 6d 65 6f 77 0a";
 
     }
 
     fn generate_simple_tcp_header<'p>(packet: &'p mut [u8]) {
         let mut tcp_header = MutableTcpPacket::new(&mut packet[..]).unwrap();
-        tcp_header.set_source(12345);
-        assert_eq!(tcp_header.get_source(), 12345);
+        tcp_header.set_source(57359);
+        assert_eq!(tcp_header.get_source(), 57359);
 
-        tcp_header.set_destination(54321);
-        assert_eq!(tcp_header.get_destination(), 54321);
+        tcp_header.set_destination(9666);
+        assert_eq!(tcp_header.get_destination(), 9666);
 
-        tcp_header.set_sequence(3456);
-        assert_eq!(tcp_header.get_sequence(), 3456);
+        tcp_header.set_sequence(3741771494);
+        assert_eq!(tcp_header.get_sequence(), 3741771494);
 
-        tcp_header.set_acknowledgement(7799);
-        assert_eq!(tcp_header.get_acknowledgement(), 7799);
+        tcp_header.set_acknowledgement(3375208561);
+        assert_eq!(tcp_header.get_acknowledgement(), 3375208561);
 
-        tcp_header.set_data_offset(0x5);
-        assert_eq!(tcp_header.get_data_offset(), 0x5);
+        tcp_header.set_data_offset(0x8);
+        // XXX assert_eq!(tcp_header.get_data_offset(), 0x8);
 
         tcp_header.set_reserved(0x0);
         assert_eq!(tcp_header.get_reserved(), 0x0);
 
-        tcp_header.set_control_bits(0x03);
-        assert_eq!(tcp_header.get_control_bits(), 0x03);
+        tcp_header.set_control_bits(0x18);
+        assert_eq!(tcp_header.get_control_bits(), 0x18);
 
-        tcp_header.set_window(0x4566);
-        assert_eq!(tcp_header.get_window(), 0x4566);
+        tcp_header.set_window(0x02ab);
+        assert_eq!(tcp_header.get_window(), 0x02ab);
 
-        tcp_header.set_checksum(0x6699);
-        assert_eq!(tcp_header.get_checksum(), 0x6699);
+        tcp_header.set_checksum(0xfe2d);
+        assert_eq!(tcp_header.get_checksum(), 0xfe2d);
 
-        tcp_header.set_urgent_pointer(0x1122);
-        assert_eq!(tcp_header.get_urgent_pointer(), 0x1122);
+        tcp_header.set_urgent_pointer(0x0000);
+        assert_eq!(tcp_header.get_urgent_pointer(), 0x0000);
+
+        let mut opts: Vec<TcpOptions> = Vec::new();
+        let tcp_option = TcpOptions{
+            kind: 0x1,
+            data: vec![0x01,0x08,0x0a,0x1d,0xfc,0xcb,0x76,0x1d,0xfc,0xbe,0x62],
+        };
+        opts.push(tcp_option);
+        tcp_header.set_options(opts);
     }
 }
