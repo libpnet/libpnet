@@ -20,8 +20,7 @@ pub struct Tcp {
     destination: u16be,
     sequence: u32be,
     acknowledgement: u32be,
-    data_offset: u4,
-    reserved: u4,
+    data_offset_and_reserved: u8,
     control_bits: u8,
     window: u16be,
     checksum: u16be,
@@ -39,8 +38,8 @@ fn tcp_options_length<'a>(tcp: &TcpPacket<'a>) -> usize {
        in 32-bit words. The minimum size of a TCP header is 20 bytes and thus
        TCP headers must have data offset set to 5 or more.
      */
-    let size = tcp.get_data_offset() as usize;
-    return size - 5
+    let size = tcp.get_data_offset_and_reserved() as usize;
+    return (size / 4) - 5 // XXX the "reserved" 4-bit word is zeros and is ignored when we divide by 4
 }
 
 /// Represents the TCP Option fields
@@ -55,7 +54,7 @@ fn tcp_padding_length<'a>(tcp: &TcpPacket<'a>) -> usize {
     /* The TCP header padding is used to ensure that the entire header
        ends on a 32 bit boundary.
      */
-    return tcp.get_data_offset() as usize % 4;
+    return tcp.get_data_offset_and_reserved() as usize % 4;
 }
 
 /// Represents the TCP header padding
@@ -152,11 +151,8 @@ mod tests {
         tcp_header.set_acknowledgement(3375208561);
         assert_eq!(tcp_header.get_acknowledgement(), 3375208561);
 
-        tcp_header.set_data_offset(0x8);
-        // XXX assert_eq!(tcp_header.get_data_offset(), 0x8);
-
-        tcp_header.set_reserved(0x0);
-        assert_eq!(tcp_header.get_reserved(), 0x0);
+        tcp_header.set_data_offset_and_reserved(0x80);
+        assert_eq!(tcp_header.get_data_offset_and_reserved(), 0x80);
 
         tcp_header.set_control_bits(0x18);
         assert_eq!(tcp_header.get_control_bits(), 0x18);
