@@ -8,8 +8,10 @@
 
 //! IPv4 packet abstraction
 
+use packet::HasPseudoheader;
+use packet::PrimitiveValues;
 use packet::ip::IpNextHeaderProtocol;
-
+use packet::checksum::compute_checksum;
 use pnet_macros::types::*;
 
 use std::net::Ipv4Addr;
@@ -39,22 +41,43 @@ pub struct Ipv4 {
     payload: Vec<u8>,
 }
 
+
+impl <'p> HasPseudoheader for Ipv4Packet <'p> {
+    fn pseudoheader_checksum(&self) -> u32 {
+        let mut sum = 0u32;
+
+        // Checksum pseudo-header
+        // IPv4 source
+        let source = self.get_source();
+        match source.octets() {
+            [a, b, c, d] => {
+                sum = sum + ((a as u32) << 8 | b as u32);
+                sum = sum + ((c as u32) << 8 | d as u32);
+            }
+        }
+
+        // IPv4 destination
+        let destination = self.get_destination();
+        match destination.octets() {
+            [a, b, c, d] => {
+                sum = sum + ((a as u32) << 8 | b as u32);
+                sum = sum + ((c as u32) << 8 | d as u32);
+            }
+        }
+
+        // IPv4 Next level protocol
+        let next_level_protocol = self.get_next_level_protocol();
+        let (next_proto,) = next_level_protocol.to_primitive_values();
+        sum = sum + next_proto as u32;
+        return sum;
+    }
+}
+
 /// Calculates the checksum of an IPv4 packet
 pub fn checksum<'a>(packet: &Ipv4Packet<'a>) -> u16be {
     use packet::Packet;
 
-    let len = packet.get_header_length() as usize * 4;
-    let mut sum = 0u32;
-    let mut i = 0;
-    while i < len {
-        let word = (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        sum = sum + word;
-        i = i + 2;
-    }
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
-    return !sum as u16;
+    return compute_checksum(packet.packet());
 }
 
 fn ipv4_options_length<'a>(ipv4: &Ipv4Packet<'a>) -> usize {
