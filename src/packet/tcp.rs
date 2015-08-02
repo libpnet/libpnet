@@ -143,7 +143,7 @@ mod tests {
 
     fn generate_tcp_with_options(packet: &mut [u8]) {
 
-        let mut packet, tcp_header = generate_simple_tcp_header(packet);
+        let mut tcp_header = generate_simple_tcp_header(packet);
         /*
            compose a TCP header with the options section set
          */
@@ -157,7 +157,7 @@ mod tests {
     }
 
     fn generate_tcp_and_payload(packet: &mut [u8]) {
-        let mut packet, tcp_header = generate_simple_tcp_header(packet);
+        let mut tcp_header = generate_simple_tcp_header(packet);
 
         // Set payload data
         packet[TCP_HEADER_LEN + 0] = 't' as u8;
@@ -200,7 +200,7 @@ mod tests {
 
     fn generate_tcp_with_options_and_padding(packet: &mut [u8]) {
 
-        let mut packet, tcp_header = generate_simple_tcp_header(packet);
+        let mut tcp_header = generate_simple_tcp_header(packet);
         /*
            compose a TCP header with the options section set
            with non-32bit boundary... so that padding is required.
@@ -253,6 +253,6 @@ mod tests {
         tcp_header.set_urgent_pointer(0x1122);
         assert_eq!(tcp_header.get_urgent_pointer(), 0x1122);
 
-        packet, tcp_header
+        &mut tcp_header
     }
 }
