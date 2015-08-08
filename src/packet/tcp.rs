@@ -38,8 +38,10 @@ fn tcp_options_length<'a>(tcp: &TcpPacket<'a>) -> usize {
        in 32-bit words. The minimum size of a TCP header is 20 bytes and thus
        TCP headers must have data offset set to 5 or more.
      */
-    let size = tcp.get_data_offset_and_reserved() as usize;
-    return (size / 4) - 5 // XXX the "reserved" 4-bit word is zeros and is ignored when we divide by 4
+    let mut v = tcp.get_data_offset_and_reserved();
+    v  = v >> 4;
+    v = v * 4;
+    return v as usize;
 }
 
 /// Represents the TCP Option fields
@@ -94,6 +96,7 @@ mod tests {
         let ipv4_source = Ipv4Addr::new(127, 0, 0, 1);
         let ipv4_destination = Ipv4Addr::new(127, 0, 0, 1);
         let next_level_protocol = IpNextHeaderProtocols::Tcp;
+        let mut csum = 0;
 
         {
             let mut mut_ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
@@ -110,7 +113,12 @@ mod tests {
         {
             let ip_header = Ipv4Packet::new(&packet[..IPV4_HEADER_LEN]).unwrap();
             let tcp_header = TcpPacket::new(&packet[IPV4_HEADER_LEN..]).unwrap();
-            let csum = checksum(&tcp_header, ip_header);
+            csum = checksum(&tcp_header, ip_header);
+        }
+
+        {
+            let mut mutable_tcp_header = MutableTcpPacket::new(&mut packet[IPV4_HEADER_LEN..]).unwrap();
+            mutable_tcp_header.set_checksum(csum);
         }
 
         {
