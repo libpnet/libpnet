@@ -103,9 +103,14 @@ mod tests {
         }
 
         {
-            let ip_header = Ipv4Packet::new(&packet[..]).unwrap();
+            let mut mutable_tcp_header = MutableTcpPacket::new(&mut packet[IPV4_HEADER_LEN..]).unwrap();
+            mutable_tcp_header.set_checksum(0);
+        }
+
+        {
+            let ip_header = Ipv4Packet::new(&packet[..IPV4_HEADER_LEN]).unwrap();
             let tcp_header = TcpPacket::new(&packet[IPV4_HEADER_LEN..]).unwrap();
-            let csum = checksum(tcp_header, ip_header);
+            let csum = checksum(&tcp_header, ip_header);
         }
 
         {
