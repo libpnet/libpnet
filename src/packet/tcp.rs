@@ -65,12 +65,12 @@ pub struct TcpPadding {
 }
 
 /// Calculates the checksum of a TCP packet
-pub fn checksum<'a, T: HasPseudoheader>(packet: &mut MutableTcpPacket<'a>, encapsulating_packet: T) -> u16be {
+/// The passed in TcpPacket must have it's initial checksum value set to zero.
+pub fn checksum<'a, T: HasPseudoheader>(packet: &TcpPacket<'a>, encapsulating_packet: T) -> u16be {
     let mut sum = encapsulating_packet.pseudoheader_checksum();
     let length = packet.packet().len() as u32;
     sum = sum + length & 0xffff;
     sum = sum + length >> 16;
-    packet.set_checksum(0);
     return rfc1071_checksum(packet.packet(), sum);
 }
 
@@ -85,7 +85,7 @@ mod tests {
     #[test]
     fn tcp_header_ipv4_test() {
         use pnet::packet::ip::IpNextHeaderProtocols;
-        use pnet::packet::ipv4::MutableIpv4Packet;
+        use pnet::packet::ipv4::{Ipv4Packet,MutableIpv4Packet};
         use std::net::{Ipv4Addr};
 
         const IPV4_HEADER_LEN: usize = 20;
@@ -94,11 +94,18 @@ mod tests {
         let ipv4_source = Ipv4Addr::new(127, 0, 0, 1);
         let ipv4_destination = Ipv4Addr::new(127, 0, 0, 1);
         let next_level_protocol = IpNextHeaderProtocols::Tcp;
+
         {
-            let mut ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
-            ip_header.set_next_level_protocol(next_level_protocol);
-            ip_header.set_source(ipv4_source);
-            ip_header.set_destination(ipv4_destination);
+            let mut mut_ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
+            mut_ip_header.set_next_level_protocol(next_level_protocol);
+            mut_ip_header.set_source(ipv4_source);
+            mut_ip_header.set_destination(ipv4_destination);
+        }
+
+        {
+            let ip_header = Ipv4Packet::new(&packet[..]).unwrap();
+            let tcp_header = TcpPacket::new(&packet[IPV4_HEADER_LEN..]).unwrap();
+            let csum = checksum(tcp_header, ip_header);
         }
 
         {
