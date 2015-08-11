@@ -41,6 +41,7 @@ fn tcp_options_length<'a>(tcp: &TcpPacket<'a>) -> usize {
     let mut v = tcp.get_data_offset_and_reserved();
     v  = v >> 4;
     v = v * 4;
+    v = v - 20;
     return v as usize;
 }
 
@@ -75,6 +76,7 @@ pub fn checksum<'a, T: HasPseudoheader>(packet: &TcpPacket<'a>, encapsulating_pa
     sum = sum + length >> 16;
     return rfc1071_checksum(packet.packet(), sum);
 }
+
 
 #[cfg(test)]
 mod tests {
