@@ -39,9 +39,9 @@ fn tcp_options_length<'a>(tcp: &TcpPacket<'a>) -> usize {
        TCP headers must have data offset set to 5 or more.
      */
     let mut v = tcp.get_data_offset_and_reserved();
-    v  = v >> 4;
-    v = v * 4;
-    v = v - 20;
+    v  = v >> 4; // get rid of reserved bits
+    v = v - 5; // remove the size of the minal tcp header of 20 bytes
+    v = v * 4; // multiple the remaining word count by 4 to get the byte count
     return v as usize;
 }
 
