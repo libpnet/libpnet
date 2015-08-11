@@ -188,12 +188,11 @@ mod tests {
         tcp_header.set_urgent_pointer(0x0000);
         assert_eq!(tcp_header.get_urgent_pointer(), 0x0000);
 
-        let mut options: Vec<TcpOptions> = vec![];
         let tcp_option = TcpOptions{
             kind: 0x1,
             data: vec![0x01,0x08,0x0a,0x1d,0xfc,0xcb,0x76,0x1d,0xfc,0xbe,0x62],
         };
-        options.push(tcp_option);
+        let mut options: Vec<TcpOptions> = vec![tcp_option];
         tcp_header.set_options(options);
     }
 }
