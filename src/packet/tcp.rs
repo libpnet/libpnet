@@ -40,7 +40,7 @@ fn tcp_options_length<'a>(tcp: &TcpPacket<'a>) -> usize {
      */
     let mut v = tcp.get_data_offset_and_reserved();
     v  = v >> 4; // get rid of reserved bits
-    v = v - 5; // remove the size of the minal tcp header of 20 bytes
+    v = v - 5; // remove the size of the minimal tcp header of 20 bytes
     v = v * 4; // multiple the remaining word count by 4 to get the byte count
     return v as usize;
 }
@@ -188,12 +188,12 @@ mod tests {
         tcp_header.set_urgent_pointer(0x0000);
         assert_eq!(tcp_header.get_urgent_pointer(), 0x0000);
 
-        let mut opts: Vec<TcpOptions> = Vec::new();
+        let mut options: Vec<TcpOptions> = vec![];
         let tcp_option = TcpOptions{
             kind: 0x1,
             data: vec![0x01,0x08,0x0a,0x1d,0xfc,0xcb,0x76,0x1d,0xfc,0xbe,0x62],
         };
-        opts.push(tcp_option);
-        tcp_header.set_options(opts);
+        options.push(tcp_option);
+        tcp_header.set_options(options);
     }
 }
