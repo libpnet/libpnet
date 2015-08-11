@@ -1,5 +1,3 @@
-// Copyright (c) 2015 David Stainton <dstainton415@gmail.com>
-//
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
@@ -57,7 +55,8 @@ fn tcp_padding_length<'a>(tcp: &TcpPacket<'a>) -> usize {
     /* The TCP header padding is used to ensure that the entire header
        ends on a 32 bit boundary.
      */
-    return tcp.get_data_offset_and_reserved() as usize % 4;
+    //return tcp.get_data_offset_and_reserved() as usize % 4;
+    return 0
 }
 
 /// Represents the TCP header padding
