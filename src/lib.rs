@@ -105,7 +105,7 @@
 #![feature(convert, custom_attribute, ip_addr, libc, plugin, slice_bytes,
            slice_patterns, vec_push_all)]
 #![plugin(pnet_macros)]
-#![cfg_attr(test, feature(str_char, scoped))]
+#![cfg_attr(test, feature(str_char))]
 #![cfg_attr(any(target_os = "freebsd", target_os = "macos"), feature(clone_from_slice))]
 
 extern crate libc;

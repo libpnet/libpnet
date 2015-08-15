@@ -160,7 +160,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
         Err(e) => panic!("layer4: unable to create channel: {}", e),
     };
 
-    let res = thread::scoped( move || {
+    let res = thread::spawn( move || {
         tx.send(()).unwrap();
         let mut iter = udp_packet_iter(&mut trx);
         loop {
@@ -192,7 +192,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
         }
     }
 
-    res.join();
+    assert!(res.join().is_ok())
 }
 
 #[test]
@@ -221,7 +221,7 @@ fn layer3_ipv4() {
         Err(e) => panic!("layer3: unable to create channel: {}", e),
     };
 
-    let res = thread::scoped( move || {
+    let res = thread::spawn( move || {
         tx.send(()).unwrap();
         let mut iter = ipv4_packet_iter(&mut trx);
         loop {
@@ -253,7 +253,7 @@ fn layer3_ipv4() {
         Err(e) => panic!("layer3_ipv4_test failed: {}", e)
     }
 
-    res.join();
+    assert!(res.join().is_ok())
 }
 
 // FIXME Find a way to test this with netmap
@@ -310,7 +310,7 @@ fn layer2() {
         Err(e) => panic!("layer2: unable to create channel: {}", e)
     };
 
-    let res = thread::scoped( move || {
+    let res = thread::spawn( move || {
         tx.send(()).unwrap();
         let mut i = 0usize;
         let mut iter = dlrx.iter();
@@ -340,7 +340,7 @@ fn layer2() {
         None => panic!("Provided buffer too small")
     }
 
-    res.join();
+    assert!(res.join().is_ok())
 }
 
 #[test]

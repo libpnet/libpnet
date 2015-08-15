@@ -6,8 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-// FIXME Remove after 1.0
-#![feature(slice_extras)]
 
 extern crate pnet;
 extern crate time;
@@ -59,7 +57,7 @@ fn main() {
     }
 
     // We received 1_000_000 packets in ((b - a) * 1_000_000) seconds.
-    for (a, b) in timestamps.iter().zip(timestamps.tail().iter()) {
+    for (a, b) in timestamps.iter().zip(timestamps.iter().skip(1)) {
         println!("{}", *b - *a);
     }
 }
