@@ -9,9 +9,9 @@
 //! IPv4 packet abstraction
 
 use packet::ip::IpNextHeaderProtocol;
-
+use packet::{Pseudoheader,PrimitiveValues};
+use util::rfc1071_checksum;
 use pnet_macros::types::*;
-
 use std::net::Ipv4Addr;
 
 /// Represents an IPv4 Packet
@@ -39,8 +39,8 @@ pub struct Ipv4 {
     payload: Vec<u8>,
 }
 
-impl <'p> HasPseudoheader for Ipv4Packet <'p> {
-    fn pseudoheader_checksum(&self) -> u32 {
+impl<'p> Pseudoheader for Ipv4Packet <'p> {
+    fn checksum(&self) -> u32 {
         let mut sum = 0u32;
 
         // Checksum pseudo-header
