@@ -1110,9 +1110,11 @@ mod tests {
 
     fn assert_parse_length_expr(expr: &str, field_names: &[&str], expected: &str) {
         let sess = ParseSess::new();
+        let mut feature_gated_cfgs = Vec::new();
         let mut ecx = ExtCtxt::new(&sess,
                                    CrateConfig::default(),
-                                   ExpansionConfig::default("parse_length_expr".to_string()));
+                                   ExpansionConfig::default("parse_length_expr".to_string()),
+                                   &mut feature_gated_cfgs);
         let expr_tokens = ecx.parse_tts(expr.to_string());
         let field_names_vec = field_names.iter().map(|field_name| field_name.to_string()).collect();
         let parsed = super::parse_length_expr(&mut ecx, &expr_tokens, &field_names_vec);
