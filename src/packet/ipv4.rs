@@ -61,11 +61,6 @@ impl<'p> Pseudoheader for Ipv4Packet <'p> {
                 sum = sum + ((c as u32) << 8 | d as u32);
             }
         }
-
-        // IPv4 Next level protocol
-        let next_level_protocol = self.get_next_level_protocol();
-        let (next_proto,) = next_level_protocol.to_primitive_values();
-        sum = sum + next_proto as u32;
         return sum;
     }
 }

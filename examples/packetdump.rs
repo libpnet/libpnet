@@ -86,7 +86,7 @@ fn handle_ipv6_packet(interface_name: &str, ethernet: &EthernetPacket) {
         handle_transport_protocol(interface_name,
                                   IpAddr::V6(header.get_source()),
                                   IpAddr::V6(header.get_destination()),
-                                  header.get_next_header(),
+                                  header.get_next_level_protocol(),
                                   header.payload());
     } else {
         println!("[{}]: Malformed IPv6 Packet", interface_name);
