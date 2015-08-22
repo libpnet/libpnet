@@ -17,14 +17,13 @@ use packet::Packet;
 use packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
 use packet::ipv4::{Ipv4Packet, MutableIpv4Packet};
 use packet::ipv4;
-use packet::ipv6::MutableIpv6Packet;
-use packet::udp::{MutableUdpPacket, UdpPacket};
+use packet::ipv6::{Ipv6Packet, MutableIpv6Packet};
+use packet::udp::{UdpPacket, MutableUdpPacket};
 use packet::udp;
 use transport::{TransportChannelType, TransportProtocol, ipv4_packet_iter, transport_channel,
                 udp_packet_iter};
 use transport::TransportProtocol::{Ipv4, Ipv6};
-use util;
-use util::IpAddr;
+use util::{IpAddr, checksum};
 
 const IPV4_HEADER_LEN: usize = 20;
 const IPV6_HEADER_LEN: usize = 40;
@@ -108,19 +107,10 @@ fn build_udp4_packet(packet: &mut [u8],
     packet[data_start + 2] = msg[2];
     packet[data_start + 3] = msg[3];
 
-    let (source, dest) = if let Some(ni) = ni {
-        let ip = ni.ips.as_ref().unwrap().iter().filter(|addr| is_ipv4(addr)).next().unwrap();
-        match (*ip).clone() {
-            IpAddr::V4(v4) => (v4, v4),
-            IpAddr::V6(_) => panic!("found ipv6 addresses when expecting ipv4 addresses"),
-        }
-    } else {
-        (ipv4_source(), ipv4_destination())
-    };
-
+    let ip_header = Ipv4Packet::new(&packet[..]).unwrap();
     let slice = &mut packet[(start + IPV4_HEADER_LEN as usize)..];
-    let checksum = udp::ipv4_checksum(&UdpPacket::new(slice).unwrap(), source, dest, TEST_PROTO);
-    MutableUdpPacket::new(slice).unwrap().set_checksum(checksum);
+    let csum = checksum(slice, ip_header);
+    MutableUdpPacket::new(slice).unwrap().set_checksum(csum);
 }
 
 fn build_udp6_packet(packet: &mut [u8], start: usize, msg: &str) {
@@ -136,11 +126,9 @@ fn build_udp6_packet(packet: &mut [u8], start: usize, msg: &str) {
     packet[data_start + 3] = msg[3];
 
     let slice = &mut packet[(start + IPV6_HEADER_LEN as usize)..];
-    let checksum = udp::ipv6_checksum(&UdpPacket::new(slice).unwrap(),
-                                      ipv6_source(),
-                                      ipv6_destination(),
-                                      TEST_PROTO);
-    MutableUdpPacket::new(slice).unwrap().set_checksum(checksum);
+    let ip_header = Ipv6Packet::new(&packet[..]).unwrap();
+    let csum = checksum(slice, ip_header);
+    MutableUdpPacket::new(slice).unwrap().set_checksum(csum);
 }
 
 // OSes have a nasty habit of tweaking IP fields, so we only check
