@@ -449,5 +449,5 @@ pub fn rfc1071_checksum(packet: &[u8], initial: u32) -> u16 {
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);
     }
-    return ! sum as u16;
+    return sum as u16 ^ 0xffff;
 }
