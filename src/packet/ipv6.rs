@@ -9,8 +9,8 @@
 //! IPv6 packet abstraction
 
 use packet::ip::IpNextHeaderProtocol;
-
-use pnet_macros_support::types::*;
+use packet::{PseudoHeader, PrimitiveValues};
+use pnet_macros::types::*;
 
 use std::net::Ipv6Addr;
 
@@ -30,6 +30,49 @@ pub struct Ipv6 {
     destination: Ipv6Addr,
     #[payload]
     payload: Vec<u8>,
+}
+
+impl<'p> PseudoHeader for Ipv6Packet<'p> {
+    fn checksum(&self) -> u32 {
+        let mut sum = 0u32;
+
+        // Checksum pseudo-header
+        // IPv6 source
+        let source = self.get_source();
+        match source.segments() {
+            [a, b, c, d, e, f, g, h] => {
+                sum = sum + a as u32;
+                sum = sum + b as u32;
+                sum = sum + c as u32;
+                sum = sum + d as u32;
+                sum = sum + e as u32;
+                sum = sum + f as u32;
+                sum = sum + g as u32;
+                sum = sum + h as u32;
+            }
+        }
+
+        // IPv6 destination
+        let destination = self.get_destination();
+        match destination.segments() {
+            [a, b, c, d, e, f, g, h] => {
+                sum = sum + a as u32;
+                sum = sum + b as u32;
+                sum = sum + c as u32;
+                sum = sum + d as u32;
+                sum = sum + e as u32;
+                sum = sum + f as u32;
+                sum = sum + g as u32;
+                sum = sum + h as u32;
+            }
+        }
+
+        // IPv6 next_header (equivalent to ipv4 "next level protocol")
+        let next_header = self.get_next_header();
+        let (next_proto,) = next_header.to_primitive_values();
+        sum = sum + next_proto as u32;
+        return sum;
+    }
 }
 
 #[test]
