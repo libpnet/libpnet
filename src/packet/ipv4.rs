@@ -54,8 +54,9 @@ impl<'p> PseudoHeader for Ipv4Packet<'p> {
         let source = self.get_source();
         match source.octets() {
             [a, b, c, d] => {
-                sum = sum + ((a as u32) << 8 | b as u32);
-                sum = sum + ((c as u32) << 8 | d as u32);
+                let src = vec![a, b, c, d];
+                sum = sum + (src[0] as u32) + (src[2] as u32) << 8;
+                sum = sum + src[1] as u32 + src[3] as u32;
             }
         }
 
@@ -63,15 +64,16 @@ impl<'p> PseudoHeader for Ipv4Packet<'p> {
         let destination = self.get_destination();
         match destination.octets() {
             [a, b, c, d] => {
-                sum = sum + ((a as u32) << 8 | b as u32);
-                sum = sum + ((c as u32) << 8 | d as u32);
+                let dst = vec![a, b, c, d];
+                sum = sum + (dst[0] as u32) + (dst[2] as u32) << 8;
+                sum = sum + dst[1] as u32 + dst[3] as u32;
             }
         }
 
         // IPv4 Next level protocol
         let next_level_protocol = self.get_next_level_protocol();
         let (next_proto,) = next_level_protocol.to_primitive_values();
-        sum = sum + next_proto as u32;
+        sum = sum + (next_proto as u32);
         return sum;
     }
 }
