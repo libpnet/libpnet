@@ -69,7 +69,8 @@ pub fn ipv4_checksum(packet: &UdpPacket,
 
 #[test]
 fn udp_header_ipv4_test() {
-    use pnet::packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
+    //use pnet::packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
+    use pnet::packet::ip::IpNextHeaderProtocols;
     use pnet::packet::ipv4::{Ipv4Packet, MutableIpv4Packet};
     use util::checksum;
     use std::net::Ipv4Addr;
@@ -92,7 +93,8 @@ fn udp_header_ipv4_test() {
     packet[20 + 8 + 3] = 't' as u8;
 
     {
-        let mut udp_header = MutableUdpPacket::new(&mut packet[20..]).unwrap();
+        let (raw_ip_header, raw_udp_packet) = packet.split_at_mut(20);
+        let mut udp_header = MutableUdpPacket::new(&mut raw_udp_packet[..]).unwrap();
         udp_header.set_source(12345);
         assert_eq!(udp_header.get_source(), 12345);
 
@@ -102,9 +104,10 @@ fn udp_header_ipv4_test() {
         udp_header.set_length(8 + 4);
         assert_eq!(udp_header.get_length(), 8 + 4);
 
-        let ip_header = Ipv4Packet::new(&packet[..]).unwrap();
+        let ip_header = Ipv4Packet::new(&raw_ip_header[..]).unwrap();
         let csum = checksum(&udp_header.to_immutable().packet(), ip_header);
         udp_header.set_checksum(csum);
+
         assert_eq!(udp_header.get_checksum(), 0x9178);
     }
 
@@ -174,7 +177,7 @@ pub fn ipv6_checksum(packet: &UdpPacket,
 
 #[test]
 fn udp_header_ipv6_test() {
-    use packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
+    use packet::ip::IpNextHeaderProtocols;
     use packet::ipv6::{Ipv6Packet, MutableIpv6Packet};
     use util::checksum;
     use std::net::Ipv6Addr;
@@ -197,7 +200,8 @@ fn udp_header_ipv6_test() {
     packet[40 + 8 + 3] = 't' as u8;
 
     {
-        let mut udp_header = MutableUdpPacket::new(&mut packet[40..]).unwrap();
+        let (raw_ip_header, raw_udp_packet) = packet.split_at_mut(40);
+        let mut udp_header = MutableUdpPacket::new(&mut raw_udp_packet[..]).unwrap();
         udp_header.set_source(12345);
         assert_eq!(udp_header.get_source(), 12345);
 
@@ -207,7 +211,7 @@ fn udp_header_ipv6_test() {
         udp_header.set_length(8 + 4);
         assert_eq!(udp_header.get_length(), 8 + 4);
 
-        let ip_header = Ipv6Packet::new(&packet[..]).unwrap();
+        let ip_header = Ipv6Packet::new(&raw_ip_header[..]).unwrap();
         let csum = checksum(&udp_header.to_immutable().packet(), ip_header);
         udp_header.set_checksum(csum);
         assert_eq!(udp_header.get_checksum(), 0x1390);

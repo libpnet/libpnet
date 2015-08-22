@@ -107,10 +107,10 @@ fn build_udp4_packet(packet: &mut [u8],
     packet[data_start + 2] = msg[2];
     packet[data_start + 3] = msg[3];
 
-    let ip_header = Ipv4Packet::new(&packet[..]).unwrap();
-    let slice = &mut packet[(start + IPV4_HEADER_LEN as usize)..];
-    let csum = checksum(slice, ip_header);
-    MutableUdpPacket::new(slice).unwrap().set_checksum(csum);
+    let (raw_ip_header, raw_udp_packet) = packet.split_at_mut(20);
+    let ip_header = Ipv4Packet::new(&raw_ip_header[..]).unwrap();
+    let csum = checksum(raw_udp_packet, ip_header);
+    MutableUdpPacket::new(raw_udp_packet).unwrap().set_checksum(csum);
 }
 
 fn build_udp6_packet(packet: &mut [u8], start: usize, msg: &str) {
@@ -125,10 +125,10 @@ fn build_udp6_packet(packet: &mut [u8], start: usize, msg: &str) {
     packet[data_start + 2] = msg[2];
     packet[data_start + 3] = msg[3];
 
-    let slice = &mut packet[(start + IPV6_HEADER_LEN as usize)..];
-    let ip_header = Ipv6Packet::new(&packet[..]).unwrap();
-    let csum = checksum(slice, ip_header);
-    MutableUdpPacket::new(slice).unwrap().set_checksum(csum);
+    let (raw_ip_header, raw_udp_packet) = packet.split_at_mut(40);
+    let ip_header = Ipv6Packet::new(&raw_ip_header[..]).unwrap(); // XXX
+    let csum = checksum(raw_udp_packet, ip_header);
+    MutableUdpPacket::new(raw_udp_packet).unwrap().set_checksum(csum);
 }
 
 // OSes have a nasty habit of tweaking IP fields, so we only check
