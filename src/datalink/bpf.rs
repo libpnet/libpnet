@@ -8,7 +8,7 @@
 
 extern crate libc;
 
-use std::collections::{VecDeque};
+use std::collections::VecDeque;
 use std::cmp;
 use std::ffi::CString;
 use std::io;

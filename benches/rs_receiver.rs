@@ -10,7 +10,7 @@
 extern crate pnet;
 extern crate time;
 
-use pnet::datalink::{datalink_channel};
+use pnet::datalink::datalink_channel;
 use pnet::datalink::DataLinkChannelType::Layer2;
 use pnet::util::{NetworkInterface, get_network_interfaces};
 

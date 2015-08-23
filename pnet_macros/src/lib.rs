@@ -55,7 +55,7 @@
 //!      - A method, `pub fn to_immutable<'p>(&'p self) -> ExamplePacket<'p>`, which is simply an
 //!        identity function. It exists for consistency with `MutableExamplePacket`.
 //!      - A number of accessor methods, of the form `pub get_{field_name}(&self) -> {field_type}`,
-//!        which will retreive the host representation of the on-the-wire value.
+//!        which will retrieve the host representation of the on-the-wire value.
 //!  * A `MutableExamplePacket<'p>` structure, which is used when sending packets on the network.
 //!    This structure contains:
 //!      - A method, `pub fn new<'p>(packet: &'p mut [u8]) -> MutableExamplePacket<'p>`, used for
@@ -67,7 +67,7 @@
 //!        struct, will populate the `MutableExamplePacket` with the values from the `Example`
 //!        struct.
 //!      - A number of accessor methods, of the form `pub get_{field_name}(&self) -> {field_type}`,
-//!        which will retreive the host representation of the on-the-wire value.
+//!        which will retrieve the host representation of the on-the-wire value.
 //!      - A number of mutator methods, of the form `pub set_{field_name}(&mut self,
 //!        val: {field_type})`, which will take a host value, convert it to the required
 //!        on-the-wire format, and store it in the buffer which backs the `MutableExamplePacket`.
@@ -145,11 +145,11 @@ extern crate syntax;
 extern crate regex;
 #[macro_use] extern crate rustc;
 
-use rustc::lint::{LintPassObject};
+use rustc::lint::LintPassObject;
 use rustc::plugin::Registry;
 
 use syntax::ast;
-use syntax::codemap::{Span};
+use syntax::codemap::Span;
 use syntax::parse::token;
 use syntax::ext::base::{Annotatable, MultiDecorator, ExtCtxt, MultiModifier};
 use syntax::ptr::P;

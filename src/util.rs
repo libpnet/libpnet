@@ -8,7 +8,7 @@
 
 //! Miscellaneous utilities for low level networking
 
-use bindings::libc;
+extern crate libc;
 
 use packet::PrimitiveValues;
 
@@ -34,24 +34,20 @@ impl MacAddr {
 impl PrimitiveValues for MacAddr {
     type T = (u8, u8, u8, u8, u8, u8);
     fn to_primitive_values(&self) -> (u8, u8, u8, u8, u8, u8) {
-        (self.0, self.1, self.2,
-         self.3, self.4, self.5)
+        (self.0, self.1, self.2, self.3, self.4, self.5)
     }
 }
 
 impl fmt::Display for MacAddr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            MacAddr(a, b, c, d, e, f) =>
-                write!(fmt, "{:x}:{:x}:{:x}:{:x}:{:x}:{:x}",
-                       a, b, c, d, e, f)
-        }
+        write!(fmt, "{:x}:{:x}:{:x}:{:x}:{:x}:{:x}",
+               self.0, self.1, self.2, self.3, self.4, self.5)
     }
 }
 
 impl fmt::Debug for MacAddr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        (self as &fmt::Display).fmt(fmt)
+        fmt::Display::fmt(self, fmt)
     }
 }
 
@@ -126,7 +122,7 @@ pub struct NetworkInterface {
 }
 
 impl NetworkInterface {
-    /// Retreive the MAC address associated with the interface
+    /// Retrieve the MAC address associated with the interface
     pub fn mac_address(&self) -> MacAddr {
         self.mac.unwrap()
     }
@@ -147,14 +143,16 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
             let mac = MacAddr((*sll).sll_addr[0], (*sll).sll_addr[1],
                               (*sll).sll_addr[2], (*sll).sll_addr[3],
                               (*sll).sll_addr[4], (*sll).sll_addr[5]);
-            return (Some(mac), None);
+
+            (Some(mac), None)
         } else {
             let addr = internal::sockaddr_to_addr(mem::transmute(sa),
                                         mem::size_of::<libc::sockaddr_storage>());
-            return match addr {
+
+            match addr {
                 Ok(sa) => (None, Some(sa.ip())),
                 Err(_) => (None, None)
-            };
+            }
         }
     }
 }
@@ -173,12 +171,13 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
                               (*sdl).sdl_data[nlen + 2] as u8,
                               (*sdl).sdl_data[nlen + 3] as u8,
                               (*sdl).sdl_data[nlen + 4] as u8,
-                              (*sdl).sdl_data[nlen + 5] as u8
-                      );
+                              (*sdl).sdl_data[nlen + 5] as u8);
+
             (Some(mac), None)
         } else {
             let addr = internal::sockaddr_to_addr(mem::transmute(sa),
                                         mem::size_of::<libc::sockaddr_storage>());
+
             match addr {
                 Ok(sa) => (None, Some(sa.ip())),
                 Err(_) => (None, None)

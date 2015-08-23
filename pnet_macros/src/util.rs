@@ -255,7 +255,7 @@ fn test_get_shiftr() {
     assert_eq!(get_shiftr(0, 35, 4, 5), 5);
 }
 
-/// Given an offset (number of bits into a chunk of memory), retreive a list of operations to get
+/// Given an offset (number of bits into a chunk of memory), retrieve a list of operations to get
 /// size bits.
 ///
 /// Assumes big endian, and that each byte will be masked, then cast to the next power of two

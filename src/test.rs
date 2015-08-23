@@ -17,7 +17,7 @@ use packet::Packet;
 use packet::ip::{IpNextHeaderProtocols, IpNextHeaderProtocol};
 use packet::ipv4::{Ipv4Packet, MutableIpv4Packet};
 use packet::ipv4;
-use packet::ipv6::{MutableIpv6Packet};
+use packet::ipv6::MutableIpv6Packet;
 use packet::udp::{UdpPacket, MutableUdpPacket};
 use packet::udp;
 use transport::{udp_packet_iter, ipv4_packet_iter, transport_channel, TransportProtocol,

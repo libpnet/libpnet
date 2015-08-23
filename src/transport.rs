@@ -18,22 +18,22 @@
 
 #![macro_use]
 
+extern crate libc;
+
 use self::TransportProtocol::{Ipv4, Ipv6};
 use self::TransportChannelType::{Layer3, Layer4};
 
 use std::io;
 use std::io::Error;
-use std::iter::{repeat};
+use std::iter::repeat;
 use std::net;
 use std::mem;
 use std::sync::Arc;
 
-use bindings::libc;
-
 use packet::Packet;
-use packet::ip::{IpNextHeaderProtocol};
-use packet::ipv4::{Ipv4Packet};
-use packet::udp::{UdpPacket};
+use packet::ip::IpNextHeaderProtocol;
+use packet::ipv4::Ipv4Packet;
+use packet::udp::UdpPacket;
 
 use internal;
 
