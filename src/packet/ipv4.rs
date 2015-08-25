@@ -9,10 +9,12 @@
 //! IPv4 packet abstraction
 
 use packet::ip::IpNextHeaderProtocol;
-
+use packet::{PseudoHeader, PrimitiveValues};
+use util::rfc1071_checksum;
 use pnet_macros::types::*;
 
 use std::net::Ipv4Addr;
+
 
 /// Represents an IPv4 Packet
 #[packet]
@@ -39,26 +41,48 @@ pub struct Ipv4 {
     payload: Vec<u8>,
 }
 
+fn ipv4_options_length<'a>(ipv4: &Ipv4Packet<'a>) -> usize {
+    ipv4.get_header_length() as usize - 5
+}
+
+impl<'p> PseudoHeader for Ipv4Packet<'p> {
+    fn checksum(&self) -> u32 {
+        let mut sum = 0u32;
+
+        // Checksum pseudo-header
+        // IPv4 source
+        let source = self.get_source();
+        match source.octets() {
+            [a, b, c, d] => {
+                let src = vec![a, b, c, d];
+                sum = sum + (src[0] as u32) + (src[2] as u32) << 8;
+                sum = sum + src[1] as u32 + src[3] as u32;
+            }
+        }
+
+        // IPv4 destination
+        let destination = self.get_destination();
+        match destination.octets() {
+            [a, b, c, d] => {
+                let dst = vec![a, b, c, d];
+                sum = sum + (dst[0] as u32) + (dst[2] as u32) << 8;
+                sum = sum + dst[1] as u32 + dst[3] as u32;
+            }
+        }
+
+        // IPv4 Next level protocol
+        let next_level_protocol = self.get_next_level_protocol();
+        let (next_proto,) = next_level_protocol.to_primitive_values();
+        sum = sum + (next_proto as u32);
+        return sum;
+    }
+}
+
 /// Calculates the checksum of an IPv4 packet
 pub fn checksum<'a>(packet: &Ipv4Packet<'a>) -> u16be {
     use packet::Packet;
 
-    let len = packet.get_header_length() as usize * 4;
-    let mut sum = 0u32;
-    let mut i = 0;
-    while i < len {
-        let word = (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        sum = sum + word;
-        i = i + 2;
-    }
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
-    return !sum as u16;
-}
-
-fn ipv4_options_length<'a>(ipv4: &Ipv4Packet<'a>) -> usize {
-    ipv4.get_header_length() as usize - 5
+    return rfc1071_checksum(packet.packet(), 0);
 }
 
 #[test]
