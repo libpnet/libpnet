@@ -22,10 +22,31 @@ CC=$(which clang || which gcc)
 CARGO_FLAGS=
 
 # FIXME Need to get interface differently on Windows
-# FIXME Needs to with with iproute2 too
-PNET_TEST_IFACE=$(ifconfig | egrep 'UP| active' | \
-                  perl -pe '/^[A-z0-9]+:([^\n]|\n\t)*status: active/' | \
-                  grep active -B1 | head -n1 | cut -f1 -d:)
+IFCONFIG=$(which ifconfig)
+IPROUTE2=$(which ip)
+
+
+if [[ -x "$IFCONFIG" ]]; then
+    PNET_TEST_IFACE=$($IFCONFIG | egrep 'UP| active' | \
+                      perl -pe '/^[A-z0-9]+:([^\n]|\n\t)*status: active/' | \
+                      grep active -B1 | head -n1 | cut -f1 -d:)
+fi
+
+if [[ -z "$PNET_TEST_IFACE" && -x "$IPROUTE2" ]]; then
+    PNET_TEST_IFACE=$($IPROUTE2 link show | grep 'UP' | head -n1 | \
+                      cut -f2 -d: | xargs)
+fi
+
+# https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-net
+if [[ -z "$PNET_TEST_IFACE" && "$SYSTEM" = "Linux" ]]; then
+    for file in /sys/class/net/*/carrier; do
+        tmp=$(cat "$file")
+        if [[ "$tmp" -eq 1 ]]; then
+            PNET_TEST_IFACE=$(echo "$file" | cut -d '/' -f 5)
+            break
+        fi
+    done
+fi
 
 # FIXME Need to link libraries properly on Windows
 build() {
