@@ -9,7 +9,7 @@
 //! IPv6 packet abstraction
 
 use packet::ip::IpNextHeaderProtocol;
-
+use packet::{Pseudoheader,PrimitiveValues};
 use pnet_macros::types::*;
 
 use std::net::Ipv6Addr;
@@ -22,7 +22,7 @@ pub struct Ipv6 {
     flow_label: u20be,
     payload_length: u16be,
     #[construct_with(u8)]
-    next_header: IpNextHeaderProtocol,
+    next_level_protocol: IpNextHeaderProtocol,
     hop_limit: u8,
     #[construct_with(u16, u16, u16, u16, u16, u16, u16, u16)]
     source: Ipv6Addr,
@@ -30,6 +30,44 @@ pub struct Ipv6 {
     destination: Ipv6Addr,
     #[payload]
     payload: Vec<u8>
+}
+
+impl <'p> Pseudoheader for Ipv6Packet <'p> {
+    fn checksum(&self) -> u32 {
+        let mut sum = 0u32;
+
+        // Checksum pseudo-header
+        // IPv6 source
+        let source = self.get_source();
+        match source.segments() {
+            [a, b, c, d, e, f, g, h] => {
+                sum = sum + a as u32;
+                sum = sum + b as u32;
+                sum = sum + c as u32;
+                sum = sum + d as u32;
+                sum = sum + e as u32;
+                sum = sum + f as u32;
+                sum = sum + g as u32;
+                sum = sum + h as u32;
+            }
+        }
+
+        // IPv6 destination
+        let destination = self.get_destination();
+        match destination.segments() {
+            [a, b, c, d, e, f, g, h] => {
+                sum = sum + a as u32;
+                sum = sum + b as u32;
+                sum = sum + c as u32;
+                sum = sum + d as u32;
+                sum = sum + e as u32;
+                sum = sum + f as u32;
+                sum = sum + g as u32;
+                sum = sum + h as u32;
+            }
+        }
+        return sum;
+    }
 }
 
 #[test]
@@ -50,8 +88,8 @@ fn ipv6_header_test() {
         ip_header.set_payload_length(0x0101);
         assert_eq!(ip_header.get_payload_length(), 0x0101);
 
-        ip_header.set_next_header(IpNextHeaderProtocols::Udp);
-        assert_eq!(ip_header.get_next_header(), IpNextHeaderProtocols::Udp);
+        ip_header.set_next_level_protocol(IpNextHeaderProtocols::Udp);
+        assert_eq!(ip_header.get_next_level_protocol(), IpNextHeaderProtocols::Udp);
 
         ip_header.set_hop_limit(1);
         assert_eq!(ip_header.get_hop_limit(), 1);

@@ -10,6 +10,12 @@
 
 #![macro_use]
 
+/// Used to help compute checksum value of packet
+pub trait Pseudoheader {
+    /// Converts IPv4 or IPv6 specific fields to a checksum value
+    fn checksum(&self) -> u32;
+}
+
 /// Represents a generic network packet
 pub trait Packet {
     /// Retreive the underlying buffer for the packet
@@ -83,4 +89,3 @@ pub mod ip;
 pub mod ipv4;
 pub mod ipv6;
 pub mod udp;
-

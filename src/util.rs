@@ -10,7 +10,9 @@
 
 use bindings::libc;
 
+use packet::Pseudoheader;
 use packet::PrimitiveValues;
+use packet::ip::IpNextHeaderProtocol;
 
 use std::fmt;
 use std::str::FromStr;
@@ -355,3 +357,36 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
     vec
 }
 
+/// checksum computes a TCP or UDP checksum.
+/// raw_packet is the TCP or UDP packet.
+/// encapsulating_packet is either the ipv4 or ipv6 packet encapsulating the higher protocol.
+/// header_protocol is the byte protocol value for either TCP or UDP.
+pub fn checksum<T: Pseudoheader>(raw_packet: &[u8], encapsulating_packet: T, header_protocol: IpNextHeaderProtocol) -> u16 {
+    let mut sum = encapsulating_packet.checksum();
+    let length = raw_packet.len() as u32;
+    let (next_proto,) = header_protocol.to_primitive_values();
+    sum = sum + next_proto as u32;
+    sum = sum + length & 0xffff;
+    sum = sum + length >> 16;
+    return rfc1071_checksum(raw_packet, sum);
+}
+
+/// Calculates rfc1071 checksum value
+pub fn rfc1071_checksum(packet: &[u8], initial: u32) -> u16 {
+    let length = packet.len() - 1;
+    let mut sum = initial;
+
+    let mut i = 0;
+    while i < length {
+        let word = (packet[i] as u32) << 8 | packet[i + 1] as u32;
+        sum = sum + word;
+        i = i + 2;
+    }
+    if packet.len()%2 == 1 {
+        sum = sum + (packet[length] as u32) << 8
+    }
+    while sum >> 16 != 0 {
+        sum = (sum >> 16) + (sum & 0xFFFF);
+    }
+    return ! sum as u16;
+}
