@@ -30,7 +30,7 @@ use std::sync::Arc;
 use datalink::DataLinkChannelType;
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-use util::{NetworkInterface};
+use util::NetworkInterface;
 
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
 #[repr(C)]
@@ -90,6 +90,23 @@ impl Drop for NmDesc {
     }
 }
 
+pub fn datalink_channel(network_interface: &NetworkInterface,
+                        _write_buffer_size: usize,
+                        _read_buffer_size: usize,
+                        _channel_type: DataLinkChannelType)
+    -> io::Result<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
+    // FIXME probably want one for each of send/recv
+    let desc = NmDesc::new(network_interface);
+    match desc {
+        Ok(desc) => {
+            let arc = Arc::new(desc);
+
+            Ok((DataLinkSenderImpl { desc: arc.clone() },
+                DataLinkReceiverImpl { desc: arc }))
+        },
+        Err(e) => Err(e)
+    }
+}
 
 pub struct DataLinkSenderImpl {
     desc: Arc<NmDesc>
@@ -152,24 +169,6 @@ impl DataLinkReceiverImpl {
         DataLinkChannelIteratorImpl {
             pc: self,
         }
-    }
-}
-
-pub fn datalink_channel(network_interface: &NetworkInterface,
-                        _write_buffer_size: usize,
-                        _read_buffer_size: usize,
-                        _channel_type: DataLinkChannelType)
-    -> io::Result<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
-    // FIXME probably want one for each of send/recv
-    let desc = NmDesc::new(network_interface);
-    match desc {
-        Ok(desc) => {
-            let arc = Arc::new(desc);
-
-            Ok((DataLinkSenderImpl { desc: arc.clone() },
-                DataLinkReceiverImpl { desc: arc }))
-        },
-        Err(e) => Err(e)
     }
 }
 

@@ -39,37 +39,35 @@ pub fn ipv4_checksum<'a>(packet: &UdpPacket<'a>,
     // IPv4 source
     match ipv4_source.octets() {
         [a, b, c, d] => {
-            sum = sum + ((a as u32) << 8 | b as u32);
-            sum = sum + ((c as u32) << 8 | d as u32);
+            sum += (a as u32) << 8 | b as u32;
+            sum += (c as u32) << 8 | d as u32;
         }
     }
 
     // IPv4 destination
     match ipv4_destination.octets() {
         [a, b, c, d] => {
-            sum = sum + ((a as u32) << 8 | b as u32);
-            sum = sum + ((c as u32) << 8 | d as u32);
+            sum += (a as u32) << 8 | b as u32;
+            sum += (c as u32) << 8 | d as u32;
         }
     }
 
     // IPv4 Next level protocol
-    sum = sum + next_level_protocol as u32;
+    sum += next_level_protocol as u32;
 
     // UDP Length
-    sum = sum + ((packet.packet()[4] as u32) << 8 |
-                  packet.packet()[5] as u32);
+    sum += (packet.packet()[4] as u32) << 8 | packet.packet()[5] as u32;
 
     // Checksum UDP header/packet
     let mut i = 0;
     let len = packet.get_length() as usize;
     while i < len && i + 1 < packet.packet().len() {
-        let word = (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        sum = sum + word;
-        i = i + 2;
+        sum += (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
+        i += 2;
     }
     // If the length is odd, make sure to checksum the final byte
     if len & 1 != 0 && len <= packet.packet().len() {
-        sum = sum + ((packet.packet()[len - 1] as u32) << 8);
+        sum += (packet.packet()[len - 1] as u32) << 8;
     }
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);
@@ -139,48 +137,47 @@ pub fn ipv6_checksum<'a>(packet: &UdpPacket<'a>,
     // IPv6 source
     match ipv6_source.segments() {
         [a, b, c, d, e, f, g, h] => {
-            sum = sum + a as u32;
-            sum = sum + b as u32;
-            sum = sum + c as u32;
-            sum = sum + d as u32;
-            sum = sum + e as u32;
-            sum = sum + f as u32;
-            sum = sum + g as u32;
-            sum = sum + h as u32;
+            sum += a as u32;
+            sum += b as u32;
+            sum += c as u32;
+            sum += d as u32;
+            sum += e as u32;
+            sum += f as u32;
+            sum += g as u32;
+            sum += h as u32;
         }
     }
 
     // IPv6 destination
     match ipv6_destination.segments() {
         [a, b, c, d, e, f, g, h] => {
-            sum = sum + a as u32;
-            sum = sum + b as u32;
-            sum = sum + c as u32;
-            sum = sum + d as u32;
-            sum = sum + e as u32;
-            sum = sum + f as u32;
-            sum = sum + g as u32;
-            sum = sum + h as u32;
+            sum += a as u32;
+            sum += b as u32;
+            sum += c as u32;
+            sum += d as u32;
+            sum += e as u32;
+            sum += f as u32;
+            sum += g as u32;
+            sum += h as u32;
         }
     }
 
     // IPv6 Next header
-    sum = sum + next_header as u32;
+    sum += next_header as u32;
 
     // UDP Length
-    sum = sum + packet.get_length() as u32;
+    sum += packet.get_length() as u32;
 
     // Checksum UDP header/packet
     let mut i = 0;
     let len = packet.get_length() as usize;
     while i < len && i + 1 < packet.packet().len() {
-        let word = (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        sum = sum + word;
-        i = i + 2;
+        sum += (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
+        i += 2;
     }
     // If the length is odd, make sure to checksum the final byte
     if len & 1 != 0 && len <= packet.packet().len() {
-        sum = sum + (packet.packet()[len - 1] as u32) << 8;
+        sum += (packet.packet()[len - 1] as u32) << 8;
     }
 
     while sum >> 16 != 0 {
@@ -192,8 +189,8 @@ pub fn ipv6_checksum<'a>(packet: &UdpPacket<'a>,
 
 #[test]
 fn udp_header_ipv6_test() {
-    use packet::ip::{IpNextHeaderProtocols};
-    use packet::ipv6::{MutableIpv6Packet};
+    use packet::ip::IpNextHeaderProtocols;
+    use packet::ipv6::MutableIpv6Packet;
 
     let mut packet = [0u8; 40 + 8 + 4];
     let next_header = IpNextHeaderProtocols::Udp;

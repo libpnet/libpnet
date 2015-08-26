@@ -41,8 +41,8 @@
 //! ```no_run
 //! extern crate pnet;
 //!
-//! use pnet::datalink::{datalink_channel};
-//! use pnet::datalink::DataLinkChannelType::{Layer2};
+//! use pnet::datalink::datalink_channel;
+//! use pnet::datalink::DataLinkChannelType::Layer2;
 //! use pnet::packet::{Packet, MutablePacket};
 //! use pnet::util::{NetworkInterface, get_network_interfaces};
 //!

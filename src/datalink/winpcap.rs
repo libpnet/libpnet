@@ -9,7 +9,7 @@
 extern crate libc;
 
 use std::cmp;
-use std::collections::{RingBuf};
+use std::collections::RingBuf;
 use std::ffi::CString;
 use std::old_io::{IoResult, IoError};
 use std::mem;
@@ -17,7 +17,7 @@ use std::raw::Slice;
 use std::sync::Arc;
 
 use bindings::{bpf, winpcap};
-use datalink::{DataLinkChannelType};
+use datalink::DataLinkChannelType;
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use util::NetworkInterface;
@@ -130,27 +130,20 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     let adapter = Arc::new(WinPcapAdapter { adapter: adapter });
     let sender = DataLinkSenderImpl {
         adapter: adapter.clone(),
-        _vec: write_buffer,
+        _write_buffer: write_buffer,
         packet: WinPcapPacket { packet: write_packet }
     };
     let receiver = DataLinkReceiverImpl {
         adapter: adapter,
-        _vec: read_buffer,
+        _read_buffer: read_buffer,
         packet: WinPcapPacket { packet: read_packet }
     };
     Ok((sender, receiver))
 }
 
-
 pub struct DataLinkSenderImpl {
     adapter: Arc<WinPcapAdapter>,
-    _vec: Vec<u8>,
-    packet: WinPcapPacket,
-}
-
-pub struct DataLinkReceiverImpl {
-    adapter: Arc<WinPcapAdapter>,
-    _vec: Vec<u8>,
+    _write_buffer: Vec<u8>,
     packet: WinPcapPacket,
 }
 
@@ -207,6 +200,12 @@ impl DataLinkSenderImpl {
 
 unsafe impl Send for DataLinkSenderImpl {}
 unsafe impl Sync for DataLinkSenderImpl {}
+
+pub struct DataLinkReceiverImpl {
+    adapter: Arc<WinPcapAdapter>,
+    _read_buffer: Vec<u8>,
+    packet: WinPcapPacket,
+}
 
 impl DataLinkReceiverImpl {
     pub fn iter<'a>(&'a mut self) -> DataLinkChannelIteratorImpl<'a> {

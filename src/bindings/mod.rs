@@ -6,9 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-// NOTE Remove this once the next rust nightly is out.
-pub mod libc;
-
 #[cfg(any(target_os = "freebsd", target_os = "macos", windows))]
 pub mod bpf;
 

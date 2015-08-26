@@ -10,7 +10,7 @@
 
 use std::io;
 use std::iter::Iterator;
-use std::option::{Option};
+use std::option::Option;
 
 use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
 use util::NetworkInterface;
@@ -68,7 +68,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     -> io::Result<(DataLinkSender, DataLinkReceiver)> {
     match backend::datalink_channel(network_interface, write_buffer_size, read_buffer_size,
                                              channel_type) {
-        Ok((tx, rx)) => Ok((DataLinkSender { dlsi: tx }, DataLinkReceiver { dlri: rx })),
+        Ok((sender, receiver)) => Ok((DataLinkSender { backend: sender }, DataLinkReceiver { backend: receiver })),
         Err(e) => Err(e)
     }
 }
@@ -76,7 +76,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
 /// Structure for sending packets at the data link layer. Should be constructed using
 /// datalink_channel().
 pub struct DataLinkSender {
-    dlsi: backend::DataLinkSenderImpl
+    backend: backend::DataLinkSenderImpl
 }
 
 impl DataLinkSender {
@@ -91,7 +91,7 @@ impl DataLinkSender {
                           func: &mut F) -> Option<io::Result<()>>
         where F : FnMut(MutableEthernetPacket)
     {
-        self.dlsi.build_and_send(num_packets, packet_size, func)
+        self.backend.build_and_send(num_packets, packet_size, func)
     }
 
     /// Send a packet
@@ -102,14 +102,14 @@ impl DataLinkSender {
     #[inline]
     pub fn send_to(&mut self, packet: &EthernetPacket, dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
-        self.dlsi.send_to(packet, dst)
+        self.backend.send_to(packet, dst)
     }
 }
 
 /// Structure for receiving packets at the data link layer. Should be constructed using
 /// datalink_channel().
 pub struct DataLinkReceiver {
-    dlri: backend::DataLinkReceiverImpl
+    backend: backend::DataLinkReceiverImpl
 }
 
 impl DataLinkReceiver {
@@ -118,22 +118,20 @@ impl DataLinkReceiver {
     /// This will likely be removed once other layer two types are supported.
     #[inline]
     pub fn iter<'a>(&'a mut self) -> DataLinkChannelIterator<'a> {
-        DataLinkChannelIterator {
-            imp: self.dlri.iter()
-        }
+        DataLinkChannelIterator { backend: self.backend.iter() }
     }
 }
 
 /// An iterator over data link layer packets
 pub struct DataLinkChannelIterator<'a> {
-    imp: backend::DataLinkChannelIteratorImpl<'a>,
+    backend: backend::DataLinkChannelIteratorImpl<'a>,
 }
 
 impl<'a> DataLinkChannelIterator<'a> {
     /// Get the next EthernetPacket in the channel
     #[inline]
     pub fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
-        self.imp.next()
+        self.backend.next()
     }
 }
 
