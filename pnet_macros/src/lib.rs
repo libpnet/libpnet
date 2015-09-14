@@ -139,7 +139,7 @@
 
 #![deny(missing_docs)]
 
-#![feature(append, fmt_radix, plugin_registrar, quote, rustc_private)]
+#![feature(fmt_radix, plugin_registrar, quote, rustc_private)]
 
 extern crate syntax;
 extern crate regex;
