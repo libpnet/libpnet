@@ -145,7 +145,6 @@ extern crate syntax;
 extern crate regex;
 #[macro_use] extern crate rustc;
 
-use rustc::lint::LintPassObject;
 use rustc::plugin::Registry;
 
 use syntax::ast;
@@ -155,7 +154,6 @@ use syntax::ext::base::{Annotatable, MultiDecorator, ExtCtxt, MultiModifier};
 use syntax::ptr::P;
 
 mod decorator;
-mod lint;
 mod util;
 
 pub mod types;
@@ -164,7 +162,6 @@ pub mod types;
 ///
 /// The #[packet] attribute is consumed, so we replace it with two internal attributes,
 /// #[_packet_generator], which is used to generate the packet implementations, and
-/// #[_packet_lint], which is used to trigger linting.
 fn packet_modifier(ecx: &mut ExtCtxt,
                    _span: Span,
                    _meta_item: &ast::MetaItem,
@@ -172,7 +169,6 @@ fn packet_modifier(ecx: &mut ExtCtxt,
     let item = item.expect_item();
     let mut new_item = (*item).clone();
 
-    new_item.attrs.push(quote_attr!(ecx, #[_packet_lint]));
     new_item.attrs.push(quote_attr!(ecx, #[_packet_generator]));
     new_item.attrs.push(quote_attr!(ecx, #[derive(Clone, Debug)]));
     new_item.attrs.push(quote_attr!(ecx, #[allow(unused_attributes)]));
@@ -182,16 +178,13 @@ fn packet_modifier(ecx: &mut ExtCtxt,
 
 /// The entry point for the syntax extension
 ///
-/// This registers each part of the plugin with the compiler. There are three parts, a modifier, to
-/// add additional attributes to the original structure, the decorator, to generate the various
-/// required structures and method, and a lint pass, which performs additional validation which
-/// requires type information.
+/// This registers each part of the plugin with the compiler. There are two parts: a modifier, to
+/// add additional attributes to the original structure; and a decorator, to generate the various
+/// required structures and method.
 #[plugin_registrar]
 pub fn plugin_registrar(registry: &mut Registry) {
     registry.register_syntax_extension(token::intern("packet"),
                                        MultiModifier(Box::new(packet_modifier)));
     registry.register_syntax_extension(token::intern("_packet_generator"),
                                        MultiDecorator(Box::new(decorator::generate_packet)));
-
-    registry.register_lint_pass(Box::new(lint::PacketPass) as LintPassObject);
 }
