@@ -15,7 +15,7 @@ use std::mem;
 use std::sync::Arc;
 
 use bindings::linux;
-use datalink::DataLinkChannelType;
+use datalink::{DataLinkChannelType, DataLinkSender, DataLinkReceiver, DataLinkChannelIterator};
 use datalink::DataLinkChannelType::{Layer2, Layer3};
 use internal;
 use packet::Packet;
@@ -39,11 +39,12 @@ fn network_addr_to_sockaddr(ni: &NetworkInterface,
     }
 }
 
+#[inline]
 pub fn datalink_channel(network_interface: &NetworkInterface,
                         write_buffer_size: usize,
                         read_buffer_size: usize,
                         channel_type: DataLinkChannelType)
-    -> io::Result<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
+    -> io::Result<(Box<DataLinkSender>, Box<DataLinkReceiver>)> {
     let eth_p_all = 0x0003;
     let (typ, proto) = match channel_type {
         Layer2 => (libc::SOCK_RAW, eth_p_all),
@@ -82,18 +83,18 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         }
 
         let fd = Arc::new(internal::FileDesc { fd: socket });
-        let sender = DataLinkSenderImpl {
+        let sender = Box::new(DataLinkSenderImpl {
             socket: fd.clone(),
             write_buffer: repeat(0u8).take(write_buffer_size).collect(),
             _channel_type: channel_type,
             send_addr: unsafe { *(send_addr as *const libc::sockaddr_ll) },
             send_addr_len: len,
-        };
-        let receiver = DataLinkReceiverImpl {
+        });
+        let receiver = Box::new(DataLinkReceiverImpl {
             socket: fd,
             read_buffer: repeat(0u8).take(read_buffer_size).collect(),
             _channel_type: channel_type
-        };
+        });
         Ok((sender, receiver))
     } else {
         Err(io::Error::last_os_error())
@@ -108,11 +109,11 @@ pub struct DataLinkSenderImpl {
     send_addr_len: usize
 }
 
-impl DataLinkSenderImpl {
+impl DataLinkSender for DataLinkSenderImpl {
     // FIXME Layer 3
-    pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
-                          func: &mut F) -> Option<io::Result<()>>
-        where F : FnMut(MutableEthernetPacket)
+    #[inline]
+    fn build_and_send(&mut self, num_packets: usize, packet_size: usize,
+                          func: &mut FnMut(MutableEthernetPacket)) -> Option<io::Result<()>>
     {
         let len = num_packets * packet_size;
         if len < self.write_buffer.as_slice().len() {
@@ -138,7 +139,8 @@ impl DataLinkSenderImpl {
         }
     }
 
-    pub fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
+    #[inline]
+    fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
         match internal::send_to(self.socket.fd,
                                 packet.packet(),
@@ -156,12 +158,12 @@ pub struct DataLinkReceiverImpl {
     _channel_type: DataLinkChannelType,
 }
 
-impl DataLinkReceiverImpl {
+impl DataLinkReceiver for DataLinkReceiverImpl {
     // FIXME Layer 3
-    pub fn iter<'a>(&'a mut self) -> DataLinkChannelIteratorImpl<'a> {
-        DataLinkChannelIteratorImpl {
+    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
+        Box::new(DataLinkChannelIteratorImpl {
             pc: self,
-        }
+        })
     }
 }
 
@@ -169,8 +171,8 @@ pub struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
 }
 
-impl<'a> DataLinkChannelIteratorImpl<'a> {
-    pub fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
+impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+    fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
         let res = internal::recv_from(self.pc.socket.fd, self.pc.read_buffer.as_mut_slice(), &mut caddr);
         match res {

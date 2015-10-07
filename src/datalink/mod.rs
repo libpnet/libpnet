@@ -9,7 +9,6 @@
 //! Support for sending and receiving data link layer packets
 
 use std::io;
-use std::iter::Iterator;
 use std::option::Option;
 
 use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
@@ -65,21 +64,14 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
                         write_buffer_size: usize,
                         read_buffer_size: usize,
                         channel_type: DataLinkChannelType)
-    -> io::Result<(DataLinkSender, DataLinkReceiver)> {
-    match backend::datalink_channel(network_interface, write_buffer_size, read_buffer_size,
-                                             channel_type) {
-        Ok((sender, receiver)) => Ok((DataLinkSender { backend: sender }, DataLinkReceiver { backend: receiver })),
-        Err(e) => Err(e)
-    }
+    -> io::Result<(Box<DataLinkSender>, Box<DataLinkReceiver>)> {
+    backend::datalink_channel(network_interface, write_buffer_size,
+        read_buffer_size, channel_type)
 }
 
 /// Structure for sending packets at the data link layer. Should be constructed using
 /// datalink_channel().
-pub struct DataLinkSender {
-    backend: backend::DataLinkSenderImpl
-}
-
-impl DataLinkSender {
+pub trait DataLinkSender : Send {
     /// Create and send a number of packets
     ///
     /// This will call `func` `num_packets` times. The function will be provided with a mutable
@@ -87,12 +79,8 @@ impl DataLinkSender {
     /// avoiding the copy required for `send`. If there is not sufficient capacity in the buffer,
     /// None will be returned.
     #[inline]
-    pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
-                          func: &mut F) -> Option<io::Result<()>>
-        where F : FnMut(MutableEthernetPacket)
-    {
-        self.backend.build_and_send(num_packets, packet_size, func)
-    }
+    fn build_and_send(&mut self, num_packets: usize, packet_size: usize,
+                          func: &mut FnMut(MutableEthernetPacket)) -> Option<io::Result<()>>;
 
     /// Send a packet
     ///
@@ -100,38 +88,24 @@ impl DataLinkSender {
     /// operating system being used. The second parameter is currently ignored, however `None`
     /// should be passed.
     #[inline]
-    pub fn send_to(&mut self, packet: &EthernetPacket, dst: Option<NetworkInterface>)
-        -> Option<io::Result<()>> {
-        self.backend.send_to(packet, dst)
-    }
+    fn send_to(&mut self, packet: &EthernetPacket, dst: Option<NetworkInterface>)
+        -> Option<io::Result<()>>;
 }
 
 /// Structure for receiving packets at the data link layer. Should be constructed using
 /// datalink_channel().
-pub struct DataLinkReceiver {
-    backend: backend::DataLinkReceiverImpl
-}
-
-impl DataLinkReceiver {
+pub trait DataLinkReceiver : Send {
     /// Returns an iterator over `EthernetPacket`s.
     ///
     /// This will likely be removed once other layer two types are supported.
     #[inline]
-    pub fn iter<'a>(&'a mut self) -> DataLinkChannelIterator<'a> {
-        DataLinkChannelIterator { backend: self.backend.iter() }
-    }
+    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a>;
 }
 
 /// An iterator over data link layer packets
-pub struct DataLinkChannelIterator<'a> {
-    backend: backend::DataLinkChannelIteratorImpl<'a>,
-}
-
-impl<'a> DataLinkChannelIterator<'a> {
+pub trait DataLinkChannelIterator<'a> {
     /// Get the next EthernetPacket in the channel
     #[inline]
-    pub fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
-        self.backend.next()
-    }
+    fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>>;
 }
 
