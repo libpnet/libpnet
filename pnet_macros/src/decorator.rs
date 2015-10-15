@@ -83,16 +83,32 @@ fn make_type(ty_str: String) -> Result<Type, String> {
     }
 }
 
-fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef) -> Option<Packet> {
+fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantData) -> Option<Packet> {
     let mut payload_span = None;
     let mut fields = Vec::new();
 
-    for ref field in &sd.fields {
+    // FIXME This is an ugly hack to match the old behaviour
+    let sfields = match vd {
+        &ast::VariantData::Struct(ref fields, _) => {
+            fields
+        },
+        &ast::VariantData::Tuple(ref fields, _) => {
+            for ref field in fields {
+                if let None = field.node.ident() {
+                    ecx.span_err(field.span, "all fields in a packet must be named");
+                    return None;
+                }
+            }
+            return None;
+        },
+        _ => return None
+    };
+
+    for ref field in sfields {
         let field_name = match field.node.ident() {
             Some(name) => name.to_string(),
             None => {
-                ecx.span_err(field.span, "all fields in a packet must be named");
-                return None;
+                panic!("This shouldn't happen");
             }
         };
         let mut is_payload = false;
@@ -159,7 +175,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, sd: &ast::StructDef)
                         "length" => {
                             let ref node = lit.node;
                             if let &ast::LitStr(ref s, _) = node {
-                                let field_names: Vec<String> = sd.fields.iter().filter_map(|field| {
+                                let field_names: Vec<String> = sfields.iter().filter_map(|field| {
                                     field.node.ident()
                                         .map(|name| name.to_string())
                                         .and_then(|name| {
@@ -254,9 +270,9 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &Annotatable) -> Option<Vec
                 }
                 let mut vec = vec![];
                 for ref variant in &ed.variants {
-                    if let ast::StructVariantKind(ref sd) = variant.node.kind {
+                    if variant.node.data.is_struct() {
                         let name = variant.node.name.to_string();
-                        if let Some(packet) = make_packet(ecx, span, name, sd) {
+                        if let Some(packet) = make_packet(ecx, span, name, &variant.node.data) {
                             vec.push(packet);
                         } else {
                             return None;
