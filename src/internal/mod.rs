@@ -19,7 +19,7 @@ mod native;
 #[cfg(windows)] pub type BufLen = i32;
 
 #[cfg(not(windows))] pub type CSocket = libc::c_int;
-#[cfg(not(windows))] pub type BufLen = u64;
+#[cfg(not(windows))] pub type BufLen = libc::size_t;
 
 // Any file descriptor on unix, only sockets on Windows.
 pub struct FileDesc {
