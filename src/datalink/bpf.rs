@@ -19,17 +19,18 @@ use std::sync::Arc;
 use bindings::bpf;
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-use datalink::DataLinkChannelType;
+use datalink::{DataLinkChannelType, DataLinkSender, DataLinkReceiver, DataLinkChannelIterator};
 use datalink::DataLinkChannelType::{Layer2, Layer3};
 use internal;
 use util::NetworkInterface;
 
 // NOTE buffer must be word aligned.
+#[inline]
 pub fn datalink_channel(network_interface: &NetworkInterface,
                         write_buffer_size: usize,
                         read_buffer_size: usize,
                         channel_type: DataLinkChannelType)
-    -> io::Result<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
+    -> io::Result<(Box<DataLinkSender>, Box<DataLinkReceiver>)> {
     #[cfg(target_os = "freebsd")]
     fn get_fd() -> libc::c_int {
         unsafe {
@@ -139,16 +140,16 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     }
 
     let fd = Arc::new(internal::FileDesc { fd: fd });
-    let sender = DataLinkSenderImpl {
+    let sender = Box::new(DataLinkSenderImpl {
         fd: fd.clone(),
         write_buffer: repeat(0u8).take(write_buffer_size).collect(),
         header_size: header_size,
-    };
-    let receiver = DataLinkReceiverImpl {
+    });
+    let receiver = Box::new(DataLinkReceiverImpl {
         fd: fd,
         read_buffer: repeat(0u8).take(read_buffer_size).collect(),
         header_size: header_size,
-    };
+    });
 
     Ok((sender, receiver))
 }
@@ -159,10 +160,10 @@ pub struct DataLinkSenderImpl {
     header_size: usize,
 }
 
-impl DataLinkSenderImpl {
-    pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
-                          func: &mut F) -> Option<io::Result<()>>
-        where F : FnMut(MutableEthernetPacket)
+impl DataLinkSender for DataLinkSenderImpl {
+    #[inline]
+    fn build_and_send(&mut self, num_packets: usize, packet_size: usize,
+                          func: &mut FnMut(MutableEthernetPacket)) -> Option<io::Result<()>>
     {
         let len = num_packets * (packet_size + self.header_size);
         if len >= self.write_buffer.len() {
@@ -193,7 +194,8 @@ impl DataLinkSenderImpl {
         }
     }
 
-    pub fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
+    #[inline]
+    fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
         match unsafe { libc::write(self.fd.fd,
                                    packet.packet().as_ptr() as *const libc::c_void,
@@ -210,14 +212,14 @@ pub struct DataLinkReceiverImpl {
     header_size: usize,
 }
 
-impl DataLinkReceiverImpl {
-    pub fn iter<'a>(&'a mut self) -> DataLinkChannelIteratorImpl<'a> {
+impl DataLinkReceiver for DataLinkReceiverImpl {
+    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
         let buflen = self.read_buffer.len();
-        DataLinkChannelIteratorImpl {
+        Box::new(DataLinkChannelIteratorImpl {
             pc: self,
             // Enough room for minimally sized packets without reallocating
             packets: VecDeque::with_capacity(buflen / 64)
-        }
+        })
     }
 }
 
@@ -226,8 +228,8 @@ pub struct DataLinkChannelIteratorImpl<'a> {
     packets: VecDeque<(usize, usize)>,
 }
 
-impl<'a> DataLinkChannelIteratorImpl<'a> {
-    pub fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
+impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+    fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
         if self.packets.is_empty() {
             let buflen = match unsafe {
                 libc::read(self.pc.fd.fd,

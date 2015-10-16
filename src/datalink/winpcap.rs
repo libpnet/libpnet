@@ -17,7 +17,7 @@ use std::raw::Slice;
 use std::sync::Arc;
 
 use bindings::{bpf, winpcap};
-use datalink::DataLinkChannelType;
+use datalink::{DataLinkChannelType, DataLinkSender, DataLinkReceiver, DataLinkChannelIterator};
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use util::NetworkInterface;
@@ -46,11 +46,12 @@ impl Drop for WinPcapPacket {
     }
 }
 
+#[inline]
 pub fn datalink_channel(network_interface: &NetworkInterface,
            read_buffer_size: usize,
            write_buffer_size: usize,
            channel_type: DataLinkChannelType)
-    -> IoResult<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
+    -> IoResult<(Box<DataLinkSenderImpl>, Box<DataLinkReceiverImpl>)> {
     let mut read_buffer = Vec::new();
     read_buffer.resize(read_buffer_size, 0u8);
 
@@ -128,16 +129,16 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     }
 
     let adapter = Arc::new(WinPcapAdapter { adapter: adapter });
-    let sender = DataLinkSenderImpl {
+    let sender = Box::new(DataLinkSenderImpl {
         adapter: adapter.clone(),
         _write_buffer: write_buffer,
         packet: WinPcapPacket { packet: write_packet }
-    };
-    let receiver = DataLinkReceiverImpl {
+    });
+    let receiver = Box::new(DataLinkReceiverImpl {
         adapter: adapter,
         _read_buffer: read_buffer,
         packet: WinPcapPacket { packet: read_packet }
-    };
+    });
     Ok((sender, receiver))
 }
 
@@ -147,10 +148,10 @@ pub struct DataLinkSenderImpl {
     packet: WinPcapPacket,
 }
 
-impl DataLinkSenderImpl {
-    pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
-                          func: &mut F) -> Option<IoResult<()>>
-        where F : FnMut(MutableEthernetPacket)
+impl DataLinkSender for DataLinkSenderImpl {
+    #[inline]
+    fn build_and_send(&mut self, num_packets: usize, packet_size: usize,
+                          func: &mut FnMut(MutableEthernetPacket)) -> Option<IoResult<()>>
     {
         use std::raw::Slice;
         let len = num_packets * packet_size;
@@ -189,7 +190,8 @@ impl DataLinkSenderImpl {
         }
     }
 
-    pub fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
+    #[inline]
+    fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
         -> Option<IoResult<()>> {
         use old_packet::MutablePacket;
         self.build_and_send(1, packet.packet().len(), &mut |mut eh| {
@@ -207,14 +209,14 @@ pub struct DataLinkReceiverImpl {
     packet: WinPcapPacket,
 }
 
-impl DataLinkReceiverImpl {
-    pub fn iter<'a>(&'a mut self) -> DataLinkChannelIteratorImpl<'a> {
+impl DataLinkReceiver for DataLinkReceiverImpl {
+    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
         let buflen = unsafe { (*self.packet.packet).Length } as usize;
-        DataLinkChannelIteratorImpl {
+        Box::new(DataLinkChannelIteratorImpl {
             pc: self,
             // Enough room for minimally sized packets without reallocating
             packets: RingBuf::with_capacity(buflen / 64)
-        }
+        })
     }
 }
 
@@ -226,8 +228,8 @@ pub struct DataLinkChannelIteratorImpl<'a> {
     packets: RingBuf<(usize, usize)>,
 }
 
-impl<'a> DataLinkChannelIteratorImpl<'a> {
-    pub fn next<'c>(&'c mut self) -> IoResult<EthernetPacket<'c>> {
+impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+    fn next<'c>(&'c mut self) -> IoResult<EthernetPacket<'c>> {
         // NOTE Most of the logic here is identical to FreeBSD/OS X
         if self.packets.is_empty() {
             let ret = unsafe {

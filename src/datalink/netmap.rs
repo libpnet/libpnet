@@ -27,7 +27,7 @@ use std::ptr;
 use std::raw;
 use std::sync::Arc;
 
-use datalink::DataLinkChannelType;
+use datalink::{DataLinkChannelType, DataLinkSender, DataLinkReceiver, DataLinkChannelIterator};
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use util::NetworkInterface;
@@ -90,19 +90,20 @@ impl Drop for NmDesc {
     }
 }
 
+#[inline]
 pub fn datalink_channel(network_interface: &NetworkInterface,
                         _write_buffer_size: usize,
                         _read_buffer_size: usize,
                         _channel_type: DataLinkChannelType)
-    -> io::Result<(DataLinkSenderImpl, DataLinkReceiverImpl)> {
+    -> io::Result<(Box<DataLinkSenderImpl>, Box<DataLinkReceiverImpl>)> {
     // FIXME probably want one for each of send/recv
     let desc = NmDesc::new(network_interface);
     match desc {
         Ok(desc) => {
             let arc = Arc::new(desc);
 
-            Ok((DataLinkSenderImpl { desc: arc.clone() },
-                DataLinkReceiverImpl { desc: arc }))
+            Ok((Box::new(DataLinkSenderImpl { desc: arc.clone() }),
+                Box::new(DataLinkReceiverImpl { desc: arc })))
         },
         Err(e) => Err(e)
     }
@@ -112,10 +113,10 @@ pub struct DataLinkSenderImpl {
     desc: Arc<NmDesc>
 }
 
-impl DataLinkSenderImpl {
-    pub fn build_and_send<F>(&mut self, num_packets: usize, packet_size: usize,
-                          func: &mut F) -> Option<io::Result<()>>
-        where F : FnMut(MutableEthernetPacket)
+impl DataLinkSender for DataLinkSenderImpl {
+    #[inline]
+    fn build_and_send(&mut self, num_packets: usize, packet_size: usize,
+                          func: &mut FnMut(MutableEthernetPacket)) -> Option<io::Result<()>>
     {
         assert!(num::cast::<usize, u16>(packet_size).unwrap() as libc::c_uint <= self.desc.buf_size);
         let desc = self.desc.desc;
@@ -150,7 +151,8 @@ impl DataLinkSenderImpl {
         Some(Ok(()))
     }
 
-    pub fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
+    #[inline]
+    fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
         use packet::MutablePacket;
         self.build_and_send(1, packet.packet().len(), &mut |mut eh: MutableEthernetPacket| {
@@ -163,12 +165,12 @@ pub struct DataLinkReceiverImpl {
     desc: Arc<NmDesc>,
 }
 
-impl DataLinkReceiverImpl {
+impl DataLinkReceiver for DataLinkReceiverImpl {
     // FIXME Layer 3
-    pub fn iter<'a>(&'a mut self) -> DataLinkChannelIteratorImpl<'a> {
-        DataLinkChannelIteratorImpl {
+    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
+        Box::new(DataLinkChannelIteratorImpl {
             pc: self,
-        }
+        })
     }
 }
 
@@ -176,8 +178,8 @@ pub struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
 }
 
-impl<'a> DataLinkChannelIteratorImpl<'a> {
-    pub fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
+impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+    fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
         let desc = self.pc.desc.desc;
         let mut h: nm_pkthdr = unsafe { mem::uninitialized() };
         let mut buf = unsafe { nm_nextpkt(desc, &mut h) };
