@@ -31,7 +31,7 @@ impl fmt::Display for GetOperation {
         let mask_str = if should_mask {
             format!("({{}} & 0x{})", fmt::radix(self.mask, 16))
         } else {
-            "{}".to_string()
+            "{}".to_owned()
         };
 
         if shift == 0 {
@@ -76,13 +76,13 @@ impl fmt::Display for SetOperation {
         let save_str = if should_save {
             format!("({{packet}} & 0x{})", fmt::radix(self.save_mask, 16))
         } else {
-            "".to_string()
+            "".to_owned()
         };
 
         let mask_str = if should_mask {
             format!("({{val}} & 0x{})", fmt::radix(self.value_mask, 16))
         } else {
-            "{val}".to_string()
+            "{val}".to_owned()
         };
 
         let shift_str = if shift == 0 {

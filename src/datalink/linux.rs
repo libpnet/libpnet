@@ -28,9 +28,8 @@ fn network_addr_to_sockaddr(ni: &NetworkInterface,
     unsafe {
         let sll: *mut libc::sockaddr_ll = mem::transmute(storage);
         (*sll).sll_family = libc::AF_PACKET as libc::sa_family_t;
-        match ni.mac {
-            Some(MacAddr(a, b, c, d, e, f)) => (*sll).sll_addr = [a, b, c, d, e, f, 0, 0],
-            _ => ()
+        if let Some(MacAddr(a, b, c, d, e, f)) = ni.mac {
+            (*sll).sll_addr = [a, b, c, d, e, f, 0, 0];
         }
         (*sll).sll_protocol = (proto as u16).to_be();
         (*sll).sll_halen = 6;
@@ -116,11 +115,10 @@ impl DataLinkSender for DataLinkSenderImpl {
                           func: &mut FnMut(MutableEthernetPacket)) -> Option<io::Result<()>>
     {
         let len = num_packets * packet_size;
-        if len < self.write_buffer.as_slice().len() {
-            let min = cmp::min(self.write_buffer.as_slice().len(), len);
-            let ref mut mut_slice = self.write_buffer;
-            for chunk in mut_slice.as_mut_slice()[.. min]
-                                  .chunks_mut(packet_size) {
+        if len < self.write_buffer.len() {
+            let min = cmp::min(self.write_buffer[..].len(), len);
+            let mut mut_slice = &mut self.write_buffer;
+            for chunk in mut_slice[.. min].chunks_mut(packet_size) {
                 {
                     let eh = MutableEthernetPacket::new(chunk).unwrap();
                     func(eh);
@@ -160,6 +158,8 @@ pub struct DataLinkReceiverImpl {
 
 impl DataLinkReceiver for DataLinkReceiverImpl {
     // FIXME Layer 3
+    // FIXME See https://github.com/Manishearth/rust-clippy/issues/417
+    #[cfg_attr(feature = "clippy", allow(needless_lifetimes))]
     fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
         Box::new(DataLinkChannelIteratorImpl {
             pc: self,
@@ -172,11 +172,11 @@ pub struct DataLinkChannelIteratorImpl<'a> {
 }
 
 impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
-    fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
+    fn next(&mut self) -> io::Result<EthernetPacket> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
-        let res = internal::recv_from(self.pc.socket.fd, self.pc.read_buffer.as_mut_slice(), &mut caddr);
+        let res = internal::recv_from(self.pc.socket.fd, &mut self.pc.read_buffer, &mut caddr);
         match res {
-            Ok(len) => Ok(EthernetPacket::new(&self.pc.read_buffer.as_slice()[0 .. len]).unwrap()),
+            Ok(len) => Ok(EthernetPacket::new(&self.pc.read_buffer[0 .. len]).unwrap()),
             Err(e) => Err(e),
         }
     }

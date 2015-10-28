@@ -41,7 +41,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     #[cfg(target_os = "macos")]
     fn get_fd() -> libc::c_int {
         // FIXME This is an arbitrary number of attempts
-        for i in (0..1_000isize) {
+        for i in 0..1_000isize {
             let fd = unsafe {
                 let file_name = format!("/dev/bpf{}", i);
                 libc::open(CString::new(file_name.as_bytes()).unwrap().as_ptr(), libc::O_RDWR, 0)
@@ -50,7 +50,8 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
                 return fd;
             }
         }
-        return -1;
+
+        -1
     }
 
     #[cfg(target_os = "freebsd")]
@@ -125,9 +126,8 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         header_size = 4;
 
         // Allow packets to be read back after they are written
-        match set_feedback(fd) {
-            Err(e) => return Err(e),
-            _ => ()
+        if let Err(e) = set_feedback(fd) {
+            return Err(e);
         }
 
     } else {
@@ -213,6 +213,8 @@ pub struct DataLinkReceiverImpl {
 }
 
 impl DataLinkReceiver for DataLinkReceiverImpl {
+    // FIXME See https://github.com/Manishearth/rust-clippy/issues/417
+    #[cfg_attr(feature = "clippy", allow(needless_lifetimes))]
     fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
         let buflen = self.read_buffer.len();
         Box::new(DataLinkChannelIteratorImpl {
@@ -229,7 +231,7 @@ pub struct DataLinkChannelIteratorImpl<'a> {
 }
 
 impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
-    fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>> {
+    fn next(&mut self) -> io::Result<EthernetPacket> {
         if self.packets.is_empty() {
             let buflen = match unsafe {
                 libc::read(self.pc.fd.fd,

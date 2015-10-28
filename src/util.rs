@@ -166,7 +166,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
         } else if (*sa).sa_family as libc::c_int == bpf::AF_LINK {
             let sdl: *const bpf::sockaddr_dl = mem::transmute(sa);
             let nlen = (*sdl).sdl_nlen as usize;
-            let mac = MacAddr((*sdl).sdl_data[nlen + 0] as u8,
+            let mac = MacAddr((*sdl).sdl_data[nlen    ] as u8,
                               (*sdl).sdl_data[nlen + 1] as u8,
                               (*sdl).sdl_data[nlen + 2] as u8,
                               (*sdl).sdl_data[nlen + 3] as u8,
@@ -207,7 +207,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
         while !addr.is_null() {
             let c_str = (*addr).ifa_name as *const i8;
             let bytes = CStr::from_ptr(c_str).to_bytes();
-            let name = from_utf8_unchecked(bytes).to_string();
+            let name = from_utf8_unchecked(bytes).to_owned();
             let (mac, ip) = sockaddr_to_network_addr((*addr).ifa_addr as *const libc::sockaddr);
             let ni = NetworkInterface {
                 name: name.clone(),
@@ -217,7 +217,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
                 flags: (*addr).ifa_flags
             };
             let mut found: bool = false;
-            for iface in ifaces.iter_mut() {
+            for iface in &mut ifaces {
                 if name == iface.name {
                     merge(iface, &ni);
                     found = true;
@@ -231,7 +231,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
         }
         libc::freeifaddrs(addrs);
 
-        for iface in ifaces.iter_mut() {
+        for iface in &mut ifaces {
             let name = CString::new(iface.name.as_bytes());
             iface.index = libc::if_nametoindex(name.unwrap().as_ptr());
         }
@@ -244,7 +244,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
             _ => new.mac
         };
         match (&mut old.ips, &new.ips) {
-            (&mut Some(ref mut old_ips), &Some(ref new_ips)) => old_ips.push_all(new_ips.as_slice()),
+            (&mut Some(ref mut old_ips), &Some(ref new_ips)) => old_ips.push_all(&new_ips[..]),
             (&mut ref mut old_ips @ None, &Some(ref new_ips)) => *old_ips = Some(new_ips.clone()),
             _ => {}
         };

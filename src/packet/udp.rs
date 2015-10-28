@@ -27,10 +27,10 @@ pub struct Udp {
 }
 
 /// Calculate the checksum for a packet built on IPv4
-pub fn ipv4_checksum<'a>(packet: &UdpPacket<'a>,
-                         ipv4_source: Ipv4Addr,
-                         ipv4_destination: Ipv4Addr,
-                         next_level_protocol: IpNextHeaderProtocol)
+pub fn ipv4_checksum(packet: &UdpPacket,
+                     ipv4_source: Ipv4Addr,
+                     ipv4_destination: Ipv4Addr,
+                     next_level_protocol: IpNextHeaderProtocol)
 -> u16be {
     let IpNextHeaderProtocol(next_level_protocol) = next_level_protocol;
     let mut sum = 0u32;
@@ -73,7 +73,7 @@ pub fn ipv4_checksum<'a>(packet: &UdpPacket<'a>,
         sum = (sum >> 16) + (sum & 0xFFFF);
     }
 
-    return !sum as u16;
+    !sum as u16
 }
 
 #[test]
@@ -93,7 +93,7 @@ fn udp_header_ipv4_test() {
     }
 
     // Set data
-    packet[20 + 8 + 0] = 't' as u8;
+    packet[20 + 8    ] = 't' as u8;
     packet[20 + 8 + 1] = 'e' as u8;
     packet[20 + 8 + 2] = 's' as u8;
     packet[20 + 8 + 3] = 't' as u8;
@@ -126,10 +126,10 @@ fn udp_header_ipv4_test() {
 
 
 /// Calculate the checksum for a packet built on IPv6
-pub fn ipv6_checksum<'a>(packet: &UdpPacket<'a>,
-                         ipv6_source: Ipv6Addr,
-                         ipv6_destination: Ipv6Addr,
-                         next_header: IpNextHeaderProtocol) -> u16be {
+pub fn ipv6_checksum(packet: &UdpPacket,
+                     ipv6_source: Ipv6Addr,
+                     ipv6_destination: Ipv6Addr,
+                     next_header: IpNextHeaderProtocol) -> u16be {
     let IpNextHeaderProtocol(next_header) = next_header;
     let mut sum = 0u32;
 
@@ -184,7 +184,7 @@ pub fn ipv6_checksum<'a>(packet: &UdpPacket<'a>,
         sum = (sum >> 16) + (sum & 0xFFFF);
     }
 
-    return !sum as u16;
+    !sum as u16
 }
 
 #[test]
@@ -204,7 +204,7 @@ fn udp_header_ipv6_test() {
     }
 
     // Set data
-    packet[40 + 8 + 0] = 't' as u8;
+    packet[40 + 8    ] = 't' as u8;
     packet[40 + 8 + 1] = 'e' as u8;
     packet[40 + 8 + 2] = 's' as u8;
     packet[40 + 8 + 3] = 't' as u8;

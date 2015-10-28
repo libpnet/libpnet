@@ -40,7 +40,7 @@ pub struct Ipv4 {
 }
 
 /// Calculates the checksum of an IPv4 packet
-pub fn checksum<'a>(packet: &Ipv4Packet<'a>) -> u16be {
+pub fn checksum(packet: &Ipv4Packet) -> u16be {
     use packet::Packet;
 
     let len = packet.get_header_length() as usize * 4;
@@ -54,10 +54,11 @@ pub fn checksum<'a>(packet: &Ipv4Packet<'a>) -> u16be {
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);
     }
-    return !sum as u16;
+
+    !sum as u16
 }
 
-fn ipv4_options_length<'a>(ipv4: &Ipv4Packet<'a>) -> usize {
+fn ipv4_options_length(ipv4: &Ipv4Packet) -> usize {
     ipv4.get_header_length() as usize - 5
 }
 

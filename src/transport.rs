@@ -150,7 +150,7 @@ impl TransportSender {
         // host byte order rather than network byte order (man 4 ip/Raw IP Sockets)
         if match self._channel_type { Layer3(..) => true, _ => false } {
             let mut mut_slice: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
-            mut_slice.as_mut_slice().clone_from_slice(packet.packet());
+            mut_slice.clone_from_slice(packet.packet());
 
             let mut new_packet = MutableIpv4Packet::new(&mut mut_slice[..]).unwrap();
             let length = new_packet.get_total_length().to_be();
@@ -181,14 +181,14 @@ macro_rules! transport_channel_iterator {
             tr: &'a mut TransportReceiver
         }
         /// Return a packet iterator with packets of type $ty for some transport receiver
-        pub fn $func<'a>(tr: &'a mut TransportReceiver) -> $iter<'a> {
+        pub fn $func(tr: &mut TransportReceiver) -> $iter {
             $iter {
                 tr: tr
             }
         }
         impl<'a> $iter<'a> {
             /// Get the next ($ty, IpAddr) pair for the given channel
-            pub fn next<'c>(&'c mut self) -> io::Result<($ty, net::IpAddr)> {
+            pub fn next(&mut self) -> io::Result<($ty, net::IpAddr)> {
                 let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
                 let res = internal::recv_from(self.tr.socket.fd, &mut self.tr.buffer[..], &mut caddr);
 

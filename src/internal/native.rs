@@ -110,7 +110,7 @@ pub fn addr_to_sockaddr(addr: SocketAddr,
                     s_addr: u32::from_be(((a as u32) << 24) |
                                          ((b as u32) << 16) |
                                          ((c as u32) <<  8) |
-                                         ((d as u32) <<  0))
+                                          (d as u32))
                 };
                 let storage = storage as *mut _ as *mut libc::sockaddr_in;
                 (*storage).sin_family = libc::AF_INET as libc::sa_family_t;
@@ -139,7 +139,8 @@ pub fn addr_to_sockaddr(addr: SocketAddr,
                 mem::size_of::<libc::sockaddr_in6>()
             }
         };
-        return len as libc::socklen_t;
+
+        len as libc::socklen_t
     }
 }
 
@@ -155,7 +156,7 @@ pub fn sockaddr_to_addr(storage: &libc::sockaddr_storage,
             let a = (ip >> 24) as u8;
             let b = (ip >> 16) as u8;
             let c = (ip >>  8) as u8;
-            let d = (ip >>  0) as u8;
+            let d =  ip        as u8;
             Ok(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(a, b, c, d)), ntohs(storage.sin_port)))
         }
         libc::AF_INET6 => {
