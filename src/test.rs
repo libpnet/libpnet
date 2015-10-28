@@ -88,7 +88,7 @@ fn build_udp4_packet(packet: &mut [u8], start: usize, msg: &str) {
     build_udp_header(packet, start + IPV4_HEADER_LEN as usize);
 
     let data_start = start + IPV4_HEADER_LEN + UDP_HEADER_LEN;
-    packet[data_start + 0] = msg.char_at(0) as u8;
+    packet[data_start    ] = msg.char_at(0) as u8;
     packet[data_start + 1] = msg.char_at(1) as u8;
     packet[data_start + 2] = msg.char_at(2) as u8;
     packet[data_start + 3] = msg.char_at(3) as u8;
@@ -106,7 +106,7 @@ fn build_udp6_packet(packet: &mut [u8], start: usize, msg: &str) {
     build_udp_header(packet, start + IPV6_HEADER_LEN as usize);
 
     let data_start = start + IPV6_HEADER_LEN + UDP_HEADER_LEN;
-    packet[data_start + 0] = msg.char_at(0) as u8;
+    packet[data_start    ] = msg.char_at(0) as u8;
     packet[data_start + 1] = msg.char_at(1) as u8;
     packet[data_start + 2] = msg.char_at(2) as u8;
     packet[data_start + 3] = msg.char_at(3) as u8;

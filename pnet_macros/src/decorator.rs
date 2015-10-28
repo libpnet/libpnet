@@ -88,11 +88,11 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
     let mut fields = Vec::new();
 
     // FIXME This is an ugly hack to match the old behaviour
-    let sfields = match vd {
-        &ast::VariantData::Struct(ref fields, _) => {
+    let sfields = match *vd {
+        ast::VariantData::Struct(ref fields, _) => {
             fields
         },
-        &ast::VariantData::Tuple(ref fields, _) => {
+        ast::VariantData::Tuple(ref fields, _) => {
             for ref field in fields {
                 if let None = field.node.ident() {
                     ecx.span_err(field.span, "all fields in a packet must be named");
@@ -116,11 +116,11 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
         let mut struct_length = None;
         let mut construct_with = Vec::new();
         let mut seen = Vec::new();
-        for attr in field.node.attrs.iter() {
-            let ref node = attr.node.value.node;
-            match node {
-                &ast::MetaWord(ref s) => {
-                    seen.push(s.to_string());
+        for attr in &field.node.attrs {
+            let node = &attr.node.value.node;
+            match *node {
+                ast::MetaWord(ref s) => {
+                    seen.push(s.to_owned());
                     if &s[..] == "payload" {
                         if payload_span.is_some() {
                             ecx.span_err(field.span, "packet may not have multiple payloads");
@@ -134,8 +134,8 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                         return None;
                     }
                 },
-                &ast::MetaList(ref s, ref items) => {
-                    seen.push(s.to_string());
+                ast::MetaList(ref s, ref items) => {
+                    seen.push(s.to_owned());
                     if &s[..] == "construct_with" {
                         if items.iter().len() == 0 {
                             ecx.span_err(field.span, "#[construct_with] must have at least one argument");
@@ -160,11 +160,11 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                         return None;
                     }
                 },
-                &ast::MetaNameValue(ref s, ref lit) => {
-                    seen.push(s.to_string());
+                ast::MetaNameValue(ref s, ref lit) => {
+                    seen.push(s.to_owned());
                     match &s[..] {
                         "length_fn" => {
-                            let ref node = lit.node;
+                            let node = &lit.node;
                             if let &ast::LitStr(ref s, _) = node {
                                 packet_length = Some(s.to_string() + "(&_self.to_immutable())");
                             } else {
@@ -173,7 +173,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                             }
                         },
                         "length" => {
-                            let ref node = lit.node;
+                            let node = &lit.node;
                             if let &ast::LitStr(ref s, _) = node {
                                 let field_names: Vec<String> = sfields.iter().filter_map(|field| {
                                     field.node.ident()
@@ -220,7 +220,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
 
         match ty {
             Type::Vector(_) => {
-                struct_length = Some(format!("_packet.{}.len()", field_name).to_string());
+                struct_length = Some(format!("_packet.{}.len()", field_name).to_owned());
                 if !is_payload && packet_length.is_none() {
                     ecx.span_err(field.span,
                                  "variable length field must have #[length = \"\"] or #[length_fn = \"\"] attribute");
@@ -311,7 +311,7 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &Annotatable) -> Option<Vec
 }
 
 //// Return the processed length expression for the packet
-fn parse_length_expr(ecx: &mut ExtCtxt, tts: &Vec<TokenTree>, field_names: &Vec<String>)
+fn parse_length_expr(ecx: &mut ExtCtxt, tts: &[TokenTree], field_names: &[String])
                      -> Vec<TokenTree> {
     let error_msg = "Only field names, constants, integers, basic arithmetic expressions \
                      (+ - * / %) and parentheses are allowed in the \"length\" attribute";
@@ -321,7 +321,7 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &Vec<TokenTree>, field_names: &Vec<
                 if name.to_string().chars().any(|c| c.is_lowercase()) {
                     if field_names.contains(&name.to_string()) {
                         let mut modified_packet_tokens = ecx.parse_tts(
-                            format!("_self.get_{}() as usize", name).to_string());
+                            format!("_self.get_{}() as usize", name).to_owned());
                         acc_packet.append(&mut modified_packet_tokens);
                     } else {
                         ecx.span_err(
@@ -332,7 +332,7 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &Vec<TokenTree>, field_names: &Vec<
                 // Constants are only recongized if they are all uppercase
                 else {
                     let mut modified_packet_tokens = ecx.parse_tts(
-                        format!("{} as usize", name).to_string());
+                        format!("{} as usize", name).to_owned());
                     acc_packet.append(&mut modified_packet_tokens);
                 }
             },
@@ -374,6 +374,7 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &Vec<TokenTree>, field_names: &Vec<
         };
         acc_packet
     });
+
     tokens_packet
 }
 
@@ -433,16 +434,15 @@ fn handle_misc_field(cx: &mut GenContext,
                      bit_offset: &mut usize,
                      offset_fns: &[String],
                      co: &mut String,
-                     name: &String,
+                     name: &str,
                      mutators: &mut String,
                      accessors: &mut String,
-                     ty_str: &String) {
+                     ty_str: &str) {
     let mut inner_accessors = String::new();
     let mut inner_mutators = String::new();
     let mut get_args = String::new();
     let mut set_args = String::new();
-    let mut i = 0usize;
-    for arg in field.construct_with.as_ref().unwrap().iter() {
+    for (i, arg) in field.construct_with.as_ref().unwrap().iter().enumerate() {
         if let &Type::Primitive(ref ty_str, size, endianness) = arg {
             let mut ops = operations(*bit_offset % 8, size).unwrap();
 
@@ -466,7 +466,6 @@ fn handle_misc_field(cx: &mut GenContext,
             cx.ecx.span_err(field.span, "arguments to #[construct_with] must be primitives");
             *error = true;
         }
-        i += 1;
     }
     *mutators = format!("{mutators}
                     /// Set the value of the {name} field
@@ -507,7 +506,7 @@ fn handle_misc_field(cx: &mut GenContext,
 
 fn handle_vec_primitive(cx: &mut GenContext,
                         error: &mut bool,
-                        inner_ty_str: &String,
+                        inner_ty_str: &str,
                         field: &Field,
                         accessors: &mut String,
                         mutators: &mut String,
@@ -675,15 +674,15 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
     let mut bit_offset = 0;
     let mut offset_fns_packet = Vec::new();
     let mut offset_fns_struct = Vec::new();
-    let mut accessors = "".to_string();
-    let mut mutators = "".to_string();
+    let mut accessors = "".to_owned();
+    let mut mutators = "".to_owned();
     let mut error = false;
     let mut payload_bounds = None;
     for (idx, ref field) in packet.fields.iter().enumerate() {
         let mut co = current_offset(bit_offset, &offset_fns_packet[..]);
 
         if field.is_payload {
-            let mut upper_bound_str = "".to_string();
+            let mut upper_bound_str = "".to_owned();
             if field.packet_length.is_some() {
                 upper_bound_str = format!("{} + {}",
                 co.clone(),
@@ -735,7 +734,7 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
 
     fn generate_set_fields(packet: &Packet) -> String {
         let mut set_fields = String::new();
-        for field in packet.fields.iter() {
+        for field in &packet.fields {
             set_fields = set_fields + &format!("_self.set_{field}(packet.{field});\n",
             field = field.name)[..];
 
@@ -754,7 +753,7 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
                  {set_fields}
              }}", name = &imm_name[..imm_name.len() - 6], set_fields = set_fields)
     } else {
-        "".to_string()
+        "".to_owned()
     };
 
     // If there are no variable length fields defined, then `_packet` is not used, hence
@@ -852,16 +851,16 @@ fn generate_packet_trait_impls(cx: &mut GenContext, packet: &Packet, payload_bou
         (packet.packet_name_mut(), "", "", ""),
         (packet.packet_name(), "", "", "")
     ] {
-        let mut pre = "".to_string();
-        let mut start = "".to_string();
-        let mut end = "".to_string();
-        if payload_bounds.lower.len() > 0 {
+        let mut pre = "".to_owned();
+        let mut start = "".to_owned();
+        let mut end = "".to_owned();
+        if !payload_bounds.lower.is_empty() {
             pre = pre + &format!("let start = {};", payload_bounds.lower)[..];
-            start = "start".to_string();
+            start = "start".to_owned();
         }
-        if payload_bounds.upper.len() > 0 {
+        if !payload_bounds.upper.is_empty() {
             pre = pre + &format!("let end = {};", payload_bounds.upper)[..];
-            end = "end".to_string();
+            end = "end".to_owned();
         }
         cx.push_item_from_string(format!("impl<'a> ::pnet::packet::{mutable}Packet for {name}<'a> {{
             #[inline]
@@ -1056,7 +1055,7 @@ fn generate_accessor_str(name: &str,
     -> String
 {
     fn build_return(max: usize) -> String {
-        let mut ret = "".to_string();
+        let mut ret = "".to_owned();
         for i in 0..max {
             ret = ret + &format!("b{} | ", i)[..];
         }
@@ -1070,7 +1069,7 @@ fn generate_accessor_str(name: &str,
         let replacement_str = format!("(_self.packet[co] as {})", ty);
         operations.first().unwrap().to_string().replace("{}", &replacement_str[..])
     } else {
-        let mut op_strings = "".to_string();
+        let mut op_strings = "".to_owned();
         for (idx, operation) in operations.iter().enumerate() {
             let replacement_str = format!("(_self.packet[co + {}] as {})", idx, ty);
             let operation = operation.to_string().replace("{}", &replacement_str[..]);
@@ -1145,12 +1144,14 @@ mod tests {
         let mut feature_gated_cfgs = Vec::new();
         let mut ecx = ExtCtxt::new(&sess,
                                    CrateConfig::default(),
-                                   ExpansionConfig::default("parse_length_expr".to_string()),
+                                   ExpansionConfig::default("parse_length_expr".to_owned()),
                                    &mut feature_gated_cfgs);
-        let expr_tokens = ecx.parse_tts(expr.to_string());
-        let field_names_vec = field_names.iter().map(|field_name| field_name.to_string()).collect();
+        let expr_tokens = ecx.parse_tts(expr.to_owned());
+        let field_names_vec: Vec<String> = field_names.iter()
+                                                      .map(|field_name| (*field_name).to_owned())
+                                                      .collect();
         let parsed = super::parse_length_expr(&mut ecx, &expr_tokens, &field_names_vec);
-        let expected_tokens = ecx.parse_tts(expected.to_string());
+        let expected_tokens = ecx.parse_tts(expected.to_owned());
         assert_eq!(tts_to_string(&parsed), tts_to_string(&expected_tokens));
     }
 

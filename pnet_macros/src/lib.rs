@@ -140,6 +140,9 @@
 #![deny(missing_docs)]
 
 #![feature(fmt_radix, plugin_registrar, quote, rustc_private)]
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
+#![cfg_attr(feature="clippy", allow(let_and_return))]
 
 extern crate syntax;
 extern crate regex;

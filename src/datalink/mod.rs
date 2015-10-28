@@ -99,6 +99,8 @@ pub trait DataLinkReceiver : Send {
     ///
     /// This will likely be removed once other layer two types are supported.
     #[inline]
+    // FIXME See https://github.com/Manishearth/rust-clippy/issues/417
+    #[cfg_attr(feature = "clippy", allow(needless_lifetimes))]
     fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a>;
 }
 
@@ -106,6 +108,6 @@ pub trait DataLinkReceiver : Send {
 pub trait DataLinkChannelIterator<'a> {
     /// Get the next EthernetPacket in the channel
     #[inline]
-    fn next<'c>(&'c mut self) -> io::Result<EthernetPacket<'c>>;
+    fn next(&mut self) -> io::Result<EthernetPacket>;
 }
 
