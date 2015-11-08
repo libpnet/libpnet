@@ -13,7 +13,7 @@ use std::rc::Rc;
 
 use syntax::ast;
 use syntax::ast::Delimited;
-use syntax::ast::TokenTree::{self, TtDelimited, TtSequence, TtToken};
+use syntax::ast::TokenTree::{self, Delimited, Sequence, Token};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
@@ -317,7 +317,7 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &[TokenTree], field_names: &[String
                      (+ - * / %) and parentheses are allowed in the \"length\" attribute";
     let tokens_packet = tts.iter().fold(Vec::new(), |mut acc_packet, tt_token| {
         match *tt_token {
-            TtToken(span, token::Ident(name, token::IdentStyle::Plain)) => {
+            Token(span, token::Ident(name, token::IdentStyle::Plain)) => {
                 if name.to_string().chars().any(|c| c.is_lowercase()) {
                     if field_names.contains(&name.to_string()) {
                         let mut modified_packet_tokens = ecx.parse_tts(
@@ -336,13 +336,13 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &[TokenTree], field_names: &[String
                     acc_packet.append(&mut modified_packet_tokens);
                 }
             },
-            TtToken(_, token::Ident(_, token::IdentStyle::ModName)) => {
+            Token(_, token::Ident(_, token::IdentStyle::ModName)) => {
                 acc_packet.push(tt_token.clone());
             },
-            TtToken(_, token::ModSep) => {
+            Token(_, token::ModSep) => {
                 acc_packet.push(tt_token.clone());
             },
-            TtToken(span, token::BinOp(binop)) => {
+            Token(span, token::BinOp(binop)) => {
                 match binop {
                     token::Plus | token::Minus | token::Star | token::Slash | token::Percent => {
                         acc_packet.push(tt_token.clone());
@@ -352,13 +352,13 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &[TokenTree], field_names: &[String
                     }
                 };
             },
-            TtToken(_, token::Literal(token::Integer(_), None)) => {
+            Token(_, token::Literal(token::Integer(_), None)) => {
                 acc_packet.push(tt_token.clone());
             },
-            TtToken(span, _) => {
+            Token(span, _) => {
                 ecx.span_err(span, error_msg);
             },
-            TtDelimited(span, ref delimited) => {
+            Delimited(span, ref delimited) => {
                 let tts = parse_length_expr(ecx, &delimited.tts, &field_names);
                 let tt_delimited = Delimited {
                     delim: delimited.delim,
@@ -366,9 +366,9 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &[TokenTree], field_names: &[String
                     tts: tts,
                     close_span: delimited.close_span
                 };
-                acc_packet.push(TtDelimited(span, Rc::new(tt_delimited)));
+                acc_packet.push(Delimited(span, Rc::new(tt_delimited)));
             },
-            TtSequence(span, _) => {
+            Sequence(span, _) => {
                 ecx.span_err(span, error_msg);
             }
         };
