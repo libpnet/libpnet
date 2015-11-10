@@ -1,15 +1,23 @@
+environment:
+  RUST_TEST_THREADS: 1
+  matrix:
+  - TARGET: x86_64-pc-windows-msvc
+    WPD_LIB_PATH: "C:/dl/wpdpack/WpdPack/Lib/x64/Packet.lib"
+  - TARGET: i686-pc-windows-msvc
+    WPD_LIB_PATH: "C:/dl/wpdpack/WpdPack/Lib/Packet.lib"
 install:
- - ps: Start-FileDownload 'https://static.rust-lang.org/dist/rust-nightly-i686-pc-windows-gnu.exe'
- - ps: Start-FileDownload 'https://static.rust-lang.org/cargo-dist/cargo-nightly-i686-pc-windows-gnu.tar.gz'
- - choco install winpcap
- - rust-nightly-i686-pc-windows-gnu.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
- - 7z e cargo-nightly-i686-pc-windows-gnu.tar.gz
- - 7z x cargo-nightly-i686-pc-windows-gnu.tar
+ - ps: mkdir C:/dl
+ - curl -o "C:/dl/wpd.zip" "https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip"
+ - ps: Add-Type -AssemblyName system.io.compression.filesystem
+ - ps: "[io.compression.zipfile]::ExtractToDirectory(\"C:/dl/wpd.zip\", \"C:/dl/wpdpack\")"
+ - ps: mkdir ${env:APPVEYOR_BUILD_FOLDER}/lib
+ - ps: cp ${env:WPD_LIB_PATH} ${env:APPVEYOR_BUILD_FOLDER}/lib
+ - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-nightly-${env:TARGET}.exe"
+ - rust-nightly-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
  - SET PATH=%PATH%;C:\Program Files (x86)\Rust\bin
- - SET PATH=%PATH%;%CD%\cargo-nightly-i686-pc-windows-gnu\bin
+ - choco install winpcap
  - rustc -V
  - cargo -V
 build: false
 test_script:
- - cargo build --verbose
- - cargo test --verbose
+    - cargo test --verbose --features appveyor

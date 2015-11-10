@@ -68,6 +68,12 @@ pub struct TransportReceiver {
     channel_type: TransportChannelType
 }
 
+#[cfg(windows)]
+const INVALID_SOCKET: libc::SOCKET = libc::INVALID_SOCKET;
+
+#[cfg(not(windows))]
+const INVALID_SOCKET: libc::c_int = -1;
+
 /// Create a new (TransportSender, TransportReceiver) pair
 ///
 /// This allows for sending and receiving packets at the transport layer. The buffer size should be
@@ -80,6 +86,10 @@ pub struct TransportReceiver {
 /// header when sending.
 pub fn transport_channel(buffer_size: usize, channel_type: TransportChannelType)
     -> io::Result<(TransportSender, TransportReceiver)> {
+    use std::net;
+    // This hack makes sure that winsock is initialised
+    let _ = net::lookup_host("\0");
+
     let socket = unsafe {
         match channel_type {
             Layer4(Ipv4(IpNextHeaderProtocol(proto))) | Layer3(IpNextHeaderProtocol(proto))
@@ -88,7 +98,7 @@ pub fn transport_channel(buffer_size: usize, channel_type: TransportChannelType)
                 => libc::socket(libc::AF_INET6, libc::SOCK_RAW, proto as libc::c_int),
         }
     };
-    if socket != -1 {
+    if socket != INVALID_SOCKET {
         if match channel_type { Layer3(_) | Layer4(Ipv4(_)) => true, _ => false } {
             let hincl: libc::c_int = match channel_type { Layer4(..) => 0, _ => 1 };
             let res = unsafe {

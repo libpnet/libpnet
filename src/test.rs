@@ -23,6 +23,7 @@ use packet::udp;
 use transport::{udp_packet_iter, ipv4_packet_iter, transport_channel, TransportProtocol,
                 TransportChannelType};
 use transport::TransportProtocol::{Ipv4, Ipv6};
+use util;
 
 const IPV4_HEADER_LEN: usize = 20;
 const IPV6_HEADER_LEN: usize = 40;
@@ -83,7 +84,15 @@ fn build_udp_header(packet: &mut [u8], offset: usize) {
     udp_header.set_length((UDP_HEADER_LEN + TEST_DATA_LEN) as u16);
 }
 
-fn build_udp4_packet(packet: &mut [u8], start: usize, msg: &str) {
+fn is_ipv4(ip: &IpAddr) -> bool {
+    if let IpAddr::V4(_) = *ip {
+        true
+    } else {
+        false
+    }
+}
+
+fn build_udp4_packet(packet: &mut [u8], start: usize, msg: &str, ni: Option<&util::NetworkInterface>) {
     build_ipv4_header(packet, start);
     build_udp_header(packet, start + IPV4_HEADER_LEN as usize);
 
@@ -93,10 +102,20 @@ fn build_udp4_packet(packet: &mut [u8], start: usize, msg: &str) {
     packet[data_start + 2] = msg.char_at(2) as u8;
     packet[data_start + 3] = msg.char_at(3) as u8;
 
+    let (source, dest) = if let Some(ni) = ni {
+        let ip = ni.ips.as_ref().unwrap().iter().filter(|addr| is_ipv4(addr)).next().unwrap();
+        match (*ip).clone() {
+            IpAddr::V4(v4) => (v4, v4),
+            IpAddr::V6(_) => panic!("found ipv6 addresses when expecting ipv4 addresses")
+        }
+    } else {
+        (ipv4_source(), ipv4_destination())
+    };
+
     let slice = &mut packet[(start + IPV4_HEADER_LEN as usize)..];
     let checksum = udp::ipv4_checksum(&UdpPacket::new(slice).unwrap(),
-                                      ipv4_source(),
-                                      ipv4_destination(),
+                                      source,
+                                      dest,
                                       TEST_PROTO);
     MutableUdpPacket::new(slice).unwrap().set_checksum(checksum);
 }
@@ -143,7 +162,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
 
     match ip {
         IpAddr::V4(..) => {
-            build_udp4_packet(&mut packet[..], 0, "l4i4")
+            build_udp4_packet(&mut packet[..], 0, "l4i4", None)
         },
         IpAddr::V6(..) => {
             build_udp6_packet(&mut packet[..], 0, "l4i6")
@@ -196,25 +215,28 @@ fn layer4(ip: IpAddr, header_len: usize) {
 }
 
 #[test]
+#[cfg(not(feature = "appveyor"))]
 fn layer4_ipv4() {
     layer4(IpAddr::V4(ipv4_source()), IPV4_HEADER_LEN as usize);
 }
 
 #[test]
+#[cfg(not(feature = "appveyor"))]
 fn layer4_ipv6() {
     layer4(IpAddr::V6(ipv6_source()), IPV6_HEADER_LEN);
 }
 
 #[test]
+#[cfg(not(feature = "appveyor"))]
 fn layer3_ipv4() {
     let send_addr = IpAddr::V4(ipv4_source());
     let mut packet = [0u8; IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN];
 
-    build_udp4_packet(&mut packet[..], 0, "l3i4");
+    build_udp4_packet(&mut packet[..], 0, "l3i4", None);
 
     let (tx, rx) = channel();
 
-    let tc =  transport_channel(IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN,
+    let tc = transport_channel(IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN,
                                     TransportChannelType::Layer3(TEST_PROTO));
     let (mut ttx, mut trx) = match tc {
         Ok((tx, rx)) => (tx, rx),
@@ -257,21 +279,40 @@ fn layer3_ipv4() {
 }
 
 // FIXME Find a way to test this with netmap
-#[cfg(not(feature = "netmap"))]
+#[cfg(all(not(feature = "appveyor"), not(feature = "netmap")))]
 #[test]
 fn layer2() {
     use datalink::{datalink_channel, DataLinkChannelType};
     use packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
-    use util;
 
     const MIN_PACKET_SIZE: usize = 64;
     const ETHERNET_HEADER_LEN: usize = 14;
 
+    #[cfg(windows)]
     fn get_test_interface() -> util::NetworkInterface {
         use std::clone::Clone;
         use std::env;
+        let interfaces = util::get_network_interfaces();
 
-        (*(&util::get_network_interfaces()[..]).iter()
+        interfaces.iter()
+            .filter(|x| {
+                match env::var("PNET_TEST_IFACE") {
+                    Ok(name) => x.name == name,
+                    Err(_) => true
+                }
+            })
+            .next()
+            .unwrap()
+            .clone()
+    }
+
+    #[cfg(not(windows))]
+    fn get_test_interface() -> util::NetworkInterface {
+        use std::clone::Clone;
+        use std::env;
+        let interfaces = util::get_network_interfaces();
+
+        interfaces.iter()
             .filter(|x| {
                 match env::var("PNET_TEST_IFACE") {
                     Ok(name) => x.name == name,
@@ -279,7 +320,7 @@ fn layer2() {
                 }
             })
             .next()
-            .unwrap())
+            .unwrap()
             .clone()
     }
 
@@ -297,7 +338,7 @@ fn layer2() {
         ethernet_header.set_ethertype(EtherTypes::Ipv4);
     }
 
-    build_udp4_packet(&mut packet[..], ETHERNET_HEADER_LEN as usize, "l2tt");
+    build_udp4_packet(&mut packet[..], ETHERNET_HEADER_LEN as usize, "l2tt", Some(&interface));
 
     let (tx, rx) = channel();
 
@@ -353,7 +394,7 @@ fn check_test_environment() {
 
     test_iface();
 
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(all(not(windows), not(target_os = "linux")))]
     fn test_iface() {
         let iface = env::var("PNET_TEST_IFACE");
         if !iface.is_ok() {
@@ -361,6 +402,6 @@ fn check_test_environment() {
         }
     }
 
-    #[cfg(target_os = "linux")]
+    #[cfg(any(windows, target_os = "linux"))]
     fn test_iface() {}
 }

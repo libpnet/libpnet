@@ -103,7 +103,7 @@
 
 // FIXME Remove this once the std lib has stabilised
 #![feature(custom_attribute, ip_addr, libc, plugin, slice_bytes,
-           slice_patterns, vec_push_all)]
+           slice_patterns, vec_push_all, lookup_host)]
 #![plugin(pnet_macros)]
 #![cfg_attr(test, feature(str_char))]
 #![cfg_attr(any(target_os = "freebsd", target_os = "macos"), feature(clone_from_slice))]
@@ -112,7 +112,6 @@
 #![cfg_attr(feature="clippy", allow(explicit_counter_loop))]
 // We can't implement Iterator since we use streaming iterators
 #![cfg_attr(feature="clippy", allow(should_implement_trait))]
-
 
 extern crate libc;
 extern crate pnet_macros;

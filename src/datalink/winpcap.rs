@@ -9,11 +9,11 @@
 extern crate libc;
 
 use std::cmp;
-use std::collections::RingBuf;
+use std::collections::VecDeque;
 use std::ffi::CString;
-use std::old_io::{IoResult, IoError};
+use std::io;
 use std::mem;
-use std::raw::Slice;
+use std::slice;
 use std::sync::Arc;
 
 use bindings::{bpf, winpcap};
@@ -50,8 +50,8 @@ impl Drop for WinPcapPacket {
 pub fn datalink_channel(network_interface: &NetworkInterface,
            read_buffer_size: usize,
            write_buffer_size: usize,
-           channel_type: DataLinkChannelType)
-    -> IoResult<(Box<DataLinkSenderImpl>, Box<DataLinkReceiverImpl>)> {
+           _channel_type: DataLinkChannelType)
+    -> io::Result<(Box<DataLinkSender>, Box<DataLinkReceiver>)> {
     let mut read_buffer = Vec::new();
     read_buffer.resize(read_buffer_size, 0u8);
 
@@ -59,18 +59,18 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     write_buffer.resize(write_buffer_size, 0u8);
 
     let adapter = unsafe {
-        let net_if_str = CString::from_slice(network_interface.name.as_bytes());
+        let net_if_str = CString::new(network_interface.name.as_bytes()).unwrap();
         winpcap::PacketOpenAdapter(net_if_str.as_ptr() as *mut libc::c_char)
     };
     if adapter.is_null() {
-        return Err(IoError::last_error());
+        return Err(io::Error::last_os_error());
     }
 
     let ret = unsafe {
         winpcap::PacketSetHwFilter(adapter, winpcap::NDIS_PACKET_TYPE_PROMISCUOUS)
     };
     if ret == 0 {
-        return Err(IoError::last_error());
+        return Err(io::Error::last_os_error());
     }
 
     // Set kernel buffer size
@@ -78,17 +78,14 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         winpcap::PacketSetBuff(adapter, read_buffer_size as libc::c_int)
     };
     if ret == 0 {
-        return Err(IoError::last_error());
+        return Err(io::Error::last_os_error());
     }
 
-    // FIXME [windows] causes "os error 31: a device atteched to the system is not functioning"
-    // FIXME [windows] This shouldn't be here - on Win32 reading seems to block indefinitely
-    //       currently.
     let ret = unsafe {
-        winpcap::PacketSetReadTimeout(adapter, 5000)
+        winpcap::PacketSetReadTimeout(adapter, 0)
     };
     if ret == 0 {
-        return Err(IoError::last_error());
+        return Err(io::Error::last_os_error());
     }
 
     // Immediate mode
@@ -96,7 +93,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         winpcap::PacketSetMinToCopy(adapter, 1)
     };
     if ret == 0 {
-        return Err(IoError::last_error());
+        return Err(io::Error::last_os_error());
     }
 
     let read_packet = unsafe { winpcap::PacketAllocatePacket() };
@@ -104,7 +101,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         unsafe {
             winpcap::PacketCloseAdapter(adapter);
         }
-        return Err(IoError::last_error());
+        return Err(io::Error::last_os_error());
     }
 
     unsafe {
@@ -119,7 +116,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
             winpcap::PacketFreePacket(read_packet);
             winpcap::PacketCloseAdapter(adapter);
         }
-        return Err(IoError::last_error());
+        return Err(io::Error::last_os_error());
     }
 
     unsafe {
@@ -151,25 +148,19 @@ pub struct DataLinkSenderImpl {
 impl DataLinkSender for DataLinkSenderImpl {
     #[inline]
     fn build_and_send(&mut self, num_packets: usize, packet_size: usize,
-                          func: &mut FnMut(MutableEthernetPacket)) -> Option<IoResult<()>>
+                          func: &mut FnMut(MutableEthernetPacket)) -> Option<io::Result<()>>
     {
-        use std::raw::Slice;
         let len = num_packets * packet_size;
         if len >= unsafe { (*self.packet.packet).Length } as usize {
             None
         } else {
             let min = unsafe { cmp::min((*self.packet.packet).Length as usize, len) };
             let slice: &mut [u8] = unsafe {
-                    mem::transmute(
-                        Slice {
-                            data: (*self.packet.packet).Buffer as *const (),
-                            len: min
-                        }
-                    )
+                slice::from_raw_parts_mut((*self.packet.packet).Buffer as *mut u8, min)
             };
             for chunk in slice.chunks_mut(packet_size) {
                 {
-                    let eh = MutableEthernetPacket::new(chunk);
+                    let eh = MutableEthernetPacket::new(chunk).unwrap();
                     func(eh);
                 }
 
@@ -181,9 +172,8 @@ impl DataLinkSender for DataLinkSenderImpl {
 
                 unsafe { (*self.packet.packet).Length = old_len; }
 
-                match ret {
-                    0 => return Some(Err(IoError::last_error())),
-                    _ => ()
+                if ret == 0 {
+                    return Some(Err(io::Error::last_os_error()))
                 }
             }
             Some(Ok(()))
@@ -192,8 +182,8 @@ impl DataLinkSender for DataLinkSenderImpl {
 
     #[inline]
     fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
-        -> Option<IoResult<()>> {
-        use old_packet::MutablePacket;
+        -> Option<io::Result<()>> {
+        use packet::MutablePacket;
         self.build_and_send(1, packet.packet().len(), &mut |mut eh| {
             eh.clone_from(packet);
         })
@@ -210,12 +200,14 @@ pub struct DataLinkReceiverImpl {
 }
 
 impl DataLinkReceiver for DataLinkReceiverImpl {
+    // FIXME See https://github.com/Manishearth/rust-clippy/issues/417
+    #[cfg_attr(feature = "clippy", allow(needless_lifetimes))]
     fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
         let buflen = unsafe { (*self.packet.packet).Length } as usize;
         Box::new(DataLinkChannelIteratorImpl {
             pc: self,
             // Enough room for minimally sized packets without reallocating
-            packets: RingBuf::with_capacity(buflen / 64)
+            packets: VecDeque::with_capacity(buflen / 64)
         })
     }
 }
@@ -225,18 +217,18 @@ unsafe impl Sync for DataLinkReceiverImpl {}
 
 pub struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
-    packets: RingBuf<(usize, usize)>,
+    packets: VecDeque<(usize, usize)>,
 }
 
 impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
-    fn next<'c>(&'c mut self) -> IoResult<EthernetPacket<'c>> {
+    fn next(&mut self) -> io::Result<EthernetPacket> {
         // NOTE Most of the logic here is identical to FreeBSD/OS X
         if self.packets.is_empty() {
             let ret = unsafe {
                 winpcap::PacketReceivePacket(self.pc.adapter.adapter, self.pc.packet.packet, 0)
             };
             let buflen = match ret {
-                0 => return Err(IoError::last_error()),
+                0 => return Err(io::Error::last_os_error()),
                 _ => unsafe { (*self.pc.packet.packet).ulBytesReceived },
             };
             let mut ptr = unsafe { (*self.pc.packet.packet).Buffer };
@@ -256,9 +248,9 @@ impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
         let (start, len) = self.packets.pop_front().unwrap();
         let slice = unsafe {
             let data = (*self.pc.packet.packet).Buffer as usize + start;
-            mem::transmute(Slice { data: data as *const u8, len: len } )
+            slice::from_raw_parts(data as *const u8, len)
         };
-        Ok(EthernetPacket::new(slice))
+        Ok(EthernetPacket::new(slice).unwrap())
     }
 }
 

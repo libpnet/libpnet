@@ -29,8 +29,8 @@ fn errno() -> i32 {
 
 #[cfg(windows)]
 #[inline]
-pub fn retry<F>(f: &mut F) -> libc::ssize_t
-    where F : FnMut() -> libc::ssize_t
+pub fn retry<F>(f: &mut F) -> libc::c_int
+    where F : FnMut() -> libc::c_int
 {
     loop {
         let minus1 = -1;

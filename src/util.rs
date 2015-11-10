@@ -12,11 +12,13 @@ extern crate libc;
 
 use packet::PrimitiveValues;
 
+use std::ffi::{CStr};
 use std::fmt;
-use std::str::FromStr;
+use std::str::{from_utf8_unchecked, FromStr};
 use std::mem;
 use std::u8;
 use std::net::IpAddr;
+
 
 #[cfg(not(windows))] use internal;
 
@@ -194,8 +196,7 @@ pub fn get_network_interfaces() -> Vec<NetworkInterface> {
 
 #[cfg(not(windows))]
 fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
-    use std::ffi::{CStr, CString};
-    use std::str::from_utf8_unchecked;
+    use std::ffi::CString;
 
     let mut ifaces: Vec<NetworkInterface> = Vec::new();
     unsafe {
@@ -255,9 +256,6 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
 
 #[cfg(windows)]
 fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
-    use std::ffi::c_str_to_bytes;
-    use std::str::from_utf8;
-
     use bindings::winpcap;
 
     let mut adapters_size = 0u32;
@@ -270,7 +268,6 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
             &mut adapters_size
         );
     }
-
 
     let vec_size = adapters_size / mem::size_of::<winpcap::IP_ADAPTER_INFO>() as u32;
 
@@ -296,17 +293,21 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
         let mut ip_cursor = unsafe { &mut (*cursor).IpAddressList as winpcap::PIP_ADDR_STRING};
         let mut ips: Vec<IpAddr> = Vec::new();
         while !ip_cursor.is_null() {
-            let ref ip_str_ptr = unsafe { &(*ip_cursor) }.IpAddress.String.as_ptr() as *const i8;
-            let ip_str = from_utf8(unsafe { c_str_to_bytes(ip_str_ptr) }).unwrap();
+            let ip_str_ptr = unsafe { &(*ip_cursor) }.IpAddress.String.as_ptr() as *const i8;
+            let bytes = unsafe { CStr::from_ptr(ip_str_ptr).to_bytes() };
+            let ip_str = unsafe { from_utf8_unchecked(bytes).to_owned() };
             ips.push(ip_str.parse().unwrap());
             ip_cursor = unsafe { (*ip_cursor).Next };
         }
 
         unsafe {
-            let ref name_str_ptr =(*cursor).AdapterName.as_ptr() as *const i8; 
+            let name_str_ptr = (*cursor).AdapterName.as_ptr() as *const i8; 
+
+            let bytes = CStr::from_ptr(name_str_ptr).to_bytes();
+            let name_str = from_utf8_unchecked(bytes).to_owned();
 
             all_ifaces.push(NetworkInterface {
-                        name: String::from_utf8_unchecked(c_str_to_bytes(name_str_ptr).to_owned()),
+                        name: name_str,
                         index: (*cursor).Index,
                         mac: Some(mac),
                         ips: Some(ips),
@@ -329,17 +330,17 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
         panic!("FIXME [windows] unable to get interface list");
     }
 
-    let buf_str = from_utf8(&buf).unwrap();
-    let iface_names = buf_str.split_str("\0\0").next();
+    let buf_str = unsafe { from_utf8_unchecked(&buf) };
+    let iface_names = buf_str.split("\0\0").next();
     let mut vec = Vec::new();
 
     // Return only supported adapters
     match iface_names {
         Some(iface_names) => {
             for iface in iface_names.split('\0') {
-                let name = iface.to_string();
+                let name = iface.to_owned();
                 let next = all_ifaces.iter()
-                                     .filter(|x| name.as_slice().ends_with(x.name.as_slice()))
+                                     .filter(|x| name[..].ends_with(&x.name[..]))
                                      .next();
                 if next.is_some() {
                     let mut iface = next.unwrap().clone();
