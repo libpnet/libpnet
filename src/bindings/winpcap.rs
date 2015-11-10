@@ -347,7 +347,8 @@ extern "system" {
         -> libc::DWORD;
 }
 
-#[link(name = ":Packet.dll")]
+#[link(name = "Packet")]
+#[allow(improper_ctypes)]
 extern {
     // from Packet32.h
     pub fn PacketSendPacket(AdapterObject: LPADAPTER, pPacket: LPPACKET, Sync: win::BOOLEAN)

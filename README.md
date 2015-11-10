@@ -1,10 +1,11 @@
-# libpnet
+# libpnet [![Crates.io](https://img.shields.io/crates/v/pnet.svg)](https://crates.io/crates/pnet) ![License](https://img.shields.io/crates/l/pnet.svg)
 
 Linux ∪ OS X Build Status: [![Linux ∪ OS X Build Status](https://travis-ci.org/libpnet/libpnet.svg?branch=master)](https://travis-ci.org/libpnet/libpnet)
 
-Windows Build Status: [![Windows Build Status](https://ci.appveyor.com/api/projects/status/9gq1dekigj03u1ym?svg=true)](https://ci.appveyor.com/project/mrmonday/libpnet)
+Windows Build Status: [![Windows Build Status](https://ci.appveyor.com/api/projects/status/9gq1dekigj03u1ym/branch/master?svg=true)](https://ci.appveyor.com/project/mrmonday/libpnet)
 
 Discussion and support: [#libpnet on freenode](http://webchat.freenode.net/?channels=%23libpnet) /
+[#rust-networking on irc.mozilla.org](http://chat.mibbit.com/?server=irc.mozilla.org&channel=%23rust-networking) /
 [#rust on irc.mozilla.org](http://chat.mibbit.com/?server=irc.mozilla.org&channel=%23rust).
 
 `libpnet` provides a cross-platform API for low level networking using Rust.
@@ -60,7 +61,7 @@ There are lots of uses for this, including network diagnostics, packet capture a
 
 ## Documentation
 
-API documentation for the lastest build can be found here:
+API documentation for the latest build can be found here:
 http://octarineparrot.com/assets/libpnet/doc/pnet/.
 
 ## Usage
@@ -69,11 +70,22 @@ To use `libpnet` in your project, add the following to your Cargo.toml:
 
 ```
 [dependencies.pnet]
-git = "https://github.com/libpnet/libpnet.git"
+version = "0.4.0"
 ```
 
 When developing, use the provided Makefile, which does weird things to make the
 tests work properly. Note that root/administrator access is usually required for libpnet.
 
 You must use the *nightly* channel of Rust to use `libpnet`.
+
+### Windows
+
+There are three requirements for building on Windows:
+
+ * You must use a nightly version of Rust which uses the MSVC toolchain
+ * You must have [WinPcap](https://www.winpcap.org/) installed (tested with
+   version 4.1.3)
+ * You must place `Packet.lib` from the [WinPcap Developers pack](https://www.winpcap.org/devel.htm)
+   in a directory named `lib`, in the root of this repository. For the 64 bit toolchain it is in
+   `WpdPack/Lib/x64/Packet.lib`, for the 32 bit toolchain, it is in `WpdPack/Lib/Packet.lib`.
 
