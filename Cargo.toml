@@ -1,7 +1,7 @@
 [package]
 
 name = "pnet"
-version = "0.4.0"
+version = "0.4.1"
 authors = [ "Robert Clipsham <robert@octarineparrot.com>" ]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
@@ -33,6 +33,9 @@ version = ">=0.0"
 features = ["netmap_with_libs"]
 optional = true
 version = ">=0.0"
+
+[dependencies.libc]
+version = "=0.1.12"
 
 [dependencies.pnet_macros]
 path = "pnet_macros"
