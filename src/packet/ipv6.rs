@@ -29,7 +29,7 @@ pub struct Ipv6 {
     #[construct_with(u16, u16, u16, u16, u16, u16, u16, u16)]
     destination: Ipv6Addr,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 #[test]
@@ -66,27 +66,20 @@ fn ipv6_header_test() {
     }
 
     let ref_packet = [0x61,           /* ver/traffic class */
-                     0x11,           /* traffic class/flow label */
-                     0x01, 0x01,     /* flow label */
-                     0x01, 0x01,     /* payload length */
-                     0x11,           /* next header */
-                     0x01,           /* hop limit */
-                     0x01, 0x10,     /* source ip */
-                     0x10, 0x01,
-                     0x01, 0x10,
-                     0x10, 0x01,
-                     0x01, 0x10,
-                     0x10, 0x01,
-                     0x01, 0x10,
-                     0x10, 0x01,
-                     0x01, 0x10,    /* dest ip */
-                     0x10, 0x01,
-                     0x01, 0x10,
-                     0x10, 0x01,
-                     0x01, 0x10,
-                     0x10, 0x01,
-                     0x01, 0x10,
-                     0x10, 0x01];
+                      0x11,           /* traffic class/flow label */
+                      0x01, 0x01,     /* flow label */
+                      0x01, 0x01,     /* payload length */
+                      0x11,           /* next header */
+                      0x01,           /* hop limit */
+                      /* source ip */
+                      0x01, 0x10, 0x10, 0x01,
+                      0x01, 0x10, 0x10, 0x01,
+                      0x01, 0x10, 0x10, 0x01,
+                      0x01, 0x10, 0x10, 0x01,
+                      /* dest ip */
+                      0x01, 0x10, 0x10, 0x01,
+                      0x01, 0x10, 0x10, 0x01,
+                      0x01, 0x10, 0x10, 0x01,
+                      0x01, 0x10, 0x10, 0x01];
     assert_eq!(&ref_packet[..], &packet[..]);
 }
-

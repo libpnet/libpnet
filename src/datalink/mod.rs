@@ -44,7 +44,7 @@ pub enum DataLinkChannelType {
     Layer2,
     /// Send and receive "cooked" packets - send and receive network layer packets
     /// FIXME Currently unimplemented
-    Layer3(EtherType)
+    Layer3(EtherType),
 }
 
 /// Create a new (DataLinkSender, DataLinkReceiver) pair
@@ -65,8 +65,10 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
                         read_buffer_size: usize,
                         channel_type: DataLinkChannelType)
     -> io::Result<(Box<DataLinkSender>, Box<DataLinkReceiver>)> {
-    backend::datalink_channel(network_interface, write_buffer_size,
-        read_buffer_size, channel_type)
+    backend::datalink_channel(network_interface,
+                              write_buffer_size,
+                              read_buffer_size,
+                              channel_type)
 }
 
 /// Structure for sending packets at the data link layer. Should be constructed using
@@ -79,8 +81,11 @@ pub trait DataLinkSender : Send {
     /// avoiding the copy required for `send`. If there is not sufficient capacity in the buffer,
     /// None will be returned.
     #[inline]
-    fn build_and_send(&mut self, num_packets: usize, packet_size: usize,
-                          func: &mut FnMut(MutableEthernetPacket)) -> Option<io::Result<()>>;
+    fn build_and_send(&mut self,
+                      num_packets: usize,
+                      packet_size: usize,
+                      func: &mut FnMut(MutableEthernetPacket))
+        -> Option<io::Result<()>>;
 
     /// Send a packet
     ///
@@ -88,7 +93,9 @@ pub trait DataLinkSender : Send {
     /// operating system being used. The second parameter is currently ignored, however `None`
     /// should be passed.
     #[inline]
-    fn send_to(&mut self, packet: &EthernetPacket, dst: Option<NetworkInterface>)
+    fn send_to(&mut self,
+               packet: &EthernetPacket,
+               dst: Option<NetworkInterface>)
         -> Option<io::Result<()>>;
 }
 
@@ -110,4 +117,3 @@ pub trait DataLinkChannelIterator<'a> {
     #[inline]
     fn next(&mut self) -> io::Result<EthernetPacket>;
 }
-

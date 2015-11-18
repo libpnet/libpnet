@@ -17,7 +17,7 @@ use std::slice;
 use std::sync::Arc;
 
 use bindings::{bpf, winpcap};
-use datalink::{DataLinkChannelType, DataLinkSender, DataLinkReceiver, DataLinkChannelIterator};
+use datalink::{DataLinkChannelIterator, DataLinkChannelType, DataLinkReceiver, DataLinkSender};
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use util::NetworkInterface;
@@ -48,9 +48,9 @@ impl Drop for WinPcapPacket {
 
 #[inline]
 pub fn datalink_channel(network_interface: &NetworkInterface,
-           read_buffer_size: usize,
-           write_buffer_size: usize,
-           _channel_type: DataLinkChannelType)
+                        read_buffer_size: usize,
+                        write_buffer_size: usize,
+                        _channel_type: DataLinkChannelType)
     -> io::Result<(Box<DataLinkSender>, Box<DataLinkReceiver>)> {
     let mut read_buffer = Vec::new();
     read_buffer.resize(read_buffer_size, 0u8);
@@ -66,32 +66,24 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         return Err(io::Error::last_os_error());
     }
 
-    let ret = unsafe {
-        winpcap::PacketSetHwFilter(adapter, winpcap::NDIS_PACKET_TYPE_PROMISCUOUS)
-    };
+    let ret = unsafe { winpcap::PacketSetHwFilter(adapter, winpcap::NDIS_PACKET_TYPE_PROMISCUOUS) };
     if ret == 0 {
         return Err(io::Error::last_os_error());
     }
 
     // Set kernel buffer size
-    let ret = unsafe {
-        winpcap::PacketSetBuff(adapter, read_buffer_size as libc::c_int)
-    };
+    let ret = unsafe { winpcap::PacketSetBuff(adapter, read_buffer_size as libc::c_int) };
     if ret == 0 {
         return Err(io::Error::last_os_error());
     }
 
-    let ret = unsafe {
-        winpcap::PacketSetReadTimeout(adapter, 0)
-    };
+    let ret = unsafe { winpcap::PacketSetReadTimeout(adapter, 0) };
     if ret == 0 {
         return Err(io::Error::last_os_error());
     }
 
     // Immediate mode
-    let ret = unsafe {
-        winpcap::PacketSetMinToCopy(adapter, 1)
-    };
+    let ret = unsafe { winpcap::PacketSetMinToCopy(adapter, 1) };
     if ret == 0 {
         return Err(io::Error::last_os_error());
     }
@@ -129,12 +121,12 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     let sender = Box::new(DataLinkSenderImpl {
         adapter: adapter.clone(),
         _write_buffer: write_buffer,
-        packet: WinPcapPacket { packet: write_packet }
+        packet: WinPcapPacket { packet: write_packet },
     });
     let receiver = Box::new(DataLinkReceiverImpl {
         adapter: adapter,
         _read_buffer: read_buffer,
-        packet: WinPcapPacket { packet: read_packet }
+        packet: WinPcapPacket { packet: read_packet },
     });
     Ok((sender, receiver))
 }
@@ -147,9 +139,11 @@ pub struct DataLinkSenderImpl {
 
 impl DataLinkSender for DataLinkSenderImpl {
     #[inline]
-    fn build_and_send(&mut self, num_packets: usize, packet_size: usize,
-                          func: &mut FnMut(MutableEthernetPacket)) -> Option<io::Result<()>>
-    {
+    fn build_and_send(&mut self,
+                      num_packets: usize,
+                      packet_size: usize,
+                      func: &mut FnMut(MutableEthernetPacket))
+        -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len >= unsafe { (*self.packet.packet).Length } as usize {
             None
@@ -166,14 +160,20 @@ impl DataLinkSender for DataLinkSenderImpl {
 
                 // Make sure the right length of packet is sent
                 let old_len = unsafe { (*self.packet.packet).Length };
-                unsafe { (*self.packet.packet).Length = packet_size as u32; }
+                unsafe {
+                    (*self.packet.packet).Length = packet_size as u32;
+                }
 
-                let ret = unsafe { winpcap::PacketSendPacket(self.adapter.adapter, self.packet.packet, 0) };
+                let ret = unsafe {
+                    winpcap::PacketSendPacket(self.adapter.adapter, self.packet.packet, 0)
+                };
 
-                unsafe { (*self.packet.packet).Length = old_len; }
+                unsafe {
+                    (*self.packet.packet).Length = old_len;
+                }
 
                 if ret == 0 {
-                    return Some(Err(io::Error::last_os_error()))
+                    return Some(Err(io::Error::last_os_error()));
                 }
             }
             Some(Ok(()))
@@ -181,12 +181,16 @@ impl DataLinkSender for DataLinkSenderImpl {
     }
 
     #[inline]
-    fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
+    fn send_to(&mut self,
+               packet: &EthernetPacket,
+               _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
         use packet::MutablePacket;
-        self.build_and_send(1, packet.packet().len(), &mut |mut eh| {
-            eh.clone_from(packet);
-        })
+        self.build_and_send(1,
+                            packet.packet().len(),
+                            &mut |mut eh| {
+                                eh.clone_from(packet);
+                            })
     }
 }
 
@@ -207,7 +211,7 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
         Box::new(DataLinkChannelIteratorImpl {
             pc: self,
             // Enough room for minimally sized packets without reallocating
-            packets: VecDeque::with_capacity(buflen / 64)
+            packets: VecDeque::with_capacity(buflen / 64),
         })
     }
 }
@@ -236,8 +240,7 @@ impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
             while ptr < end {
                 unsafe {
                     let packet: *const bpf::bpf_hdr = mem::transmute(ptr);
-                    let start = ptr as isize +
-                                (*packet).bh_hdrlen as isize -
+                    let start = ptr as isize + (*packet).bh_hdrlen as isize -
                                 (*self.pc.packet.packet).Buffer as isize;
                     self.packets.push_back((start as usize, (*packet).bh_caplen as usize));
                     let offset = (*packet).bh_hdrlen as isize + (*packet).bh_caplen as isize;
@@ -253,4 +256,3 @@ impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
         Ok(EthernetPacket::new(slice).unwrap())
     }
 }
-

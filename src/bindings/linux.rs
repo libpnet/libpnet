@@ -20,6 +20,5 @@ pub struct packet_mreq {
     pub mr_ifindex: libc::c_int,
     pub mr_type: libc::c_ushort,
     pub mr_alen: libc::c_ushort,
-    pub mr_address: [libc::c_uchar; 8]
+    pub mr_address: [libc::c_uchar; 8],
 }
-

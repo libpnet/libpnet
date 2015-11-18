@@ -12,15 +12,16 @@ extern crate libc;
 
 use packet::PrimitiveValues;
 
-use std::ffi::{CStr};
+use std::ffi::CStr;
 use std::fmt;
-use std::str::{from_utf8_unchecked, FromStr};
+use std::str::{FromStr, from_utf8_unchecked};
 use std::mem;
 use std::u8;
 use std::net::IpAddr;
 
 
-#[cfg(not(windows))] use internal;
+#[cfg(not(windows))]
+use internal;
 
 /// A MAC address
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -42,8 +43,14 @@ impl PrimitiveValues for MacAddr {
 
 impl fmt::Display for MacAddr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "{:x}:{:x}:{:x}:{:x}:{:x}:{:x}",
-               self.0, self.1, self.2, self.3, self.4, self.5)
+        write!(fmt,
+               "{:x}:{:x}:{:x}:{:x}:{:x}:{:x}",
+               self.0,
+               self.1,
+               self.2,
+               self.3,
+               self.4,
+               self.5)
     }
 }
 
@@ -53,9 +60,9 @@ impl fmt::Debug for MacAddr {
     }
 }
 
-// FIXME Is this the right way to do this? Which occurs is an implementation issue rather than
-//       actually defined - is it useful to provide these errors, or would it be better to just
-//       give ()?
+// FIXME Is this the right way to do this? Which occurs is an implementation
+//       issue rather than actually defined - is it useful to provide these
+//       errors, or would it be better to just give ()?
 /// Represents an error which occurred whilst parsing a MAC address
 #[derive(Copy, Debug, PartialEq, Eq, Clone)]
 pub enum ParseMacAddrErr {
@@ -95,17 +102,28 @@ impl FromStr for MacAddr {
 #[test]
 fn mac_addr_from_str() {
     assert_eq!("00:00:00:00:00:00".parse(), Ok(MacAddr(0, 0, 0, 0, 0, 0)));
-    assert_eq!("ff:ff:ff:ff:ff:ff".parse(), Ok(MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)));
-    assert_eq!("12:34:56:78:90:ab".parse(), Ok(MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB)));
-    assert_eq!("::::::".parse::<MacAddr>(), Err(ParseMacAddrErr::InvalidComponent));
-    assert_eq!("0::::::".parse::<MacAddr>(), Err(ParseMacAddrErr::InvalidComponent));
-    assert_eq!("::::0::".parse::<MacAddr>(), Err(ParseMacAddrErr::InvalidComponent));
-    assert_eq!("12:34:56:78".parse::<MacAddr>(), Err(ParseMacAddrErr::TooFewComponents));
-    assert_eq!("12:34:56:78:".parse::<MacAddr>(), Err(ParseMacAddrErr::InvalidComponent));
-    assert_eq!("12:34:56:78:90".parse::<MacAddr>(), Err(ParseMacAddrErr::TooFewComponents));
-    assert_eq!("12:34:56:78:90:".parse::<MacAddr>(), Err(ParseMacAddrErr::InvalidComponent));
-    assert_eq!("12:34:56:78:90:00:00".parse::<MacAddr>(), Err(ParseMacAddrErr::TooManyComponents));
-    assert_eq!("xx:xx:xx:xx:xx:xx".parse::<MacAddr>(), Err(ParseMacAddrErr::InvalidComponent));
+    assert_eq!("ff:ff:ff:ff:ff:ff".parse(),
+               Ok(MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)));
+    assert_eq!("12:34:56:78:90:ab".parse(),
+               Ok(MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB)));
+    assert_eq!("::::::".parse::<MacAddr>(),
+               Err(ParseMacAddrErr::InvalidComponent));
+    assert_eq!("0::::::".parse::<MacAddr>(),
+               Err(ParseMacAddrErr::InvalidComponent));
+    assert_eq!("::::0::".parse::<MacAddr>(),
+               Err(ParseMacAddrErr::InvalidComponent));
+    assert_eq!("12:34:56:78".parse::<MacAddr>(),
+               Err(ParseMacAddrErr::TooFewComponents));
+    assert_eq!("12:34:56:78:".parse::<MacAddr>(),
+               Err(ParseMacAddrErr::InvalidComponent));
+    assert_eq!("12:34:56:78:90".parse::<MacAddr>(),
+               Err(ParseMacAddrErr::TooFewComponents));
+    assert_eq!("12:34:56:78:90:".parse::<MacAddr>(),
+               Err(ParseMacAddrErr::InvalidComponent));
+    assert_eq!("12:34:56:78:90:00:00".parse::<MacAddr>(),
+               Err(ParseMacAddrErr::TooManyComponents));
+    assert_eq!("xx:xx:xx:xx:xx:xx".parse::<MacAddr>(),
+               Err(ParseMacAddrErr::InvalidComponent));
 }
 
 /// Represents a network interface and its associated addresses
@@ -142,18 +160,21 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
             (None, None)
         } else if (*sa).sa_family as libc::c_int == libc::AF_PACKET {
             let sll: *const libc::sockaddr_ll = mem::transmute(sa);
-            let mac = MacAddr((*sll).sll_addr[0], (*sll).sll_addr[1],
-                              (*sll).sll_addr[2], (*sll).sll_addr[3],
-                              (*sll).sll_addr[4], (*sll).sll_addr[5]);
+            let mac = MacAddr((*sll).sll_addr[0],
+                              (*sll).sll_addr[1],
+                              (*sll).sll_addr[2],
+                              (*sll).sll_addr[3],
+                              (*sll).sll_addr[4],
+                              (*sll).sll_addr[5]);
 
             (Some(mac), None)
         } else {
             let addr = internal::sockaddr_to_addr(mem::transmute(sa),
-                                        mem::size_of::<libc::sockaddr_storage>());
+                                                  mem::size_of::<libc::sockaddr_storage>());
 
             match addr {
                 Ok(sa) => (None, Some(sa.ip())),
-                Err(_) => (None, None)
+                Err(_) => (None, None),
             }
         }
     }
@@ -168,7 +189,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
         } else if (*sa).sa_family as libc::c_int == bpf::AF_LINK {
             let sdl: *const bpf::sockaddr_dl = mem::transmute(sa);
             let nlen = (*sdl).sdl_nlen as usize;
-            let mac = MacAddr((*sdl).sdl_data[nlen    ] as u8,
+            let mac = MacAddr((*sdl).sdl_data[nlen] as u8,
                               (*sdl).sdl_data[nlen + 1] as u8,
                               (*sdl).sdl_data[nlen + 2] as u8,
                               (*sdl).sdl_data[nlen + 3] as u8,
@@ -178,11 +199,11 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
             (Some(mac), None)
         } else {
             let addr = internal::sockaddr_to_addr(mem::transmute(sa),
-                                        mem::size_of::<libc::sockaddr_storage>());
+                                                  mem::size_of::<libc::sockaddr_storage>());
 
             match addr {
                 Ok(sa) => (None, Some(sa.ip())),
-                Err(_) => (None, None)
+                Err(_) => (None, None),
             }
         }
     }
@@ -215,7 +236,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
                 index: 0,
                 mac: mac,
                 ips: ip.map(|ip| [ip].to_vec()),
-                flags: (*addr).ifa_flags
+                flags: (*addr).ifa_flags,
             };
             let mut found: bool = false;
             for iface in &mut ifaces {
@@ -242,7 +263,7 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
     fn merge(old: &mut NetworkInterface, new: &NetworkInterface) {
         old.mac = match new.mac {
             None => old.mac,
-            _ => new.mac
+            _ => new.mac,
         };
         match (&mut old.ips, &new.ips) {
             (&mut Some(ref mut old_ips), &Some(ref new_ips)) => old_ips.push_all(&new_ips[..]),
@@ -262,11 +283,9 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
 
     unsafe {
         let mut tmp: winpcap::IP_ADAPTER_INFO = mem::zeroed();
-        // FIXME [windows] This only gets IPv4 addresses - should use GetAdaptersAddresses
-        winpcap::GetAdaptersInfo(
-            &mut tmp,
-            &mut adapters_size
-        );
+        // FIXME [windows] This only gets IPv4 addresses - should use
+        // GetAdaptersAddresses
+        winpcap::GetAdaptersInfo(&mut tmp, &mut adapters_size);
     }
 
     let vec_size = adapters_size / mem::size_of::<winpcap::IP_ADAPTER_INFO>() as u32;
@@ -283,14 +302,14 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
     let mut all_ifaces = Vec::with_capacity(vec_size as usize);
     while !cursor.is_null() {
         let mac = unsafe {
-                    MacAddr((*cursor).Address[0],
-                            (*cursor).Address[1],
-                            (*cursor).Address[2],
-                            (*cursor).Address[3],
-                            (*cursor).Address[4],
-                            (*cursor).Address[5])
-                  };
-        let mut ip_cursor = unsafe { &mut (*cursor).IpAddressList as winpcap::PIP_ADDR_STRING};
+            MacAddr((*cursor).Address[0],
+                    (*cursor).Address[1],
+                    (*cursor).Address[2],
+                    (*cursor).Address[3],
+                    (*cursor).Address[4],
+                    (*cursor).Address[5])
+        };
+        let mut ip_cursor = unsafe { &mut (*cursor).IpAddressList as winpcap::PIP_ADDR_STRING };
         let mut ips: Vec<IpAddr> = Vec::new();
         while !ip_cursor.is_null() {
             let ip_str_ptr = unsafe { &(*ip_cursor) }.IpAddress.String.as_ptr() as *const i8;
@@ -301,19 +320,19 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
         }
 
         unsafe {
-            let name_str_ptr = (*cursor).AdapterName.as_ptr() as *const i8; 
+            let name_str_ptr = (*cursor).AdapterName.as_ptr() as *const i8;
 
             let bytes = CStr::from_ptr(name_str_ptr).to_bytes();
             let name_str = from_utf8_unchecked(bytes).to_owned();
 
             all_ifaces.push(NetworkInterface {
-                        name: name_str,
-                        index: (*cursor).Index,
-                        mac: Some(mac),
-                        ips: Some(ips),
-                        //flags: (*cursor).Type, // FIXME [windows]
-                        flags: 0,
-                     });
+                name: name_str,
+                index: (*cursor).Index,
+                mac: Some(mac),
+                ips: Some(ips),
+                // flags: (*cursor).Type, // FIXME [windows]
+                flags: 0,
+            });
 
             cursor = (*cursor).Next;
         }
@@ -339,19 +358,16 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
         Some(iface_names) => {
             for iface in iface_names.split('\0') {
                 let name = iface.to_owned();
-                let next = all_ifaces.iter()
-                                     .filter(|x| name[..].ends_with(&x.name[..]))
-                                     .next();
+                let next = all_ifaces.iter().filter(|x| name[..].ends_with(&x.name[..])).next();
                 if next.is_some() {
                     let mut iface = next.unwrap().clone();
                     iface.name = name;
                     vec.push(iface);
                 }
             }
-        },
-        None => ()
+        }
+        None => (),
     };
 
     vec
 }
-

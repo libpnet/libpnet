@@ -8,13 +8,13 @@
 
 //! Support for implementing transport layer protocols
 //!
-//! The transport module provides the ability to send and receive packets at the transport layer
-//! using IPv4 or IPv6. It also enables layer 3 networking for specific transport protocols, using
-//! IPv4 only.
+//! The transport module provides the ability to send and receive packets at
+//! the transport layer using IPv4 or IPv6. It also enables layer 3 networking
+//! for specific transport protocols, using IPv4 only.
 //!
-//! Note that this is limited by operating system support - for example, on OS X and FreeBSD, it is
-//! impossible to implement protocols which are already implemented in the kernel such as TCP and
-//! UDP.
+//! Note that this is limited by operating system support - for example, on OS
+//! X and FreeBSD, it is impossible to implement protocols which are already
+//! implemented in the kernel such as TCP and UDP.
 
 #![macro_use]
 
@@ -43,7 +43,7 @@ pub enum TransportProtocol {
     /// Represents a transport protocol built on top of IPv4
     Ipv4(IpNextHeaderProtocol),
     /// Represents a transport protocol built on top of IPv6
-    Ipv6(IpNextHeaderProtocol)
+    Ipv6(IpNextHeaderProtocol),
 }
 
 /// Type of transport channel to present
@@ -52,20 +52,20 @@ pub enum TransportChannelType {
     /// The application will send and receive transport layer packets
     Layer4(TransportProtocol),
     /// The application will send and receive IPv4 packets, with the specified transport protocol
-    Layer3(IpNextHeaderProtocol)
+    Layer3(IpNextHeaderProtocol),
 }
 
 /// Structure used for sending at the transport layer. Should be created with transport_channel()
 pub struct TransportSender {
     socket: Arc<internal::FileDesc>,
-    _channel_type: TransportChannelType
+    _channel_type: TransportChannelType,
 }
 
 /// Structure used for sending at the transport layer. Should be created with transport_channel()
 pub struct TransportReceiver {
     socket: Arc<internal::FileDesc>,
     buffer: Vec<u8>,
-    channel_type: TransportChannelType
+    channel_type: TransportChannelType,
 }
 
 #[cfg(windows)]
@@ -84,7 +84,8 @@ const INVALID_SOCKET: libc::c_int = -1;
 /// allow sending and receiving UDP packets using IPv4; whereas Layer3(IpNextHeaderProtocols::Udp)
 /// would include the IPv4 Header in received values, and require manual construction of an IP
 /// header when sending.
-pub fn transport_channel(buffer_size: usize, channel_type: TransportChannelType)
+pub fn transport_channel(buffer_size: usize,
+                         channel_type: TransportChannelType)
     -> io::Result<(TransportSender, TransportReceiver)> {
     use std::net;
     // This hack makes sure that winsock is initialised
@@ -92,15 +93,21 @@ pub fn transport_channel(buffer_size: usize, channel_type: TransportChannelType)
 
     let socket = unsafe {
         match channel_type {
-            Layer4(Ipv4(IpNextHeaderProtocol(proto))) | Layer3(IpNextHeaderProtocol(proto))
-                => libc::socket(libc::AF_INET, libc::SOCK_RAW, proto as libc::c_int),
-            Layer4(Ipv6(IpNextHeaderProtocol(proto)))
-                => libc::socket(libc::AF_INET6, libc::SOCK_RAW, proto as libc::c_int),
+            Layer4(Ipv4(IpNextHeaderProtocol(proto))) | Layer3(IpNextHeaderProtocol(proto)) =>
+                libc::socket(libc::AF_INET, libc::SOCK_RAW, proto as libc::c_int),
+            Layer4(Ipv6(IpNextHeaderProtocol(proto))) =>
+                libc::socket(libc::AF_INET6, libc::SOCK_RAW, proto as libc::c_int),
         }
     };
     if socket != INVALID_SOCKET {
-        if match channel_type { Layer3(_) | Layer4(Ipv4(_)) => true, _ => false } {
-            let hincl: libc::c_int = match channel_type { Layer4(..) => 0, _ => 1 };
+        if match channel_type {
+            Layer3(_) | Layer4(Ipv4(_)) => true,
+            _ => false,
+        } {
+            let hincl: libc::c_int = match channel_type {
+                Layer4(..) => 0,
+                _ => 1,
+            };
             let res = unsafe {
                 libc::setsockopt(socket,
                                  libc::IPPROTO_IP,
@@ -110,7 +117,9 @@ pub fn transport_channel(buffer_size: usize, channel_type: TransportChannelType)
             };
             if res == -1 {
                 let err = Error::last_os_error();
-                unsafe { internal::close(socket); }
+                unsafe {
+                    internal::close(socket);
+                }
                 return Err(err);
             }
         }
@@ -133,7 +142,7 @@ pub fn transport_channel(buffer_size: usize, channel_type: TransportChannelType)
 }
 
 impl TransportSender {
-    fn send<T : Packet>(&mut self, packet: T, dst: net::IpAddr) -> io::Result<usize> {
+    fn send<T: Packet>(&mut self, packet: T, dst: net::IpAddr) -> io::Result<usize> {
         let mut caddr = unsafe { mem::zeroed() };
         let slen = internal::addr_to_sockaddr(net::SocketAddr::new(dst, 0), &mut caddr);
         let caddr_ptr = (&caddr as *const libc::sockaddr_storage) as *const libc::sockaddr;
@@ -143,22 +152,26 @@ impl TransportSender {
 
     /// Send a packet to the provided desination
     #[inline]
-    pub fn send_to<T : Packet>(&mut self, packet: T, destination: net::IpAddr) -> io::Result<usize> {
+    pub fn send_to<T: Packet>(&mut self, packet: T, destination: net::IpAddr) -> io::Result<usize> {
         self.send_to_impl(packet, destination)
     }
 
     #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]
-    fn send_to_impl<T : Packet>(&mut self, packet: T, dst: net::IpAddr) -> io::Result<usize> {
+    fn send_to_impl<T: Packet>(&mut self, packet: T, dst: net::IpAddr) -> io::Result<usize> {
         self.send(packet, dst)
     }
 
     #[cfg(any(target_os = "freebsd", target_os = "macos"))]
-    fn send_to_impl<T : Packet>(&mut self, packet: T, dst: net::IpAddr) -> io::Result<usize> {
+    fn send_to_impl<T: Packet>(&mut self, packet: T, dst: net::IpAddr) -> io::Result<usize> {
         use packet::ipv4::MutableIpv4Packet;
 
-        // FreeBSD and OS X expect total length and fragment offset fields of IPv4 packets to be in
+        // FreeBSD and OS X expect total length and fragment offset fields of IPv4
+        // packets to be in
         // host byte order rather than network byte order (man 4 ip/Raw IP Sockets)
-        if match self._channel_type { Layer3(..) => true, _ => false } {
+        if match self._channel_type {
+            Layer3(..) => true,
+            _ => false,
+        } {
             let mut mut_slice: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
             mut_slice.clone_from_slice(packet.packet());
 
@@ -200,7 +213,9 @@ macro_rules! transport_channel_iterator {
             /// Get the next ($ty, IpAddr) pair for the given channel
             pub fn next(&mut self) -> io::Result<($ty, net::IpAddr)> {
                 let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
-                let res = internal::recv_from(self.tr.socket.fd, &mut self.tr.buffer[..], &mut caddr);
+                let res = internal::recv_from(self.tr.socket.fd,
+                                              &mut self.tr.buffer[..],
+                                              &mut caddr);
 
                 let offset = match self.tr.channel_type {
                     Layer4(Ipv4(_)) => {
@@ -263,4 +278,3 @@ transport_channel_iterator!(Ipv4Packet,
 transport_channel_iterator!(UdpPacket,
                             UdpTransportChannelIterator,
                             udp_packet_iter);
-

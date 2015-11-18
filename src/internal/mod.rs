@@ -11,7 +11,7 @@ extern crate libc;
 use std::io;
 use std::mem;
 
-pub use self::native::{close, retry, addr_to_sockaddr, sockaddr_to_addr};
+pub use self::native::{addr_to_sockaddr, close, retry, sockaddr_to_addr};
 
 mod native;
 
@@ -34,12 +34,19 @@ impl Drop for FileDesc {
     }
 }
 
-pub fn send_to(socket: CSocket, buffer: &[u8], dst: *const libc::sockaddr, slen: libc::socklen_t)
+pub fn send_to(socket: CSocket,
+               buffer: &[u8],
+               dst: *const libc::sockaddr,
+               slen: libc::socklen_t)
     -> io::Result<usize> {
 
     let send_len = retry(&mut || unsafe {
-        libc::sendto(socket, buffer.as_ptr() as *const libc::c_void, buffer.len() as BufLen,
-                     0, dst, slen)
+        libc::sendto(socket,
+                     buffer.as_ptr() as *const libc::c_void,
+                     buffer.len() as BufLen,
+                     0,
+                     dst,
+                     slen)
     });
 
     if send_len < 0 {
@@ -49,12 +56,18 @@ pub fn send_to(socket: CSocket, buffer: &[u8], dst: *const libc::sockaddr, slen:
     }
 }
 
-pub fn recv_from(socket: CSocket, buffer: &mut [u8], caddr: *mut libc::sockaddr_storage)
+pub fn recv_from(socket: CSocket,
+                 buffer: &mut [u8],
+                 caddr: *mut libc::sockaddr_storage)
     -> io::Result<usize> {
     let mut caddrlen = mem::size_of::<libc::sockaddr_storage>() as libc::socklen_t;
     let len = retry(&mut || unsafe {
-        libc::recvfrom(socket, buffer.as_ptr() as *mut libc::c_void, buffer.len() as BufLen,
-                       0, caddr as *mut libc::sockaddr, &mut caddrlen)
+        libc::recvfrom(socket,
+                       buffer.as_ptr() as *mut libc::c_void,
+                       buffer.len() as BufLen,
+                       0,
+                       caddr as *mut libc::sockaddr,
+                       &mut caddrlen)
     });
 
     if len < 0 {
@@ -63,4 +76,3 @@ pub fn recv_from(socket: CSocket, buffer: &mut [u8], caddr: *mut libc::sockaddr_
         Ok(len as usize)
     }
 }
-
