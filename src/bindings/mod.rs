@@ -14,4 +14,3 @@ pub mod linux;
 
 #[cfg(windows)]
 pub mod winpcap;
-

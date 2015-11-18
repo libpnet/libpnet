@@ -15,16 +15,17 @@ use std::mem;
 use std::sync::Arc;
 
 use bindings::linux;
-use datalink::{DataLinkChannelType, DataLinkSender, DataLinkReceiver, DataLinkChannelIterator};
+use datalink::{DataLinkChannelIterator, DataLinkChannelType, DataLinkReceiver, DataLinkSender};
 use datalink::DataLinkChannelType::{Layer2, Layer3};
 use internal;
 use packet::Packet;
 use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
-use util::{NetworkInterface, MacAddr};
+use util::{MacAddr, NetworkInterface};
 
 fn network_addr_to_sockaddr(ni: &NetworkInterface,
                             storage: *mut libc::sockaddr_storage,
-                            proto: libc::c_int) -> usize {
+                            proto: libc::c_int)
+    -> usize {
     unsafe {
         let sll: *mut libc::sockaddr_ll = mem::transmute(storage);
         (*sll).sll_family = libc::AF_PACKET as libc::sa_family_t;
@@ -52,16 +53,16 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     let socket = unsafe { libc::socket(libc::AF_PACKET, typ, proto.to_be() as i32) };
     if socket != -1 {
         let mut addr: libc::sockaddr_storage = unsafe { mem::zeroed() };
-        let len = network_addr_to_sockaddr(network_interface,
-                                           &mut addr,
-                                           proto as i32);
+        let len = network_addr_to_sockaddr(network_interface, &mut addr, proto as i32);
 
         let send_addr = (&addr as *const libc::sockaddr_storage) as *const libc::sockaddr;
 
         // Bind to interface
         if unsafe { libc::bind(socket, send_addr, len as libc::socklen_t) } == -1 {
             let err = io::Error::last_os_error();
-            unsafe { internal::close(socket); }
+            unsafe {
+                internal::close(socket);
+            }
             return Err(err);
         }
 
@@ -70,14 +71,17 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         pmr.mr_type = linux::PACKET_MR_PROMISC as u16;
 
         // Enable promiscuous capture
-        if unsafe { libc::setsockopt(socket,
-                                     linux::SOL_PACKET,
-                                     linux::PACKET_ADD_MEMBERSHIP,
-                                     (&pmr as *const linux::packet_mreq)
-                                           as *const libc::c_void,
-                                     mem::size_of::<linux::packet_mreq>() as u32) } == -1 {
+        if unsafe {
+            libc::setsockopt(socket,
+                             linux::SOL_PACKET,
+                             linux::PACKET_ADD_MEMBERSHIP,
+                             (&pmr as *const linux::packet_mreq) as *const libc::c_void,
+                             mem::size_of::<linux::packet_mreq>() as u32)
+        } == -1 {
             let err = io::Error::last_os_error();
-            unsafe { internal::close(socket); }
+            unsafe {
+                internal::close(socket);
+            }
             return Err(err);
         }
 
@@ -92,7 +96,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         let receiver = Box::new(DataLinkReceiverImpl {
             socket: fd,
             read_buffer: repeat(0u8).take(read_buffer_size).collect(),
-            _channel_type: channel_type
+            _channel_type: channel_type,
         });
         Ok((sender, receiver))
     } else {
@@ -105,32 +109,38 @@ pub struct DataLinkSenderImpl {
     write_buffer: Vec<u8>,
     _channel_type: DataLinkChannelType,
     send_addr: libc::sockaddr_ll,
-    send_addr_len: usize
+    send_addr_len: usize,
 }
 
 impl DataLinkSender for DataLinkSenderImpl {
     // FIXME Layer 3
     #[inline]
-    fn build_and_send(&mut self, num_packets: usize, packet_size: usize,
-                          func: &mut FnMut(MutableEthernetPacket)) -> Option<io::Result<()>>
-    {
+    fn build_and_send(&mut self,
+                      num_packets: usize,
+                      packet_size: usize,
+                      func: &mut FnMut(MutableEthernetPacket))
+        -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len < self.write_buffer.len() {
             let min = cmp::min(self.write_buffer[..].len(), len);
             let mut mut_slice = &mut self.write_buffer;
-            for chunk in mut_slice[.. min].chunks_mut(packet_size) {
+            for chunk in mut_slice[..min].chunks_mut(packet_size) {
                 {
                     let eh = MutableEthernetPacket::new(chunk).unwrap();
                     func(eh);
                 }
-                let send_addr = (&self.send_addr as *const libc::sockaddr_ll)
-                                                 as *const libc::sockaddr;
-                match internal::send_to(self.socket.fd, chunk, send_addr,
-                                             self.send_addr_len as libc::socklen_t) {
+                let send_addr =
+                    (&self.send_addr as *const libc::sockaddr_ll) as *const libc::sockaddr;
+
+                match internal::send_to(self.socket.fd,
+                                        chunk,
+                                        send_addr,
+                                        self.send_addr_len as libc::socklen_t) {
                     Err(e) => return Some(Err(e)),
-                    Ok(_) => ()
+                    Ok(_) => (),
                 }
             }
+
             Some(Ok(()))
         } else {
             None
@@ -138,14 +148,16 @@ impl DataLinkSender for DataLinkSenderImpl {
     }
 
     #[inline]
-    fn send_to(&mut self, packet: &EthernetPacket, _dst: Option<NetworkInterface>)
+    fn send_to(&mut self,
+               packet: &EthernetPacket,
+               _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
         match internal::send_to(self.socket.fd,
                                 packet.packet(),
                                 (&self.send_addr as *const libc::sockaddr_ll) as *const _,
                                 self.send_addr_len as libc::socklen_t) {
             Err(e) => Some(Err(e)),
-            Ok(_) => Some(Ok(()))
+            Ok(_) => Some(Ok(())),
         }
     }
 }
@@ -161,9 +173,7 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
     // FIXME See https://github.com/Manishearth/rust-clippy/issues/417
     #[cfg_attr(feature = "clippy", allow(needless_lifetimes))]
     fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
-        Box::new(DataLinkChannelIteratorImpl {
-            pc: self,
-        })
+        Box::new(DataLinkChannelIteratorImpl { pc: self })
     }
 }
 
@@ -176,9 +186,8 @@ impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
         let res = internal::recv_from(self.pc.socket.fd, &mut self.pc.read_buffer, &mut caddr);
         match res {
-            Ok(len) => Ok(EthernetPacket::new(&self.pc.read_buffer[0 .. len]).unwrap()),
+            Ok(len) => Ok(EthernetPacket::new(&self.pc.read_buffer[0..len]).unwrap()),
             Err(e) => Err(e),
         }
     }
 }
-

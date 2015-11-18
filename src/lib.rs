@@ -13,9 +13,10 @@
 //! There are four key components:
 //!
 //!  * The packet module, allowing safe construction and manipulation of packets
-//! * The pnet_packet crate, providing infrastructure for the packet module
+//!  * The pnet_packet crate, providing infrastructure for the packet module
 //!  * The transport module, which allows implementation of transport protocols
-//!  * The datalink module, which allows sending and receiving data link packets directly
+//!  * The datalink module, which allows sending and receiving data link
+//!    packets directly
 //!
 //! ## Terminology
 //!
@@ -25,18 +26,19 @@
 //!  * Layer 3, network layer
 //!  * Layer 4, transport layer
 //!
-//! Unless otherwise stated, all interactions with libpnet are in host-byte order - any platform
-//! specific variations are handled internally.
+//! Unless otherwise stated, all interactions with libpnet are in host-byte
+//! order - any platform specific variations are handled internally.
 //!
 //! ## Examples
 //!
-//! More examples, including a packet logger, and a version of the echo server written at the
-//! transport layer, can be found in the examples/ directory.
+//! More examples, including a packet logger, and a version of the echo server
+//! written at the transport layer, can be found in the examples/ directory.
 //!
 //! ### Ethernet echo server
 //!
-//! This (fairly useless) code implements an Ethernet echo server. Whenever a packet is received on
-//! an interface, it echo's the packet back; reversing the source and destination addresses.
+//! This (fairly useless) code implements an Ethernet echo server. Whenever a
+//! packet is received on an interface, it echo's the packet back; reversing the
+//! source and destination addresses.
 //!
 //! ```no_run
 //! extern crate pnet;
@@ -51,7 +53,8 @@
 //! // Invoke as echo <interface name>
 //! fn main() {
 //!     let interface_name = env::args().nth(1).unwrap();
-//!     let interface_names_match = |iface: &NetworkInterface| iface.name == interface_name;
+//!     let interface_names_match =
+//!         |iface: &NetworkInterface| iface.name == interface_name;
 //!
 //!     // Find the network interface with the provided name
 //!     let interfaces = get_network_interfaces();
@@ -61,7 +64,10 @@
 //!                               .unwrap();
 //!
 //!     // Create a new channel, dealing with layer 2 packets
-//!     let (mut tx, mut rx) = match datalink_channel(&interface, 4096, 4096, Layer2) {
+//!     let (mut tx, mut rx) = match datalink_channel(&interface,
+//!                                                   4096,
+//!                                                   4096,
+//!                                                   Layer2) {
 //!         Ok((tx, rx)) => (tx, rx),
 //!         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
 //!     };
@@ -76,13 +82,14 @@
 //!                 // problem, you could also use send_to.
 //!                 //
 //!                 // The packet is sent once the closure has finished executing.
-//!                 tx.build_and_send(1, packet.packet().len(), &mut |mut new_packet| {
-//!                     // Create a clone of the original packet
-//!                     new_packet.clone_from(&packet);
+//!                 tx.build_and_send(1, packet.packet().len(),
+//!                     &mut |mut new_packet| {
+//!                         // Create a clone of the original packet
+//!                         new_packet.clone_from(&packet);
 //!
-//!                     // Switch the source and destination
-//!                     new_packet.set_source(packet.get_destination());
-//!                     new_packet.set_destination(packet.get_source());
+//!                         // Switch the source and destination
+//!                         new_packet.set_source(packet.get_destination());
+//!                         new_packet.set_destination(packet.get_source());
 //!                 });
 //!             },
 //!             Err(e) => {
@@ -124,8 +131,8 @@ pub mod util;
 mod bindings;
 mod internal;
 
-// NOTE should probably have a cfg(pnet_test_network) here, but cargo doesn't allow custom --cfg
-//      flags
+// NOTE should probably have a cfg(pnet_test_network) here, but cargo doesn't
+//      allow custom --cfg flags
 #[cfg(test)]
 mod test;
 
@@ -133,4 +140,3 @@ mod test;
 mod pnet {
     pub use packet;
 }
-

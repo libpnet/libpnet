@@ -23,7 +23,7 @@ pub struct Udp {
     length: u16be,
     checksum: u16be,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 /// Calculate the checksum for a packet built on IPv4
@@ -31,7 +31,7 @@ pub fn ipv4_checksum(packet: &UdpPacket,
                      ipv4_source: Ipv4Addr,
                      ipv4_destination: Ipv4Addr,
                      next_level_protocol: IpNextHeaderProtocol)
--> u16be {
+    -> u16be {
     let IpNextHeaderProtocol(next_level_protocol) = next_level_protocol;
     let mut sum = 0u32;
 
@@ -93,7 +93,7 @@ fn udp_header_ipv4_test() {
     }
 
     // Set data
-    packet[20 + 8    ] = 't' as u8;
+    packet[20 + 8] = 't' as u8;
     packet[20 + 8 + 1] = 'e' as u8;
     packet[20 + 8 + 2] = 's' as u8;
     packet[20 + 8 + 3] = 't' as u8;
@@ -118,10 +118,10 @@ fn udp_header_ipv4_test() {
     }
 
     let ref_packet = [0x30, 0x39, /* source */
-                     0xd4, 0x31, /* destination */
-                     0x00, 0x0c, /* length */
-                     0x91, 0x78  /* checksum*/];
-    assert_eq!(&ref_packet[..], &packet[20 .. 28]);
+                      0xd4, 0x31, /* destination */
+                      0x00, 0x0c, /* length */
+                      0x91, 0x78  /* checksum */];
+    assert_eq!(&ref_packet[..], &packet[20..28]);
 }
 
 
@@ -129,7 +129,8 @@ fn udp_header_ipv4_test() {
 pub fn ipv6_checksum(packet: &UdpPacket,
                      ipv6_source: Ipv6Addr,
                      ipv6_destination: Ipv6Addr,
-                     next_header: IpNextHeaderProtocol) -> u16be {
+                     next_header: IpNextHeaderProtocol)
+    -> u16be {
     let IpNextHeaderProtocol(next_header) = next_header;
     let mut sum = 0u32;
 
@@ -204,7 +205,7 @@ fn udp_header_ipv6_test() {
     }
 
     // Set data
-    packet[40 + 8    ] = 't' as u8;
+    packet[40 + 8] = 't' as u8;
     packet[40 + 8 + 1] = 'e' as u8;
     packet[40 + 8 + 2] = 's' as u8;
     packet[40 + 8 + 3] = 't' as u8;
@@ -229,9 +230,8 @@ fn udp_header_ipv6_test() {
     }
 
     let ref_packet = [0x30, 0x39, /* source */
-                     0xd4, 0x31, /* destination */
-                     0x00, 0x0c, /* length */
-                     0x13, 0x90  /* checksum*/];
-    assert_eq!(&ref_packet[..], &packet[40 .. 48]);
+                      0xd4, 0x31, /* destination */
+                      0x00, 0x0c, /* length */
+                      0x13, 0x90  /* checksum */];
+    assert_eq!(&ref_packet[..], &packet[40..48]);
 }
-

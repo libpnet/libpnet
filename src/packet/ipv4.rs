@@ -78,7 +78,7 @@ pub struct Ipv4Option {
     number: u5,
     length: u8,
     #[payload]
-    data: Vec<u8>
+    data: Vec<u8>,
 }
 
 #[test]
@@ -116,7 +116,8 @@ fn ipv4_packet_test() {
         assert_eq!(ip_header.get_ttl(), 64);
 
         ip_header.set_next_level_protocol(IpNextHeaderProtocols::Udp);
-        assert_eq!(ip_header.get_next_level_protocol(), IpNextHeaderProtocols::Udp);
+        assert_eq!(ip_header.get_next_level_protocol(),
+                   IpNextHeaderProtocols::Udp);
 
         ip_header.set_source(Ipv4Addr::new(192, 168, 0, 1));
         assert_eq!(ip_header.get_source(), Ipv4Addr::new(192, 168, 0, 1));
@@ -130,15 +131,15 @@ fn ipv4_packet_test() {
     }
 
     let ref_packet = [0x45,           /* ver/ihl */
-                     0x11,           /* dscp/ecn */
-                     0x00, 0x73,     /* total len */
-                     0x01, 0x01,     /* identification */
-                     0x41, 0x01,     /* flags/frag offset */
-                     0x40,           /* ttl */
-                     0x11,           /* proto */
-                     0xb6, 0x4e,     /* checksum */
-                     0xc0, 0xa8, 0x00, 0x01, /* source ip */
-                     0xc0, 0xa8, 0x00, 0xc7  /* dest ip */];
+                      0x11,           /* dscp/ecn */
+                      0x00, 0x73,     /* total len */
+                      0x01, 0x01,     /* identification */
+                      0x41, 0x01,     /* flags/frag offset */
+                      0x40,           /* ttl */
+                      0x11,           /* proto */
+                      0xb6, 0x4e,     /* checksum */
+                      0xc0, 0xa8, 0x00, 0x01, /* source ip */
+                      0xc0, 0xa8, 0x00, 0xc7  /* dest ip */];
+
     assert_eq!(&ref_packet[..], &packet[..]);
 }
-

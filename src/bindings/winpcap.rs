@@ -152,7 +152,7 @@ pub enum IF_OPER_STATUS {
     IfOperStatusUnknown,
     IfOperStatusDormant,
     IfOperStatusNotPresent,
-    IfOperStatusLowerLayerDown
+    IfOperStatusLowerLayerDown,
 }
 
 #[repr(C)]
@@ -342,8 +342,11 @@ extern "system" {
 
     // from IPHlpApi.h
     pub fn GetAdaptersInfo(pAdapterInfo: PIP_ADAPTER_INFO, pOutBufLen: PULONG) -> libc::DWORD;
-    pub fn GetAdaptersAddresses(Family: ULONG, Flags: ULONG, Reserved: PVOID,
-                               AdapterAddresses: PIP_ADAPTER_ADDRESSES, SizePointer: PULONG)
+    pub fn GetAdaptersAddresses(Family: ULONG,
+                                Flags: ULONG,
+                                Reserved: PVOID,
+                                AdapterAddresses: PIP_ADAPTER_ADDRESSES,
+                                SizePointer: PULONG)
         -> libc::DWORD;
 }
 
@@ -351,9 +354,13 @@ extern "system" {
 #[allow(improper_ctypes)]
 extern {
     // from Packet32.h
-    pub fn PacketSendPacket(AdapterObject: LPADAPTER, pPacket: LPPACKET, Sync: win::BOOLEAN)
+    pub fn PacketSendPacket(AdapterObject: LPADAPTER,
+                            pPacket: LPPACKET,
+                            Sync: win::BOOLEAN)
         -> win::BOOLEAN;
-    pub fn PacketReceivePacket(AdapterObject: LPADAPTER, lpPacket: LPPACKET, Sync: win::BOOLEAN)
+    pub fn PacketReceivePacket(AdapterObject: LPADAPTER,
+                               lpPacket: LPPACKET,
+                               Sync: win::BOOLEAN)
         -> win::BOOLEAN;
     pub fn PacketAllocatePacket() -> LPPACKET;
     pub fn PacketInitPacket(lpPacket: LPPACKET, Buffer: PVOID, Length: UINT);
@@ -366,4 +373,3 @@ extern {
     pub fn PacketSetBuff(AdapterObject: LPADAPTER, dim: libc::c_int) -> win::BOOLEAN;
     pub fn PacketSetReadTimeout(AdapterObject: LPADAPTER, timeout: libc::c_int) -> win::BOOLEAN;
 }
-

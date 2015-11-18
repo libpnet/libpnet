@@ -28,7 +28,7 @@ pub trait MutablePacket : Packet {
     fn payload_mut(&mut self) -> &mut [u8];
 
     /// Initialize this packet by cloning another
-    fn clone_from<T : Packet>(&mut self, other: &T) {
+    fn clone_from<T: Packet>(&mut self, other: &T) {
         use std::slice::bytes::copy_memory;
         copy_memory(other.packet(), self.packet_mut())
     }
@@ -73,8 +73,14 @@ impl PrimitiveValues for ::std::net::Ipv6Addr {
     fn to_primitive_values(&self) -> (u16, u16, u16, u16, u16, u16, u16, u16) {
         let segments = self.segments();
 
-        (segments[0], segments[1], segments[2], segments[3],
-         segments[4], segments[5], segments[6], segments[7])
+        (segments[0],
+         segments[1],
+         segments[2],
+         segments[3],
+         segments[4],
+         segments[5],
+         segments[6],
+         segments[7])
     }
 }
 
@@ -83,4 +89,3 @@ pub mod ip;
 pub mod ipv4;
 pub mod ipv6;
 pub mod udp;
-
