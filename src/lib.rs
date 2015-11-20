@@ -106,7 +106,6 @@
 #![crate_type = "dylib"]
 
 #![deny(missing_docs)]
-#![allow(plugin_as_library)]
 
 // FIXME Remove this once the std lib has stabilised
 #![feature(custom_attribute, ip_addr, plugin, slice_bytes,
@@ -121,7 +120,7 @@
 #![cfg_attr(feature="clippy", allow(should_implement_trait))]
 
 extern crate libc;
-extern crate pnet_macros;
+extern crate pnet_macros_support;
 
 pub mod datalink;
 pub mod packet;

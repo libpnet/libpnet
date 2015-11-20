@@ -1,7 +1,7 @@
 [package]
 
 name = "pnet_macros"
-version = "0.3.3"
+version = "0.4.0"
 authors = ["Robert Clipsham <robert@octarineparrot.com>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
@@ -24,6 +24,10 @@ compiletest_rs = ">=0.0"
 [dev-dependencies.pnet]
 path = ".."
 version = ">=0.3"
+
+[dev-dependencies.pnet_macros_support]
+path = "../pnet_macros_support"
+version = ">=0.1"
 
 [dependencies]
 regex = ">=0.1"

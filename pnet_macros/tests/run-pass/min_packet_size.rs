@@ -10,9 +10,9 @@
 #![plugin(pnet_macros)]
 
 extern crate pnet;
-extern crate pnet_macros;
+extern crate pnet_macros_support;
 
-use pnet_macros::types::*;
+use pnet_macros_support::types::*;
 
 #[packet]
 pub struct ByteAligned {
