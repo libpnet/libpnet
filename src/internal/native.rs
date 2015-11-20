@@ -88,10 +88,10 @@ pub fn addr_to_sockaddr(addr: SocketAddr, storage: &mut libc::sockaddr_storage) 
             }
             IpAddr::V6(ip_addr) => {
                 let [a, b, c, d, e, f, g, h] = ip_addr.segments();
-                let inaddr = libc::in6_addr {
-                    s6_addr: [htons(a), htons(b), htons(c), htons(d), htons(e), htons(f), htons(g),
-                              htons(h)],
-                };
+                let addrarr = [htons(a), htons(b), htons(c), htons(d), htons(e), htons(f),
+                               htons(g), htons(h)];
+                let mut inaddr: libc::in6_addr = mem::uninitialized();
+                inaddr.s6_addr = mem::transmute(addrarr);
                 let storage = storage as *mut _ as *mut libc::sockaddr_in6;
                 (*storage).sin6_family = libc::AF_INET6 as libc::sa_family_t;
                 (*storage).sin6_port = htons(addr.port());
@@ -120,14 +120,15 @@ pub fn sockaddr_to_addr(storage: &libc::sockaddr_storage, len: usize) -> io::Res
         libc::AF_INET6 => {
             assert!(len as usize >= mem::size_of::<libc::sockaddr_in6>());
             let storage: &libc::sockaddr_in6 = unsafe { mem::transmute(storage) };
-            let a = ntohs(storage.sin6_addr.s6_addr[0]);
-            let b = ntohs(storage.sin6_addr.s6_addr[1]);
-            let c = ntohs(storage.sin6_addr.s6_addr[2]);
-            let d = ntohs(storage.sin6_addr.s6_addr[3]);
-            let e = ntohs(storage.sin6_addr.s6_addr[4]);
-            let f = ntohs(storage.sin6_addr.s6_addr[5]);
-            let g = ntohs(storage.sin6_addr.s6_addr[6]);
-            let h = ntohs(storage.sin6_addr.s6_addr[7]);
+            let addr: [u16; 8] = unsafe { mem::transmute(storage.sin6_addr.s6_addr) };
+            let a = ntohs(addr[0]);
+            let b = ntohs(addr[1]);
+            let c = ntohs(addr[2]);
+            let d = ntohs(addr[3]);
+            let e = ntohs(addr[4]);
+            let f = ntohs(addr[5]);
+            let g = ntohs(addr[6]);
+            let h = ntohs(addr[7]);
             let ip = IpAddr::V6(Ipv6Addr::new(a, b, c, d, e, f, g, h));
             Ok(SocketAddr::new(ip, ntohs(storage.sin6_port)))
         }

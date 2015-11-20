@@ -70,7 +70,7 @@ To use `libpnet` in your project, add the following to your Cargo.toml:
 
 ```
 [dependencies.pnet]
-version = "0.5.0"
+version = "0.5.1"
 ```
 
 When developing, use the provided Makefile, which does weird things to make the
