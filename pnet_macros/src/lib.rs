@@ -15,9 +15,10 @@
 //! #![plugin(pnet_macros)]
 //!
 //! extern crate pnet;
+//! extern crate pnet_macros_support;
 //!
 //! /// This module contains a list of type aliases which may be used
-//! use pnet_macros::types::{u4, u12be};
+//! use pnet_macros_support::types::{u4, u12be};
 //!
 //! /// Packets are specified in the same way as normal Rust structs, but with a `#[packet]`
 //! /// attribute.
@@ -158,8 +159,6 @@ use syntax::ptr::P;
 
 mod decorator;
 mod util;
-
-pub mod types;
 
 /// Replace the #[packet] attribute with internal attributes
 ///

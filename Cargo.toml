@@ -1,7 +1,6 @@
 [package]
-
 name = "pnet"
-version = "0.4.1"
+version = "0.5.0"
 authors = [ "Robert Clipsham <robert@octarineparrot.com>" ]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
@@ -10,17 +9,12 @@ documentation = "http://octarineparrot.com/assets/libpnet/doc/pnet/"
 description = "Cross-platform, low level networking using the Rust programming language."
 readme = "README.md"
 keywords = ["networking", "transport", "datalink", "packet", "protocol"]
-
-links = "packet"
 build = "build.rs"
 
 [lib]
-
 name = "pnet"
-crate_type = [ "rlib", "dylib" ]
 
 [features]
-
 default = ["clippy"]
 netmap = ["netmap_sys"]
 appveyor = []
@@ -39,7 +33,11 @@ version = "=0.1.12"
 
 [dependencies.pnet_macros]
 path = "pnet_macros"
-version = ">=0.3"
+version = ">=0.4"
+
+[dependencies.pnet_macros_support]
+path = "pnet_macros"
+version = ">=0.1"
 
 [dev-dependencies]
 time = ">=0.1"

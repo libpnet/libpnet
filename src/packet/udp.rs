@@ -11,7 +11,7 @@
 use packet::Packet;
 use packet::ip::IpNextHeaderProtocol;
 
-use pnet_macros::types::*;
+use pnet_macros_support::types::*;
 
 use std::net::{Ipv4Addr, Ipv6Addr};
 
