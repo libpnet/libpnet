@@ -67,11 +67,15 @@ impl Packet {
     }
 }
 
-fn make_type(ty_str: String) -> Result<Type, String> {
-    if let Some((size, endianness)) = parse_ty(&ty_str[..]) {
-        Ok(Type::Primitive(ty_str, size, endianness))
+fn make_type(ty_str: String, endianness_important: bool) -> Result<Type, String> {
+    if let Some((size, endianness, spec)) = parse_ty(&ty_str[..]) {
+        if !endianness_important || size <= 8 || spec == EndiannessSpecified::Yes {
+            Ok(Type::Primitive(ty_str, size, endianness))
+        } else {
+            Err("endianness must be specified for types of size >= 8".to_owned())
+        }
     } else if ty_str.starts_with("Vec<") {
-        let ty = make_type(String::from(&ty_str[4..ty_str.len()-1]));
+        let ty = make_type(String::from(&ty_str[4..ty_str.len()-1]), endianness_important);
         match ty {
             Ok(ty) => Ok(Type::Vector(Box::new(ty))),
             Err(e) => Err(e),
@@ -143,7 +147,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                         }
                         for ty in items.iter() {
                             if let ast::MetaWord(ref s) = ty.node {
-                                match make_type(s.to_string()) {
+                                match make_type(s.to_string(), false) {
                                     Ok(ty) => construct_with.push(ty),
                                     Err(e) => {
                                         ecx.span_err(field.span, &e);
@@ -210,7 +214,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
             return None;
         }
 
-        let ty = match make_type(ty_to_string(&*field.node.ty)) {
+        let ty = match make_type(ty_to_string(&*field.node.ty), true) {
             Ok(ty) => ty,
             Err(e) => {
                 ecx.span_err(field.span, &e);
@@ -960,10 +964,16 @@ fn generate_debug_impls(cx: &mut GenContext, packet: &Packet) {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum EndiannessSpecified {
+    No,
+    Yes
+}
+
 /// Given a type in the form `u([0-9]+)(be|le)?`, return a tuple of it's size and endianness
 ///
 /// If 1 <= size <= 8, Endianness will be Big.
-fn parse_ty(ty: &str) -> Option<(usize, Endianness)> {
+fn parse_ty(ty: &str) -> Option<(usize, Endianness, EndiannessSpecified)> {
     let re = Regex::new(r"^u([0-9]+)(be|le)?$").unwrap();
     let iter = match re.captures_iter(ty).next() {
         Some(c) => c,
@@ -972,18 +982,18 @@ fn parse_ty(ty: &str) -> Option<(usize, Endianness)> {
 
     if iter.len() == 3 || iter.len() == 2 {
         let size = iter.at(1).unwrap();
-        let endianness = if let Some(e) = iter.at(2) {
+        let (endianness, has_end) = if let Some(e) = iter.at(2) {
             if e == "be" {
-                Endianness::Big
+                (Endianness::Big, EndiannessSpecified::Yes)
             } else {
-                Endianness::Little
+                (Endianness::Little, EndiannessSpecified::Yes)
             }
         } else {
-            Endianness::Big
+            (Endianness::Big, EndiannessSpecified::No)
         };
 
         if let Ok(sz) = size.parse() {
-            Some((sz, endianness))
+            Some((sz, endianness, has_end))
         } else {
             None
         }
@@ -994,9 +1004,11 @@ fn parse_ty(ty: &str) -> Option<(usize, Endianness)> {
 
 #[test]
 fn test_parse_ty() {
-    assert_eq!(parse_ty("u8"), Some((8, Endianness::Big)));
-    assert_eq!(parse_ty("u21be"), Some((21, Endianness::Big)));
-    assert_eq!(parse_ty("u21le"), Some((21, Endianness::Little)));
+    assert_eq!(parse_ty("u8"), Some((8, Endianness::Big, EndiannessSpecified::No)));
+    assert_eq!(parse_ty("u21be"), Some((21, Endianness::Big, EndiannessSpecified::Yes)));
+    assert_eq!(parse_ty("u21le"), Some((21, Endianness::Little, EndiannessSpecified::Yes)));
+    assert_eq!(parse_ty("u9"), Some((9, Endianness::Big, EndiannessSpecified::No)));
+    assert_eq!(parse_ty("u16"), Some((16, Endianness::Big, EndiannessSpecified::No)));
     assert_eq!(parse_ty("uable"), None);
     assert_eq!(parse_ty("u21re"), None);
     assert_eq!(parse_ty("i21be"), None);

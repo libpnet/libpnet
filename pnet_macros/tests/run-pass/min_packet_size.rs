@@ -24,7 +24,7 @@ pub struct ByteAligned {
 
 #[packet]
 pub struct ByteAlignedWithVariableLength {
-    banana: u16,
+    banana: u16be,
     #[length_fn = "length_fn1"]
     #[payload]
     payload: Vec<u8>
@@ -37,7 +37,7 @@ fn length_fn1(_: &ByteAlignedWithVariableLengthPacket) -> usize {
 
 #[packet]
 pub struct ByteAlignedWithVariableLengthAndPayload {
-    banana: u32,
+    banana: u32be,
     #[length_fn = "length_fn2"]
     var_length: Vec<u8>,
     #[payload]

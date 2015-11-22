@@ -6,25 +6,19 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(custom_attribute, plugin, slice_bytes, vec_push_all)]
+// error-pattern: endianness must be specified for types of size >= 8
+
+#![feature(custom_attribute, plugin)]
 #![plugin(pnet_macros)]
 
 extern crate pnet;
-extern crate pnet_macros_support;
-
-use pnet_macros_support::types::*;
 
 #[packet]
-pub struct WithVariableLengthField {
-    banana: u32be,
-    #[length = "3"]
-    var_length: Vec<u8>,
+pub struct PacketU16 {
+    banana: u16,
     #[payload]
     payload: Vec<u8>
 }
 
-fn main() {
-    let data = [1, 1, 1, 1, 2, 3, 4, 5, 6];
-    let packet = WithVariableLengthFieldPacket::new(&data[..]).unwrap();
-    assert_eq!(packet.get_var_length(), vec![2, 3, 4]);
-}
+fn main() {}
+
