@@ -204,8 +204,6 @@ pub struct DataLinkReceiverImpl {
 }
 
 impl DataLinkReceiver for DataLinkReceiverImpl {
-    // FIXME See https://github.com/Manishearth/rust-clippy/issues/417
-    #[cfg_attr(feature = "clippy", allow(needless_lifetimes))]
     fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
         let buflen = unsafe { (*self.packet.packet).Length } as usize;
         Box::new(DataLinkChannelIteratorImpl {
