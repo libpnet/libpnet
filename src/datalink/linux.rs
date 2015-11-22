@@ -170,8 +170,6 @@ pub struct DataLinkReceiverImpl {
 
 impl DataLinkReceiver for DataLinkReceiverImpl {
     // FIXME Layer 3
-    // FIXME See https://github.com/Manishearth/rust-clippy/issues/417
-    #[cfg_attr(feature = "clippy", allow(needless_lifetimes))]
     fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
         Box::new(DataLinkChannelIteratorImpl { pc: self })
     }
