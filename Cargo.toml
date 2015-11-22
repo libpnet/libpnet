@@ -33,7 +33,7 @@ version = "=0.1.12"
 
 [dependencies.pnet_macros]
 path = "pnet_macros"
-version = ">=0.4"
+version = ">=0.5"
 
 [dependencies.pnet_macros_support]
 path = "pnet_macros"
