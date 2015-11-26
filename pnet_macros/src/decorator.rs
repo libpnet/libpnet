@@ -169,7 +169,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                     match &s[..] {
                         "length_fn" => {
                             let node = &lit.node;
-                            if let &ast::LitStr(ref s, _) = node {
+                            if let ast::LitStr(ref s, _) = *node {
                                 packet_length = Some(s.to_string() + "(&_self.to_immutable())");
                             } else {
                                 ecx.span_err(field.span, "#[length_fn] should be used as #[length_fn = \"name_of_function\"]");
@@ -178,7 +178,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                         },
                         "length" => {
                             let node = &lit.node;
-                            if let &ast::LitStr(ref s, _) = node {
+                            if let ast::LitStr(ref s, _) = *node {
                                 let field_names: Vec<String> = sfields.iter().filter_map(|field| {
                                     field.node.ident()
                                         .map(|name| name.to_string())
@@ -265,7 +265,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
 }
 
 fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &Annotatable) -> Option<Vec<Packet>> {
-    if let &Annotatable::Item(ref item) = item {
+    if let Annotatable::Item(ref item) = *item {
         match item.node {
             ast::ItemEnum(ref ed, ref _gs) => {
                 if item.vis != ast::Visibility::Public {
@@ -447,7 +447,7 @@ fn handle_misc_field(cx: &mut GenContext,
     let mut get_args = String::new();
     let mut set_args = String::new();
     for (i, arg) in field.construct_with.as_ref().unwrap().iter().enumerate() {
-        if let &Type::Primitive(ref ty_str, size, endianness) = arg {
+        if let Type::Primitive(ref ty_str, size, endianness) = *arg {
             let mut ops = operations(*bit_offset % 8, size).unwrap();
 
             if endianness == Endianness::Little {
