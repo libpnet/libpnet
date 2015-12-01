@@ -147,9 +147,9 @@
 
 extern crate syntax;
 extern crate regex;
-#[macro_use] extern crate rustc;
+#[macro_use] extern crate rustc_plugin;
 
-use rustc::plugin::Registry;
+use rustc_plugin::Registry;
 
 use syntax::ast;
 use syntax::codemap::Span;
