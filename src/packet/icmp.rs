@@ -415,4 +415,53 @@ mod tests {
         let ref_packet = echo_reply::EchoReplyPacket::new(packet_buf).unwrap();
         assert_eq!(&ref_packet.packet()[..], &packet[..]);
     }
+
+	#[test]
+	fn destination_unreachable() {
+        let packet_buf = &get_packet_from_capture("destination_unreachable.pcapng")[..];
+        let ref_packet = destination_unreachable::DestinationUnreachablePacket::new(packet_buf).unwrap();
+        assert_eq!(ref_packet.get_icmp_type(), icmp_types::DestinationUnreachable);
+        assert_eq!(ref_packet.get_icmp_type().to_primitive_values().0, 3);
+        assert_eq!(ref_packet.get_icmp_code(), destination_unreachable::icmp_codes::DestinationHostUnreachable);
+        assert_eq!(ref_packet.get_icmp_code().to_primitive_values().0, 1);
+
+        // Verify payload
+
+        let nested_ip_packet = Ipv4Packet::new(ref_packet.payload()).unwrap();
+        assert_eq!(nested_ip_packet.packet()[..].len(), 84);
+        assert_eq!(nested_ip_packet.get_version(), 4);
+        assert_eq!(nested_ip_packet.get_header_length(), 5);  // The length is given in 4 bytes words
+        assert_eq!(nested_ip_packet.get_dscp(), 0);
+        assert_eq!(nested_ip_packet.get_ecn(), 0);
+        assert_eq!(nested_ip_packet.get_total_length(), 84);
+        assert_eq!(nested_ip_packet.get_identification(), 0xa1da);
+        assert_eq!(nested_ip_packet.get_flags(), 0x02);
+        assert_eq!(nested_ip_packet.get_fragment_offset(), 0);
+        assert_eq!(nested_ip_packet.get_ttl(), 54);
+        assert_eq!(nested_ip_packet.get_next_level_protocol().to_primitive_values().0, 1);
+        assert_eq!(nested_ip_packet.get_checksum(), 0x11e7);
+        assert_eq!(nested_ip_packet.get_source().to_primitive_values(), (172, 31, 128, 7));
+        assert_eq!(nested_ip_packet.get_destination().to_primitive_values(), (135, 227, 220, 221));
+        // FIXME: bug?
+        // assert_eq!(nested_ip_packet.get_options_raw(), &[]);
+        // assert_eq!(nested_ip_packet.get_options()[..], []);
+
+        let nested_echo_request_packet = echo_request::EchoRequestPacket::new(nested_ip_packet.payload()).unwrap();
+        assert_eq!(nested_echo_request_packet.get_icmp_type(), icmp_types::EchoRequest);
+        assert_eq!(nested_echo_request_packet.get_icmp_type().to_primitive_values().0, 8);
+        assert_eq!(nested_echo_request_packet.get_icmp_code(), echo_request::icmp_codes::NoCode);
+        assert_eq!(nested_echo_request_packet.get_icmp_code().to_primitive_values().0, 0);
+
+        assert_eq!(nested_echo_request_packet.get_identifier(), 0x2877);
+        assert_eq!(nested_echo_request_packet.get_sequence_number(), 0x000b);
+
+        let data = [0x34, 0x58, 0x60, 0x56, 0x00, 0x00, 0x00, 0x00,
+                    0xce, 0xdd, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                    0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+                    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+                    0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
+                    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37];
+        assert_eq!(nested_echo_request_packet.payload()[..], data[..]);
+    }
 }
