@@ -187,3 +187,70 @@ pub mod echo_reply {
         payload: Vec<u8>,
     }
 }
+
+/// abstraction for "echo request" ICMP packets.
+pub mod echo_request {
+    use packet::{Packet, PrimitiveValues};
+    use packet::icmp::{IcmpCode, IcmpType};
+    use pnet_macros_support::types::*;
+
+    /// Represents an indentifier field
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct Identifier(pub u16);
+
+    impl Identifier {
+        /// Create an identifier
+        pub fn new(val: u16) -> Identifier {
+            Identifier(val)
+        }
+    }
+
+    impl PrimitiveValues for Identifier {
+        type T = (u16,);
+        fn to_primitive_values(&self) -> (u16,) {
+            (self.0,)
+        }
+    }
+
+    /// Represents a sequence number field
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct SequenceNumber(pub u16);
+
+    impl SequenceNumber {
+        /// Create a sequence number
+        pub fn new(val: u16) -> SequenceNumber {
+            SequenceNumber(val)
+        }
+    }
+
+    impl PrimitiveValues for SequenceNumber {
+        type T = (u16,);
+        fn to_primitive_values(&self) -> (u16,) {
+            (self.0,)
+        }
+    }
+
+    /// Enumeration of available ICMP codes for "echo reply" ICMP packets. There is actually only
+    /// one, since the only valid ICMP code is 0.
+    #[allow(non_snake_case)]
+	#[allow(non_upper_case_globals)]
+    pub mod icmp_codes {
+        use packet::icmp::IcmpCode;
+        /// 0 is the only available ICMP code for "echo reply" ICMP packets.
+        pub const NoCode: IcmpCode = IcmpCode(0);
+    }
+
+    /// Represents an "echo request" ICMP packet.
+    #[packet]
+    pub struct EchoRequest {
+        #[construct_with(u8)]
+        icmp_type: IcmpType,
+        #[construct_with(u8)]
+        icmp_code: IcmpCode,
+        checksum: u16be,
+        identifier: u16be,
+        sequence_number: u16be,
+        #[payload]
+        payload: Vec<u8>,
+    }
+}
