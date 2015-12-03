@@ -8,6 +8,9 @@
 
 //! ICMP packet abstraction
 
+#[cfg(test)]
+extern crate pcapng;
+
 use packet::{Packet, PrimitiveValues};
 use pnet_macros_support::types::*;
 
@@ -310,5 +313,38 @@ pub mod destination_unreachable {
         unused: u32be,
         #[payload]
         payload: Vec<u8>,
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+    use std::fs::File;
+    use packet::{Packet, PrimitiveValues};
+    use packet::ipv4::{Ipv4Packet};
+    use packet::ethernet::{EthernetPacket};
+    use pcapng;
+
+
+	fn get_packet_from_capture(capture_name: &str) -> Vec<u8> {
+        let mut path: String = "./test_data/".to_owned();
+        path.push_str(capture_name);
+        let mut f = File::open(path).unwrap();
+        let mut r = pcapng::SimpleReader::new(&mut f);
+        let (_, pcapng_packet) = r.packets().next().unwrap();
+        let ethernet_packet = EthernetPacket::new(&pcapng_packet.data[..]).unwrap();
+        let ip_packet = Ipv4Packet::new(ethernet_packet.payload()).unwrap();
+
+        // We cannot return the ip_packet payload since the underlying buffer does not exist
+        // anymore after this function return. The only solution I found is to manually make a copy
+        // of the payload and return it.
+        //
+        // This seems very clumsy, is there any better way to do this?
+        let mut data: Vec<u8> = vec![];
+        for byte in ip_packet.payload() {
+            data.push(*byte);
+        }
+        data
     }
 }
