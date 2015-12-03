@@ -254,3 +254,61 @@ pub mod echo_request {
         payload: Vec<u8>,
     }
 }
+
+/// abstraction for "destination unreachable" ICMP packets.
+pub mod destination_unreachable {
+    use packet::icmp::{IcmpCode, IcmpType};
+    use pnet_macros_support::types::*;
+
+    /// Enumeration of the recognized ICMP codes for "destination unreachable" ICMP packets.
+    #[allow(non_snake_case)]
+	#[allow(non_upper_case_globals)]
+    pub mod icmp_codes {
+        use packet::icmp::IcmpCode;
+        /// ICMP code for "destination network unreachable" packet
+        pub const DestinationNetworkUnreachable: IcmpCode = IcmpCode(0);
+        /// ICMP code for "destination host unreachable" packet
+        pub const DestinationHostUnreachable: IcmpCode = IcmpCode(1);
+        /// ICMP code for "destination protocol unreachable" packet
+        pub const DestinationProtocolUnreachable: IcmpCode = IcmpCode(2);
+        /// ICMP code for "destination port unreachable" packet
+        pub const DestinationPortUnreachable: IcmpCode = IcmpCode(3);
+        /// ICMP code for "fragmentation required and DFF flag set" packet
+        pub const FragmentationRequiredAndDFFlagSet: IcmpCode = IcmpCode(4);
+        /// ICMP code for "source route failed" packet
+        pub const SourceRouteFailed: IcmpCode = IcmpCode(5);
+        /// ICMP code for "destination network unknown" packet
+        pub const DestinationNetworkUnknown: IcmpCode = IcmpCode(6);
+        /// ICMP code for "destination host unknown" packet
+        pub const DestinationHostUnknown: IcmpCode = IcmpCode(7);
+        /// ICMP code for "source host isolated" packet
+        pub const SourceHostIsolated: IcmpCode = IcmpCode(8);
+        /// ICMP code for "network administrative prohibited" packet
+        pub const NetworkAdministrativelyProhibited: IcmpCode = IcmpCode(9);
+        /// ICMP code for "host administrative prohibited" packet
+        pub const HostAdministrativelyProhibited: IcmpCode = IcmpCode(10);
+        /// ICMP code for "network unreachable for this Type Of Service" packet
+        pub const NetworkUnreachableForTOS: IcmpCode = IcmpCode(11);
+        /// ICMP code for "host unreachable for this Type Of Service" packet
+        pub const HostUnreachableForTOS: IcmpCode = IcmpCode(12);
+        /// ICMP code for "communication administratively prohibited" packet
+        pub const CommunicationAdministrativelyProhibited: IcmpCode = IcmpCode(13);
+        /// ICMP code for "host precedence violation" packet
+        pub const HostPrecedenceViolation: IcmpCode = IcmpCode(14);
+        /// ICMP code for "precedence cut off in effect" packet
+        pub const PrecedenceCutoffInEffect: IcmpCode = IcmpCode(15);
+    }
+
+    /// Represents an "echo request" ICMP packet.
+    #[packet]
+    pub struct DestinationUnreachable {
+        #[construct_with(u8)]
+        icmp_type: IcmpType,
+        #[construct_with(u8)]
+        icmp_code: IcmpCode,
+        checksum: u16be,
+        unused: u32be,
+        #[payload]
+        payload: Vec<u8>,
+    }
+}
