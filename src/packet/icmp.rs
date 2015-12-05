@@ -8,9 +8,6 @@
 
 //! ICMP packet abstraction
 
-#[cfg(test)]
-extern crate pcapng;
-
 use packet::{Packet, PrimitiveValues};
 use pnet_macros_support::types::*;
 
@@ -319,33 +316,25 @@ pub mod destination_unreachable {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
+    use super::*;
     use std::fs::File;
     use packet::{Packet, PrimitiveValues};
-    use packet::ipv4::{Ipv4Packet};
-    use packet::ethernet::{EthernetPacket};
-    use pcapng;
+    use packet::ipv4::Ipv4Packet;
+    use packet::ethernet::EthernetPacket;
+    use testutils;
 
-
-	fn get_packet_from_capture(capture_name: &str) -> Vec<u8> {
-        let mut path: String = "./test_data/".to_owned();
-        path.push_str(capture_name);
-        let mut f = File::open(path).unwrap();
-        let mut r = pcapng::SimpleReader::new(&mut f);
-        let (_, pcapng_packet) = r.packets().next().unwrap();
-        let ethernet_packet = EthernetPacket::new(&pcapng_packet.data[..]).unwrap();
-        let ip_packet = Ipv4Packet::new(ethernet_packet.payload()).unwrap();
-
-        // We cannot return the ip_packet payload since the underlying buffer does not exist
-        // anymore after this function return. The only solution I found is to manually make a copy
-        // of the payload and return it.
-        //
-        // This seems very clumsy, is there any better way to do this?
-        let mut data: Vec<u8> = vec![];
+    // FIXME: do we really have to copy?
+    fn get_ip_payload(packet_bytes: &[u8]) -> Vec<u8> {
+        let eth_packet = EthernetPacket::new(packet_bytes).unwrap();
+        let ip_packet = Ipv4Packet::new(eth_packet.payload()).unwrap();
+        // It would be nice to just return ip_packet.payload() but `eth_packet` and `ip_packet`
+        // don't live long enough. One solution is to copy data, but since the underlying buffer
+        // exists outside of the scope of this function, is it really necessary?
+        let mut bytes = vec![];
         for byte in ip_packet.payload() {
-            data.push(*byte);
+            bytes.push(*byte);
         }
-        data
+        bytes
     }
 
 	#[test]
@@ -365,32 +354,33 @@ mod tests {
 	                 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
 	                 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
 	                 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37]);
-	        // This is broken. For now, set the checksum manually
-	        //
-	        // let packet_checksum = checksum(&icmp_packet.to_immutable());
-	        // icmp_packet.set_checksum(packet_checksum);
-	        // assert_eq!(icmp_packet.get_checksum(), 0xefe9);
-	        icmp_packet.set_checksum(0xefe9);
+            // FIXME: For now, set the checksum manually
+            //
+            // let packet_checksum = checksum(&icmp_packet.to_immutable());
+            // icmp_packet.set_checksum(packet_checksum);
+            // assert_eq!(icmp_packet.get_checksum(), 0xefe9);
+            icmp_packet.set_checksum(0xefe9);
 
-	        assert_eq!(icmp_packet.get_icmp_type().to_primitive_values().0, 8);
-	        assert_eq!(icmp_packet.get_icmp_code().to_primitive_values().0, 0);
-	        assert_eq!(icmp_packet.get_identifier(), 0x1a57);
-	        assert_eq!(icmp_packet.get_sequence_number(), 0x0001);
+            assert_eq!(icmp_packet.get_icmp_type().to_primitive_values().0, 8);
+            assert_eq!(icmp_packet.get_icmp_code().to_primitive_values().0, 0);
+            assert_eq!(icmp_packet.get_identifier(), 0x1a57);
+            assert_eq!(icmp_packet.get_sequence_number(), 0x0001);
 
-	    }
-        let packet_buf = &get_packet_from_capture("echo_request.pcapng")[..];
-        let ref_packet = echo_request::EchoRequestPacket::new(packet_buf).unwrap();
+        }
+        let capture = &testutils::read_capture("echo_request");
+        let ip_payload = get_ip_payload(&capture[0][..]);
+        let ref_packet = echo_request::EchoRequestPacket::new(&ip_payload[..]).unwrap();
         assert_eq!(&ref_packet.packet()[..], &packet[..]);
-	}
+    }
 
-	#[test]
-	fn echo_reply() {
-	    let mut packet = [0u8; 8 + 56];
-	    {
-	        let mut icmp_packet = echo_reply::MutableEchoReplyPacket::new(&mut packet[..]).unwrap();
-	        icmp_packet.set_icmp_type(icmp_types::EchoReply);
-	        icmp_packet.set_identifier(0x1ad3);
-	        icmp_packet.set_sequence_number(0x0001);
+    #[test]
+    fn echo_reply() {
+        let mut packet = [0u8; 8 + 56];
+        {
+            let mut icmp_packet = echo_reply::MutableEchoReplyPacket::new(&mut packet[..]).unwrap();
+            icmp_packet.set_icmp_type(icmp_types::EchoReply);
+            icmp_packet.set_identifier(0x1ad3);
+            icmp_packet.set_sequence_number(0x0001);
 	        icmp_packet.set_payload(
                 vec![0x83, 0x4f, 0x60, 0x56, 0x00, 0x00, 0x00, 0x00,
                      0x68, 0x79, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -399,38 +389,37 @@ mod tests {
                      0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
                      0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
                      0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37]);
-	        // This is broken. For now, set the checksum manually
-	        //
-	        // let packet_checksum = checksum(&icmp_packet.to_immutable());
-	        // icmp_packet.set_checksum(packet_checksum);
-	        // assert_eq!(icmp_packet.get_checksum(), 0xefe9);
-	        icmp_packet.set_checksum(0xda39);
+            //
+            // let packet_checksum = checksum(&icmp_packet.to_immutable());
+            // icmp_packet.set_checksum(packet_checksum);
+            // assert_eq!(icmp_packet.get_checksum(), 0xefe9);
+            icmp_packet.set_checksum(0xda39);
 
-	        assert_eq!(icmp_packet.get_icmp_type().to_primitive_values().0, 0);
-	        assert_eq!(icmp_packet.get_icmp_code().to_primitive_values().0, 0);
-	        assert_eq!(icmp_packet.get_identifier(), 0x1ad3);
-	        assert_eq!(icmp_packet.get_sequence_number(), 0x0001);
+            assert_eq!(icmp_packet.get_icmp_type().to_primitive_values().0, 0);
+            assert_eq!(icmp_packet.get_icmp_code().to_primitive_values().0, 0);
+            assert_eq!(icmp_packet.get_identifier(), 0x1ad3);
+            assert_eq!(icmp_packet.get_sequence_number(), 0x0001);
         }
-        let packet_buf = &get_packet_from_capture("echo_reply.pcapng")[..];
-        let ref_packet = echo_reply::EchoReplyPacket::new(packet_buf).unwrap();
+        let capture = &testutils::read_capture("echo_reply");
+        let ip_payload = get_ip_payload(&capture[0][..]);
+        let ref_packet = echo_reply::EchoReplyPacket::new(&ip_payload[..]).unwrap();
         assert_eq!(&ref_packet.packet()[..], &packet[..]);
     }
 
-	#[test]
-	fn destination_unreachable() {
-        let packet_buf = &get_packet_from_capture("destination_unreachable.pcapng")[..];
-        let ref_packet = destination_unreachable::DestinationUnreachablePacket::new(packet_buf).unwrap();
+    #[test]
+    fn destination_unreachable() {
+        let capture = &testutils::read_capture("destination_unreachable");
+        let ip_payload = get_ip_payload(&capture[0][..]);
+        let ref_packet = destination_unreachable::DestinationUnreachablePacket::new(&ip_payload[..]).unwrap();
         assert_eq!(ref_packet.get_icmp_type(), icmp_types::DestinationUnreachable);
         assert_eq!(ref_packet.get_icmp_type().to_primitive_values().0, 3);
         assert_eq!(ref_packet.get_icmp_code(), destination_unreachable::icmp_codes::DestinationHostUnreachable);
         assert_eq!(ref_packet.get_icmp_code().to_primitive_values().0, 1);
 
-        // Verify payload
-
         let nested_ip_packet = Ipv4Packet::new(ref_packet.payload()).unwrap();
         assert_eq!(nested_ip_packet.packet()[..].len(), 84);
         assert_eq!(nested_ip_packet.get_version(), 4);
-        assert_eq!(nested_ip_packet.get_header_length(), 5);  // The length is given in 4 bytes words
+        assert_eq!(nested_ip_packet.get_header_length(), 5); // The length is given in 4 bytes words
         assert_eq!(nested_ip_packet.get_dscp(), 0);
         assert_eq!(nested_ip_packet.get_ecn(), 0);
         assert_eq!(nested_ip_packet.get_total_length(), 84);

@@ -119,6 +119,9 @@ pub mod datalink;
 pub mod packet;
 pub mod transport;
 pub mod util;
+ #[cfg(test)]
+pub mod testutils;
+
 
 mod bindings;
 mod internal;
