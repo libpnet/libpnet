@@ -17,6 +17,7 @@ plugin = true
 
 [features]
 default = ["clippy"]
+travis = []
 
 [dev-dependencies]
 compiletest_rs = ">=0.0"

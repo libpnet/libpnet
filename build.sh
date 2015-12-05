@@ -166,6 +166,7 @@ case "$1" in
         benchmarks
     ;;
     travis_script)
+        CARGO_FLAGS="$CARGO_FLAGS --features travis"
         travis_script
     ;;
     *)
