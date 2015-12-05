@@ -314,6 +314,45 @@ pub mod destination_unreachable {
 }
 
 
+pub mod time_exceeded {
+    //! abstraction for "destination unreachable" ICMP packets.
+    //!
+    //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //!  |     Type      |     Code      |          Checksum             |
+    //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //!  |                             unused                            |
+    //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //!  |      Internet Header + 64 bits of Original Data Datagram      |
+    //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+    use packet::icmp::{IcmpCode, IcmpType};
+    use pnet_macros_support::types::*;
+
+    /// Enumeration of the recognized ICMP codes for "time exceeded" ICMP packets.
+    #[allow(non_snake_case)]
+	#[allow(non_upper_case_globals)]
+    pub mod icmp_codes {
+        use packet::icmp::IcmpCode;
+        /// ICMP code for "time to live exceeded in transit" packet.
+        pub const TimeToLiveExceededInTransit: IcmpCode = IcmpCode(0);
+        /// ICMP code for "fragment reassembly time exceeded" packet.
+        pub const FragmentReasemblyTimeExceeded: IcmpCode = IcmpCode(1);
+    }
+
+    /// Represents an "echo request" ICMP packet.
+    #[packet]
+    pub struct TimeExceeded {
+        #[construct_with(u8)]
+        icmp_type: IcmpType,
+        #[construct_with(u8)]
+        icmp_code: IcmpCode,
+        checksum: u16be,
+        unused: u32be,
+        #[payload]
+        payload: Vec<u8>,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -452,5 +491,54 @@ mod tests {
                     0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
                     0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37];
         assert_eq!(nested_echo_request_packet.payload()[..], data[..]);
+    }
+
+    #[test]
+    fn time_exceeded() {
+        let capture = testutils::read_capture("time_exceeded");
+        let failing_frame = EthernetPacket::new(&capture[0][..]).unwrap();
+        let failing_packet = Ipv4Packet::new(failing_frame.payload()).unwrap();
+
+        // Build a new time exceeded packet
+        let header_length = 4 * failing_packet.get_header_length() as u32;
+        let packet_size: u32 = 8 + header_length + 8;
+        let mut time_exceeded_buf = vec![0u8 ; packet_size as usize];
+        {
+            let mut time_exceeded_packet = time_exceeded::MutableTimeExceededPacket::new(&mut time_exceeded_buf[..]).unwrap();
+
+            // Set header
+            time_exceeded_packet.set_icmp_type(icmp_types::TimeExceeded);
+            time_exceeded_packet.set_icmp_code(time_exceeded::icmp_codes::TimeToLiveExceededInTransit);
+
+            // Set payload
+            let mut payload = vec![];
+            let mut offset: u32 = 0;
+            while offset < header_length + 8 {
+                if offset as usize >= failing_packet.packet().len() {
+                    panic!("Index is {} but packet is only {} long. Packet: {:?}",
+                           offset,
+                           failing_packet.packet().len(),
+                           failing_packet.packet());
+                }
+                payload.push(failing_packet.packet()[offset as usize]);
+                offset += 1 ;
+            }
+            time_exceeded_packet.set_payload(payload);
+
+            // FIXME: For now, set the checksum manually
+            time_exceeded_packet.set_checksum(0xa0bf);
+
+            assert_eq!(time_exceeded_packet.get_icmp_type(), icmp_types::TimeExceeded);
+            assert_eq!(time_exceeded_packet.get_icmp_type().to_primitive_values().0, 11);
+            assert_eq!(time_exceeded_packet.get_icmp_code(), time_exceeded::icmp_codes::TimeToLiveExceededInTransit);
+            assert_eq!(time_exceeded_packet.get_icmp_code().to_primitive_values().0, 0);
+        }
+
+        // Build ref packet
+        let ref_frame = EthernetPacket::new(&capture[1][..]).unwrap();
+        let ref_ip_packet = Ipv4Packet::new(ref_frame.payload()).unwrap();
+        let ref_time_exceeded_packet = time_exceeded::TimeExceededPacket::new(ref_ip_packet.payload()).unwrap();
+        assert_eq!(ref_time_exceeded_packet.packet().len(), time_exceeded_buf[..].len());
+        assert_eq!(ref_time_exceeded_packet.packet()[..], time_exceeded_buf[..]);
     }
 }
