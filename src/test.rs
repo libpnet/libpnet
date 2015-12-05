@@ -223,8 +223,10 @@ fn layer4_ipv4() {
     layer4(IpAddr::V4(ipv4_source()), IPV4_HEADER_LEN as usize);
 }
 
+// travis does not currently support IPv6
 #[test]
-#[cfg(not(feature = "appveyor"))]
+#[cfg(all(not(feature = "appveyor"),
+          not(all(target_os = "linux", feature = "travis"))))]
 fn layer4_ipv6() {
     layer4(IpAddr::V6(ipv6_source()), IPV6_HEADER_LEN);
 }

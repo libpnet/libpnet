@@ -18,6 +18,7 @@ name = "pnet"
 default = ["clippy"]
 netmap = ["netmap_sys"]
 appveyor = []
+travis = []
 
 [dependencies.clippy]
 optional = true

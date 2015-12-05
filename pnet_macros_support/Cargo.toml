@@ -13,3 +13,6 @@ keywords = ["networking", "bitfields", "packet", "protocol"]
 
 [lib]
 name = "pnet_macros_support"
+
+[features]
+travis = []
