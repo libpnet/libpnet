@@ -3,8 +3,10 @@ environment:
   matrix:
   - TARGET: x86_64-pc-windows-msvc
     WPD_LIB_PATH: "C:/dl/wpdpack/WpdPack/Lib/x64/Packet.lib"
+    VCVARS: "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64\\vcvars64.bat"
   - TARGET: i686-pc-windows-msvc
     WPD_LIB_PATH: "C:/dl/wpdpack/WpdPack/Lib/Packet.lib"
+    VCVARS: "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\vcvars32.bat"
 install:
  - ps: mkdir C:/dl
  - curl -o "C:/dl/wpd.zip" "https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip"
@@ -14,6 +16,7 @@ install:
  - ps: cp ${env:WPD_LIB_PATH} ${env:APPVEYOR_BUILD_FOLDER}/lib
  - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-nightly-${env:TARGET}.exe"
  - rust-nightly-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
+ - CALL "%VCVARS%"
  - SET PATH=%PATH%;C:\Program Files (x86)\Rust\bin
  - choco install winpcap
  - rustc -V
