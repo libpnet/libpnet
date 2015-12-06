@@ -19,7 +19,6 @@ use packet::ipv4::{Ipv4Packet, MutableIpv4Packet};
 use packet::ipv4;
 use packet::ipv6::{Ipv6Packet, MutableIpv6Packet};
 use packet::udp::{UdpPacket, MutableUdpPacket};
-use packet::udp;
 use transport::{TransportChannelType, TransportProtocol, ipv4_packet_iter, transport_channel,
                 udp_packet_iter};
 use transport::TransportProtocol::{Ipv4, Ipv6};
@@ -84,18 +83,10 @@ fn build_udp_header(packet: &mut [u8], offset: usize) {
     udp_header.set_length((UDP_HEADER_LEN + TEST_DATA_LEN) as u16);
 }
 
-fn is_ipv4(ip: &IpAddr) -> bool {
-    if let IpAddr::V4(_) = *ip {
-        true
-    } else {
-        false
-    }
-}
 
 fn build_udp4_packet(packet: &mut [u8],
                      start: usize,
-                     msg: &str,
-                     ni: Option<&util::NetworkInterface>) {
+                     msg: &str) {
     build_ipv4_header(packet, start);
     build_udp_header(packet, start + IPV4_HEADER_LEN as usize);
 
@@ -157,7 +148,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
 
     match ip {
         IpAddr::V4(..) => {
-            build_udp4_packet(&mut packet[..], 0, "l4i4", None)
+            build_udp4_packet(&mut packet[..], 0, "l4i4")
         }
         IpAddr::V6(..) => {
             build_udp6_packet(&mut packet[..], 0, "l4i6")
@@ -230,7 +221,7 @@ fn layer3_ipv4() {
     let send_addr = IpAddr::V4(ipv4_source());
     let mut packet = [0u8; IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN];
 
-    build_udp4_packet(&mut packet[..], 0, "l3i4", None);
+    build_udp4_packet(&mut packet[..], 0, "l3i4");
 
     let (tx, rx) = channel();
 
@@ -337,8 +328,7 @@ fn layer2() {
 
     build_udp4_packet(&mut packet[..],
                       ETHERNET_HEADER_LEN as usize,
-                      "l2tt",
-                      Some(&interface));
+                      "l2tt");
 
     let (tx, rx) = channel();
 
