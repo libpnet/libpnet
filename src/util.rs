@@ -444,7 +444,7 @@ pub fn rfc1071_checksum(packet: &[u8], initial: u32) -> u16 {
         i = i + 2;
     }
     if packet.len()%2 == 1 {
-        sum = (sum + (packet[length] as u32)) << 8
+        sum = sum + ((packet[length] as u32) << 8);
     }
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);
