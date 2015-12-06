@@ -10,7 +10,7 @@
 
 use packet::ip::IpNextHeaderProtocol;
 use packet::{PseudoHeader, PrimitiveValues};
-use pnet_macros::types::*;
+use pnet_macros_support::types::*;
 
 use std::net::Ipv6Addr;
 

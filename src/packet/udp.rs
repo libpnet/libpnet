@@ -9,7 +9,7 @@
 //! UDP packet abstraction
 
 use packet::Packet;
-use pnet_macros::types::*;
+use pnet_macros_support::types::*;
 
 
 /// Represents an UDP Packet

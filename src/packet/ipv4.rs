@@ -11,7 +11,7 @@
 use packet::ip::IpNextHeaderProtocol;
 use packet::{PseudoHeader, PrimitiveValues};
 use util::rfc1071_checksum;
-use pnet_macros::types::*;
+use pnet_macros_support::types::*;
 
 use std::net::Ipv4Addr;
 
