@@ -427,9 +427,9 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
 pub fn checksum<T: PseudoHeader>(raw_packet: &[u8], encapsulating_packet: T) -> u16 {
     let mut sum = encapsulating_packet.checksum();
     let length = raw_packet.len() as u32;
-    sum = sum + length & 0xffff;
-    sum = sum + length >> 16;
-    return rfc1071_checksum(raw_packet, sum);
+    sum = (sum + length) & 0xffff;
+    sum = (sum + length) >> 16;
+    rfc1071_checksum(raw_packet, sum)
 }
 
 /// Calculates rfc1071 checksum value
@@ -444,10 +444,10 @@ pub fn rfc1071_checksum(packet: &[u8], initial: u32) -> u16 {
         i = i + 2;
     }
     if packet.len()%2 == 1 {
-        sum = sum + (packet[length] as u32) << 8
+        sum = (sum + (packet[length] as u32)) << 8
     }
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);
     }
-    return sum as u16 ^ 0xffff;
+    sum as u16 ^ 0xffff
 }

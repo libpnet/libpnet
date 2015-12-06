@@ -71,7 +71,7 @@ impl<'p> PseudoHeader for Ipv6Packet<'p> {
         let next_header = self.get_next_header();
         let (next_proto,) = next_header.to_primitive_values();
         sum = sum + next_proto as u32;
-        return sum;
+        sum
     }
 }
 

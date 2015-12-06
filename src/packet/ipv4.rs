@@ -52,7 +52,7 @@ impl<'p> PseudoHeader for Ipv4Packet<'p> {
         match source.octets() {
             [a, b, c, d] => {
                 let src = vec![a, b, c, d];
-                sum = sum + (src[0] as u32) + (src[2] as u32) << 8;
+                sum = (sum + (src[0] as u32) + (src[2] as u32)) << 8;
                 sum = sum + src[1] as u32 + src[3] as u32;
             }
         }
@@ -62,7 +62,7 @@ impl<'p> PseudoHeader for Ipv4Packet<'p> {
         match destination.octets() {
             [a, b, c, d] => {
                 let dst = vec![a, b, c, d];
-                sum = sum + (dst[0] as u32) + (dst[2] as u32) << 8;
+                sum = (sum + (dst[0] as u32) + (dst[2] as u32)) << 8;
                 sum = sum + dst[1] as u32 + dst[3] as u32;
             }
         }
@@ -71,7 +71,7 @@ impl<'p> PseudoHeader for Ipv4Packet<'p> {
         let next_level_protocol = self.get_next_level_protocol();
         let (next_proto,) = next_level_protocol.to_primitive_values();
         sum = sum + (next_proto as u32);
-        return sum;
+        sum
     }
 }
 
@@ -80,10 +80,10 @@ fn ipv4_options_length(ipv4: &Ipv4Packet) -> usize {
 }
 
 /// Calculates the checksum of an IPv4 packet
-pub fn checksum<'a>(packet: &Ipv4Packet<'a>) -> u16be {
+pub fn checksum(packet: &Ipv4Packet) -> u16be {
     use packet::Packet;
 
-    return rfc1071_checksum(packet.packet(), 0);
+    rfc1071_checksum(packet.packet(), 0)
 }
 
 #[test]
