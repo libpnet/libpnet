@@ -528,7 +528,7 @@ fn handle_vec_primitive(cx: &mut GenContext,
 
                                         let packet = &_self.packet[current_offset..end];
                                         let mut vec = Vec::with_capacity(packet.len());
-                                        vec.push_all(packet);
+                                        vec.extend_from_slice(packet);
                                         vec
                                     }}
                                     ",
@@ -550,13 +550,19 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                 #[inline]
                                 #[allow(trivial_numeric_casts)]
                                 pub fn set_{name}(&mut self, vals: Vec<{inner_ty_str}>) {{
-                                    use std::slice::bytes::copy_memory;
+                                    use std::ptr::copy_nonoverlapping;
                                     let mut _self = self;
                                     let current_offset = {co};
 
                                     {check_len}
 
-                                    copy_memory(&vals[..], &mut _self.packet[current_offset..]);
+                                    // &mut and & can never overlap
+                                    unsafe {{
+                                        copy_nonoverlapping(vals[..].as_ptr(),
+                                                            _self.packet[current_offset..]
+                                                                 .as_mut_ptr(),
+                                                            vals.len())
+                                    }}
                                 }}
                                 ",
                                 mutators = mutators,
@@ -1129,7 +1135,7 @@ fn generate_get_fields(packet: &Packet) -> String {
             gets = gets + &format!("{field} : {{
                                                 let payload = self.payload();
                                                 let mut vec = Vec::with_capacity(payload.len());
-                                                vec.push_all(payload);
+                                                vec.extend_from_slice(payload);
 
                                                 vec
                                             }},\n", field = field.name)[..]

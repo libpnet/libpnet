@@ -6,15 +6,11 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-// FIXME Remove before 1.0
-#![feature(ip_addr)]
-
 /// This example shows a basic packet logger using libpnet
 
 extern crate pnet;
 
 use std::env;
-use std::net::{IpAddr};
 
 use pnet::packet::{Packet};
 use pnet::packet::ethernet::{EthernetPacket, EtherTypes};
@@ -26,7 +22,7 @@ use pnet::packet::udp::{UdpPacket};
 use pnet::datalink::{datalink_channel};
 use pnet::datalink::DataLinkChannelType::{Layer2};
 
-use pnet::util::{NetworkInterface, get_network_interfaces};
+use pnet::util::{IpAddr, NetworkInterface, get_network_interfaces};
 
 fn handle_udp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8]) {
     let udp = UdpPacket::new(packet);

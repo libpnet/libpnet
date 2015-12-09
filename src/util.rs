@@ -17,7 +17,7 @@ use std::fmt;
 use std::str::{FromStr, from_utf8_unchecked};
 use std::mem;
 use std::u8;
-use std::net::IpAddr;
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 
 #[cfg(not(windows))]
@@ -126,6 +126,47 @@ fn mac_addr_from_str() {
                Err(ParseMacAddrErr::InvalidComponent));
 }
 
+/// Represents either an Ipv4Addr or an Ipv6Addr
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum IpAddr {
+    /// An IPv4 Address
+    V4(Ipv4Addr),
+    /// An IPv6 Address
+    V6(Ipv6Addr)
+}
+
+impl FromStr for IpAddr {
+    type Err = ();
+    fn from_str(s: &str) -> Result<IpAddr, ()> {
+        let ipv4: Result<Ipv4Addr, _> = FromStr::from_str(s);
+        let ipv6: Result<Ipv6Addr, _> = FromStr::from_str(s);
+        match ipv4 {
+            Ok(res) => Ok(IpAddr::V4(res)),
+            Err(_) => {
+                match ipv6 {
+                    Ok(res) => Ok(IpAddr::V6(res)),
+                    Err(_) => Err(()),
+                }
+            },
+        }
+    }
+}
+
+impl fmt::Debug for IpAddr {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, fmt)
+    }
+}
+
+impl fmt::Display for IpAddr {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            IpAddr::V4(ip_addr) => fmt::Display::fmt(&ip_addr, fmt),
+            IpAddr::V6(ip_addr) => fmt::Display::fmt(&ip_addr, fmt),
+        }
+    }
+}
+
 /// Represents a network interface and its associated addresses
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct NetworkInterface {
@@ -155,6 +196,8 @@ impl NetworkInterface {
 
 #[cfg(target_os = "linux")]
 fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
+    use std::net::SocketAddr;
+
     unsafe {
         if sa.is_null() {
             (None, None)
@@ -173,7 +216,8 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
                                                   mem::size_of::<libc::sockaddr_storage>());
 
             match addr {
-                Ok(sa) => (None, Some(sa.ip())),
+                Ok(SocketAddr::V4(sa)) => (None, Some(IpAddr::V4(*sa.ip()))),
+                Ok(SocketAddr::V6(sa)) => (None, Some(IpAddr::V6(*sa.ip()))),
                 Err(_) => (None, None),
             }
         }
@@ -183,6 +227,8 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
 fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
     use bindings::bpf;
+    use std::net::SocketAddr;
+
     unsafe {
         if sa.is_null() {
             (None, None)
@@ -202,7 +248,8 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
                                                   mem::size_of::<libc::sockaddr_storage>());
 
             match addr {
-                Ok(sa) => (None, Some(sa.ip())),
+                Ok(SocketAddr::V4(sa)) => (None, Some(IpAddr::V4(*sa.ip()))),
+                Ok(SocketAddr::V6(sa)) => (None, Some(IpAddr::V6(*sa.ip()))),
                 Err(_) => (None, None),
             }
         }
@@ -266,7 +313,8 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
             _ => new.mac,
         };
         match (&mut old.ips, &new.ips) {
-            (&mut Some(ref mut old_ips), &Some(ref new_ips)) => old_ips.push_all(&new_ips[..]),
+            (&mut Some(ref mut old_ips), &Some(ref new_ips)) =>
+                old_ips.extend_from_slice(&new_ips[..]),
             (&mut ref mut old_ips @ None, &Some(ref new_ips)) => *old_ips = Some(new_ips.clone()),
             _ => {}
         };

@@ -8,7 +8,7 @@
 
 extern crate libc;
 
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{Ipv4Addr, Ipv6Addr};
 use std::sync::mpsc::channel;
 use std::thread;
 use std::iter::Iterator;
@@ -24,6 +24,7 @@ use transport::{TransportChannelType, TransportProtocol, ipv4_packet_iter, trans
                 udp_packet_iter};
 use transport::TransportProtocol::{Ipv4, Ipv6};
 use util;
+use util::IpAddr;
 
 const IPV4_HEADER_LEN: usize = 20;
 const IPV6_HEADER_LEN: usize = 40;
