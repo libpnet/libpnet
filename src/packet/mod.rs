@@ -29,8 +29,14 @@ pub trait MutablePacket : Packet {
 
     /// Initialize this packet by cloning another
     fn clone_from<T: Packet>(&mut self, other: &T) {
-        use std::slice::bytes::copy_memory;
-        copy_memory(other.packet(), self.packet_mut())
+        use std::ptr;
+
+        assert!(self.packet().len() >= other.packet().len());
+        unsafe {
+            ptr::copy_nonoverlapping(other.packet().as_ptr(),
+                                     self.packet_mut().as_mut_ptr(),
+                                     other.packet().len());
+        }
     }
 }
 

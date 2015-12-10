@@ -36,6 +36,7 @@ use packet::ipv4::Ipv4Packet;
 use packet::udp::UdpPacket;
 
 use internal;
+use util;
 
 /// Represents a transport layer protocol
 #[derive(Clone, Copy)]
@@ -142,9 +143,15 @@ pub fn transport_channel(buffer_size: usize,
 }
 
 impl TransportSender {
-    fn send<T: Packet>(&mut self, packet: T, dst: net::IpAddr) -> io::Result<usize> {
+    fn send<T: Packet>(&mut self, packet: T, dst: util::IpAddr) -> io::Result<usize> {
         let mut caddr = unsafe { mem::zeroed() };
-        let slen = internal::addr_to_sockaddr(net::SocketAddr::new(dst, 0), &mut caddr);
+        let sockaddr = match dst {
+            util::IpAddr::V4(ip_addr) =>
+                net::SocketAddr::V4(net::SocketAddrV4::new(ip_addr, 0)),
+            util::IpAddr::V6(ip_addr) =>
+                net::SocketAddr::V6(net::SocketAddrV6::new(ip_addr, 0, 0, 0)),
+        };
+        let slen = internal::addr_to_sockaddr(sockaddr, &mut caddr);
         let caddr_ptr = (&caddr as *const libc::sockaddr_storage) as *const libc::sockaddr;
 
         internal::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen)
@@ -152,17 +159,17 @@ impl TransportSender {
 
     /// Send a packet to the provided desination
     #[inline]
-    pub fn send_to<T: Packet>(&mut self, packet: T, destination: net::IpAddr) -> io::Result<usize> {
+    pub fn send_to<T: Packet>(&mut self, packet: T, destination: util::IpAddr) -> io::Result<usize> {
         self.send_to_impl(packet, destination)
     }
 
     #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]
-    fn send_to_impl<T: Packet>(&mut self, packet: T, dst: net::IpAddr) -> io::Result<usize> {
+    fn send_to_impl<T: Packet>(&mut self, packet: T, dst: util::IpAddr) -> io::Result<usize> {
         self.send(packet, dst)
     }
 
     #[cfg(any(target_os = "freebsd", target_os = "macos"))]
-    fn send_to_impl<T: Packet>(&mut self, packet: T, dst: net::IpAddr) -> io::Result<usize> {
+    fn send_to_impl<T: Packet>(&mut self, packet: T, dst: util::IpAddr) -> io::Result<usize> {
         use packet::ipv4::MutableIpv4Packet;
 
         // FreeBSD and OS X expect total length and fragment offset fields of IPv4
@@ -211,7 +218,7 @@ macro_rules! transport_channel_iterator {
         }
         impl<'a> $iter<'a> {
             /// Get the next ($ty, IpAddr) pair for the given channel
-            pub fn next(&mut self) -> io::Result<($ty, net::IpAddr)> {
+            pub fn next(&mut self) -> io::Result<($ty, util::IpAddr)> {
                 let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
                 let res = internal::recv_from(self.tr.socket.fd,
                                               &mut self.tr.buffer[..],
@@ -237,7 +244,11 @@ macro_rules! transport_channel_iterator {
                                         &caddr,
                                         mem::size_of::<libc::sockaddr_storage>()
                                    );
-                        Ok((packet, addr.unwrap().ip()))
+                        let ip = match addr.unwrap() {
+                            net::SocketAddr::V4(sa) => util::IpAddr::V4(*sa.ip()),
+                            net::SocketAddr::V6(sa) => util::IpAddr::V6(*sa.ip()),
+                        };
+                        Ok((packet, ip))
                     },
                     Err(e) => Err(e),
                 };
