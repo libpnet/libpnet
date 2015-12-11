@@ -89,8 +89,14 @@ pub fn transport_channel(buffer_size: usize,
                          channel_type: TransportChannelType)
     -> io::Result<(TransportSender, TransportReceiver)> {
     use std::net;
+
     // This hack makes sure that winsock is initialised
-    let _ = net::lookup_host("\0");
+    let _ = {
+        let ip = net::Ipv4Addr::new(255, 255, 255, 255);
+        let sockaddr = net::SocketAddr::V4(net::SocketAddrV4::new(ip, 0));
+
+        net::UdpSocket::bind(sockaddr)
+    };
 
     let socket = unsafe {
         match channel_type {
@@ -170,6 +176,7 @@ impl TransportSender {
 
     #[cfg(any(target_os = "freebsd", target_os = "macos"))]
     fn send_to_impl<T: Packet>(&mut self, packet: T, dst: util::IpAddr) -> io::Result<usize> {
+        use packet::MutablePacket;
         use packet::ipv4::MutableIpv4Packet;
 
         // FreeBSD and OS X expect total length and fragment offset fields of IPv4
@@ -180,9 +187,9 @@ impl TransportSender {
             _ => false,
         } {
             let mut mut_slice: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
-            mut_slice.clone_from_slice(packet.packet());
 
             let mut new_packet = MutableIpv4Packet::new(&mut mut_slice[..]).unwrap();
+            new_packet.clone_from(&packet);
             let length = new_packet.get_total_length().to_be();
             new_packet.set_total_length(length);
             let offset = new_packet.get_fragment_offset().to_be();

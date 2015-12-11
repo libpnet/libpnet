@@ -108,10 +108,8 @@
 #![deny(missing_docs)]
 
 // FIXME Remove this once the std lib has stabilised
-#![feature(custom_attribute, plugin, slice_patterns, lookup_host)]
+#![feature(custom_attribute, plugin)]
 #![plugin(pnet_macros)]
-#![cfg_attr(test, feature(str_char))]
-#![cfg_attr(any(target_os = "freebsd", target_os = "macos"), feature(clone_from_slice))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
 // See: https://github.com/Manishearth/rust-clippy/issues/373
 #![cfg_attr(feature="clippy", allow(explicit_counter_loop))]

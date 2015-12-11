@@ -37,20 +37,14 @@ pub fn ipv4_checksum(packet: &UdpPacket,
 
     // Checksum pseudo-header
     // IPv4 source
-    match ipv4_source.octets() {
-        [a, b, c, d] => {
-            sum += (a as u32) << 8 | b as u32;
-            sum += (c as u32) << 8 | d as u32;
-        }
-    }
+    let octets = ipv4_source.octets();
+    sum += (octets[0] as u32) << 8 | octets[1] as u32;
+    sum += (octets[2] as u32) << 8 | octets[3] as u32;
 
     // IPv4 destination
-    match ipv4_destination.octets() {
-        [a, b, c, d] => {
-            sum += (a as u32) << 8 | b as u32;
-            sum += (c as u32) << 8 | d as u32;
-        }
-    }
+    let octets = ipv4_destination.octets();
+    sum += (octets[0] as u32) << 8 | octets[1] as u32;
+    sum += (octets[2] as u32) << 8 | octets[3] as u32;
 
     // IPv4 Next level protocol
     sum += next_level_protocol as u32;
@@ -136,32 +130,26 @@ pub fn ipv6_checksum(packet: &UdpPacket,
 
     // Checksum pseudo-header
     // IPv6 source
-    match ipv6_source.segments() {
-        [a, b, c, d, e, f, g, h] => {
-            sum += a as u32;
-            sum += b as u32;
-            sum += c as u32;
-            sum += d as u32;
-            sum += e as u32;
-            sum += f as u32;
-            sum += g as u32;
-            sum += h as u32;
-        }
-    }
+    let segments = ipv6_source.segments();
+    sum += segments[0] as u32;
+    sum += segments[1] as u32;
+    sum += segments[2] as u32;
+    sum += segments[3] as u32;
+    sum += segments[4] as u32;
+    sum += segments[5] as u32;
+    sum += segments[6] as u32;
+    sum += segments[7] as u32;
 
     // IPv6 destination
-    match ipv6_destination.segments() {
-        [a, b, c, d, e, f, g, h] => {
-            sum += a as u32;
-            sum += b as u32;
-            sum += c as u32;
-            sum += d as u32;
-            sum += e as u32;
-            sum += f as u32;
-            sum += g as u32;
-            sum += h as u32;
-        }
-    }
+    let segments = ipv6_destination.segments();
+    sum += segments[0] as u32;
+    sum += segments[1] as u32;
+    sum += segments[2] as u32;
+    sum += segments[3] as u32;
+    sum += segments[4] as u32;
+    sum += segments[5] as u32;
+    sum += segments[6] as u32;
+    sum += segments[7] as u32;
 
     // IPv6 Next header
     sum += next_header as u32;
