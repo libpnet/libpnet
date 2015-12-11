@@ -75,11 +75,11 @@ pub fn addr_to_sockaddr(addr: SocketAddr, storage: &mut libc::sockaddr_storage) 
         let len = match addr {
             SocketAddr::V4(sa) => {
                 let ip_addr = sa.ip();
-                let [a, b, c, d] = ip_addr.octets();
+                let octets = ip_addr.octets();
                 let inaddr = libc::in_addr {
-                    s_addr: u32::from_be(((a as u32) << 24) | ((b as u32) << 16) |
-                                         ((c as u32) << 8) |
-                                         (d as u32)),
+                    s_addr: u32::from_be(((octets[0] as u32) << 24) | ((octets[1] as u32) << 16) |
+                                         ((octets[2] as u32) << 8) |
+                                         (octets[3] as u32)),
                 };
                 let storage = storage as *mut _ as *mut libc::sockaddr_in;
                 (*storage).sin_family = libc::AF_INET as libc::sa_family_t;
@@ -89,10 +89,11 @@ pub fn addr_to_sockaddr(addr: SocketAddr, storage: &mut libc::sockaddr_storage) 
             }
             SocketAddr::V6(sa) => {
                 let ip_addr = sa.ip();
-                let [a, b, c, d, e, f, g, h] = ip_addr.segments();
+                let segments = ip_addr.segments();
                 let inaddr = libc::in6_addr {
-                    s6_addr: [htons(a), htons(b), htons(c), htons(d), htons(e), htons(f), htons(g),
-                              htons(h)],
+                    s6_addr: [htons(segments[0]), htons(segments[1]), htons(segments[2]),
+                              htons(segments[3]), htons(segments[4]), htons(segments[5]),
+                              htons(segments[6]), htons(segments[7])],
                 };
                 let storage = storage as *mut _ as *mut libc::sockaddr_in6;
                 (*storage).sin6_family = libc::AF_INET6 as libc::sa_family_t;

@@ -29,7 +29,7 @@ impl fmt::Display for GetOperation {
         let shift = (self.shiftr as i16) - (self.shiftl as i16);
 
         let mask_str = if should_mask {
-            format!("({{}} & 0x{})", fmt::radix(self.mask, 16))
+            format!("({{}} & 0x{})", radix16_u8(self.mask))
         } else {
             "{}".to_owned()
         };
@@ -67,6 +67,34 @@ pub struct SetOperation {
     shiftr: u8,
 }
 
+macro_rules! radix_fn {
+    ($name:ident, $ty:ty) => {
+        fn $name(mut val: $ty) -> String
+        {
+            let mut ret = String::new();
+            let vals = "0123456789abcdef".as_bytes();
+            while val > 0 {
+                let remainder = val % 16;
+                val /= 16;
+                ret = format!("{}{}", vals[remainder as usize] as char, ret);
+            }
+
+            ret
+        }
+
+        mod $name {
+            #[test]
+            fn test() {
+                assert_eq!(super::$name(0xab), "ab".to_owned());
+                assert_eq!(super::$name(0x1c), "1c".to_owned());
+            }
+        }
+    }
+}
+
+radix_fn!(radix16_u8, u8);
+radix_fn!(radix16_u64, u64);
+
 impl fmt::Display for SetOperation {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let should_mask = self.value_mask != 0xFF;
@@ -74,13 +102,13 @@ impl fmt::Display for SetOperation {
         let shift = (self.shiftr as i16) - (self.shiftl as i16);
 
         let save_str = if should_save {
-            format!("({{packet}} & 0x{})", fmt::radix(self.save_mask, 16))
+            format!("({{packet}} & 0x{})", radix16_u8(self.save_mask))
         } else {
             "".to_owned()
         };
 
         let mask_str = if should_mask {
-            format!("({{val}} & 0x{})", fmt::radix(self.value_mask, 16))
+            format!("({{val}} & 0x{})", radix16_u64(self.value_mask))
         } else {
             "{val}".to_owned()
         };
