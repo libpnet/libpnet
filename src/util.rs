@@ -11,7 +11,6 @@
 extern crate libc;
 
 use packet::PrimitiveValues;
-use packet::PseudoHeader;
 
 use std::ffi::CStr;
 use std::fmt;
@@ -421,31 +420,31 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
     vec
 }
 
-/// checksum computes a TCP or UDP checksum.
-/// raw_packet is the TCP or UDP packet.
-/// encapsulating_packet is either the ipv4 or ipv6 packet encapsulating the higher protocol.
-pub fn checksum<T: PseudoHeader>(raw_packet: &[u8], encapsulating_packet: T) -> u16 {
-    let mut sum = encapsulating_packet.checksum();
-    let length = raw_packet.len() as u32;
-    sum = (sum + length) & 0xffff;
-    sum = (sum + length) >> 16;
-    rfc1071_checksum(raw_packet, sum)
-}
 
-/// Calculates rfc1071 checksum value
-pub fn rfc1071_checksum(packet: &[u8], initial: u32) -> u16 {
-    let length = packet.len() - 1;
-    let mut sum = initial;
-
+/// Perform a 16 bits words addition of an array of bytes
+pub fn sum_16_bit_words(data: &[u8]) -> u32 {
+    let mut sum = 0;
+    let length = data.len() - 1;
     let mut i = 0;
     while i < length {
-        let word = (packet[i] as u32) << 8 | packet[i + 1] as u32;
+        let word = (data[i] as u32) << 8 | data[i + 1] as u32;
         sum = sum + word;
         i = i + 2;
     }
-    if packet.len()%2 == 1 {
-        sum = sum + ((packet[length] as u32) << 8);
+    if data.len() % 2 == 1 {
+        sum = sum + ((data[length] as u32) << 8);
     }
+    sum
+}
+
+
+/// Calculates rfc1071 checksum value
+pub fn rfc1071_checksum(packet: &[u8], pseudo_header_packet: Option<&[u8]>) -> u16 {
+    let mut sum = 0;
+    if let Some(pseudo_header) = pseudo_header_packet {
+        sum = sum_16_bit_words(pseudo_header);
+    }
+    sum += sum_16_bit_words(packet);
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);
     }
@@ -471,7 +470,7 @@ fn checksum_even_simple() {
     //
     // => checksum is 1000 0100 0011 1110
     //                   8    4    3    e
-    assert_eq!(rfc1071_checksum(&data[..], 0), 0x843e);
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x843e);
 }
 
 #[test]
@@ -493,7 +492,7 @@ fn checksum_even_with_carry() {
     //
     // => checksum is 0100 0111 1110 0100
     //                   4    7    e    4
-    assert_eq!(rfc1071_checksum(&data[..], 0), 0x47e4);
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x47e4);
 }
 
 #[test]
@@ -517,7 +516,7 @@ fn checksum_odd() {
     //
     // => checksum is 0010 1111 0011 1110
     //                   2    f    3    e
-    assert_eq!(rfc1071_checksum(&data[..], 0), 0x2f3e);
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x2f3e);
 }
 
 #[test]
@@ -541,7 +540,7 @@ fn checksum_odd_with_carry() {
     //
     // => checksum is 0010 1111 0011 1110
     //                   2    f    3    e
-    assert_eq!(rfc1071_checksum(&data[..], 0), 0x2f3e);
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x2f3e);
 }
 
 #[test]
@@ -550,13 +549,13 @@ fn checksum_basics() {
     // ff (00) => 1111 1111 0000 0000
     // => checksum is 0000 0000 1111 1111
     //                   0    0    f    f
-    assert_eq!(rfc1071_checksum(&data[..], 0), 0x00ff);
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x00ff);
 
     data.push(0xff);
     // ff ff => 1111 1111 1111 1111
     // => checksum is 0000 0000 0000 0000
     //                   0    0    0    0
-    assert_eq!(rfc1071_checksum(&data[..], 0), 0x0000);
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x0000);
 
     data.push(0xff);
     //   ff ff
@@ -566,7 +565,7 @@ fn checksum_basics() {
     //         =>      1111 1111 0000 0000
     // => checksum is 0000 0000 1111 1111
     //                   0    0    f    f
-    assert_eq!(rfc1071_checksum(&data[..], 0), 0x00ff);
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x00ff);
 
     data = vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
                 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -580,5 +579,5 @@ fn checksum_basics() {
     // 1111 1111 1111 1111
     //
     // => checksum is 0000 0000 0000 1111 = 0x0000
-    assert_eq!(rfc1071_checksum(&data[..], 0), 0x0000);
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x0000);
 }

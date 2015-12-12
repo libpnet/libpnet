@@ -8,7 +8,7 @@
 
 //! IPv6 packet abstraction
 
-use packet::ip::IpNextHeaderProtocol;
+use packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
 use packet::{PseudoHeader, PrimitiveValues};
 use pnet_macros_support::types::*;
 
@@ -32,46 +32,83 @@ pub struct Ipv6 {
     payload: Vec<u8>,
 }
 
+/// Represents an IPv6 Packet pseudo header
+#[packet] pub struct Ipv6PseudoHeader {
+    #[construct_with(u16, u16, u16, u16, u16, u16, u16, u16)]
+    source: Ipv6Addr,
+    // RFC 2460:
+    // If the IPv6 packet contains a Routing header, the Destination Address used in the
+    // pseudo-header is that of the final destination. At the originating node, that address will
+    // be in the last element of the Routing header; at the recipient(s), that address will be in
+    // the Destination Address field of the IPv6 header.
+    #[construct_with(u16, u16, u16, u16, u16, u16, u16, u16)]
+    destination: Ipv6Addr,
+    // RFC 2460: 
+    // The Upper-Layer Packet Length in the pseudo-header is the length of the
+    // upper-layer header and data (e.g., TCP header plus TCP data). Some upper-layer protocols
+    // carry their own length information (e.g., the Length field in the UDP header); for such
+    // protocols, that is the length used in the pseudo- header. Other protocols (such as TCP) do
+    // not carry their own length information, in which case the length used in the pseudo-header
+    // is the Payload Length from the IPv6 header, minus the length of any extension headers
+    // present between the IPv6 header and the upper-layer header.
+    inner_packet_length: u32be,
+    zeros: u24be,
+    // RFC 2460:
+    // The Next Header value in the pseudo-header identifies the upper-layer protocol (e.g., 6 for
+    // TCP, or 17 for UDP). It will differ from the Next Header value in the IPv6 header if there
+    // are extension headers between the IPv6 header and the upper-layer header.
+    #[construct_with(u8)]
+    next_level_protocol: IpNextHeaderProtocol,
+    #[payload]
+    payload: Vec<u8>,
+}
+
+pub struct Ipv6HeaderIter<'p, 'h> {
+    packet: &'p Ipv6Packet<'p>,
+    current_header: Ipv6Packet<'h>,
+}
+
+impl<'p, 'h> Iterator for Ipv6HeaderIter<'p, 'h> {
+    type Item = &'h Ipv6Packet<'h>;
+    fn next(&mut self) -> Option<&'h Ipv6Packet<'h>> {
+        match self.current_header.get_next_header() {
+            IpNextHeaderProtocols::Hopopt |
+            IpNextHeaderProtocols::Ipv6 |
+            IpNextHeaderProtocols::Ipv6Route | 
+            IpNextHeaderProtocols::Ipv6Frag |
+            IpNextHeaderProtocols::Ipv6Icmp |
+            IpNextHeaderProtocols::Ipv6Opts => {
+                self.current_header = Ipv6Packet::new(self.current_header.payload()).unwrap(); // is it ok to unwrap here?
+                Some(self.current_header)
+            },
+            _ => None,
+        };
+    }
+}
+
 impl<'p> PseudoHeader for Ipv6Packet<'p> {
-    fn checksum(&self) -> u32 {
-        let mut sum = 0u32;
-
-        // Checksum pseudo-header
-        // IPv6 source
-        let source = self.get_source();
-        match source.segments() {
-            [a, b, c, d, e, f, g, h] => {
-                sum = sum + a as u32;
-                sum = sum + b as u32;
-                sum = sum + c as u32;
-                sum = sum + d as u32;
-                sum = sum + e as u32;
-                sum = sum + f as u32;
-                sum = sum + g as u32;
-                sum = sum + h as u32;
+    // might need other argument for next header value in case of header extensions.
+    fn get_pseudo_header(&self, inner_packet_length: Option<u32>) -> Vec<u8> {
+        let mut pseudo_header_buf: Vec<u8> = vec![0, 40];
+        {
+            let mut pseudo_header = MutableIpv6PseudoHeaderPacket::new(&mut pseudo_header_buf[..]).unwrap();
+            pseudo_header.set_source(self.get_source());
+            // FIXME: not sure which header I should take for this one...
+            pseudo_header.set_destination(self.get_destination());
+            // Get the next_level_protocol and inner_packet_length from the last ipv6 header
+            loop {
+                if let Some(header) = self.next() {
+                    pseudo_header.set_next_level_protocol(header.get_next_header());
+                    pseudo_header.set_inner_packet_length(header.get_payload_length() as u32);
+                } else {
+                    break;
+                }
             }
+            if let Some(inner_packet_length) = inner_packet_length {
+                pseudo_header.set_inner_packet_length(inner_packet_length as u32);
+            } 
         }
-
-        // IPv6 destination
-        let destination = self.get_destination();
-        match destination.segments() {
-            [a, b, c, d, e, f, g, h] => {
-                sum = sum + a as u32;
-                sum = sum + b as u32;
-                sum = sum + c as u32;
-                sum = sum + d as u32;
-                sum = sum + e as u32;
-                sum = sum + f as u32;
-                sum = sum + g as u32;
-                sum = sum + h as u32;
-            }
-        }
-
-        // IPv6 next_header (equivalent to ipv4 "next level protocol")
-        let next_header = self.get_next_header();
-        let (next_proto,) = next_header.to_primitive_values();
-        sum = sum + next_proto as u32;
-        sum
+        pseudo_header_buf
     }
 }
 

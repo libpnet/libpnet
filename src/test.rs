@@ -100,7 +100,8 @@ fn build_udp4_packet(packet: &mut [u8],
 
     let (raw_ip_header, raw_udp_packet) = packet.split_at_mut(20);
     let ip_header = Ipv4Packet::new(&raw_ip_header[..]).unwrap();
-    let csum = util::checksum(raw_udp_packet, ip_header);
+    let pseudo_header = ip_header.get_pseudo_header(packet.get_length() as u32);
+    let csum = util::rfc1071_checksum(&raw_udp_packet, Some(&pseudo_header[..]));
     MutableUdpPacket::new(raw_udp_packet).unwrap().set_checksum(csum);
 }
 
@@ -118,7 +119,8 @@ fn build_udp6_packet(packet: &mut [u8], start: usize, msg: &str) {
 
     let (raw_ip_header, raw_udp_packet) = packet.split_at_mut(40);
     let ip_header = Ipv6Packet::new(&raw_ip_header[..]).unwrap(); // XXX
-    let csum = util::checksum(raw_udp_packet, ip_header);
+    let pseudo_header = ip_header.get_pseudo_header(Some(packet.get_length() as u32));
+    let csum = util::rfc1071_checksum(&raw_udp_packet, Some(&pseudo_header[..]));
     MutableUdpPacket::new(raw_udp_packet).unwrap().set_checksum(csum);
 }
 
