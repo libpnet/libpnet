@@ -7,7 +7,7 @@
 // except according to those terms.
 
 #![feature(custom_attribute, plugin, slice_bytes, vec_push_all)]
-#![plugin(pnet_macros)]
+#![plugin(pnet_macros_plugin)]
 
 extern crate pnet;
 

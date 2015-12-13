@@ -10,9 +10,9 @@
 //! specify the format of on-the-wire packets, and automatically generate zero-copy accessors and
 //! mutators for the fields. It is used as follows:
 //!
-//! ```
+//! ```no_run
 //! #![feature(core, collections, custom_attribute, plugin)]
-//! #![plugin(pnet_macros)]
+//! #![plugin(pnet_macros_plugin)]
 //!
 //! extern crate pnet;
 //! extern crate pnet_macros_support;
@@ -24,25 +24,27 @@
 //! /// attribute.
 //! #[packet]
 //! pub struct Example {
-//!     /// This is a simple field which contains a 4-bit, unsigned integer.
-//!     /// Note that `u4` is simply an alias for `u8` - the name is a hint
-//!     /// to the compiler plugin, it is NOT a usable 4 bit type!
+//!     // This is a simple field which contains a 4-bit, unsigned integer.
+//!     // Note that `u4` is simply an alias for `u8` - the name is a hint
+//!     // to the compiler plugin, it is NOT a usable 4 bit type!
 //!     simple_field1: u4,
 //!
-//!     /// This specifies that `simple_field2` should be a 12-bit field,
-//!     /// with bits stored in big endian
+//!     // This specifies that `simple_field2` should be a 12-bit field,
+//!     // with bits stored in big endian
 //!     simple_field2: u12be,
 //!
-//!     /// All packets must specify a `#[payload]`, which should be a
-//!     /// `Vec<u8>`. This represents the packet's payload, for example in
-//!     /// an IPv4 packet, the payload could be a UDP packet, or in a UDP
-//!     /// packet the payload could be the application data. All the
-//!     /// remaining space in the packet is considered to be the payload
-//!     /// (this doesn't have to be the case, see the documentation for
-//!     /// `#[payload]` below.
+//!     // All packets must specify a `#[payload]`, which should be a
+//!     // `Vec<u8>`. This represents the packet's payload, for example in
+//!     // an IPv4 packet, the payload could be a UDP packet, or in a UDP
+//!     // packet the payload could be the application data. All the
+//!     // remaining space in the packet is considered to be the payload
+//!     // (this doesn't have to be the case, see the documentation for
+//!     // `#[payload]` below.
 //!     #[payload]
 //!     payload: Vec<u8>
 //! }
+//!
+//! # fn main(){}
 //! ```
 //! A number of things will then be generated. You can see this in action in the documentation and
 //! source of each of the packet types in the `pnet::packet` module. Things generated include
@@ -140,43 +142,150 @@
 
 #![deny(missing_docs)]
 
-#![feature(plugin_registrar, quote, rustc_private)]
+#![cfg_attr(not(feature = "with-syntex"), feature(plugin_registrar, quote, rustc_private))]
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
 #![cfg_attr(feature="clippy", allow(let_and_return))]
 
-extern crate syntax;
-extern crate regex;
-#[macro_use] extern crate rustc_plugin;
+#[cfg(feature = "with-syntex")]
+extern crate syntex;
 
-use rustc_plugin::Registry;
+#[cfg(feature = "with-syntex")]
+extern crate syntex_syntax as syntax;
+
+#[cfg(not(feature = "with-syntex"))]
+extern crate syntax;
+
+extern crate regex;
+
+#[cfg(not(feature = "with-syntex"))]
+extern crate rustc_plugin;
 
 use syntax::ast;
 use syntax::codemap::Span;
 use syntax::parse::token;
-use syntax::ext::base::{Annotatable, MultiDecorator, ExtCtxt, MultiModifier};
+use syntax::ext::base::{Annotatable, ExtCtxt};
+use syntax::ext::build::AstBuilder;
 use syntax::ptr::P;
+
+#[cfg(not(feature = "with-syntex"))]
+use syntax::ext::base::{MultiDecorator, MultiModifier};
 
 mod decorator;
 mod util;
 
+/// Helper for creating meta words
+fn mw(ecx: &mut ExtCtxt, span: Span, word: &'static str) -> P<ast::MetaItem> {
+    ecx.meta_word(span, token::InternedString::new(word))
+}
+
 /// Replace the #[packet] attribute with internal attributes
 ///
 /// The #[packet] attribute is consumed, so we replace it with two internal attributes,
-/// #[_packet_generator], which is used to generate the packet implementations, and
-#[allow(used_underscore_binding)]
+/// #[packet_generator], which is used to generate the packet implementations, and
 fn packet_modifier(ecx: &mut ExtCtxt,
-                   _span: Span,
+                   span: Span,
                    _meta_item: &ast::MetaItem,
                    item: Annotatable) -> Annotatable {
     let item = item.expect_item();
     let mut new_item = (*item).clone();
 
-    new_item.attrs.push(quote_attr!(ecx, #[packet_generator]));
-    new_item.attrs.push(quote_attr!(ecx, #[derive(Clone, Debug)]));
-    new_item.attrs.push(quote_attr!(ecx, #[allow(unused_attributes)]));
+    let packet_generator = mw(ecx, span, "packet_generator");
+    let clone = mw(ecx, span, "Clone");
+    let debug = mw(ecx, span, "Debug");
+    let unused_attrs = mw(ecx, span, "unused_attributes");
+
+    let a1 = ecx.attribute(span, packet_generator);
+    let a2 = ecx.attribute(span,
+                           ecx.meta_list(span,
+                                         token::InternedString::new("derive"),
+                                         vec![clone, debug]));
+    let a3 = ecx.attribute(span, ecx.meta_list(span,
+                                               token::InternedString::new("allow"),
+                                               vec![unused_attrs]));
+
+    new_item.attrs.push(a1);
+    new_item.attrs.push(a2);
+    new_item.attrs.push(a3);
 
     Annotatable::Item(P(new_item))
+}
+
+/// Helper function to get mutable access to the fields in a struct/enum
+#[cfg(feature = "with-syntex")]
+fn variant_data_fields(vd: &mut ast::VariantData) -> &mut [ast::StructField] {
+    match *vd {
+        ast::VariantData::Struct(ref mut fields, _) => fields,
+        ast::VariantData::Tuple(ref mut fields, _) => fields,
+        _ => &mut [],
+    }
+}
+
+/// Removes the attributes we've introduced from a particular struct/enum
+#[cfg(feature = "with-syntex")]
+fn remove_attributes_struct(vd: &mut ast::VariantData) {
+    for field in variant_data_fields(vd) {
+        let mut attrs = &mut field.node.attrs;
+        attrs.retain(|attr| {
+            match attr.node.value.node {
+                ast::MetaWord(ref s) => {
+                    *s != "payload"
+                },
+                ast::MetaList(ref s, _) => {
+                    *s != "construct_with"
+                },
+                ast::MetaNameValue(ref s, _) => {
+                    !(*s == "length_fn" || *s == "length")
+                },
+            }
+        });
+    }
+}
+
+/// This iterates through a crate and removes any references to attributes
+/// which we introduce but aren't already consumed
+#[cfg(feature = "with-syntex")]
+fn remove_attributes(mut krate: ast::Crate) -> ast::Crate {
+    let mut new_items = Vec::with_capacity(krate.module.items.len());
+    for item in &krate.module.items {
+        let new_item = item.clone().map(|mut item|{
+            match item.node {
+                ast::ItemEnum(ref mut ed, ref _gs) => {
+                    let mut new_variants = Vec::with_capacity(ed.variants.len());
+                    for variant in &ed.variants {
+                        let new_variant = variant.clone().map(|mut variant| {
+                            if variant.node.data.is_struct() {
+                                remove_attributes_struct(&mut variant.node.data);
+                            }
+
+                            variant
+                        });
+                        new_variants.push(new_variant);
+                    }
+                    ed.variants = new_variants;
+                },
+                ast::ItemStruct(ref mut sd, ref _gs) => {
+                    remove_attributes_struct(sd);
+                },
+                _ => {},
+            }
+
+            item
+        });
+        new_items.push(new_item);
+    }
+
+    krate.module.items = new_items;
+
+    krate
+}
+
+/// The entry point for the plugin when using syntex
+#[cfg(feature = "with-syntex")]
+pub fn register(registry: &mut syntex::Registry) {
+    registry.add_modifier("packet", packet_modifier);
+    registry.add_decorator("packet_generator", decorator::generate_packet);
+    registry.add_post_expansion_pass(remove_attributes);
 }
 
 /// The entry point for the syntax extension
@@ -184,10 +293,11 @@ fn packet_modifier(ecx: &mut ExtCtxt,
 /// This registers each part of the plugin with the compiler. There are two parts: a modifier, to
 /// add additional attributes to the original structure; and a decorator, to generate the various
 /// required structures and method.
-#[plugin_registrar]
-pub fn plugin_registrar(registry: &mut Registry) {
+#[cfg(not(feature = "with-syntex"))]
+pub fn register(registry: &mut rustc_plugin::Registry) {
     registry.register_syntax_extension(token::intern("packet"),
                                        MultiModifier(Box::new(packet_modifier)));
     registry.register_syntax_extension(token::intern("packet_generator"),
                                        MultiDecorator(Box::new(decorator::generate_packet)));
 }
+

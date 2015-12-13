@@ -9,7 +9,7 @@
 // error-pattern: Only field names, constants, integers, basic arithmetic expressions (+ - * / %) and parentheses are allowed in the "length" attribute
 
 #![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros)]
+#![plugin(pnet_macros_plugin)]
 
 extern crate pnet;
 
