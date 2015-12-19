@@ -223,15 +223,13 @@ fn layer4(ip: IpAddr, header_len: usize) {
 }
 
 #[test]
-#[cfg(not(feature = "appveyor"))]
 fn layer4_ipv4() {
     layer4(IpAddr::V4(ipv4_source()), IPV4_HEADER_LEN as usize);
 }
 
 // travis does not currently support IPv6
 #[test]
-#[cfg(all(not(feature = "appveyor"),
-          not(all(target_os = "linux", feature = "travis"))))]
+#[cfg(not(all(target_os = "linux", feature = "travis")))]
 fn layer4_ipv6() {
     layer4(IpAddr::V6(ipv6_source()), IPV6_HEADER_LEN);
 }
@@ -291,7 +289,7 @@ fn layer3_ipv4() {
 }
 
 // FIXME Find a way to test this with netmap
-#[cfg(all(not(feature = "appveyor"), not(feature = "netmap")))]
+#[cfg(not(feature = "netmap"))]
 #[test]
 fn layer2() {
     use datalink::{DataLinkChannelType, datalink_channel};
