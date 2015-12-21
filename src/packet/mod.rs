@@ -10,6 +10,11 @@
 
 #![macro_use]
 
+pub enum PseudoHeaderIPv6IPv4 {
+    Ipv6PseudoHeader,
+    Ipv4PseudoHeader,
+}
+
 /// Used to help compute checksum value of packet
 pub trait PseudoHeader {
     /// Converts IPv4 or IPv6 specific fields to a checksum value
@@ -23,7 +28,7 @@ pub trait PseudoHeader {
     // are extension headers between the IPv6 header and the upper-
     // layer header.
     //
-    fn get_pseudo_header(&self, inner_packet_length: Option<u32>) -> Vec<u8> ;
+    fn populate(&self, buffer: &mut [u8], inner_packet_length: Option<usize>) -> PseudoHeaderIPv6IPv4 ;
 }
 
 /// Represents a generic network packet

@@ -88,28 +88,25 @@ impl<'p, 'h> Iterator for Ipv6HeaderIter<'p, 'h> {
 }
 
 impl<'p> PseudoHeader for Ipv6Packet<'p> {
-    // might need other argument for next header value in case of header extensions.
-    fn get_pseudo_header(&self, inner_packet_length: Option<u32>) -> Vec<u8> {
-        let mut pseudo_header_buf: Vec<u8> = vec![0, 40];
-        {
-            let mut pseudo_header = MutableIpv6PseudoHeaderPacket::new(&mut pseudo_header_buf[..]).unwrap();
-            pseudo_header.set_source(self.get_source());
-            // FIXME: not sure which header I should take for this one...
-            pseudo_header.set_destination(self.get_destination());
-            // Get the next_level_protocol and inner_packet_length from the last ipv6 header
-            loop {
-                if let Some(header) = self.next() {
-                    pseudo_header.set_next_level_protocol(header.get_next_header());
-                    pseudo_header.set_inner_packet_length(header.get_payload_length() as u32);
-                } else {
-                    break;
-                }
+    fn populate(&self, buffer: &mut [u8], inner_packet_length: Option<usize>) -> Ipv6PseudoHeader {
+
+        let mut pseudo_header = MutableIpv6PseudoHeaderPacket::new(&mut pseudo_header_buf[..]).unwrap();
+        pseudo_header.set_source(self.get_source());
+        pseudo_header.set_destination(self.get_destination());
+        // Get the next_level_protocol and inner_packet_length from the last ipv6 header
+        loop {
+            if let Some(header) = self.next() {
+                pseudo_header.set_next_level_protocol(header.get_next_header());
+                pseudo_header.set_inner_packet_length(header.get_payload_length() as u32);
+            } else {
+                break;
             }
-            if let Some(inner_packet_length) = inner_packet_length {
-                pseudo_header.set_inner_packet_length(inner_packet_length as u32);
-            } 
         }
-        pseudo_header_buf
+        if let Some(inner_packet_length) = inner_packet_length {
+            pseudo_header.set_inner_packet_length(inner_packet_length as u32);
+        }
+
+        PseudoHeaderIPv6IPv4(pseudo_header.to_immutable())
     }
 }
 

@@ -71,10 +71,10 @@ impl<'p> PseudoHeader for Ipv4Packet<'p> {
     ///
     /// The `inner_packet_length` is optional, since in case of UDP, it is taken from the length
     /// field of the UDP header, whereas for TCP, it is computed from the header length.
-    fn get_pseudo_header(&self, inner_packet_length: Option<u32>) -> Vec<u8> {
+    fn populate(&self, buffer: &mut [u8], inner_packet_length: Option<usize>) -> Ipv4PseudoHeader {
         let mut pseudo_header_buf: Vec<u8> = vec![0, 12];
         {
-            let mut pseudo_header = MutableIpv4PseudoHeaderPacket::new(&mut pseudo_header_buf[..]).unwrap();
+            let mut pseudo_header = MutableIpv4PseudoHeaderPacket::new(&mut buffer[..]).unwrap();
             pseudo_header.set_source(self.get_source());
             pseudo_header.set_destination(self.get_destination());
             pseudo_header.set_next_level_protocol(self.get_next_level_protocol());
@@ -88,7 +88,7 @@ impl<'p> PseudoHeader for Ipv4Packet<'p> {
             }
         }
 
-        pseudo_header_buf
+        PseudoHeaderIPv6IPv4(pseudo_header.to_immutable())
     }
 }
 
