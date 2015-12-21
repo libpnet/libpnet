@@ -33,30 +33,31 @@ pub struct Ipv6 {
 }
 
 /// Represents an IPv6 Packet pseudo header
-#[packet] pub struct Ipv6PseudoHeader {
+#[packet]
+pub struct Ipv6PseudoHeader {
     #[construct_with(u16, u16, u16, u16, u16, u16, u16, u16)]
     source: Ipv6Addr,
-    // RFC 2460:
-    // If the IPv6 packet contains a Routing header, the Destination Address used in the
-    // pseudo-header is that of the final destination. At the originating node, that address will
-    // be in the last element of the Routing header; at the recipient(s), that address will be in
-    // the Destination Address field of the IPv6 header.
+    /// RFC 2460:
+    /// If the IPv6 packet contains a Routing header, the Destination Address used in the
+    /// pseudo-header is that of the final destination. At the originating node, that address will
+    /// be in the last element of the Routing header; at the recipient(s), that address will be in
+    /// the Destination Address field of the IPv6 header.
     #[construct_with(u16, u16, u16, u16, u16, u16, u16, u16)]
     destination: Ipv6Addr,
-    // RFC 2460: 
-    // The Upper-Layer Packet Length in the pseudo-header is the length of the
-    // upper-layer header and data (e.g., TCP header plus TCP data). Some upper-layer protocols
-    // carry their own length information (e.g., the Length field in the UDP header); for such
-    // protocols, that is the length used in the pseudo- header. Other protocols (such as TCP) do
-    // not carry their own length information, in which case the length used in the pseudo-header
-    // is the Payload Length from the IPv6 header, minus the length of any extension headers
-    // present between the IPv6 header and the upper-layer header.
+    /// RFC 2460: 
+    /// The Upper-Layer Packet Length in the pseudo-header is the length of the
+    /// upper-layer header and data (e.g., TCP header plus TCP data). Some upper-layer protocols
+    /// carry their own length information (e.g., the Length field in the UDP header); for such
+    /// protocols, that is the length used in the pseudo- header. Other protocols (such as TCP) do
+    /// not carry their own length information, in which case the length used in the pseudo-header
+    /// is the Payload Length from the IPv6 header, minus the length of any extension headers
+    /// present between the IPv6 header and the upper-layer header.
     inner_packet_length: u32be,
     zeros: u24be,
-    // RFC 2460:
-    // The Next Header value in the pseudo-header identifies the upper-layer protocol (e.g., 6 for
-    // TCP, or 17 for UDP). It will differ from the Next Header value in the IPv6 header if there
-    // are extension headers between the IPv6 header and the upper-layer header.
+    /// RFC 2460:
+    /// The Next Header value in the pseudo-header identifies the upper-layer protocol (e.g., 6 for
+    /// TCP, or 17 for UDP). It will differ from the Next Header value in the IPv6 header if there
+    /// are extension headers between the IPv6 header and the upper-layer header.
     #[construct_with(u8)]
     next_level_protocol: IpNextHeaderProtocol,
     #[payload]

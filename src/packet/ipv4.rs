@@ -41,7 +41,7 @@ pub struct Ipv4 {
     payload: Vec<u8>,
 }
 
-/// Represents an IPv4 Packet
+/// Represents an IPv4 pseudo header
 ///
 /// 0          8          16          24         32
 /// +---------------------------------------------+
@@ -61,7 +61,6 @@ pub struct Ipv4PseudoHeader {
     #[construct_with(u8)]
     next_level_protocol: IpNextHeaderProtocol,
     inner_packet_length: u16be,
-    // just to avoid the compiler to complain
     #[payload]
     payload: Vec<u8>,
 }
@@ -88,6 +87,7 @@ impl<'p> PseudoHeader for Ipv4Packet<'p> {
                 );
             }
         }
+
         pseudo_header_buf
     }
 }

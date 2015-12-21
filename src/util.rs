@@ -434,6 +434,7 @@ pub fn sum_16_bit_words(data: &[u8]) -> u32 {
     if data.len() % 2 == 1 {
         sum = sum + ((data[length] as u32) << 8);
     }
+
     sum
 }
 
@@ -448,6 +449,7 @@ pub fn rfc1071_checksum(packet: &[u8], pseudo_header_packet: Option<&[u8]>) -> u
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);
     }
+
     sum as u16 ^ 0xffff
 }
 
