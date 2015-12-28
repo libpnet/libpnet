@@ -164,6 +164,7 @@ mod util;
 ///
 /// The #[packet] attribute is consumed, so we replace it with two internal attributes,
 /// #[_packet_generator], which is used to generate the packet implementations, and
+#[allow(used_underscore_binding)]
 fn packet_modifier(ecx: &mut ExtCtxt,
                    _span: Span,
                    _meta_item: &ast::MetaItem,
@@ -171,7 +172,7 @@ fn packet_modifier(ecx: &mut ExtCtxt,
     let item = item.expect_item();
     let mut new_item = (*item).clone();
 
-    new_item.attrs.push(quote_attr!(ecx, #[_packet_generator]));
+    new_item.attrs.push(quote_attr!(ecx, #[packet_generator]));
     new_item.attrs.push(quote_attr!(ecx, #[derive(Clone, Debug)]));
     new_item.attrs.push(quote_attr!(ecx, #[allow(unused_attributes)]));
 
@@ -187,6 +188,6 @@ fn packet_modifier(ecx: &mut ExtCtxt,
 pub fn plugin_registrar(registry: &mut Registry) {
     registry.register_syntax_extension(token::intern("packet"),
                                        MultiModifier(Box::new(packet_modifier)));
-    registry.register_syntax_extension(token::intern("_packet_generator"),
+    registry.register_syntax_extension(token::intern("packet_generator"),
                                        MultiDecorator(Box::new(decorator::generate_packet)));
 }
