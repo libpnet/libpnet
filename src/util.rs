@@ -419,3 +419,165 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
 
     vec
 }
+
+
+/// Perform a 16 bits words addition of an array of bytes
+pub fn sum_16_bit_words(data: &[u8]) -> u32 {
+    let mut sum = 0;
+    let length = data.len() - 1;
+    let mut i = 0;
+    while i < length {
+        let word = (data[i] as u32) << 8 | data[i + 1] as u32;
+        sum = sum + word;
+        i = i + 2;
+    }
+    if data.len() % 2 == 1 {
+        sum = sum + ((data[length] as u32) << 8);
+    }
+    sum
+}
+
+
+/// Calculates rfc1071 checksum value
+pub fn rfc1071_checksum(packet: &[u8], pseudo_header_packet: Option<&[u8]>) -> u16 {
+    let mut sum = 0;
+    if let Some(pseudo_header) = pseudo_header_packet {
+        sum = sum_16_bit_words(pseudo_header);
+    }
+    sum += sum_16_bit_words(packet);
+    while sum >> 16 != 0 {
+        sum = (sum >> 16) + (sum & 0xFFFF);
+    }
+    sum as u16 ^ 0xffff
+}
+
+#[test]
+fn checksum_even_simple() {
+    let data = vec![
+        0x03, 0x01, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78,
+        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
+    //   03 01
+    // + 00 00
+    // + 12 34
+    // + 56 78
+    // + 01 02
+    // + 03 04
+    // + 05 06
+    // + 07 08
+    //  +1 +2
+    // --------
+    //   7b c1 = 0111 1011 1100 0001
+    //
+    // => checksum is 1000 0100 0011 1110
+    //                   8    4    3    e
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x843e);
+}
+
+#[test]
+fn checksum_even_with_carry() {
+    let data = vec![
+        0x30, 0x10, 0x00, 0x00, 0x21, 0x43, 0x65, 0x87,
+        0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80];
+    //    2
+    //   30 10
+    // + 00 00
+    // + 21 43
+    // + 65 87
+    // + 10 20
+    // + 30 40
+    // + 50 60
+    // + 70 80
+    // --------
+    // 1 b8 1a => b8 1b = 1011 1000 0001 1011
+    //
+    // => checksum is 0100 0111 1110 0100
+    //                   4    7    e    4
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x47e4);
+}
+
+#[test]
+fn checksum_odd() {
+    let data = vec![
+        0x03, 0x01, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78,
+        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+        0x55];
+    //   03 01
+    // + 00 00
+    // + 12 34
+    // + 56 78
+    // + 01 02
+    // + 03 04
+    // + 05 06
+    // + 07 08
+    // + 55 00
+    //  +2 +2
+    // --------
+    //   d0 c1 = 1101 0000 1100 0001
+    //
+    // => checksum is 0010 1111 0011 1110
+    //                   2    f    3    e
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x2f3e);
+}
+
+#[test]
+fn checksum_odd_with_carry() {
+    let data = vec![
+        0x03, 0x01, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78,
+        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+        0x55, 0xff, 0xff];
+    //   03 01
+    // + 00 00
+    // + 12 34
+    // + 56 78
+    // + 01 02
+    // + 03 04
+    // + 05 06
+    // + 07 08
+    // + 55 ff
+    //   ff 00
+    // --------
+    // 1 d0 c0 => d0 c1
+    //
+    // => checksum is 0010 1111 0011 1110
+    //                   2    f    3    e
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x2f3e);
+}
+
+#[test]
+fn checksum_basics() {
+    let mut data = vec![0xff];
+    // ff (00) => 1111 1111 0000 0000
+    // => checksum is 0000 0000 1111 1111
+    //                   0    0    f    f
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x00ff);
+
+    data.push(0xff);
+    // ff ff => 1111 1111 1111 1111
+    // => checksum is 0000 0000 0000 0000
+    //                   0    0    0    0
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x0000);
+
+    data.push(0xff);
+    //   ff ff
+    // + ff (00)
+    // --------
+    // 1 fe ff => 0001 1111 1110 1111 1111
+    //         =>      1111 1111 0000 0000
+    // => checksum is 0000 0000 1111 1111
+    //                   0    0    f    f
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x00ff);
+
+    data = vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+    // 0xffff * 20 = 0x1fffe0 = 0001 1111 1111 1111 1110 0000
+    // 1111 1111 1110 0000
+    // +         0001 1111
+    // -------------------
+    // 1111 1111 1111 1111
+    //
+    // => checksum is 0000 0000 0000 1111 = 0x0000
+    assert_eq!(rfc1071_checksum(&data[..], None), 0x0000);
+}

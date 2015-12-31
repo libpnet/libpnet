@@ -8,12 +8,10 @@
 
 //! UDP packet abstraction
 
-use packet::Packet;
-use packet::ip::IpNextHeaderProtocol;
-
+use packet::{Packet, PseudoHeader};
 use pnet_macros_support::types::*;
+use util::rfc1071_checksum;
 
-use std::net::{Ipv4Addr, Ipv6Addr};
 
 /// Represents an UDP Packet
 #[packet]
@@ -26,54 +24,17 @@ pub struct Udp {
     payload: Vec<u8>,
 }
 
-/// Calculate the checksum for a packet built on IPv4
-pub fn ipv4_checksum(packet: &UdpPacket,
-                     ipv4_source: Ipv4Addr,
-                     ipv4_destination: Ipv4Addr,
-                     next_level_protocol: IpNextHeaderProtocol)
-    -> u16be {
-    let IpNextHeaderProtocol(next_level_protocol) = next_level_protocol;
-    let mut sum = 0u32;
-
-    // Checksum pseudo-header
-    // IPv4 source
-    let octets = ipv4_source.octets();
-    sum += (octets[0] as u32) << 8 | octets[1] as u32;
-    sum += (octets[2] as u32) << 8 | octets[3] as u32;
-
-    // IPv4 destination
-    let octets = ipv4_destination.octets();
-    sum += (octets[0] as u32) << 8 | octets[1] as u32;
-    sum += (octets[2] as u32) << 8 | octets[3] as u32;
-
-    // IPv4 Next level protocol
-    sum += next_level_protocol as u32;
-
-    // UDP Length
-    sum += (packet.packet()[4] as u32) << 8 | packet.packet()[5] as u32;
-
-    // Checksum UDP header/packet
-    let mut i = 0;
-    let len = packet.get_length() as usize;
-    while i < len && i + 1 < packet.packet().len() {
-        sum += (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        i += 2;
-    }
-    // If the length is odd, make sure to checksum the final byte
-    if len & 1 != 0 && len <= packet.packet().len() {
-        sum += (packet.packet()[len - 1] as u32) << 8;
-    }
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
-
-    !sum as u16
+fn checksum<T: PseudoHeader>(udp_packet: &UdpPacket, ip_packet: &T) -> u16 {
+    let pseudo_header = ip_packet.get_pseudo_header(Some(udp_packet.get_length() as u32));
+    rfc1071_checksum(udp_packet.packet(), Some(&pseudo_header[..]))
 }
 
 #[test]
 fn udp_header_ipv4_test() {
+    // use pnet::packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
     use pnet::packet::ip::IpNextHeaderProtocols;
-    use pnet::packet::ipv4::MutableIpv4Packet;
+    use pnet::packet::ipv4::{Ipv4Packet, MutableIpv4Packet};
+    use std::net::Ipv4Addr;
 
     let mut packet = [0u8; 20 + 8 + 4];
     let ipv4_source = Ipv4Addr::new(192, 168, 0, 1);
@@ -93,7 +54,8 @@ fn udp_header_ipv4_test() {
     packet[20 + 8 + 3] = 't' as u8;
 
     {
-        let mut udp_header = MutableUdpPacket::new(&mut packet[20..]).unwrap();
+        let (raw_ip_header, raw_udp_packet) = packet.split_at_mut(20);
+        let mut udp_header = MutableUdpPacket::new(&mut raw_udp_packet[..]).unwrap();
         udp_header.set_source(12345);
         assert_eq!(udp_header.get_source(), 12345);
 
@@ -103,11 +65,10 @@ fn udp_header_ipv4_test() {
         udp_header.set_length(8 + 4);
         assert_eq!(udp_header.get_length(), 8 + 4);
 
-        let checksum = ipv4_checksum(&udp_header.to_immutable(),
-                                     ipv4_source,
-                                     ipv4_destination,
-                                     next_level_protocol);
-        udp_header.set_checksum(checksum);
+        let ip_header = Ipv4Packet::new(&raw_ip_header[..]).unwrap();
+        let csum = checksum(&udp_header.to_immutable(), &ip_header);
+        udp_header.set_checksum(csum);
+
         assert_eq!(udp_header.get_checksum(), 0x9178);
     }
 
@@ -118,68 +79,11 @@ fn udp_header_ipv4_test() {
     assert_eq!(&ref_packet[..], &packet[20..28]);
 }
 
-
-/// Calculate the checksum for a packet built on IPv6
-pub fn ipv6_checksum(packet: &UdpPacket,
-                     ipv6_source: Ipv6Addr,
-                     ipv6_destination: Ipv6Addr,
-                     next_header: IpNextHeaderProtocol)
-    -> u16be {
-    let IpNextHeaderProtocol(next_header) = next_header;
-    let mut sum = 0u32;
-
-    // Checksum pseudo-header
-    // IPv6 source
-    let segments = ipv6_source.segments();
-    sum += segments[0] as u32;
-    sum += segments[1] as u32;
-    sum += segments[2] as u32;
-    sum += segments[3] as u32;
-    sum += segments[4] as u32;
-    sum += segments[5] as u32;
-    sum += segments[6] as u32;
-    sum += segments[7] as u32;
-
-    // IPv6 destination
-    let segments = ipv6_destination.segments();
-    sum += segments[0] as u32;
-    sum += segments[1] as u32;
-    sum += segments[2] as u32;
-    sum += segments[3] as u32;
-    sum += segments[4] as u32;
-    sum += segments[5] as u32;
-    sum += segments[6] as u32;
-    sum += segments[7] as u32;
-
-    // IPv6 Next header
-    sum += next_header as u32;
-
-    // UDP Length
-    sum += packet.get_length() as u32;
-
-    // Checksum UDP header/packet
-    let mut i = 0;
-    let len = packet.get_length() as usize;
-    while i < len && i + 1 < packet.packet().len() {
-        sum += (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        i += 2;
-    }
-    // If the length is odd, make sure to checksum the final byte
-    if len & 1 != 0 && len <= packet.packet().len() {
-        sum += (packet.packet()[len - 1] as u32) << 8;
-    }
-
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
-
-    !sum as u16
-}
-
 #[test]
 fn udp_header_ipv6_test() {
     use packet::ip::IpNextHeaderProtocols;
-    use packet::ipv6::MutableIpv6Packet;
+    use packet::ipv6::{Ipv6Packet, MutableIpv6Packet};
+    use std::net::Ipv6Addr;
 
     let mut packet = [0u8; 40 + 8 + 4];
     let next_header = IpNextHeaderProtocols::Udp;
@@ -199,7 +103,8 @@ fn udp_header_ipv6_test() {
     packet[40 + 8 + 3] = 't' as u8;
 
     {
-        let mut udp_header = MutableUdpPacket::new(&mut packet[40..]).unwrap();
+        let (raw_ip_header, raw_udp_packet) = packet.split_at_mut(40);
+        let mut udp_header = MutableUdpPacket::new(&mut raw_udp_packet[..]).unwrap();
         udp_header.set_source(12345);
         assert_eq!(udp_header.get_source(), 12345);
 
@@ -209,11 +114,9 @@ fn udp_header_ipv6_test() {
         udp_header.set_length(8 + 4);
         assert_eq!(udp_header.get_length(), 8 + 4);
 
-        let checksum = ipv6_checksum(&udp_header.to_immutable(),
-                                     ipv6_source,
-                                     ipv6_destination,
-                                     next_header);
-        udp_header.set_checksum(checksum);
+        let ip_header = Ipv6Packet::new(&raw_ip_header[..]).unwrap();
+        let csum = checksum(&udp_header.to_immutable(), &ip_header);
+        udp_header.set_checksum(csum);
         assert_eq!(udp_header.get_checksum(), 0x1390);
     }
 

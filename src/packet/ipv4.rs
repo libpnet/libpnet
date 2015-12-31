@@ -9,10 +9,12 @@
 //! IPv4 packet abstraction
 
 use packet::ip::IpNextHeaderProtocol;
-
+use packet::{Packet, PseudoHeader, PrimitiveValues};
+use util::rfc1071_checksum;
 use pnet_macros_support::types::*;
 
 use std::net::Ipv4Addr;
+
 
 /// Represents an IPv4 Packet
 #[packet]
@@ -39,27 +41,65 @@ pub struct Ipv4 {
     payload: Vec<u8>,
 }
 
-/// Calculates the checksum of an IPv4 packet
-pub fn checksum(packet: &Ipv4Packet) -> u16be {
-    use packet::Packet;
+/// Represents an IPv4 Packet
+///
+/// 0          8          16          24         32
+/// +---------------------------------------------+
+/// |                  source_ip                  |
+/// +----------------------+----------------------+
+/// |                destination_ip               |
+/// +-----------+----------+----------------------+
+/// |   zeros   | protocol | tcp/udp length       |
+/// +-----------+---------------------------------+
+#[packet]
+pub struct Ipv4PseudoHeader {
+    #[construct_with(u8, u8, u8, u8)]
+    source: Ipv4Addr,
+    #[construct_with(u8, u8, u8, u8)]
+    destination: Ipv4Addr,
+    zeros: u8,
+    #[construct_with(u8)]
+    next_level_protocol: IpNextHeaderProtocol,
+    inner_packet_length: u16be,
+    // just to avoid the compiler to complain
+    #[payload]
+    payload: Vec<u8>,
+}
 
-    let len = packet.get_header_length() as usize * 4;
-    let mut sum = 0u32;
-    let mut i = 0;
-    while i < len {
-        let word = (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        sum = sum + word;
-        i = i + 2;
-    }
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
+impl<'p> PseudoHeader for Ipv4Packet<'p> {
 
-    !sum as u16
+    /// Return a PseudoHeader packet out of the packet header.
+    ///
+    /// The `inner_packet_length` is optional, since in case of UDP, it is taken from the length
+    /// field of the UDP header, whereas for TCP, it is computed from the header length.
+    fn get_pseudo_header(&self, inner_packet_length: Option<u32>) -> Vec<u8> {
+        let mut pseudo_header_buf: Vec<u8> = vec![0, 12];
+        {
+            let mut pseudo_header = MutableIpv4PseudoHeaderPacket::new(&mut pseudo_header_buf[..]).unwrap();
+            pseudo_header.set_source(self.get_source());
+            pseudo_header.set_destination(self.get_destination());
+            pseudo_header.set_next_level_protocol(self.get_next_level_protocol());
+            if let Some(inner_packet_length) = inner_packet_length {
+                pseudo_header.set_inner_packet_length(inner_packet_length as u16);
+            } else {
+                pseudo_header.set_inner_packet_length(
+                    // FIXME: is u16 legit for payload length?
+                    self.payload().len() as u16 - (4 as u16 * self.get_header_length() as u16)
+                );
+            }
+        }
+        pseudo_header_buf
+    }
 }
 
 fn ipv4_options_length(ipv4: &Ipv4Packet) -> usize {
     ipv4.get_header_length() as usize - 5
+}
+
+/// Calculates the checksum of an IPv4 packet
+pub fn checksum(packet: &Ipv4Packet) -> u16be {
+    use packet::Packet;
+    rfc1071_checksum(packet.packet(), None)
 }
 
 #[test]
