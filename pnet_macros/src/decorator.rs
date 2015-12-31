@@ -127,8 +127,9 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                     seen.push(s.to_owned());
                     if &s[..] == "payload" {
                         if payload_span.is_some() {
-                            ecx.span_err(field.span, "packet may not have multiple payloads");
-                            ecx.span_note(payload_span.unwrap(), "first payload defined here");
+                            ecx.struct_span_err(field.span, "packet may not have multiple payloads")
+                                .span_note(payload_span.unwrap(), "first payload defined here")
+                                .emit();
                             return None;
                         }
                         is_payload = true;
