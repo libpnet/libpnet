@@ -1,0 +1,19 @@
+[package]
+
+name = "pnet_macros_plugin"
+version = "0.1.0"
+authors = ["Robert Clipsham <robert@octarineparrot.com>"]
+license = "MIT/Apache-2.0"
+homepage = "https://github.com/libpnet/libpnet"
+repository = "https://github.com/libpnet/libpnet"
+documentation = "http://octarineparrot.com/assets/libpnet/doc/pnet/"
+description = "Automatic bit manipulation for binary data formats"
+readme = "../README.md"
+keywords = ["networking", "bitfields", "packet", "protocol", "plugin"]
+
+[lib]
+plugin = true
+
+[dependencies.pnet_macros]
+version = ">=0.7.0"
+path = "../pnet_macros"

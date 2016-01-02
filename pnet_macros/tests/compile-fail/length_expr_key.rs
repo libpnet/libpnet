@@ -9,7 +9,7 @@
 // error-pattern: error: Field name must be a member of the struct and not the field itself
 
 #![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros)]
+#![plugin(pnet_macros_plugin)]
 
 extern crate pnet;
 
