@@ -10,9 +10,116 @@
 
 use packet::ip::IpNextHeaderProtocol;
 
+use packet::PrimitiveValues;
+
 use pnet_macros_support::types::*;
 
 use std::net::Ipv4Addr;
+
+/// IPv4 header options numbers as defined in
+/// http://www.iana.org/assignments/ip-parameters/ip-parameters.xhtml
+#[allow(non_snake_case)]
+#[allow(non_upper_case_globals)]
+pub mod Ipv4OptionNumbers {
+    use super::Ipv4OptionNumber;
+
+    /// End of Options List
+    pub const EOL: Ipv4OptionNumber = Ipv4OptionNumber(0);
+
+    /// No Operation
+    pub const NOP: Ipv4OptionNumber = Ipv4OptionNumber(1);
+
+    /// Security
+    pub const SEC: Ipv4OptionNumber = Ipv4OptionNumber(2);
+
+    /// Loose Source Route
+    pub const LSR: Ipv4OptionNumber = Ipv4OptionNumber(3);
+
+    /// Time Stamp
+    pub const TS: Ipv4OptionNumber = Ipv4OptionNumber(4);
+
+    /// Extended Security
+    pub const ESEC: Ipv4OptionNumber = Ipv4OptionNumber(5);
+
+    /// Commercial Security
+    pub const CIPSO: Ipv4OptionNumber = Ipv4OptionNumber(6);
+
+    /// Record Route
+    pub const RR: Ipv4OptionNumber = Ipv4OptionNumber(7);
+
+    /// Stream ID
+    pub const SID: Ipv4OptionNumber = Ipv4OptionNumber(8);
+
+    /// Strict Source Route
+    pub const SSR: Ipv4OptionNumber = Ipv4OptionNumber(9);
+
+    /// Experimental Measurement
+    pub const ZSU: Ipv4OptionNumber = Ipv4OptionNumber(10);
+
+    /// MTU Probe
+    pub const MTUP: Ipv4OptionNumber = Ipv4OptionNumber(11);
+
+    /// MTU Reply
+    pub const MTUR: Ipv4OptionNumber = Ipv4OptionNumber(12);
+
+    /// Experimental Flow Control
+    pub const FINN: Ipv4OptionNumber = Ipv4OptionNumber(13);
+
+    /// Experimental Access Control
+    pub const VISA: Ipv4OptionNumber = Ipv4OptionNumber(14);
+
+    /// ENCODE
+    pub const ENCODE: Ipv4OptionNumber = Ipv4OptionNumber(15);
+
+    /// IMI Traffic Descriptor
+    pub const IMITD: Ipv4OptionNumber = Ipv4OptionNumber(16);
+
+    /// Extended Internet Protocol
+    pub const EIP: Ipv4OptionNumber = Ipv4OptionNumber(17);
+
+    /// Traceroute
+    pub const TR: Ipv4OptionNumber = Ipv4OptionNumber(18);
+
+    /// Address Extension
+    pub const ADDEXT: Ipv4OptionNumber = Ipv4OptionNumber(19);
+
+    /// Router Alert
+    pub const RTRALT: Ipv4OptionNumber = Ipv4OptionNumber(20);
+
+    /// Selective Directed Broadcast
+    pub const SDB: Ipv4OptionNumber = Ipv4OptionNumber(21);
+
+    /// Dynamic Packet State
+    pub const DPS: Ipv4OptionNumber = Ipv4OptionNumber(23);
+
+    /// Upstream Multicast Pkt.
+    pub const UMP: Ipv4OptionNumber = Ipv4OptionNumber(24);
+
+    /// Quick-Start
+    pub const QS: Ipv4OptionNumber = Ipv4OptionNumber(25);
+
+    /// RFC3692-style Experiment
+    pub const EXP: Ipv4OptionNumber = Ipv4OptionNumber(30);
+}
+
+/// Represents an IPv4 option 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Ipv4OptionNumber(pub u8);
+
+impl Ipv4OptionNumber {
+    /// Create a new Ipv4OptionNumber
+    pub fn new(value: u8) -> Ipv4OptionNumber {
+        println!("{:?}", Ipv4OptionNumbers::EOL);
+        Ipv4OptionNumber(value)
+    }
+}
+
+impl PrimitiveValues for Ipv4OptionNumber {
+    type T = (u8,);
+    fn to_primitive_values(&self) -> (u8,) {
+        (self.0,)
+    }
+}
 
 /// Represents an IPv4 Packet
 #[packet]
@@ -59,7 +166,10 @@ pub fn checksum(packet: &Ipv4Packet) -> u16be {
 }
 
 fn ipv4_options_length(ipv4: &Ipv4Packet) -> usize {
-    ipv4.get_header_length() as usize - 5
+    // the header_length unit is the "word"
+    // - and a word is made of 4 bytes,
+    // - and the header length (without the options) is 5 words long
+    ipv4.get_header_length() as usize * 4 - 20
 }
 
 #[test]
@@ -75,10 +185,33 @@ fn ipv4_options_length_test() {
 pub struct Ipv4Option {
     copied: u1,
     class: u2,
-    number: u5,
-    length: u8,
+    #[construct_with(u5)]
+    number: Ipv4OptionNumber,
+    #[length_fn = "ipv4_option_length"]
+    // The length field is an optional field, using a Vec is a way to implement
+    // it
+    length: Vec<u8>,
+    #[length_fn = "ipv4_option_payload_length"]
     #[payload]
     data: Vec<u8>,
+}
+
+/// This function gets the 'length' of the length field of the IPv4Option packet
+/// Few options (EOL, NOP) are 1 bytes long, and then have a length field equal
+/// to 0
+fn ipv4_option_length(option: &Ipv4OptionPacket) -> usize {
+    match option.get_number() {
+        Ipv4OptionNumbers::EOL => 0,
+        Ipv4OptionNumbers::NOP => 0,
+        _ => 1,
+    }
+}
+
+fn ipv4_option_payload_length(ipv4_option: &Ipv4OptionPacket) -> usize {
+    match ipv4_option.get_length().first() {
+        Some(len) => *len as usize - 2,
+        None => 0,
+    }
 }
 
 #[test]
@@ -128,6 +261,7 @@ fn ipv4_packet_test() {
         let imm_header = checksum(&ip_header.to_immutable());
         ip_header.set_checksum(imm_header);
         assert_eq!(ip_header.get_checksum(), 0xb64e);
+
     }
 
     let ref_packet = [0x45,           /* ver/ihl */
@@ -140,6 +274,35 @@ fn ipv4_packet_test() {
                       0xb6, 0x4e,     /* checksum */
                       0xc0, 0xa8, 0x00, 0x01, /* source ip */
                       0xc0, 0xa8, 0x00, 0xc7  /* dest ip */];
+
+    assert_eq!(&ref_packet[..], &packet[..]);
+}
+
+#[test]
+fn ipv4_packet_option_test() {
+
+    let mut packet = [0u8; 3];
+    {
+        let mut ipv4_options = MutableIpv4OptionPacket::new(&mut packet[..]).unwrap();
+
+        ipv4_options.set_copied(1);
+        assert_eq!(ipv4_options.get_copied(), 1);
+
+        ipv4_options.set_class(0);
+        assert_eq!(ipv4_options.get_class(), 0);
+
+        ipv4_options.set_number(Ipv4OptionNumber(3));
+        assert_eq!(ipv4_options.get_number(), Ipv4OptionNumbers::LSR);
+
+        ipv4_options.set_length(vec![3]);
+        assert_eq!(ipv4_options.get_length(), vec![3]);
+
+        ipv4_options.set_data(vec![16]);
+    }
+
+    let ref_packet = [0x83,           /* copy / class / number */
+                      0x03,           /* length */
+                      0x10,           /* data */];
 
     assert_eq!(&ref_packet[..], &packet[..]);
 }
