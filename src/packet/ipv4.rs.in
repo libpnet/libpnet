@@ -107,7 +107,6 @@ pub struct Ipv4OptionNumber(pub u8);
 impl Ipv4OptionNumber {
     /// Create a new Ipv4OptionNumber
     pub fn new(value: u8) -> Ipv4OptionNumber {
-        println!("{:?}", Ipv4OptionNumbers::EOL);
         Ipv4OptionNumber(value)
     }
 }
