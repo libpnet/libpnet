@@ -87,17 +87,10 @@ fn make_type(ty_str: String, endianness_important: bool) -> Result<Type, String>
     }
 }
 
-#[cfg(not(feature = "with-syntex"))]
 fn multiple_payload_error(ecx: &mut ExtCtxt, field_span: Span, payload_span: Span) {
     ecx.struct_span_err(field_span, "packet may not have multiple payloads")
         .span_note(payload_span, "first payload defined here")
         .emit();
-}
-
-#[cfg(feature = "with-syntex")]
-fn multiple_payload_error(ecx: &mut ExtCtxt, field_span: Span, payload_span: Span) {
-    ecx.span_err(field_span, "packet may not have multiple payloads");
-    ecx.span_note(payload_span, "first payload defined here");
 }
 
 fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantData) -> Option<Packet> {
