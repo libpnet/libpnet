@@ -87,6 +87,19 @@ fn make_type(ty_str: String, endianness_important: bool) -> Result<Type, String>
     }
 }
 
+#[cfg(not(feature = "with-syntex"))]
+fn multiple_payload_error(ecx: &mut ExtCtxt, field_span: Span, payload_span: Span) {
+    ecx.struct_span_err(field_span, "packet may not have multiple payloads")
+        .span_note(payload_span, "first payload defined here")
+        .emit();
+}
+
+#[cfg(feature = "with-syntex")]
+fn multiple_payload_error(ecx: &mut ExtCtxt, field_span: Span, payload_span: Span) {
+    ecx.span_err(field_span, "packet may not have multiple payloads");
+    ecx.span_note(payload_span, "first payload defined here");
+}
+
 fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantData) -> Option<Packet> {
     let mut payload_span = None;
     let mut fields = Vec::new();
@@ -127,8 +140,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                     seen.push(s.to_owned());
                     if &s[..] == "payload" {
                         if payload_span.is_some() {
-                            ecx.span_err(field.span, "packet may not have multiple payloads");
-                            ecx.span_note(payload_span.unwrap(), "first payload defined here");
+                            multiple_payload_error(ecx, field.span, payload_span.unwrap());
                             return None;
                         }
                         is_payload = true;
@@ -475,6 +487,7 @@ fn handle_misc_field(cx: &mut GenContext,
                     /// Set the value of the {name} field
                     #[inline]
                     #[allow(trivial_numeric_casts)]
+                    #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                     pub fn set_{name}(&mut self, val: {ty_str}) {{
                         use pnet::packet::PrimitiveValues;
                         let _self = self;
@@ -501,6 +514,7 @@ fn handle_misc_field(cx: &mut GenContext,
                         /// Get the value of the {name} field
                         #[inline]
                         #[allow(trivial_numeric_casts)]
+                        #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                         pub fn get_{name}(&self) -> {ty_str} {{
                             {ctor}
                         }}
@@ -521,6 +535,7 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                     /// Get the value of the {name} field (copies contents)
                                     #[inline]
                                     #[allow(trivial_numeric_casts)]
+                                    #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                     pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
                                         let _self = self;
                                         let current_offset = {co};
@@ -549,6 +564,7 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                 /// Set the value of the {name} field (copies contents)
                                 #[inline]
                                 #[allow(trivial_numeric_casts)]
+                                #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn set_{name}(&mut self, vals: Vec<{inner_ty_str}>) {{
                                     use std::ptr::copy_nonoverlapping;
                                     let mut _self = self;
@@ -593,12 +609,13 @@ fn handle_vector_field(cx: &mut GenContext,
                                 /// Get the raw &[u8] value of the {name} field, without copying
                                 #[inline]
                                 #[allow(trivial_numeric_casts)]
+                                #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}_raw(&self) -> &[u8] {{
                                     let _self = self;
                                     let current_offset = {co};
-                                    let len = {packet_length};
+                                    let end = current_offset + {packet_length};
 
-                                    &_self.packet[current_offset..len]
+                                    &_self.packet[current_offset..end]
                                 }}
                                 ",
                                 accessors = accessors,
@@ -609,12 +626,13 @@ fn handle_vector_field(cx: &mut GenContext,
                                 /// Get the raw &mut [u8] value of the {name} field, without copying
                                 #[inline]
                                 #[allow(trivial_numeric_casts)]
+                                #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}_raw_mut(&mut self) -> &mut [u8] {{
                                     let _self = self;
                                     let current_offset = {co};
-                                    let len = {packet_length};
+                                    let end = current_offset + {packet_length};
 
-                                    &mut _self.packet[current_offset..len]
+                                    &mut _self.packet[current_offset..end]
                                 }}
                                 ",
                                 mutators = mutators,
@@ -635,14 +653,15 @@ fn handle_vector_field(cx: &mut GenContext,
                                 /// Get the value of the {name} field (copies contents)
                                 #[inline]
                                 #[allow(trivial_numeric_casts)]
+                                #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
                                     use pnet::packet::FromPacket;
                                     let _self = self;
                                     let current_offset = {co};
-                                    let len = {packet_length};
+                                    let end = current_offset + {packet_length};
 
                                     {inner_ty_str}Iterable {{
-                                        buf: &_self.packet[current_offset..len]
+                                        buf: &_self.packet[current_offset..end]
                                     }}.map(|packet| packet.from_packet())
                                       .collect::<Vec<_>>()
                                 }}
@@ -656,16 +675,17 @@ fn handle_vector_field(cx: &mut GenContext,
                                 /// Set the value of the {name} field (copies contents)
                                 #[inline]
                                 #[allow(trivial_numeric_casts)]
+                                #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn set_{name}(&mut self, vals: Vec<{inner_ty_str}>) {{
                                     use pnet::packet::PacketSize;
                                     let _self = self;
                                     let mut current_offset = {co};
-                                    let len = {packet_length};
+                                    let end = current_offset + {packet_length};
                                     for val in vals.into_iter() {{
                                         let mut packet = Mutable{inner_ty_str}Packet::new(&mut _self.packet[current_offset..]).unwrap();
                                         packet.populate(val);
                                         current_offset += packet.packet_size();
-                                        assert!(current_offset <= len);
+                                        assert!(current_offset <= end);
                                     }}
                                 }}
                                 ",
@@ -758,6 +778,7 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
         let imm_name = packet.packet_name();
         format!("/// Populates a {name}Packet using a {name} structure
              #[inline]
+             #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
              pub fn populate(&mut self, packet: {name}) {{
                  let _self = self;
                  {set_fields}
@@ -846,6 +867,7 @@ fn generate_packet_size_impls(cx: &mut GenContext, packet: &Packet, size: &str) 
     for name in &[packet.packet_name(), packet.packet_name_mut()] {
         cx.push_item_from_string(format!("
             impl<'a> ::pnet::packet::PacketSize for {name}<'a> {{
+                #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                 fn packet_size(&self) -> usize {{
                     let _self = self;
                     {size}
@@ -877,6 +899,7 @@ fn generate_packet_trait_impls(cx: &mut GenContext, packet: &Packet, payload_bou
             fn packet{u_mut}<'p>(&'p {mut_} self) -> &'p {mut_} [u8] {{ &{mut_} self.packet[..] }}
 
             #[inline]
+            #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
             fn payload{u_mut}<'p>(&'p {mut_} self) -> &'p {mut_} [u8] {{
                 let _self = self;
                 {pre}
@@ -959,6 +982,7 @@ fn generate_debug_impls(cx: &mut GenContext, packet: &Packet) {
     for packet in &[packet.packet_name(), packet.packet_name_mut()] {
         cx.push_item_from_string(format!("
         impl<'p> ::std::fmt::Debug for {packet}<'p> {{
+            #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
             fn fmt(&self, fmt: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {{
                 let _self = self;
                 write!(fmt,
@@ -1045,6 +1069,7 @@ fn generate_mutator_str(name: &str,
     let mutator = if let Some(struct_name) = inner {
         format!("#[inline]
     #[allow(trivial_numeric_casts)]
+    #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
     fn set_{name}(_self: &mut {struct_name}, val: {ty}) {{
         let co = {co};
         {operations}
@@ -1053,6 +1078,7 @@ fn generate_mutator_str(name: &str,
         format!("/// Set the {name} field
     #[inline]
     #[allow(trivial_numeric_casts)]
+    #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
     pub fn set_{name}(&mut self, val: {ty}) {{
         let _self = self;
         let co = {co};
@@ -1101,6 +1127,7 @@ fn generate_accessor_str(name: &str,
     let accessor = if let Some(struct_name) = inner {
         format!("#[inline]
         #[allow(trivial_numeric_casts)]
+        #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
         fn get_{name}(_self: &{struct_name}) -> {ty} {{
             let co = {co};
             {operations}
@@ -1109,6 +1136,7 @@ fn generate_accessor_str(name: &str,
         format!("/// Get the {name} field
         #[inline]
         #[allow(trivial_numeric_casts)]
+        #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
         pub fn get_{name}(&self) -> {ty} {{
             let _self = self;
             let co = {co};

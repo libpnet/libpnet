@@ -86,10 +86,8 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         return Err(io::Error::last_os_error());
     }
     let mut iface: bpf::ifreq = unsafe { mem::zeroed() };
-    let mut i = 0;
-    for c in network_interface.name.bytes() {
+    for (i, c) in network_interface.name.bytes().enumerate() {
         iface.ifr_name[i] = c as i8;
-        i += 1;
     }
 
     let buflen = read_buffer_size as libc::c_uint;

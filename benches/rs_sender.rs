@@ -6,9 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-// FIXME Remove before 1.0
-#![feature(str_char)]
-
 extern crate pnet;
 
 use pnet::datalink::datalink_channel;
@@ -66,11 +63,12 @@ pub fn build_udp4_packet(packet: &mut [u8], msg: &str) {
 
     {
         let data = udp_header.payload_mut();
-        data[0] = msg.char_at(0) as u8;
-        data[1] = msg.char_at(1) as u8;
-        data[2] = msg.char_at(2) as u8;
-        data[3] = msg.char_at(3) as u8;
-        data[4] = msg.char_at(4) as u8;
+        let msg = msg.as_bytes();
+        data[0] = msg[0];
+        data[1] = msg[1];
+        data[2] = msg[2];
+        data[3] = msg[3];
+        data[4] = msg[4];
     }
 
     let checksum = udp::ipv4_checksum(&udp_header.to_immutable(),

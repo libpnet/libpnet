@@ -7,7 +7,6 @@
 // except according to those terms.
 
 #![allow(bad_style)]
-#![unstable]
 
 extern crate netmap_sys;
 extern crate libc;
@@ -59,6 +58,9 @@ struct NmDesc {
     buf_size: libc::c_uint,
 }
 
+unsafe impl Send for NmDesc {}
+unsafe impl Sync for NmDesc {}
+
 impl NmDesc {
     fn new(iface: &NetworkInterface) -> io::Result<NmDesc> {
         let ifname = CString::new(("netmap:".to_string() + &iface.name[..]).as_bytes());
@@ -93,7 +95,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
                         _write_buffer_size: usize,
                         _read_buffer_size: usize,
                         _channel_type: DataLinkChannelType)
-    -> io::Result<(Box<DataLinkSenderImpl>, Box<DataLinkReceiverImpl>)> {
+    -> io::Result<(Box<DataLinkSender>, Box<DataLinkReceiver>)> {
     // FIXME probably want one for each of send/recv
     let desc = NmDesc::new(network_interface);
     match desc {
@@ -118,8 +120,7 @@ impl DataLinkSender for DataLinkSenderImpl {
                       packet_size: usize,
                       func: &mut FnMut(MutableEthernetPacket))
         -> Option<io::Result<()>> {
-        assert!(num::cast::<usize, u16>(packet_size).unwrap() as libc::c_uint <=
-                self.desc.buf_size);
+        assert!(packet_size <= self.desc.buf_size as usize);
         let desc = self.desc.desc;
         let mut fds = pollfd {
             fd: unsafe { NETMAP_FD(desc) },
@@ -141,7 +142,7 @@ impl DataLinkSender for DataLinkSenderImpl {
                         data: buf,
                         len: packet_size,
                     };
-                    let meh = MutableEthernetPacket::new(mem::transmute(slice));
+                    let meh = MutableEthernetPacket::new(mem::transmute(slice)).unwrap();
                     (*slot_ptr.offset(i as isize)).len = packet_size as u16;
                     func(meh);
                     let next = nm_ring_next(ring, i);
@@ -205,6 +206,6 @@ impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
                 data: buf,
                 len: h.len as usize,
             })
-        }))
+        }).unwrap())
     }
 }

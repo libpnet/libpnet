@@ -10,7 +10,7 @@
 // ignored as this error message isn't implemented yet
 
 #![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros)]
+#![plugin(pnet_macros_plugin)]
 
 extern crate pnet;
 

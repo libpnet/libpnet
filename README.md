@@ -70,13 +70,13 @@ To use `libpnet` in your project, add the following to your Cargo.toml:
 
 ```
 [dependencies.pnet]
-version = "0.6.0"
+version = "0.7.1"
 ```
 
 When developing, use the provided Makefile, which does weird things to make the
 tests work properly. Note that root/administrator access is usually required for libpnet.
 
-You must use the *nightly* channel of Rust to use `libpnet`.
+You need to use either the *beta* or *nightly* channels of Rust to use `libpnet`.
 
 ### Windows
 
