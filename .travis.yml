@@ -1,5 +1,10 @@
 language: rust
+cache:
+    directories:
+        - $HOME/.cargo
 rust:
+    - 1.6.0
+    - stable
     - beta
     - nightly
 os:
@@ -15,8 +20,16 @@ env:
     - PNET_FEATURES="travis nightly" PNET_MACROS_FEATURES="travis"
 matrix:
   allow_failures:
-    - env: PNET_FEATURES="travis nightly clippy" PNET_MACROS_FEATURES="travis clippy"
+    - rust: nightly
   exclude:
+    - rust: 1.6.0
+      env: PNET_FEATURES="travis nightly clippy" PNET_MACROS_FEATURES="travis clippy"
+    - rust: 1.6.0
+      env: PNET_FEATURES="travis nightly" PNET_MACROS_FEATURES="travis"
+    - rust: stable
+      env: PNET_FEATURES="travis nightly clippy" PNET_MACROS_FEATURES="travis clippy"
+    - rust: stable
+      env: PNET_FEATURES="travis nightly" PNET_MACROS_FEATURES="travis"
     - rust: beta
       env: PNET_FEATURES="travis nightly clippy" PNET_MACROS_FEATURES="travis clippy"
     - rust: beta
