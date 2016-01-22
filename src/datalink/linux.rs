@@ -132,12 +132,11 @@ impl DataLinkSender for DataLinkSenderImpl {
                 let send_addr =
                     (&self.send_addr as *const libc::sockaddr_ll) as *const libc::sockaddr;
 
-                match internal::send_to(self.socket.fd,
-                                        chunk,
-                                        send_addr,
-                                        self.send_addr_len as libc::socklen_t) {
-                    Err(e) => return Some(Err(e)),
-                    Ok(_) => (),
+                if let Err(e) =  internal::send_to(self.socket.fd,
+                                                   chunk,
+                                                   send_addr,
+                                                   self.send_addr_len as libc::socklen_t) {
+                    return Some(Err(e));
                 }
             }
 

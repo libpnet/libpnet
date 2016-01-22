@@ -13,7 +13,7 @@ use std::rc::Rc;
 
 use syntax::ast;
 use syntax::ast::Delimited;
-use syntax::ast::TokenTree::{self, Delimited, Sequence, Token};
+use syntax::ast::TokenTree::{self, Sequence, Token};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;
@@ -367,7 +367,7 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &[TokenTree], field_names: &[String
             Token(span, _) => {
                 ecx.span_err(span, error_msg);
             },
-            Delimited(span, ref delimited) => {
+            TokenTree::Delimited(span, ref delimited) => {
                 let tts = parse_length_expr(ecx, &delimited.tts, &field_names);
                 let tt_delimited = Delimited {
                     delim: delimited.delim,
@@ -375,7 +375,7 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &[TokenTree], field_names: &[String
                     tts: tts,
                     close_span: delimited.close_span
                 };
-                acc_packet.push(Delimited(span, Rc::new(tt_delimited)));
+                acc_packet.push(TokenTree::Delimited(span, Rc::new(tt_delimited)));
             },
             Sequence(span, _) => {
                 ecx.span_err(span, error_msg);
