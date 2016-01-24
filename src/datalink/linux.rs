@@ -1,4 +1,4 @@
-// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014-2016 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -15,7 +15,8 @@ use std::mem;
 use std::sync::Arc;
 
 use bindings::linux;
-use datalink::{DataLinkChannelIterator, DataLinkChannelType, DataLinkReceiver, DataLinkSender};
+use datalink::{EthernetDataLinkChannelIterator, DataLinkChannelType, EthernetDataLinkReceiver,
+               EthernetDataLinkSender};
 use datalink::DataLinkChannelType::{Layer2, Layer3};
 use internal;
 use packet::Packet;
@@ -44,7 +45,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
                         write_buffer_size: usize,
                         read_buffer_size: usize,
                         channel_type: DataLinkChannelType)
-    -> io::Result<(Box<DataLinkSender>, Box<DataLinkReceiver>)> {
+    -> io::Result<(Box<EthernetDataLinkSender>, Box<EthernetDataLinkReceiver>)> {
     let eth_p_all = 0x0003;
     let (typ, proto) = match channel_type {
         Layer2 => (libc::SOCK_RAW, eth_p_all),
@@ -112,7 +113,7 @@ pub struct DataLinkSenderImpl {
     send_addr_len: usize,
 }
 
-impl DataLinkSender for DataLinkSenderImpl {
+impl EthernetDataLinkSender for DataLinkSenderImpl {
     // FIXME Layer 3
     #[inline]
     fn build_and_send(&mut self,
@@ -167,9 +168,9 @@ pub struct DataLinkReceiverImpl {
     _channel_type: DataLinkChannelType,
 }
 
-impl DataLinkReceiver for DataLinkReceiverImpl {
+impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
     // FIXME Layer 3
-    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
+    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a> {
         Box::new(DataLinkChannelIteratorImpl { pc: self })
     }
 }
@@ -178,7 +179,7 @@ pub struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
 }
 
-impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
     fn next(&mut self) -> io::Result<EthernetPacket> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
         let res = internal::recv_from(self.pc.socket.fd, &mut self.pc.read_buffer, &mut caddr);
