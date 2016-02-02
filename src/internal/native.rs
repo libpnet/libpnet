@@ -70,6 +70,16 @@ fn ntohs(u: u16) -> u16 {
     u16::from_be(u)
 }
 
+macro_rules! to_u8_array {
+    ($($num:expr),*) => {
+        if cfg!(target_endian = "big") {
+            [ $(($num>>8) as u8, ($num&0xff) as u8,)* ]
+        } else {
+            [ $(($num&0xff) as u8, ($num>>8) as u8,)* ]
+        }
+    }
+}
+
 pub fn addr_to_sockaddr(addr: SocketAddr, storage: &mut libc::sockaddr_storage) -> libc::socklen_t {
     unsafe {
         let len = match addr {
@@ -90,11 +100,11 @@ pub fn addr_to_sockaddr(addr: SocketAddr, storage: &mut libc::sockaddr_storage) 
             SocketAddr::V6(sa) => {
                 let ip_addr = sa.ip();
                 let segments = ip_addr.segments();
-                let inaddr = libc::in6_addr {
-                    s6_addr: [htons(segments[0]), htons(segments[1]), htons(segments[2]),
-                              htons(segments[3]), htons(segments[4]), htons(segments[5]),
-                              htons(segments[6]), htons(segments[7])],
-                };
+                let mut inaddr: libc::in6_addr = mem::uninitialized();
+                inaddr.s6_addr = to_u8_array!(segments[0], segments[1],
+                                              segments[2], segments[3],
+                                              segments[4], segments[5],
+                                              segments[6], segments[7]);
                 let storage = storage as *mut _ as *mut libc::sockaddr_in6;
                 (*storage).sin6_family = libc::AF_INET6 as libc::sa_family_t;
                 (*storage).sin6_port = htons(addr.port());
@@ -104,6 +114,16 @@ pub fn addr_to_sockaddr(addr: SocketAddr, storage: &mut libc::sockaddr_storage) 
         };
 
         len as libc::socklen_t
+    }
+}
+
+macro_rules! to_u16_array {
+    ($slf:ident, $($first:expr, $second:expr),*) => {
+        if cfg!(target_endian = "big") {
+            [$( (($slf.sin6_addr.s6_addr[$first] as u16) << 8) + $slf.sin6_addr.s6_addr[$second] as u16,)*]
+        } else {
+            [$( (($slf.sin6_addr.s6_addr[$second] as u16) << 8) + $slf.sin6_addr.s6_addr[$first] as u16,)*]
+        }
     }
 }
 
@@ -123,15 +143,9 @@ pub fn sockaddr_to_addr(storage: &libc::sockaddr_storage, len: usize) -> io::Res
         libc::AF_INET6 => {
             assert!(len as usize >= mem::size_of::<libc::sockaddr_in6>());
             let storage: &libc::sockaddr_in6 = unsafe { mem::transmute(storage) };
-            let a = ntohs(storage.sin6_addr.s6_addr[0]);
-            let b = ntohs(storage.sin6_addr.s6_addr[1]);
-            let c = ntohs(storage.sin6_addr.s6_addr[2]);
-            let d = ntohs(storage.sin6_addr.s6_addr[3]);
-            let e = ntohs(storage.sin6_addr.s6_addr[4]);
-            let f = ntohs(storage.sin6_addr.s6_addr[5]);
-            let g = ntohs(storage.sin6_addr.s6_addr[6]);
-            let h = ntohs(storage.sin6_addr.s6_addr[7]);
-            let ip = Ipv6Addr::new(a, b, c, d, e, f, g, h);
+            let addr = to_u16_array!(storage, 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
+            let ip = Ipv6Addr::new(addr[0], addr[1], addr[2], addr[3],
+                                   addr[4], addr[5], addr[6], addr[7]);
             Ok(SocketAddr::V6(SocketAddrV6::new(ip,
                                                 ntohs(storage.sin6_port),
                                                 u32::from_be(storage.sin6_flowinfo),
