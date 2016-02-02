@@ -32,7 +32,7 @@ optional = true
 version = ">=0.0"
 
 [dependencies.libc]
-version = "=0.1.12"
+version = "0.2.*"
 
 [dependencies.syntex]
 version = "=0.26.0"
