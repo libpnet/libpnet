@@ -180,21 +180,23 @@ impl TransportSender {
         use packet::ipv4::MutableIpv4Packet;
 
         // FreeBSD and OS X expect total length and fragment offset fields of IPv4
-        // packets to be in
-        // host byte order rather than network byte order (man 4 ip/Raw IP Sockets)
-        if match self._channel_type {
-            Layer3(..) => true,
-            _ => false,
-        } {
+        // packets to be in host byte order rather than network byte order. Fragment offset is the
+        // ip_off field in the ip struct and contains both the offset and the three flag bits.
+        // See `man 4 ip`/Raw IP Sockets)
+        if let Layer3(_) = self._channel_type {
             let mut mut_slice: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
 
             let mut new_packet = MutableIpv4Packet::new(&mut mut_slice[..]).unwrap();
             new_packet.clone_from(&packet);
             let length = new_packet.get_total_length().to_be();
             new_packet.set_total_length(length);
-            let offset = new_packet.get_fragment_offset().to_be();
-            new_packet.set_fragment_offset(offset);
-
+            {
+                // Turn fragment offset into host order
+                let d = new_packet.packet_mut();
+                let host_order = u16::from_be((d[6] as u16) << 8 | d[7] as u16);
+                d[6] = (host_order >> 8) as u8;
+                d[7] = host_order as u8;
+            }
             return self.send(new_packet, dst);
         }
 
