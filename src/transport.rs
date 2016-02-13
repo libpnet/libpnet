@@ -192,9 +192,15 @@ impl TransportSender {
             new_packet.clone_from(&packet);
             let length = new_packet.get_total_length().to_be();
             new_packet.set_total_length(length);
-            let offset = new_packet.get_fragment_offset().to_be();
-            new_packet.set_fragment_offset(offset);
-
+            {
+                // On these platforms the ip_off (fragment offset) field from the ip struct need
+                // to be in host byte order. The three fragment flag bits are also stored in these
+                // two bytes.
+                let d = new_packet.packet_mut();
+                let host_order = u16::from_be((d[6] as u16) << 8 | d[7] as u16);
+                d[6] = (host_order >> 8) as u8;
+                d[7] = host_order as u8;
+            }
             return self.send(new_packet, dst);
         }
 
