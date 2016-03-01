@@ -132,7 +132,7 @@ pub enum IpAddr {
     /// An IPv4 Address
     V4(Ipv4Addr),
     /// An IPv6 Address
-    V6(Ipv6Addr)
+    V6(Ipv6Addr),
 }
 
 impl FromStr for IpAddr {
@@ -147,7 +147,7 @@ impl FromStr for IpAddr {
                     Ok(res) => Ok(IpAddr::V6(res)),
                     Err(_) => Err(()),
                 }
-            },
+            }
         }
     }
 }
@@ -313,8 +313,9 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
             _ => new.mac,
         };
         match (&mut old.ips, &new.ips) {
-            (&mut Some(ref mut old_ips), &Some(ref new_ips)) =>
-                old_ips.extend_from_slice(&new_ips[..]),
+            (&mut Some(ref mut old_ips), &Some(ref new_ips)) => {
+                old_ips.extend_from_slice(&new_ips[..])
+            }
             (&mut ref mut old_ips @ None, &Some(ref new_ips)) => *old_ips = Some(new_ips.clone()),
             _ => {}
         };
