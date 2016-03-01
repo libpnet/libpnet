@@ -24,7 +24,7 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 use internal;
 
 /// A MAC address
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
 
 impl MacAddr {
@@ -127,12 +127,12 @@ fn mac_addr_from_str() {
 }
 
 /// Represents either an Ipv4Addr or an Ipv6Addr
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum IpAddr {
     /// An IPv4 Address
     V4(Ipv4Addr),
     /// An IPv6 Address
-    V6(Ipv6Addr)
+    V6(Ipv6Addr),
 }
 
 impl FromStr for IpAddr {
@@ -147,7 +147,7 @@ impl FromStr for IpAddr {
                     Ok(res) => Ok(IpAddr::V6(res)),
                     Err(_) => Err(()),
                 }
-            },
+            }
         }
     }
 }
@@ -168,7 +168,7 @@ impl fmt::Display for IpAddr {
 }
 
 /// Represents a network interface and its associated addresses
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub struct NetworkInterface {
     /// The name of the interface
     pub name: String,
@@ -313,8 +313,9 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
             _ => new.mac,
         };
         match (&mut old.ips, &new.ips) {
-            (&mut Some(ref mut old_ips), &Some(ref new_ips)) =>
-                old_ips.extend_from_slice(&new_ips[..]),
+            (&mut Some(ref mut old_ips), &Some(ref new_ips)) => {
+                old_ips.extend_from_slice(&new_ips[..])
+            }
             (&mut ref mut old_ips @ None, &Some(ref new_ips)) => *old_ips = Some(new_ips.clone()),
             _ => {}
         };
