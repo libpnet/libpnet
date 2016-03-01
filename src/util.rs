@@ -24,7 +24,7 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 use internal;
 
 /// A MAC address
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
 
 impl MacAddr {
@@ -127,7 +127,7 @@ fn mac_addr_from_str() {
 }
 
 /// Represents either an Ipv4Addr or an Ipv6Addr
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum IpAddr {
     /// An IPv4 Address
     V4(Ipv4Addr),
@@ -168,7 +168,7 @@ impl fmt::Display for IpAddr {
 }
 
 /// Represents a network interface and its associated addresses
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub struct NetworkInterface {
     /// The name of the interface
     pub name: String,
