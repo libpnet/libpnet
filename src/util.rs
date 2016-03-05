@@ -266,6 +266,21 @@ pub fn get_network_interfaces() -> Vec<NetworkInterface> {
 fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
     use std::ffi::CString;
 
+    fn merge(old: &mut NetworkInterface, new: &NetworkInterface) {
+        old.mac = match new.mac {
+            None => old.mac,
+            _ => new.mac,
+        };
+        match (&mut old.ips, &new.ips) {
+            (&mut Some(ref mut old_ips), &Some(ref new_ips)) => {
+                old_ips.extend_from_slice(&new_ips[..])
+            }
+            (&mut ref mut old_ips @ None, &Some(ref new_ips)) => *old_ips = Some(new_ips.clone()),
+            _ => {}
+        };
+        old.flags = old.flags | new.flags;
+    }
+
     let mut ifaces: Vec<NetworkInterface> = Vec::new();
     unsafe {
         let mut addrs: *mut libc::ifaddrs = mem::uninitialized();
@@ -304,24 +319,9 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
             let name = CString::new(iface.name.as_bytes());
             iface.index = libc::if_nametoindex(name.unwrap().as_ptr());
         }
-        return ifaces;
-    }
 
-    fn merge(old: &mut NetworkInterface, new: &NetworkInterface) {
-        old.mac = match new.mac {
-            None => old.mac,
-            _ => new.mac,
-        };
-        match (&mut old.ips, &new.ips) {
-            (&mut Some(ref mut old_ips), &Some(ref new_ips)) => {
-                old_ips.extend_from_slice(&new_ips[..])
-            }
-            (&mut ref mut old_ips @ None, &Some(ref new_ips)) => *old_ips = Some(new_ips.clone()),
-            _ => {}
-        };
-        old.flags = old.flags | new.flags;
+        ifaces
     }
-
 }
 
 #[cfg(windows)]
