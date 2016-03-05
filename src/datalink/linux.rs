@@ -52,57 +52,57 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         Layer3(EtherType(proto)) => (libc::SOCK_DGRAM, proto),
     };
     let socket = unsafe { libc::socket(libc::AF_PACKET, typ, proto.to_be() as i32) };
-    if socket != -1 {
-        let mut addr: libc::sockaddr_storage = unsafe { mem::zeroed() };
-        let len = network_addr_to_sockaddr(network_interface, &mut addr, proto as i32);
-
-        let send_addr = (&addr as *const libc::sockaddr_storage) as *const libc::sockaddr;
-
-        // Bind to interface
-        if unsafe { libc::bind(socket, send_addr, len as libc::socklen_t) } == -1 {
-            let err = io::Error::last_os_error();
-            unsafe {
-                internal::close(socket);
-            }
-            return Err(err);
-        }
-
-        let mut pmr: linux::packet_mreq = unsafe { mem::zeroed() };
-        pmr.mr_ifindex = network_interface.index as i32;
-        pmr.mr_type = linux::PACKET_MR_PROMISC as u16;
-
-        // Enable promiscuous capture
-        if unsafe {
-            libc::setsockopt(socket,
-                             linux::SOL_PACKET,
-                             linux::PACKET_ADD_MEMBERSHIP,
-                             (&pmr as *const linux::packet_mreq) as *const libc::c_void,
-                             mem::size_of::<linux::packet_mreq>() as u32)
-        } == -1 {
-            let err = io::Error::last_os_error();
-            unsafe {
-                internal::close(socket);
-            }
-            return Err(err);
-        }
-
-        let fd = Arc::new(internal::FileDesc { fd: socket });
-        let sender = Box::new(DataLinkSenderImpl {
-            socket: fd.clone(),
-            write_buffer: repeat(0u8).take(write_buffer_size).collect(),
-            _channel_type: channel_type,
-            send_addr: unsafe { *(send_addr as *const libc::sockaddr_ll) },
-            send_addr_len: len,
-        });
-        let receiver = Box::new(DataLinkReceiverImpl {
-            socket: fd,
-            read_buffer: repeat(0u8).take(read_buffer_size).collect(),
-            _channel_type: channel_type,
-        });
-        Ok((sender, receiver))
-    } else {
-        Err(io::Error::last_os_error())
+    if socket == -1 {
+        return Err(io::Error::last_os_error());
     }
+    let mut addr: libc::sockaddr_storage = unsafe { mem::zeroed() };
+    let len = network_addr_to_sockaddr(network_interface, &mut addr, proto as i32);
+
+    let send_addr = (&addr as *const libc::sockaddr_storage) as *const libc::sockaddr;
+
+    // Bind to interface
+    if unsafe { libc::bind(socket, send_addr, len as libc::socklen_t) } == -1 {
+        let err = io::Error::last_os_error();
+        unsafe {
+            internal::close(socket);
+        }
+        return Err(err);
+    }
+
+    let mut pmr: linux::packet_mreq = unsafe { mem::zeroed() };
+    pmr.mr_ifindex = network_interface.index as i32;
+    pmr.mr_type = linux::PACKET_MR_PROMISC as u16;
+
+    // Enable promiscuous capture
+    if unsafe {
+        libc::setsockopt(socket,
+                         linux::SOL_PACKET,
+                         linux::PACKET_ADD_MEMBERSHIP,
+                         (&pmr as *const linux::packet_mreq) as *const libc::c_void,
+                         mem::size_of::<linux::packet_mreq>() as u32)
+    } == -1 {
+        let err = io::Error::last_os_error();
+        unsafe {
+            internal::close(socket);
+        }
+        return Err(err);
+    }
+
+    let fd = Arc::new(internal::FileDesc { fd: socket });
+    let sender = Box::new(DataLinkSenderImpl {
+        socket: fd.clone(),
+        write_buffer: repeat(0u8).take(write_buffer_size).collect(),
+        _channel_type: channel_type,
+        send_addr: unsafe { *(send_addr as *const libc::sockaddr_ll) },
+        send_addr_len: len,
+    });
+    let receiver = Box::new(DataLinkReceiverImpl {
+        socket: fd,
+        read_buffer: repeat(0u8).take(read_buffer_size).collect(),
+        _channel_type: channel_type,
+    });
+
+    Ok((sender, receiver))
 }
 
 pub struct DataLinkSenderImpl {

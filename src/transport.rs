@@ -106,46 +106,46 @@ pub fn transport_channel(buffer_size: usize,
                 libc::socket(libc::AF_INET6, libc::SOCK_RAW, proto as libc::c_int),
         }
     };
-    if socket != INVALID_SOCKET {
-        if match channel_type {
-            Layer3(_) | Layer4(Ipv4(_)) => true,
-            _ => false,
-        } {
-            let hincl: libc::c_int = match channel_type {
-                Layer4(..) => 0,
-                _ => 1,
-            };
-            let res = unsafe {
-                libc::setsockopt(socket,
-                                 libc::IPPROTO_IP,
-                                 libc::IP_HDRINCL,
-                                 (&hincl as *const libc::c_int) as *const libc::c_void,
-                                 mem::size_of::<libc::c_int>() as libc::socklen_t)
-            };
-            if res == -1 {
-                let err = Error::last_os_error();
-                unsafe {
-                    internal::close(socket);
-                }
-                return Err(err);
-            }
-        }
-
-        let sock = Arc::new(internal::FileDesc { fd: socket });
-        let sender = TransportSender {
-            socket: sock.clone(),
-            _channel_type: channel_type,
-        };
-        let receiver = TransportReceiver {
-            socket: sock,
-            buffer: repeat(0u8).take(buffer_size).collect(),
-            channel_type: channel_type,
-        };
-
-        Ok((sender, receiver))
-    } else {
-        Err(Error::last_os_error())
+    if socket == INVALID_SOCKET {
+        return Err(Error::last_os_error());
     }
+
+    if match channel_type {
+        Layer3(_) | Layer4(Ipv4(_)) => true,
+        _ => false,
+    } {
+        let hincl: libc::c_int = match channel_type {
+            Layer4(..) => 0,
+            _ => 1,
+        };
+        let res = unsafe {
+            libc::setsockopt(socket,
+                             libc::IPPROTO_IP,
+                             libc::IP_HDRINCL,
+                             (&hincl as *const libc::c_int) as *const libc::c_void,
+                             mem::size_of::<libc::c_int>() as libc::socklen_t)
+        };
+        if res == -1 {
+            let err = Error::last_os_error();
+            unsafe {
+                internal::close(socket);
+            }
+            return Err(err);
+        }
+    }
+
+    let sock = Arc::new(internal::FileDesc { fd: socket });
+    let sender = TransportSender {
+        socket: sock.clone(),
+        _channel_type: channel_type,
+    };
+    let receiver = TransportReceiver {
+        socket: sock,
+        buffer: repeat(0u8).take(buffer_size).collect(),
+        channel_type: channel_type,
+    };
+
+    Ok((sender, receiver))
 }
 
 impl TransportSender {
