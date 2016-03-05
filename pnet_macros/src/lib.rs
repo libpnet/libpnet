@@ -228,13 +228,13 @@ fn remove_attributes_struct(vd: &mut ast::VariantData) {
         let mut attrs = &mut field.node.attrs;
         attrs.retain(|attr| {
             match attr.node.value.node {
-                ast::MetaWord(ref s) => {
+                ast::MetaItemKind::Word(ref s) => {
                     *s != "payload"
                 },
-                ast::MetaList(ref s, _) => {
+                ast::MetaItemKind::List(ref s, _) => {
                     *s != "construct_with"
                 },
-                ast::MetaNameValue(ref s, _) => {
+                ast::MetaItemKind::NameValue(ref s, _) => {
                     !(*s == "length_fn" || *s == "length")
                 },
             }
@@ -250,21 +250,18 @@ fn remove_attributes(mut krate: ast::Crate) -> ast::Crate {
     for item in &krate.module.items {
         let new_item = item.clone().map(|mut item|{
             match item.node {
-                ast::ItemEnum(ref mut ed, ref _gs) => {
+                ast::ItemKind::Enum(ref mut ed, ref _gs) => {
                     let mut new_variants = Vec::with_capacity(ed.variants.len());
                     for variant in &ed.variants {
-                        let new_variant = variant.clone().map(|mut variant| {
-                            if variant.node.data.is_struct() {
-                                remove_attributes_struct(&mut variant.node.data);
-                            }
-
-                            variant
-                        });
+                        let mut new_variant = variant.clone();
+                        if new_variant.node.data.is_struct() {
+                            remove_attributes_struct(&mut new_variant.node.data);
+                        }
                         new_variants.push(new_variant);
                     }
                     ed.variants = new_variants;
                 },
-                ast::ItemStruct(ref mut sd, ref _gs) => {
+                ast::ItemKind::Struct(ref mut sd, ref _gs) => {
                     remove_attributes_struct(sd);
                 },
                 _ => {},

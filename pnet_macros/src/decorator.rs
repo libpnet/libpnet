@@ -129,7 +129,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
         for attr in &field.node.attrs {
             let node = &attr.node.value.node;
             match *node {
-                ast::MetaWord(ref s) => {
+                ast::MetaItemKind::Word(ref s) => {
                     seen.push(s.to_owned());
                     if &s[..] == "payload" {
                         if payload_span.is_some() {
@@ -143,7 +143,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                         return None;
                     }
                 },
-                ast::MetaList(ref s, ref items) => {
+                ast::MetaItemKind::List(ref s, ref items) => {
                     seen.push(s.to_owned());
                     if &s[..] == "construct_with" {
                         if items.iter().len() == 0 {
@@ -151,7 +151,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                             return None;
                         }
                         for ty in items.iter() {
-                            if let ast::MetaWord(ref s) = ty.node {
+                            if let ast::MetaItemKind::Word(ref s) = ty.node {
                                 match make_type(s.to_string(), false) {
                                     Ok(ty) => construct_with.push(ty),
                                     Err(e) => {
@@ -169,12 +169,12 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                         return None;
                     }
                 },
-                ast::MetaNameValue(ref s, ref lit) => {
+                ast::MetaItemKind::NameValue(ref s, ref lit) => {
                     seen.push(s.to_owned());
                     match &s[..] {
                         "length_fn" => {
                             let node = &lit.node;
-                            if let ast::LitStr(ref s, _) = *node {
+                            if let ast::LitKind::Str(ref s, _) = *node {
                                 packet_length = Some(s.to_string() + "(&_self.to_immutable())");
                             } else {
                                 ecx.span_err(field.span, "#[length_fn] should be used as #[length_fn = \"name_of_function\"]");
@@ -183,7 +183,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                         },
                         "length" => {
                             let node = &lit.node;
-                            if let ast::LitStr(ref s, _) = *node {
+                            if let ast::LitKind::Str(ref s, _) = *node {
                                 let field_names: Vec<String> = sfields.iter().filter_map(|field| {
                                     field.node.ident()
                                         .map(|name| name.to_string())
@@ -272,7 +272,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
 fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &Annotatable) -> Option<Vec<Packet>> {
     if let Annotatable::Item(ref item) = *item {
         match item.node {
-            ast::ItemEnum(ref ed, ref _gs) => {
+            ast::ItemKind::Enum(ref ed, ref _gs) => {
                 if item.vis != ast::Visibility::Public {
                     ecx.span_err(item.span, "#[packet] enums must be public");
                     return None;
@@ -294,7 +294,7 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &Annotatable) -> Option<Vec
 
                 Some(vec)
             },
-            ast::ItemStruct(ref sd, ref _gs) => {
+            ast::ItemKind::Struct(ref sd, ref _gs) => {
                 if item.vis != ast::Visibility::Public {
                     ecx.span_err(item.span, "#[packet] structs must be public");
                     return None;
