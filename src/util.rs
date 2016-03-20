@@ -17,7 +17,7 @@ use std::fmt;
 use std::str::{FromStr, from_utf8_unchecked};
 use std::mem;
 use std::u8;
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::IpAddr;
 
 
 #[cfg(not(windows))]
@@ -124,47 +124,6 @@ fn mac_addr_from_str() {
                Err(ParseMacAddrErr::TooManyComponents));
     assert_eq!("xx:xx:xx:xx:xx:xx".parse::<MacAddr>(),
                Err(ParseMacAddrErr::InvalidComponent));
-}
-
-/// Represents either an Ipv4Addr or an Ipv6Addr
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub enum IpAddr {
-    /// An IPv4 Address
-    V4(Ipv4Addr),
-    /// An IPv6 Address
-    V6(Ipv6Addr),
-}
-
-impl FromStr for IpAddr {
-    type Err = ();
-    fn from_str(s: &str) -> Result<IpAddr, ()> {
-        let ipv4: Result<Ipv4Addr, _> = FromStr::from_str(s);
-        let ipv6: Result<Ipv6Addr, _> = FromStr::from_str(s);
-        match ipv4 {
-            Ok(res) => Ok(IpAddr::V4(res)),
-            Err(_) => {
-                match ipv6 {
-                    Ok(res) => Ok(IpAddr::V6(res)),
-                    Err(_) => Err(()),
-                }
-            }
-        }
-    }
-}
-
-impl fmt::Debug for IpAddr {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, fmt)
-    }
-}
-
-impl fmt::Display for IpAddr {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            IpAddr::V4(ip_addr) => fmt::Display::fmt(&ip_addr, fmt),
-            IpAddr::V6(ip_addr) => fmt::Display::fmt(&ip_addr, fmt),
-        }
-    }
 }
 
 /// Represents a network interface and its associated addresses
