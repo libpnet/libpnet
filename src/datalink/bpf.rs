@@ -9,7 +9,6 @@
 extern crate libc;
 
 use std::collections::VecDeque;
-use std::cmp;
 use std::ffi::CString;
 use std::io;
 use std::iter::repeat;
@@ -122,8 +121,6 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         return Err(err);
     }
 
-    let mut header_size = 0;
-
     // Get the device type
     let mut dlt: libc::c_uint = 0;
     if unsafe { bpf::ioctl(fd, bpf::BIOCGDLT, &mut dlt) } == -1 {
@@ -134,16 +131,20 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         return Err(err);
     }
 
+    let mut loopback = false;
+    let mut allocated_read_buffer_size = read_buffer_size;
     // The loopback device does weird things
     // FIXME This should really just be another L2 packet header type
     if dlt == bpf::DLT_NULL {
-        header_size = 4;
+        loopback = true;
+        // So we can guaranatee that we can have a header before the packet.
+        // Loopback packets arrive without the header.
+        allocated_read_buffer_size += EthernetPacket::minimum_packet_size();
 
         // Allow packets to be read back after they are written
         if let Err(e) = set_feedback(fd) {
             return Err(e);
         }
-
     } else {
         // Don't fill in source MAC
         if unsafe { bpf::ioctl(fd, bpf::BIOCSHDRCMPLT, &one) } == -1 {
@@ -159,12 +160,12 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     let sender = Box::new(DataLinkSenderImpl {
         fd: fd.clone(),
         write_buffer: repeat(0u8).take(write_buffer_size).collect(),
-        header_size: header_size,
+        loopback: loopback,
     });
     let receiver = Box::new(DataLinkReceiverImpl {
         fd: fd,
-        read_buffer: repeat(0u8).take(read_buffer_size).collect(),
-        header_size: header_size,
+        read_buffer: repeat(0u8).take(allocated_read_buffer_size).collect(),
+        loopback: loopback,
     });
 
     Ok((sender, receiver))
@@ -173,7 +174,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
 pub struct DataLinkSenderImpl {
     fd: Arc<internal::FileDesc>,
     write_buffer: Vec<u8>,
-    header_size: usize,
+    loopback: bool,
 }
 
 impl EthernetDataLinkSender for DataLinkSenderImpl {
@@ -182,28 +183,27 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                       num_packets: usize,
                       packet_size: usize,
                       func: &mut FnMut(MutableEthernetPacket))
-        -> Option<io::Result<()>> {
-        let len = num_packets * (packet_size + self.header_size);
+                      -> Option<io::Result<()>> {
+        let len = num_packets * packet_size;
         if len >= self.write_buffer.len() {
             None
         } else {
-            let min = cmp::min(self.write_buffer.len(), len);
-            for chunk in self.write_buffer[..min].chunks_mut(packet_size + self.header_size) {
-                // If we're sending on the loopback device, the first 4 bytes must be set to
-                // AF_INET
-                if self.header_size == 4 {
-                    unsafe {
-                        *(chunk.as_mut_ptr() as *mut u32) = libc::AF_INET as u32;
-                    }
-                }
+            // If we're sending on the loopback device, discard the ethernet header.
+            // The OS will prepend the packet with 4 bytes set to AF_INET.
+            let offset = if self.loopback {
+                MutableEthernetPacket::minimum_packet_size()
+            } else {
+                0
+            };
+            for chunk in self.write_buffer[..len].chunks_mut(packet_size) {
                 {
-                    let eh = MutableEthernetPacket::new(&mut chunk[self.header_size..]).unwrap();
+                    let eh = MutableEthernetPacket::new(chunk).unwrap();
                     func(eh);
                 }
                 match unsafe {
                     libc::write(self.fd.fd,
-                                chunk.as_ptr() as *const libc::c_void,
-                                chunk.len() as libc::size_t)
+                                chunk.as_ptr().offset(offset as isize) as *const libc::c_void,
+                                (chunk.len() - offset) as libc::size_t)
                 } {
                     len if len == -1 => return Some(Err(io::Error::last_os_error())),
                     _ => (),
@@ -217,11 +217,18 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
     fn send_to(&mut self,
                packet: &EthernetPacket,
                _dst: Option<NetworkInterface>)
-        -> Option<io::Result<()>> {
+               -> Option<io::Result<()>> {
+        // If we're sending on the loopback device, discard the ethernet header.
+        // The OS will prepend the packet with 4 bytes set to AF_INET.
+        let offset = if self.loopback {
+            MutableEthernetPacket::minimum_packet_size()
+        } else {
+            0
+        };
         match unsafe {
             libc::write(self.fd.fd,
-                        packet.packet().as_ptr() as *const libc::c_void,
-                        packet.packet().len() as libc::size_t)
+                        packet.packet().as_ptr().offset(offset as isize) as *const libc::c_void,
+                        (packet.packet().len() - offset) as libc::size_t)
         } {
             len if len == -1 => Some(Err(io::Error::last_os_error())),
             _ => Some(Ok(())),
@@ -232,7 +239,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
 pub struct DataLinkReceiverImpl {
     fd: Arc<internal::FileDesc>,
     read_buffer: Vec<u8>,
-    header_size: usize,
+    loopback: bool,
 }
 
 impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
@@ -253,30 +260,43 @@ pub struct DataLinkChannelIteratorImpl<'a> {
 
 impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
     fn next(&mut self) -> io::Result<EthernetPacket> {
+        // Loopback packets arrive with a 4 byte header instead of normal ethernet header.
+        // Discard that header and replace with zeroed out ethernet header.
+        let (header_size, buffer_offset) = if self.pc.loopback {
+            (4, EthernetPacket::minimum_packet_size())
+        } else {
+            (0, 0)
+        };
         if self.packets.is_empty() {
+            let buffer = &mut self.pc.read_buffer[buffer_offset..];
             let buflen = match unsafe {
                 libc::read(self.pc.fd.fd,
-                           self.pc.read_buffer.as_ptr() as *mut libc::c_void,
-                           self.pc.read_buffer.len() as libc::size_t)
+                           buffer.as_ptr() as *mut libc::c_void,
+                           buffer.len() as libc::size_t)
             } {
                 len if len > 0 => len,
                 _ => return Err(io::Error::last_os_error()),
             };
-            let mut ptr = self.pc.read_buffer.as_mut_ptr();
-            let end = unsafe { self.pc.read_buffer.as_ptr().offset(buflen as isize) };
+            let mut ptr = buffer.as_mut_ptr();
+            let end = unsafe { buffer.as_ptr().offset(buflen as isize) };
             while (ptr as *const u8) < end {
                 unsafe {
                     let packet: *const bpf::bpf_hdr = mem::transmute(ptr);
                     let start = ptr as isize + (*packet).bh_hdrlen as isize -
-                                self.pc.read_buffer.as_ptr() as isize;
-                    self.packets.push_back((start as usize + self.pc.header_size,
-                                            (*packet).bh_caplen as usize - self.pc.header_size));
+                                buffer.as_ptr() as isize;
+                    self.packets.push_back((start as usize + header_size,
+                                            (*packet).bh_caplen as usize - header_size));
                     let offset = (*packet).bh_hdrlen as isize + (*packet).bh_caplen as isize;
                     ptr = ptr.offset(bpf::BPF_WORDALIGN(offset));
                 }
             }
         }
-        let (start, len) = self.packets.pop_front().unwrap();
+        let (start, mut len) = self.packets.pop_front().unwrap();
+        len += buffer_offset;
+        // Zero out part that will become fake ethernet header if on loopback.
+        for i in (&mut self.pc.read_buffer[start..start + buffer_offset]).iter_mut() {
+            *i = 0;
+        }
         Ok(EthernetPacket::new(&self.pc.read_buffer[start..start + len]).unwrap())
     }
 }
