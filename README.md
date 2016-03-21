@@ -74,7 +74,7 @@ version = "0.7.4"
 ```
 
 `libpnet` should work on any Rust channel (stable, beta, or nightly), starting
-with Rust 1.6. When using a nightly version of Rust, you may wish to use pass
+with Rust 1.7. When using a nightly version of Rust, you may wish to use pass
 `--no-default-features --features nightly` to Cargo, to enable faster build
 times.
 
@@ -93,4 +93,3 @@ There are three requirements for building on Windows:
  * You must place `Packet.lib` from the [WinPcap Developers pack](https://www.winpcap.org/devel.htm)
    in a directory named `lib`, in the root of this repository. For the 64 bit toolchain it is in
    `WpdPack/Lib/x64/Packet.lib`, for the 32 bit toolchain, it is in `WpdPack/Lib/Packet.lib`.
-
