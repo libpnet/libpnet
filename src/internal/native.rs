@@ -17,8 +17,6 @@ use std::mem;
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 
 
-
-
 ///
 /// sockaddr and misc bindings
 ///

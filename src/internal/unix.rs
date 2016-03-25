@@ -2,20 +2,18 @@ extern crate libc;
 
 use std::io;
 
-#[cfg(not(windows))] pub type CSocket = libc::c_int;
-#[cfg(not(windows))] pub type BufLen = libc::size_t;
+pub type CSocket = libc::c_int;
+pub type BufLen = libc::size_t;
 
 
 fn errno() -> i32 {
     io::Error::last_os_error().raw_os_error().unwrap()
 }
 
-#[cfg(unix)]
 pub unsafe fn close(sock: CSocket) {
     let _ = libc::close(sock);
 }
 
-#[cfg(unix)]
 #[inline]
 pub fn retry<F>(f: &mut F) -> libc::ssize_t
     where F: FnMut() -> libc::ssize_t

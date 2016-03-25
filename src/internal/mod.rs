@@ -13,13 +13,16 @@ use std::mem;
 
 pub use self::native::{addr_to_sockaddr, sockaddr_to_addr};
 
-#[cfg(windows)]mod windows;
-#[cfg(not(windows))]mod posix;
+
+#[cfg(unix)]
+mod unix;
+#[cfg(unix)]
+pub use self::unix::*;
 
 #[cfg(windows)]
+mod windows;
+#[cfg(windows)]
 pub use self::windows::*;
-#[cfg(not(windows))]
-pub use self::posix::*;
 
 mod native;
 
