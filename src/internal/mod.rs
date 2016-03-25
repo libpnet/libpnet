@@ -11,15 +11,21 @@ extern crate libc;
 use std::io;
 use std::mem;
 
-pub use self::native::{addr_to_sockaddr, close, retry, sockaddr_to_addr};
+pub use self::native::{addr_to_sockaddr, sockaddr_to_addr};
+
+
+#[cfg(unix)]
+mod unix;
+#[cfg(unix)]
+pub use self::unix::*;
+
+#[cfg(windows)]
+mod windows;
+#[cfg(windows)]
+pub use self::windows::*;
 
 mod native;
 
-#[cfg(windows)] pub type CSocket = libc::SOCKET;
-#[cfg(windows)] pub type BufLen = i32;
-
-#[cfg(not(windows))] pub type CSocket = libc::c_int;
-#[cfg(not(windows))] pub type BufLen = libc::size_t;
 
 // Any file descriptor on unix, only sockets on Windows.
 pub struct FileDesc {
