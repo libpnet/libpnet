@@ -49,8 +49,8 @@ impl Drop for WinPcapPacket {
 
 #[inline]
 pub fn datalink_channel(network_interface: &NetworkInterface,
-                        read_buffer_size: usize,
                         write_buffer_size: usize,
+                        read_buffer_size: usize,
                         _channel_type: DataLinkChannelType)
     -> io::Result<(Box<EthernetDataLinkSender>, Box<EthernetDataLinkReceiver>)> {
     let mut read_buffer = Vec::new();
