@@ -37,8 +37,8 @@ fn ethernet_header_test() {
         ethernet_header.set_destination(dest);
         assert_eq!(ethernet_header.get_destination(), dest);
 
-        ethernet_header.set_ethertype(EtherTypes::Ipv6);
-        assert_eq!(ethernet_header.get_ethertype(), EtherTypes::Ipv6);
+        ethernet_header.set_ethertype(EtherType::new(EtherTypes::Ipv6));
+        assert_eq!(ethernet_header.get_ethertype(), EtherType::new(EtherTypes::Ipv6));
     }
 
     let ref_packet = [0xde, 0xf0, 0x12, 0x34, 0x45, 0x67, /* destination */
@@ -56,18 +56,16 @@ fn ethernet_header_test() {
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod EtherTypes {
-    use packet::ethernet::EtherType;
-
     /// Internet Protocol version 4 (IPv4) [RFC7042]
-    pub const Ipv4: EtherType = EtherType(0x0800);
+    pub const Ipv4: u16 = 0x0800;
     /// Address Resolution Protocol (ARP) [RFC7042]
-    pub const Arp: EtherType = EtherType(0x0806);
+    pub const Arp: u16 = 0x0806;
     /// Wake on Lan
-    pub const WakeOnLan: EtherType = EtherType(0x0842);
+    pub const WakeOnLan: u16 = 0x0842;
     /// Reverse Address Resolution Protocol (RARP) [RFC903]
-    pub const Rarp: EtherType = EtherType(0x8035);
+    pub const Rarp: u16 = 0x8035;
     /// Internet Protocol version 6 (IPv6) [RFC7042]
-    pub const Ipv6: EtherType = EtherType(0x86DD);
+    pub const Ipv6: u16 = 0x86DD;
 }
 
 /// Represents the Ethernet ethertype field.
@@ -78,6 +76,12 @@ impl EtherType {
     /// Construct a new EtherType
     pub fn new(val: u16) -> EtherType {
         EtherType(val)
+    }
+
+    /// Unpack the interal value.
+    pub fn unpack(&self) -> u16 {
+        let &EtherType(value) = self;
+        value
     }
 }
 

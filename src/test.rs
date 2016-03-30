@@ -14,6 +14,7 @@ use std::thread;
 use std::iter::Iterator;
 
 use packet::Packet;
+use packet::ethernet::EtherType;
 use packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
 use packet::ipv4::{Ipv4Packet, MutableIpv4Packet};
 use packet::ipv4;
@@ -160,6 +161,9 @@ fn check_ipv4_header(packet: &[u8], header: &Ipv4Packet) {
                ipv4_header.get_next_level_protocol());
     assert_eq!(header.get_source(), ipv4_header.get_source());
     assert_eq!(header.get_destination(), ipv4_header.get_destination());
+    assert!(header.get_header_length() <= 5 &&
+            header.get_options().is_empty() &&
+            ipv4_header.get_options().is_empty());
 }
 
 fn layer4(ip: IpAddr, header_len: usize) {
@@ -343,7 +347,7 @@ fn layer2() {
         let mut ethernet_header = MutableEthernetPacket::new(&mut packet[..]).unwrap();
         ethernet_header.set_source(interface.mac_address());
         ethernet_header.set_destination(interface.mac_address());
-        ethernet_header.set_ethertype(EtherTypes::Ipv4);
+        ethernet_header.set_ethertype(EtherType::new(EtherTypes::Ipv4));
     }
 
     build_udp4_packet(&mut packet[..],
