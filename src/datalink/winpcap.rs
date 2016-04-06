@@ -1,4 +1,4 @@
-// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014-2016 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -17,7 +17,8 @@ use std::slice;
 use std::sync::Arc;
 
 use bindings::{bpf, winpcap};
-use datalink::{DataLinkChannelIterator, DataLinkChannelType, DataLinkReceiver, DataLinkSender};
+use datalink::{EthernetDataLinkChannelIterator, DataLinkChannelType, EthernetDataLinkReceiver,
+               EthernetDataLinkSender};
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use util::NetworkInterface;
@@ -48,10 +49,10 @@ impl Drop for WinPcapPacket {
 
 #[inline]
 pub fn datalink_channel(network_interface: &NetworkInterface,
-                        read_buffer_size: usize,
                         write_buffer_size: usize,
+                        read_buffer_size: usize,
                         _channel_type: DataLinkChannelType)
-    -> io::Result<(Box<DataLinkSender>, Box<DataLinkReceiver>)> {
+    -> io::Result<(Box<EthernetDataLinkSender>, Box<EthernetDataLinkReceiver>)> {
     let mut read_buffer = Vec::new();
     read_buffer.resize(read_buffer_size, 0u8);
 
@@ -137,7 +138,7 @@ pub struct DataLinkSenderImpl {
     packet: WinPcapPacket,
 }
 
-impl DataLinkSender for DataLinkSenderImpl {
+impl EthernetDataLinkSender for DataLinkSenderImpl {
     #[inline]
     fn build_and_send(&mut self,
                       num_packets: usize,
@@ -203,8 +204,8 @@ pub struct DataLinkReceiverImpl {
     packet: WinPcapPacket,
 }
 
-impl DataLinkReceiver for DataLinkReceiverImpl {
-    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
+impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
+    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a> {
         let buflen = unsafe { (*self.packet.packet).Length } as usize;
         Box::new(DataLinkChannelIteratorImpl {
             pc: self,
@@ -222,7 +223,7 @@ pub struct DataLinkChannelIteratorImpl<'a> {
     packets: VecDeque<(usize, usize)>,
 }
 
-impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
     fn next(&mut self) -> io::Result<EthernetPacket> {
         // NOTE Most of the logic here is identical to FreeBSD/OS X
         if self.packets.is_empty() {

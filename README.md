@@ -13,7 +13,7 @@ Discussion and support: [#libpnet on freenode](http://webchat.freenode.net/?chan
 There are four key components:
 
  * The packet module, allowing safe construction and manipulation of packets
- * The pnet_packet crate, providing infrastructure for the packet module
+ * The pnet_macros crate, providing infrastructure for the packet module
  * The transport module, which allows implementation of transport protocols
  * The datalink module, which allows sending and receiving data link packets directly
 
@@ -70,13 +70,18 @@ To use `libpnet` in your project, add the following to your Cargo.toml:
 
 ```
 [dependencies.pnet]
-version = "0.7.1"
+version = "0.7.4"
 ```
 
-When developing, use the provided Makefile, which does weird things to make the
-tests work properly. Note that root/administrator access is usually required for libpnet.
+`libpnet` should work on any Rust channel (stable, beta, or nightly), starting
+with Rust 1.7. When using a nightly version of Rust, you may wish to use pass
+`--no-default-features --features nightly` to Cargo, to enable faster build
+times.
 
-You need to use either the *beta* or *nightly* channels of Rust to use `libpnet`.
+When running the test suite, there are a number of networking tests which will
+likely fail - the easiest way to workaround this is to run `cargo test` as a
+root or administrative user. This can often be avoided, however it is more
+involved.
 
 ### Windows
 
@@ -88,4 +93,3 @@ There are three requirements for building on Windows:
  * You must place `Packet.lib` from the [WinPcap Developers pack](https://www.winpcap.org/devel.htm)
    in a directory named `lib`, in the root of this repository. For the 64 bit toolchain it is in
    `WpdPack/Lib/x64/Packet.lib`, for the 32 bit toolchain, it is in `WpdPack/Lib/Packet.lib`.
-

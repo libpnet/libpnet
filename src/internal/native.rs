@@ -16,48 +16,6 @@ use std::io;
 use std::mem;
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 
-use internal::CSocket;
-
-#[cfg(windows)]
-pub unsafe fn close(sock: CSocket) {
-    let _ = libc::closesocket(sock);
-}
-#[cfg(unix)]
-pub unsafe fn close(sock: CSocket) {
-    let _ = libc::close(sock);
-}
-
-fn errno() -> i32 {
-    io::Error::last_os_error().raw_os_error().unwrap()
-}
-
-#[cfg(windows)]
-#[inline]
-pub fn retry<F>(f: &mut F) -> libc::c_int
-    where F: FnMut() -> libc::c_int
-{
-    loop {
-        let minus1 = -1;
-        let ret = f();
-        if ret != minus1 || errno() as isize != libc::WSAEINTR as isize {
-            return ret;
-        }
-    }
-}
-
-#[cfg(unix)]
-#[inline]
-pub fn retry<F>(f: &mut F) -> libc::ssize_t
-    where F: FnMut() -> libc::ssize_t
-{
-    loop {
-        let minus1 = -1;
-        let ret = f();
-        if ret != minus1 || errno() as isize != libc::EINTR as isize {
-            return ret;
-        }
-    }
-}
 
 ///
 /// sockaddr and misc bindings
@@ -91,9 +49,14 @@ pub fn addr_to_sockaddr(addr: SocketAddr, storage: &mut libc::sockaddr_storage) 
                 let ip_addr = sa.ip();
                 let segments = ip_addr.segments();
                 let inaddr = libc::in6_addr {
-                    s6_addr: [htons(segments[0]), htons(segments[1]), htons(segments[2]),
-                              htons(segments[3]), htons(segments[4]), htons(segments[5]),
-                              htons(segments[6]), htons(segments[7])],
+                    s6_addr: [htons(segments[0]),
+                              htons(segments[1]),
+                              htons(segments[2]),
+                              htons(segments[3]),
+                              htons(segments[4]),
+                              htons(segments[5]),
+                              htons(segments[6]),
+                              htons(segments[7])],
                 };
                 let storage = storage as *mut _ as *mut libc::sockaddr_in6;
                 (*storage).sin6_family = libc::AF_INET6 as libc::sa_family_t;

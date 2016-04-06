@@ -11,18 +11,19 @@
 extern crate pnet;
 
 use std::env;
+use std::net::IpAddr;
 
-use pnet::packet::{Packet};
+use pnet::packet::Packet;
 use pnet::packet::ethernet::{EthernetPacket, EtherTypes};
 use pnet::packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
-use pnet::packet::ipv4::{Ipv4Packet};
-use pnet::packet::ipv6::{Ipv6Packet};
-use pnet::packet::udp::{UdpPacket};
+use pnet::packet::ipv4::Ipv4Packet;
+use pnet::packet::ipv6::Ipv6Packet;
+use pnet::packet::udp::UdpPacket;
 
-use pnet::datalink::{datalink_channel};
-use pnet::datalink::DataLinkChannelType::{Layer2};
+use pnet::datalink::datalink_channel;
+use pnet::datalink::DataLinkChannelType::Layer2;
 
-use pnet::util::{IpAddr, NetworkInterface, get_network_interfaces};
+use pnet::util::{NetworkInterface, get_network_interfaces};
 
 fn handle_udp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8]) {
     let udp = UdpPacket::new(packet);

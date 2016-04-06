@@ -13,6 +13,109 @@ use pnet_macros_support::types::*;
 
 use std::net::Ipv4Addr;
 
+/// IPv4 header options numbers as defined in
+/// http://www.iana.org/assignments/ip-parameters/ip-parameters.xhtml
+#[allow(non_snake_case)]
+#[allow(non_upper_case_globals)]
+pub mod Ipv4OptionNumbers {
+    use super::Ipv4OptionNumber;
+
+    /// End of Options List
+    pub const EOL: Ipv4OptionNumber = Ipv4OptionNumber(0);
+
+    /// No Operation
+    pub const NOP: Ipv4OptionNumber = Ipv4OptionNumber(1);
+
+    /// Security
+    pub const SEC: Ipv4OptionNumber = Ipv4OptionNumber(2);
+
+    /// Loose Source Route
+    pub const LSR: Ipv4OptionNumber = Ipv4OptionNumber(3);
+
+    /// Time Stamp
+    pub const TS: Ipv4OptionNumber = Ipv4OptionNumber(4);
+
+    /// Extended Security
+    pub const ESEC: Ipv4OptionNumber = Ipv4OptionNumber(5);
+
+    /// Commercial Security
+    pub const CIPSO: Ipv4OptionNumber = Ipv4OptionNumber(6);
+
+    /// Record Route
+    pub const RR: Ipv4OptionNumber = Ipv4OptionNumber(7);
+
+    /// Stream ID
+    pub const SID: Ipv4OptionNumber = Ipv4OptionNumber(8);
+
+    /// Strict Source Route
+    pub const SSR: Ipv4OptionNumber = Ipv4OptionNumber(9);
+
+    /// Experimental Measurement
+    pub const ZSU: Ipv4OptionNumber = Ipv4OptionNumber(10);
+
+    /// MTU Probe
+    pub const MTUP: Ipv4OptionNumber = Ipv4OptionNumber(11);
+
+    /// MTU Reply
+    pub const MTUR: Ipv4OptionNumber = Ipv4OptionNumber(12);
+
+    /// Experimental Flow Control
+    pub const FINN: Ipv4OptionNumber = Ipv4OptionNumber(13);
+
+    /// Experimental Access Control
+    pub const VISA: Ipv4OptionNumber = Ipv4OptionNumber(14);
+
+    /// ENCODE
+    pub const ENCODE: Ipv4OptionNumber = Ipv4OptionNumber(15);
+
+    /// IMI Traffic Descriptor
+    pub const IMITD: Ipv4OptionNumber = Ipv4OptionNumber(16);
+
+    /// Extended Internet Protocol
+    pub const EIP: Ipv4OptionNumber = Ipv4OptionNumber(17);
+
+    /// Traceroute
+    pub const TR: Ipv4OptionNumber = Ipv4OptionNumber(18);
+
+    /// Address Extension
+    pub const ADDEXT: Ipv4OptionNumber = Ipv4OptionNumber(19);
+
+    /// Router Alert
+    pub const RTRALT: Ipv4OptionNumber = Ipv4OptionNumber(20);
+
+    /// Selective Directed Broadcast
+    pub const SDB: Ipv4OptionNumber = Ipv4OptionNumber(21);
+
+    /// Dynamic Packet State
+    pub const DPS: Ipv4OptionNumber = Ipv4OptionNumber(23);
+
+    /// Upstream Multicast Pkt.
+    pub const UMP: Ipv4OptionNumber = Ipv4OptionNumber(24);
+
+    /// Quick-Start
+    pub const QS: Ipv4OptionNumber = Ipv4OptionNumber(25);
+
+    /// RFC3692-style Experiment
+    pub const EXP: Ipv4OptionNumber = Ipv4OptionNumber(30);
+}
+
+/// Represents an IPv4 option
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Ipv4OptionNumber(pub u8);
+
+impl Ipv4OptionNumber {
+    /// Create a new Ipv4OptionNumber
+    pub fn new(value: u8) -> Ipv4OptionNumber {
+        Ipv4OptionNumber(value)
+    }
+}
+
+impl PrimitiveValues for Ipv4OptionNumber {
+    type T = (u8,);
+    fn to_primitive_values(&self) -> (u8,) {
+        (self.0,)
+    }
+}
 
 /// Represents an IPv4 Packet
 #[packet]
