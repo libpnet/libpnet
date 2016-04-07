@@ -19,6 +19,7 @@ use pnet::packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
 use pnet::packet::ipv4::Ipv4Packet;
 use pnet::packet::ipv6::Ipv6Packet;
 use pnet::packet::udp::UdpPacket;
+use pnet::packet::tcp::TcpPacket;
 
 use pnet::datalink;
 
@@ -36,12 +37,10 @@ fn handle_udp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, 
 }
 
 fn handle_tcp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8]) {
-    // Since we only look at source and destination ports, and these are located in the same
-    // place in both TCP and UDP headers, we cheat here
-    let udp = UdpPacket::new(packet);
-    if let Some(udp) = udp {
+    let tcp = TcpPacket::new(packet);
+    if let Some(tcp) = tcp {
         println!("[{}]: TCP Packet: {}:{} > {}:{}; length: {}", interface_name, source,
-                    udp.get_source(), destination, udp.get_destination(), packet.len());
+                    tcp.get_source(), destination, tcp.get_destination(), packet.len());
     } else {
         println!("[{}]: Malformed TCP Packet", interface_name);
     }

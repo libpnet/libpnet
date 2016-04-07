@@ -379,3 +379,45 @@ fn get_network_interfaces_impl() -> Vec<NetworkInterface> {
 
     vec
 }
+
+/// Convert value to byte array
+pub trait Octets {
+    /// Output type - bytes array
+    type Output;
+
+    /// Return value as bytes (big-endian order)
+    fn octets(&self) -> Self::Output;
+}
+
+impl Octets for u64 {
+    type Output = [u8; 8];
+
+    fn octets(&self) -> Self::Output {
+        [(*self >> 56) as u8, (*self >> 48) as u8, (*self >> 40) as u8, (*self >> 32) as u8,
+         (*self >> 24) as u8, (*self >> 16) as u8, (*self >> 8) as u8, *self as u8]
+    }
+}
+
+impl Octets for u32 {
+    type Output = [u8; 4];
+
+    fn octets(&self) -> Self::Output {
+        [(*self >> 24) as u8, (*self >> 16) as u8 , (*self >> 8) as u8, *self as u8]
+    }
+}
+
+impl Octets for u16 {
+    type Output = [u8; 2];
+
+    fn octets(&self) -> Self::Output {
+        [(*self >> 8) as u8, *self as u8]
+    }
+}
+
+impl Octets for u8 {
+    type Output = [u8; 1];
+
+    fn octets(&self) -> Self::Output {
+        [*self]
+    }
+}
