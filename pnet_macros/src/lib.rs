@@ -225,7 +225,7 @@ fn variant_data_fields(vd: &mut ast::VariantData) -> &mut [ast::StructField] {
 #[cfg(feature = "with-syntex")]
 fn remove_attributes_struct(vd: &mut ast::VariantData) {
     for field in variant_data_fields(vd) {
-        let mut attrs = &mut field.node.attrs;
+        let mut attrs = &mut field.attrs;
         attrs.retain(|attr| {
             match attr.node.value.node {
                 ast::MetaItemKind::Word(ref s) => {

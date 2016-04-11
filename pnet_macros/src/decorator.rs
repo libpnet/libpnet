@@ -104,7 +104,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
         },
         ast::VariantData::Tuple(ref fields, _) => {
             for ref field in fields {
-                if let None = field.node.ident() {
+                if let None = field.ident {
                     ecx.span_err(field.span, "all fields in a packet must be named");
                     return None;
                 }
@@ -115,7 +115,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
     };
 
     for ref field in sfields {
-        let field_name = match field.node.ident() {
+        let field_name = match field.ident {
             Some(name) => name.to_string(),
             None => {
                 panic!("This shouldn't happen");
@@ -126,7 +126,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
         let mut struct_length = None;
         let mut construct_with = Vec::new();
         let mut seen = Vec::new();
-        for attr in &field.node.attrs {
+        for attr in &field.attrs {
             let node = &attr.node.value.node;
             match *node {
                 ast::MetaItemKind::Word(ref s) => {
@@ -185,7 +185,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
                             let node = &lit.node;
                             if let ast::LitKind::Str(ref s, _) = *node {
                                 let field_names: Vec<String> = sfields.iter().filter_map(|field| {
-                                    field.node.ident()
+                                    field.ident
                                         .map(|name| name.to_string())
                                         .and_then(|name| {
                                             if name == field_name {
@@ -219,7 +219,7 @@ fn make_packet(ecx: &mut ExtCtxt, span: Span, name: String, vd: &ast::VariantDat
             return None;
         }
 
-        let ty = match make_type(ty_to_string(&*field.node.ty), true) {
+        let ty = match make_type(ty_to_string(&*field.ty), true) {
             Ok(ty) => ty,
             Err(e) => {
                 ecx.span_err(field.span, &e);
