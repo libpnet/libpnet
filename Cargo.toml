@@ -1,6 +1,6 @@
 [package]
 name = "pnet"
-version = "0.8.0"
+version = "0.8.1"
 authors = [ "Robert Clipsham <robert@octarineparrot.com>" ]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
@@ -35,7 +35,7 @@ version = ">=0.0"
 version = "=0.1.12"
 
 [dependencies.syntex]
-version = "0.30.*"
+version = "0.31.*"
 optional = true
 
 [dependencies.pnet_macros]
@@ -58,5 +58,5 @@ version = ">=0.1"
 time = ">=0.1"
 
 [build-dependencies]
-syntex = { version = "0.30.*", optional = true }
+syntex = { version = "0.31.*", optional = true }
 pnet_macros = { path = "pnet_macros", version = ">=0.6" }
