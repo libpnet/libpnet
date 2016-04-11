@@ -100,7 +100,7 @@ fn handle_arp_packet(interface_name: &str, ethernet: &EthernetPacket) {
 }
 
 fn handle_packet(interface_name: &str, ethernet: &EthernetPacket) {
-    match ethernet.get_ethertype() {
+    match ethernet.get_ethertype().unpack() {
         EtherTypes::Ipv4 => handle_ipv4_packet(interface_name, ethernet),
         EtherTypes::Ipv6 => handle_ipv6_packet(interface_name, ethernet),
         EtherTypes::Arp  => handle_arp_packet(interface_name, ethernet),

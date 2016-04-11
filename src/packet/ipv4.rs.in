@@ -19,85 +19,83 @@ use std::net::Ipv4Addr;
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod Ipv4OptionNumbers {
-    use super::Ipv4OptionNumber;
-
     /// End of Options List
-    pub const EOL: Ipv4OptionNumber = Ipv4OptionNumber(0);
+    pub const EOL: u8 = 0;
 
     /// No Operation
-    pub const NOP: Ipv4OptionNumber = Ipv4OptionNumber(1);
+    pub const NOP: u8 = 1;
 
     /// Security
-    pub const SEC: Ipv4OptionNumber = Ipv4OptionNumber(2);
+    pub const SEC: u8 = 2;
 
     /// Loose Source Route
-    pub const LSR: Ipv4OptionNumber = Ipv4OptionNumber(3);
+    pub const LSR: u8 = 3;
 
     /// Time Stamp
-    pub const TS: Ipv4OptionNumber = Ipv4OptionNumber(4);
+    pub const TS: u8 = 4;
 
     /// Extended Security
-    pub const ESEC: Ipv4OptionNumber = Ipv4OptionNumber(5);
+    pub const ESEC: u8 = 5;
 
     /// Commercial Security
-    pub const CIPSO: Ipv4OptionNumber = Ipv4OptionNumber(6);
+    pub const CIPSO: u8 = 6;
 
     /// Record Route
-    pub const RR: Ipv4OptionNumber = Ipv4OptionNumber(7);
+    pub const RR: u8 = 7;
 
     /// Stream ID
-    pub const SID: Ipv4OptionNumber = Ipv4OptionNumber(8);
+    pub const SID: u8 = 8;
 
     /// Strict Source Route
-    pub const SSR: Ipv4OptionNumber = Ipv4OptionNumber(9);
+    pub const SSR: u8 = 9;
 
     /// Experimental Measurement
-    pub const ZSU: Ipv4OptionNumber = Ipv4OptionNumber(10);
+    pub const ZSU: u8 = 10;
 
     /// MTU Probe
-    pub const MTUP: Ipv4OptionNumber = Ipv4OptionNumber(11);
+    pub const MTUP: u8 = 11;
 
     /// MTU Reply
-    pub const MTUR: Ipv4OptionNumber = Ipv4OptionNumber(12);
+    pub const MTUR: u8 = 12;
 
     /// Experimental Flow Control
-    pub const FINN: Ipv4OptionNumber = Ipv4OptionNumber(13);
+    pub const FINN: u8 = 13;
 
     /// Experimental Access Control
-    pub const VISA: Ipv4OptionNumber = Ipv4OptionNumber(14);
+    pub const VISA: u8 = 14;
 
     /// ENCODE
-    pub const ENCODE: Ipv4OptionNumber = Ipv4OptionNumber(15);
+    pub const ENCODE: u8 = 15;
 
     /// IMI Traffic Descriptor
-    pub const IMITD: Ipv4OptionNumber = Ipv4OptionNumber(16);
+    pub const IMITD: u8 = 16;
 
     /// Extended Internet Protocol
-    pub const EIP: Ipv4OptionNumber = Ipv4OptionNumber(17);
+    pub const EIP: u8 = 17;
 
     /// Traceroute
-    pub const TR: Ipv4OptionNumber = Ipv4OptionNumber(18);
+    pub const TR: u8 = 18;
 
     /// Address Extension
-    pub const ADDEXT: Ipv4OptionNumber = Ipv4OptionNumber(19);
+    pub const ADDEXT: u8 = 19;
 
     /// Router Alert
-    pub const RTRALT: Ipv4OptionNumber = Ipv4OptionNumber(20);
+    pub const RTRALT: u8 = 20;
 
     /// Selective Directed Broadcast
-    pub const SDB: Ipv4OptionNumber = Ipv4OptionNumber(21);
+    pub const SDB: u8 = 21;
 
     /// Dynamic Packet State
-    pub const DPS: Ipv4OptionNumber = Ipv4OptionNumber(23);
+    pub const DPS: u8 = 23;
 
     /// Upstream Multicast Pkt.
-    pub const UMP: Ipv4OptionNumber = Ipv4OptionNumber(24);
+    pub const UMP: u8 = 24;
 
     /// Quick-Start
-    pub const QS: Ipv4OptionNumber = Ipv4OptionNumber(25);
+    pub const QS: u8 = 25;
 
     /// RFC3692-style Experiment
-    pub const EXP: Ipv4OptionNumber = Ipv4OptionNumber(30);
+    pub const EXP: u8 = 30;
 }
 
 /// Represents an IPv4 option
@@ -108,6 +106,12 @@ impl Ipv4OptionNumber {
     /// Create a new Ipv4OptionNumber
     pub fn new(value: u8) -> Ipv4OptionNumber {
         Ipv4OptionNumber(value)
+    }
+
+    /// Unpack the interal value.
+    pub fn unpack(&self) -> u8 {
+        let &Ipv4OptionNumber(value) = self;
+        value
     }
 }
 
@@ -197,7 +201,7 @@ pub struct Ipv4Option {
 /// Few options (EOL, NOP) are 1 bytes long, and then have a length field equal
 /// to 0
 fn ipv4_option_length(option: &Ipv4OptionPacket) -> usize {
-    match option.get_number() {
+    match option.get_number().unpack() {
         Ipv4OptionNumbers::EOL => 0,
         Ipv4OptionNumbers::NOP => 0,
         _ => 1,
@@ -288,7 +292,7 @@ fn ipv4_packet_option_test() {
         assert_eq!(ipv4_options.get_class(), 0);
 
         ipv4_options.set_number(Ipv4OptionNumber(3));
-        assert_eq!(ipv4_options.get_number(), Ipv4OptionNumbers::LSR);
+        assert_eq!(ipv4_options.get_number().unpack(), Ipv4OptionNumbers::LSR);
 
         ipv4_options.set_length(vec![3]);
         assert_eq!(ipv4_options.get_length(), vec![3]);

@@ -11,7 +11,7 @@ extern crate pnet;
 use pnet::datalink::datalink_channel;
 use pnet::datalink::DataLinkChannelType::Layer2;
 use pnet::packet::{MutablePacket, Packet};
-use pnet::packet::ethernet::{EtherTypes, MutableEthernetPacket, EthernetPacket};
+use pnet::packet::ethernet::{EtherType, EtherTypes, MutableEthernetPacket, EthernetPacket};
 use pnet::packet::ip::IpNextHeaderProtocols;
 use pnet::packet::ipv4::MutableIpv4Packet;
 use pnet::packet::ipv4;
@@ -97,7 +97,7 @@ fn main() {
     {
         mut_ethernet_header.set_destination(destination);
         mut_ethernet_header.set_source(interface.mac_address());
-        mut_ethernet_header.set_ethertype(EtherTypes::Ipv4);
+        mut_ethernet_header.set_ethertype(EtherType::new(EtherTypes::Ipv4));
         build_udp4_packet(mut_ethernet_header.payload_mut(), "rmesg");
     }
 
