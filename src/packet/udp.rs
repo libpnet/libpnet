@@ -6,11 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! UDP packet abstraction
-
 #[cfg(feature = "with-syntex")]
 include!(concat!(env!("OUT_DIR"), "/udp.rs"));
 
 #[cfg(not(feature = "with-syntex"))]
 include!("udp.rs.in");
-

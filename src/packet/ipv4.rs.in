@@ -7,9 +7,8 @@
 // except according to those terms.
 
 use packet::ip::IpNextHeaderProtocol;
-
-use packet::PrimitiveValues;
-
+use packet::{Packet, PseudoHeader, PrimitiveValues};
+use util::rfc1071_checksum;
 use pnet_macros_support::types::*;
 
 use std::net::Ipv4Addr;
@@ -143,30 +142,65 @@ pub struct Ipv4 {
     payload: Vec<u8>,
 }
 
-/// Calculates the checksum of an IPv4 packet
-pub fn checksum(packet: &Ipv4Packet) -> u16be {
-    use packet::Packet;
+/// Represents an IPv4 pseudo header
+///
+/// 0          8          16          24         32
+/// +---------------------------------------------+
+/// |                  source_ip                  |
+/// +----------------------+----------------------+
+/// |                destination_ip               |
+/// +-----------+----------+----------------------+
+/// |   zeros   | protocol | tcp/udp length       |
+/// +-----------+---------------------------------+
+#[packet]
+pub struct Ipv4PseudoHeader {
+    #[construct_with(u8, u8, u8, u8)]
+    source: Ipv4Addr,
+    #[construct_with(u8, u8, u8, u8)]
+    destination: Ipv4Addr,
+    zeros: u8,
+    #[construct_with(u8)]
+    next_level_protocol: IpNextHeaderProtocol,
+    inner_packet_length: u16be,
+    #[payload]
+    payload: Vec<u8>,
+}
 
-    let len = packet.get_header_length() as usize * 4;
-    let mut sum = 0u32;
-    let mut i = 0;
-    while i < len {
-        let word = (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        sum = sum + word;
-        i = i + 2;
-    }
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
+impl<'p> PseudoHeader for Ipv4Packet<'p> {
 
-    !sum as u16
+    /// Return a PseudoHeader packet out of the packet header.
+    ///
+    /// The `inner_packet_length` is optional, since in case of UDP, it is taken from the length
+    /// field of the UDP header, whereas for TCP, it is computed from the header length.
+    fn populate(&self, buffer: &mut [u8], inner_packet_length: Option<usize>) -> Ipv4PseudoHeader {
+        let mut pseudo_header_buf: Vec<u8> = vec![0, 12];
+        {
+            let mut pseudo_header = MutableIpv4PseudoHeaderPacket::new(&mut buffer[..]).unwrap();
+            pseudo_header.set_source(self.get_source());
+            pseudo_header.set_destination(self.get_destination());
+            pseudo_header.set_next_level_protocol(self.get_next_level_protocol());
+            if let Some(inner_packet_length) = inner_packet_length {
+                pseudo_header.set_inner_packet_length(inner_packet_length as u16);
+            } else {
+                pseudo_header.set_inner_packet_length(
+                    // FIXME: is u16 legit for payload length?
+                    self.payload().len() as u16 - (4 as u16 * self.get_header_length() as u16)
+                );
+            }
+        }
+
+        PseudoHeaderIPv6IPv4(pseudo_header.to_immutable())
+    }
 }
 
 fn ipv4_options_length(ipv4: &Ipv4Packet) -> usize {
-    // the header_length unit is the "word"
-    // - and a word is made of 4 bytes,
-    // - and the header length (without the options) is 5 words long
-    ipv4.get_header_length() as usize * 4 - 20
+    ipv4.get_header_length() as usize - 5
+}
+
+/// Calculates the checksum of an IPv4 packet
+pub fn checksum(packet: &Ipv4Packet) -> u16be {
+    use packet::Packet;
+    rfc1071_checksum(packet.packet(), None)
 }
 
 #[test]
@@ -182,33 +216,10 @@ fn ipv4_options_length_test() {
 pub struct Ipv4Option {
     copied: u1,
     class: u2,
-    #[construct_with(u5)]
-    number: Ipv4OptionNumber,
-    #[length_fn = "ipv4_option_length"]
-    // The length field is an optional field, using a Vec is a way to implement
-    // it
-    length: Vec<u8>,
-    #[length_fn = "ipv4_option_payload_length"]
+    number: u5,
+    length: u8,
     #[payload]
     data: Vec<u8>,
-}
-
-/// This function gets the 'length' of the length field of the IPv4Option packet
-/// Few options (EOL, NOP) are 1 bytes long, and then have a length field equal
-/// to 0
-fn ipv4_option_length(option: &Ipv4OptionPacket) -> usize {
-    match option.get_number() {
-        Ipv4OptionNumbers::EOL => 0,
-        Ipv4OptionNumbers::NOP => 0,
-        _ => 1,
-    }
-}
-
-fn ipv4_option_payload_length(ipv4_option: &Ipv4OptionPacket) -> usize {
-    match ipv4_option.get_length().first() {
-        Some(len) => *len as usize - 2,
-        None => 0,
-    }
 }
 
 #[test]
@@ -270,35 +281,6 @@ fn ipv4_packet_test() {
                       0xb6, 0x4e,     /* checksum */
                       0xc0, 0xa8, 0x00, 0x01, /* source ip */
                       0xc0, 0xa8, 0x00, 0xc7  /* dest ip */];
-
-    assert_eq!(&ref_packet[..], &packet[..]);
-}
-
-#[test]
-fn ipv4_packet_option_test() {
-
-    let mut packet = [0u8; 3];
-    {
-        let mut ipv4_options = MutableIpv4OptionPacket::new(&mut packet[..]).unwrap();
-
-        ipv4_options.set_copied(1);
-        assert_eq!(ipv4_options.get_copied(), 1);
-
-        ipv4_options.set_class(0);
-        assert_eq!(ipv4_options.get_class(), 0);
-
-        ipv4_options.set_number(Ipv4OptionNumber(3));
-        assert_eq!(ipv4_options.get_number(), Ipv4OptionNumbers::LSR);
-
-        ipv4_options.set_length(vec![3]);
-        assert_eq!(ipv4_options.get_length(), vec![3]);
-
-        ipv4_options.set_data(vec![16]);
-    }
-
-    let ref_packet = [0x83,           /* copy / class / number */
-                      0x03,           /* length */
-                      0x10,           /* data */];
 
     assert_eq!(&ref_packet[..], &packet[..]);
 }

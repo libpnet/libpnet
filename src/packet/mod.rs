@@ -10,6 +10,27 @@
 
 #![macro_use]
 
+pub enum PseudoHeaderIPv6IPv4 {
+    Ipv6PseudoHeader,
+    Ipv4PseudoHeader,
+}
+
+/// Used to help compute checksum value of packet
+pub trait PseudoHeader {
+    /// Converts IPv4 or IPv6 specific fields to a checksum value
+    // Should we add a "next_header" u16 argument for ipv6 packets with extension header?
+    //
+    // According to rfc 2460, regarding the "next header" field in the ipv6 pseudo header:
+    //
+    // The Next Header value in the pseudo-header identifies the
+    // upper-layer protocol (e.g., 6 for TCP, or 17 for UDP).  It will
+    // differ from the Next Header value in the IPv6 header if there
+    // are extension headers between the IPv6 header and the upper-
+    // layer header.
+    //
+    fn populate(&self, buffer: &mut [u8], inner_packet_length: Option<usize>) -> PseudoHeaderIPv6IPv4 ;
+}
+
 /// Represents a generic network packet
 pub trait Packet {
     /// Retreive the underlying buffer for the packet
