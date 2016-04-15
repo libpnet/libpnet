@@ -290,10 +290,10 @@ fn ipv4_packet_option_test() {
         ipv4_options.set_number(Ipv4OptionNumber(3));
         assert_eq!(ipv4_options.get_number(), Ipv4OptionNumbers::LSR);
 
-        ipv4_options.set_length(vec![3]);
+        ipv4_options.set_length(&vec![3]);
         assert_eq!(ipv4_options.get_length(), vec![3]);
 
-        ipv4_options.set_data(vec![16]);
+        ipv4_options.set_data(&vec![16]);
     }
 
     let ref_packet = [0x83,           /* copy / class / number */
