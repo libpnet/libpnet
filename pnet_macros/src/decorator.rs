@@ -558,7 +558,7 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                 #[inline]
                                 #[allow(trivial_numeric_casts)]
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
-                                pub fn set_{name}(&mut self, vals: Vec<{inner_ty_str}>) {{
+                                pub fn set_{name}(&mut self, vals: &[{inner_ty_str}]) {{
                                     use std::ptr::copy_nonoverlapping;
                                     let mut _self = self;
                                     let current_offset = {co};
@@ -669,7 +669,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 #[inline]
                                 #[allow(trivial_numeric_casts)]
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
-                                pub fn set_{name}(&mut self, vals: Vec<{inner_ty_str}>) {{
+                                pub fn set_{name}(&mut self, vals: &[{inner_ty_str}]) {{
                                     use pnet::packet::PacketSize;
                                     let _self = self;
                                     let mut current_offset = {co};
@@ -758,9 +758,16 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
     fn generate_set_fields(packet: &Packet) -> String {
         let mut set_fields = String::new();
         for field in &packet.fields {
-            set_fields = set_fields + &format!("_self.set_{field}(packet.{field});\n",
-            field = field.name)[..];
-
+            match field.ty {
+                Type::Vector(_) => {
+                    set_fields = set_fields + &format!("_self.set_{field}(&packet.{field});\n",
+                    field = field.name)[..];
+                },
+                _ => {
+                    set_fields = set_fields + &format!("_self.set_{field}(packet.{field});\n",
+                    field = field.name)[..];
+                }
+            }
         }
 
         set_fields
@@ -772,7 +779,7 @@ fn generate_packet_impl(cx: &mut GenContext, packet: &Packet, mutable: bool, nam
         format!("/// Populates a {name}Packet using a {name} structure
              #[inline]
              #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
-             pub fn populate(&mut self, packet: {name}) {{
+             pub fn populate(&mut self, packet: &{name}) {{
                  let _self = self;
                  {set_fields}
              }}", name = &imm_name[..imm_name.len() - 6], set_fields = set_fields)
