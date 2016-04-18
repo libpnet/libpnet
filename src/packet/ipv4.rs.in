@@ -14,6 +14,18 @@ use pnet_macros_support::types::*;
 
 use std::net::Ipv4Addr;
 
+/// IPv4 header flags
+#[allow(non_snake_case)]
+#[allow(non_upper_case_globals)]
+pub mod Ipv4Flags {
+    use pnet_macros_support::types::*;
+
+    /// Don't Fragment flag
+    pub const DontFragment: u3 = 0b010;
+    /// More Fragments flag
+    pub const MoreFragments: u3 = 0b100;
+}
+
 /// IPv4 header options numbers as defined in
 /// http://www.iana.org/assignments/ip-parameters/ip-parameters.xhtml
 #[allow(non_snake_case)]
@@ -236,7 +248,7 @@ fn ipv4_packet_test() {
         ip_header.set_identification(257);
         assert_eq!(ip_header.get_identification(), 257);
 
-        ip_header.set_flags(2);
+        ip_header.set_flags(Ipv4Flags::DontFragment);
         assert_eq!(ip_header.get_flags(), 2);
 
         ip_header.set_fragment_offset(257);
