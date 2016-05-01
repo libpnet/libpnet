@@ -9,6 +9,7 @@
 use packet::{Packet, PrimitiveValues};
 
 use util::MacAddr;
+use std::fmt;
 
 /// Represents an Ethernet packet
 #[packet]
@@ -89,3 +90,15 @@ impl PrimitiveValues for EtherType {
         (self.0,)
     }
 }
+
+impl fmt::Display for EtherType       {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            &EtherTypes::Ipv4        => "Ipv4", //(0x0800);
+            &EtherTypes::Arp         => "Arp", //(0x0806);
+            &EtherTypes::WakeOnLan   => "WakeOnLan", //(0x0842);
+            &EtherTypes::Rarp        => "Rarp", //(0x8035);
+            &EtherTypes::Ipv6        => "Ipv6", //(0x86DD);
+            _                       => "unknown"
+        })
+    }

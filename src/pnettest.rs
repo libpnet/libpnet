@@ -15,6 +15,7 @@ use std::iter::Iterator;
 
 use packet::Packet;
 use packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
+use pnet::packet::ethernet::{EtherTypes, EtherType};
 use packet::ipv4::{Ipv4Packet, MutableIpv4Packet};
 use packet::ipv4;
 use packet::ipv6::MutableIpv6Packet;
@@ -497,4 +498,15 @@ fn check_test_environment() {
     #[cfg(any(windows, target_os = "linux"))]
     fn test_iface() {
     }
+}
+
+
+#[test]
+fn check_display() {
+    use std::env;
+    let ipv4 = EtherType(0x0800);
+    let arp = EtherType(0x0806);
+    assert_eq!(format!("{}{}",ipv4,arp),"Ipv4Arp");
+    let Hopopt = IpNextHeaderProtocol(0);
+    assert_eq!(format!("{}",Hopopt),"Hopopt");
 }
