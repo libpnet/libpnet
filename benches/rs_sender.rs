@@ -8,8 +8,7 @@
 
 extern crate pnet;
 
-use pnet::datalink::datalink_channel;
-use pnet::datalink::DataLinkChannelType::Layer2;
+use pnet::datalink;
 use pnet::packet::{MutablePacket, Packet};
 use pnet::packet::ethernet::{EtherTypes, MutableEthernetPacket, EthernetPacket};
 use pnet::packet::ip::IpNextHeaderProtocols;
@@ -77,6 +76,8 @@ pub fn build_udp4_packet(packet: &mut [u8], msg: &str) {
 }
 
 fn main() {
+    use pnet::datalink::Channel::Ethernet;
+
     let interface_name = env::args().nth(1).unwrap();
     let destination = (&env::args().nth(2).unwrap()[..]).parse().unwrap();
     // Find the network interface with the provided name
@@ -87,8 +88,9 @@ fn main() {
                               .unwrap();
 
     // Create a channel to send on
-    let (mut tx, _) = match datalink_channel(interface, 64, 0, Layer2) {
-        Ok((tx, rx)) => (tx, rx),
+    let mut tx = match datalink::channel(interface, &Default::default()) {
+        Ok(Ethernet(tx, _)) => tx,
+        Ok(_) => panic!("rs_sender: unhandled channel type"),
         Err(e) => panic!("rs_sender: unable to create channel: {}", e)
     };
 

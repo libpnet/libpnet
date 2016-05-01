@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+//! Support for sending and receiving data link layer packets using the netmap library
+
 #![allow(bad_style)]
 
 extern crate netmap_sys;
@@ -25,8 +27,9 @@ use std::ptr;
 use std::slice;
 use std::sync::Arc;
 
-use datalink::{EthernetDataLinkChannelIterator, DataLinkChannelType, EthernetDataLinkReceiver,
-               EthernetDataLinkSender};
+use datalink;
+use datalink::Channel::Ethernet;
+use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use util::NetworkInterface;
@@ -90,26 +93,40 @@ impl Drop for NmDesc {
     }
 }
 
+/// Netmap specific configuration
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct Config;
+
+impl<'a> From<&'a datalink::Config> for Config {
+    fn from(_config: &datalink::Config) -> Config {
+        Config
+    }
+}
+
+impl Default for Config {
+    fn default() -> Config {
+        Config
+    }
+}
+
+/// Create a datalink channel using the netmap library
 #[inline]
-pub fn datalink_channel(network_interface: &NetworkInterface,
-                        _write_buffer_size: usize,
-                        _read_buffer_size: usize,
-                        _channel_type: DataLinkChannelType)
-    -> io::Result<(Box<EthernetDataLinkSender>, Box<EthernetDataLinkReceiver>)> {
+pub fn channel(network_interface: &NetworkInterface, _config: &Config)
+    -> io::Result<datalink::Channel> {
     // FIXME probably want one for each of send/recv
     let desc = NmDesc::new(network_interface);
     match desc {
         Ok(desc) => {
             let arc = Arc::new(desc);
 
-            Ok((Box::new(DataLinkSenderImpl { desc: arc.clone() }),
-                Box::new(DataLinkReceiverImpl { desc: arc })))
+            Ok(Ethernet(Box::new(DataLinkSenderImpl { desc: arc.clone() }),
+                        Box::new(DataLinkReceiverImpl { desc: arc })))
         }
         Err(e) => Err(e),
     }
 }
 
-pub struct DataLinkSenderImpl {
+struct DataLinkSenderImpl {
     desc: Arc<NmDesc>,
 }
 
@@ -167,7 +184,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
     }
 }
 
-pub struct DataLinkReceiverImpl {
+struct DataLinkReceiverImpl {
     desc: Arc<NmDesc>,
 }
 
@@ -178,7 +195,7 @@ impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
     }
 }
 
-pub struct DataLinkChannelIteratorImpl<'a> {
+struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
 }
 

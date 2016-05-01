@@ -43,8 +43,8 @@
 //! ```no_run
 //! extern crate pnet;
 //!
-//! use pnet::datalink::datalink_channel;
-//! use pnet::datalink::DataLinkChannelType::Layer2;
+//! use pnet::datalink;
+//! use pnet::datalink::Channel::Ethernet;
 //! use pnet::packet::{Packet, MutablePacket};
 //! use pnet::util::{NetworkInterface, get_network_interfaces};
 //!
@@ -64,11 +64,9 @@
 //!                               .unwrap();
 //!
 //!     // Create a new channel, dealing with layer 2 packets
-//!     let (mut tx, mut rx) = match datalink_channel(&interface,
-//!                                                   4096,
-//!                                                   4096,
-//!                                                   Layer2) {
-//!         Ok((tx, rx)) => (tx, rx),
+//!     let (mut tx, mut rx) = match datalink::channel(&interface, &Default::default()) {
+//!         Ok(Ethernet(tx, rx)) => (tx, rx),
+//!         Ok(_) => panic!("Unhandled channel type"),
 //!         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
 //!     };
 //!

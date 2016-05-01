@@ -18,12 +18,18 @@ use util::NetworkInterface;
 #[path = "winpcap.rs"]
 mod backend;
 
+#[cfg(windows)]
+pub mod winpcap;
+
 #[cfg(all(not(feature = "netmap"),
           target_os = "linux"
           )
       )]
 #[path = "linux.rs"]
 mod backend;
+
+#[cfg(target_os = "linux")]
+pub mod linux;
 
 #[cfg(all(not(feature = "netmap"),
           any(target_os = "freebsd",
@@ -33,42 +39,93 @@ mod backend;
 #[path = "bpf.rs"]
 mod backend;
 
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
+pub mod bpf;
+
 #[cfg(feature = "netmap")]
 #[path = "netmap.rs"]
 mod backend;
 
-/// Type of data link channel to present
-#[derive(Clone, Copy)]
-pub enum DataLinkChannelType {
+#[cfg(feature = "netmap")]
+pub mod netmap;
+
+/// Type of data link channel to present (Linux only)
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ChannelType {
     /// Send and receive layer 2 packets directly, including headers
     Layer2,
     /// Send and receive "cooked" packets - send and receive network layer packets
-    /// FIXME Currently unimplemented
     Layer3(EtherType),
 }
 
-/// Create a new (DataLinkSender, DataLinkReceiver) pair
+/// A channel for sending and receiving at the data link layer
+///
+/// NOTE: It is important to always include a catch-all variant in match statements using this
+/// enum, since new variants may be added. For example:
+///
+/// ```ignore
+/// match some_channel {
+///     Ethernet(tx, rx) => { /* Handle Ethernet packets */ },
+///     _ => panic!("Unhandled channel type")
+/// }
+/// ```
+pub enum Channel {
+    /// A datalink channel which sends and receives Ethernet packets
+    Ethernet(Box<EthernetDataLinkSender>, Box<EthernetDataLinkReceiver>),
+
+    /// This variant should never be used
+    ///
+    /// Including it allows new variants to be added to `Channel` without breaking existing code.
+    PleaseIncludeACatchAllVariantWhenMatchingOnThisEnum,
+}
+
+/// A generic configuration type, encapsulating all options supported by each backend
+///
+/// Each option should be treated as a hint - each backend is free to ignore any and all
+/// options which don't apply to it.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct Config {
+    /// The size of buffer to use when writing packets. Defaults to 4096
+    pub write_buffer_size: usize,
+
+    /// The size of buffer to use when reading packets. Defaults to 4096
+    pub read_buffer_size: usize,
+
+    /// Linux only: Specifies whether to read packets at the datalink layer or network layer.
+    /// Defaults to Layer2
+    pub channel_type: ChannelType,
+
+    /// BPF/OS X only: The number of /dev/bpf* file descriptors to attempt before failing. Defaults
+    /// to: 1000
+    pub bpf_fd_attempts: usize
+}
+
+impl Default for Config {
+    fn default() -> Config {
+        Config {
+            write_buffer_size: 4096,
+            read_buffer_size: 4096,
+            channel_type: ChannelType::Layer2,
+            bpf_fd_attempts: 1000
+        }
+    }
+}
+
+/// Create a new datalink channel for sending and receiving data
 ///
 /// This allows for sending and receiving packets at the data link layer.
 ///
 /// A list of network interfaces can be retrieved using util::get_network_interfaces().
 ///
-/// The buffer sizes should be large enough to handle the largest packet you wish
-/// to send or receive. Note that these parameters may be ignored, depending on the operating
-/// system.
+/// The configuration serves as a hint to the backend - some or all of it may be used or ignored,
+/// depending on which backend is used.
 ///
-/// The channel type specifies what layer to send and receive packets at, currently only layer 2 is
-/// supported.
+/// When matching on the returned channel, make sure to include a catch-all so that code doesn't
+/// break when new channel types are added.
 #[inline]
-pub fn datalink_channel(network_interface: &NetworkInterface,
-                        write_buffer_size: usize,
-                        read_buffer_size: usize,
-                        channel_type: DataLinkChannelType)
-    -> io::Result<(Box<EthernetDataLinkSender>, Box<EthernetDataLinkReceiver>)> {
-    backend::datalink_channel(network_interface,
-                              write_buffer_size,
-                              read_buffer_size,
-                              channel_type)
+pub fn channel(network_interface: &NetworkInterface, configuration: &Config)
+    -> io::Result<Channel> {
+    backend::channel(network_interface, &configuration.into())
 }
 
 macro_rules! dls {
