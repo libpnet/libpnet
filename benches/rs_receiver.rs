@@ -10,13 +10,14 @@
 extern crate pnet;
 extern crate time;
 
-use pnet::datalink::datalink_channel;
-use pnet::datalink::DataLinkChannelType::Layer2;
+use pnet::datalink;
 use pnet::util::{NetworkInterface, get_network_interfaces};
 
 use std::env;
 
 fn main() {
+    use pnet::datalink::Channel::Ethernet;
+
     let iface_name = env::args().nth(1).unwrap();
     let interface_names_match = |iface: &NetworkInterface| iface.name == iface_name;
 
@@ -28,8 +29,9 @@ fn main() {
                               .unwrap();
 
     // Create a channel to receive on
-    let (_, mut rx) = match datalink_channel(&interface, 0, 4096, Layer2) {
-        Ok((tx, rx)) => (tx, rx),
+    let mut rx = match datalink::channel(&interface, &Default::default()) {
+        Ok(Ethernet(_, rx)) => rx,
+        Ok(_) => panic!("rs_sender: unhandled channel type"),
         Err(e) => panic!("rs_benchmark: unable to create channel: {}", e)
     };
 

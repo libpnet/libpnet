@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+//! Support for sending and receiving data link layer packets using the /dev/bpf device
+
 extern crate libc;
 
 use std::collections::VecDeque;
@@ -18,21 +20,57 @@ use std::sync::Arc;
 use bindings::bpf;
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-use datalink::{EthernetDataLinkChannelIterator, DataLinkChannelType, EthernetDataLinkReceiver,
-               EthernetDataLinkSender};
-use datalink::DataLinkChannelType::{Layer2, Layer3};
+use datalink;
+use datalink::Channel::Ethernet;
+use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use internal;
 use util::NetworkInterface;
 
+/// BPF-specific configuration
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct Config {
+    /// The size of buffer to use when writing packets. Defaults to 4096
+    pub write_buffer_size: usize,
+
+    /// The size of buffer to use when reading packets. Defaults to 4096
+    pub read_buffer_size: usize,
+
+    /// The number of /dev/bpf* file descriptors to attempt before failing.
+    ///
+    /// This setting is only used on OS X - FreeBSD uses a single /dev/bpf rather than creating a
+    /// new descriptor each time one is opened.
+    ///
+    /// Defaults to: 1000
+    pub bpf_fd_attempts: usize,
+}
+
+impl<'a> From<&'a datalink::Config> for Config {
+    fn from(config: &datalink::Config) -> Config {
+        Config {
+            write_buffer_size: config.write_buffer_size,
+            read_buffer_size: config.read_buffer_size,
+            bpf_fd_attempts: config.bpf_fd_attempts,
+        }
+    }
+}
+
+impl Default for Config {
+    fn default() -> Config {
+        Config {
+            write_buffer_size: 4096,
+            read_buffer_size: 4096,
+            bpf_fd_attempts: 1000,
+        }
+    }
+}
+
+/// Create a datalink channel using the /dev/bpf device
 // NOTE buffer must be word aligned.
 #[inline]
-pub fn datalink_channel(network_interface: &NetworkInterface,
-                        write_buffer_size: usize,
-                        read_buffer_size: usize,
-                        channel_type: DataLinkChannelType)
-    -> io::Result<(Box<EthernetDataLinkSender>, Box<EthernetDataLinkReceiver>)> {
+pub fn channel(network_interface: &NetworkInterface, config: &Config)
+    -> io::Result<datalink::Channel> {
     #[cfg(target_os = "freebsd")]
-    fn get_fd() -> libc::c_int {
+    fn get_fd(_attempts: usize) -> libc::c_int {
         unsafe {
             libc::open(CString::new(&b"/dev/bpf"[..]).unwrap().as_ptr(),
                        libc::O_RDWR,
@@ -41,9 +79,8 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     }
 
     #[cfg(target_os = "macos")]
-    fn get_fd() -> libc::c_int {
-        // FIXME This is an arbitrary number of attempts
-        for i in 0..1_000isize {
+    fn get_fd(attempts: usize) -> libc::c_int {
+        for i in 0..attempts {
             let fd = unsafe {
                 let file_name = format!("/dev/bpf{}", i);
                 libc::open(CString::new(file_name.as_bytes()).unwrap().as_ptr(),
@@ -76,12 +113,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         Ok(())
     }
 
-    match channel_type {
-        Layer2 => (),
-        Layer3(_) => unimplemented!(),
-    }
-
-    let fd = get_fd();
+    let fd = get_fd(config.bpf_fd_attempts);
     if fd == -1 {
         return Err(io::Error::last_os_error());
     }
@@ -90,7 +122,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         iface.ifr_name[i] = c as i8;
     }
 
-    let buflen = read_buffer_size as libc::c_uint;
+    let buflen = config.read_buffer_size as libc::c_uint;
     // NOTE Buffer length must be set before binding to an interface
     //      otherwise this will return Invalid Argument
     if unsafe { bpf::ioctl(fd, bpf::BIOCSBLEN, &buflen) } == -1 {
@@ -132,7 +164,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     }
 
     let mut loopback = false;
-    let mut allocated_read_buffer_size = read_buffer_size;
+    let mut allocated_read_buffer_size = config.read_buffer_size;
     // The loopback device does weird things
     // FIXME This should really just be another L2 packet header type
     if dlt == bpf::DLT_NULL {
@@ -159,7 +191,7 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
     let fd = Arc::new(internal::FileDesc { fd: fd });
     let sender = Box::new(DataLinkSenderImpl {
         fd: fd.clone(),
-        write_buffer: repeat(0u8).take(write_buffer_size).collect(),
+        write_buffer: repeat(0u8).take(config.write_buffer_size).collect(),
         loopback: loopback,
     });
     let receiver = Box::new(DataLinkReceiverImpl {
@@ -168,10 +200,10 @@ pub fn datalink_channel(network_interface: &NetworkInterface,
         loopback: loopback,
     });
 
-    Ok((sender, receiver))
+    Ok(Ethernet(sender, receiver))
 }
 
-pub struct DataLinkSenderImpl {
+struct DataLinkSenderImpl {
     fd: Arc<internal::FileDesc>,
     write_buffer: Vec<u8>,
     loopback: bool,
@@ -236,7 +268,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
     }
 }
 
-pub struct DataLinkReceiverImpl {
+struct DataLinkReceiverImpl {
     fd: Arc<internal::FileDesc>,
     read_buffer: Vec<u8>,
     loopback: bool,
@@ -253,7 +285,7 @@ impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
     }
 }
 
-pub struct DataLinkChannelIteratorImpl<'a> {
+struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
     packets: VecDeque<(usize, usize)>,
 }
