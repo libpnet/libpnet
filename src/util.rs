@@ -46,7 +46,7 @@ impl PrimitiveValues for MacAddr {
 impl fmt::Display for MacAddr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
-               "{:x}:{:x}:{:x}:{:x}:{:x}:{:x}",
+               "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
                self.0,
                self.1,
                self.2,
