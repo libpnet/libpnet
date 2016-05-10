@@ -30,6 +30,7 @@ mod macros {
         "ipv4.rs",
         "ipv6.rs",
         "udp.rs",
+        "tcp.rs",
     ];
 
     pub fn expand() {
