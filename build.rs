@@ -29,6 +29,7 @@ mod macros {
         "ethernet.rs",
         "ipv4.rs",
         "ipv6.rs",
+        "icmp.rs",
         "udp.rs",
         "tcp.rs",
         "arp.rs"
