@@ -242,12 +242,10 @@ fn remove_attributes_struct(vd: &mut ast::VariantData) {
     }
 }
 
-/// This iterates through a crate and removes any references to attributes
-/// which we introduce but aren't already consumed
 #[cfg(feature = "with-syntex")]
-fn remove_attributes(mut krate: ast::Crate) -> ast::Crate {
-    let mut new_items = Vec::with_capacity(krate.module.items.len());
-    for item in &krate.module.items {
+fn remove_attributes_mod(module: &mut ast::Mod) {
+    let mut new_items = Vec::with_capacity(module.items.len());
+    for item in &module.items {
         let new_item = item.clone().map(|mut item|{
             match item.node {
                 ast::ItemKind::Enum(ref mut ed, ref _gs) => {
@@ -264,6 +262,9 @@ fn remove_attributes(mut krate: ast::Crate) -> ast::Crate {
                 ast::ItemKind::Struct(ref mut sd, ref _gs) => {
                     remove_attributes_struct(sd);
                 },
+                ast::ItemKind::Mod(ref mut m) => {
+                    remove_attributes_mod(m);
+                },
                 _ => {},
             }
 
@@ -272,7 +273,14 @@ fn remove_attributes(mut krate: ast::Crate) -> ast::Crate {
         new_items.push(new_item);
     }
 
-    krate.module.items = new_items;
+    module.items = new_items;
+}
+
+/// This iterates through a crate and removes any references to attributes
+/// which we introduce but aren't already consumed
+#[cfg(feature = "with-syntex")]
+fn remove_attributes(mut krate: ast::Crate) -> ast::Crate {
+    remove_attributes_mod(&mut krate.module);
 
     krate
 }

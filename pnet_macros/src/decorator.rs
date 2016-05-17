@@ -16,7 +16,6 @@ use syntax::ast::Delimited;
 use syntax::ast::TokenTree::{self, Sequence, Token};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
-use syntax::ext::build::AstBuilder;
 use syntax::ext::quote::rt::ExtParseUtils;
 use syntax::parse::token;
 use syntax::print::pprust::{tts_to_string, ty_to_string};
