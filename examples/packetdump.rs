@@ -20,6 +20,7 @@ use pnet::packet::ipv4::Ipv4Packet;
 use pnet::packet::ipv6::Ipv6Packet;
 use pnet::packet::udp::UdpPacket;
 use pnet::packet::tcp::TcpPacket;
+use pnet::packet::arp::ArpPacket;
 
 use pnet::datalink;
 
@@ -89,12 +90,18 @@ fn handle_ipv6_packet(interface_name: &str, ethernet: &EthernetPacket) {
 }
 
 fn handle_arp_packet(interface_name: &str, ethernet: &EthernetPacket) {
-    println!("[{}]: ARP packet: {} > {}; length: {}",
-            interface_name,
-            ethernet.get_source(),
-            ethernet.get_destination(),
-            ethernet.packet().len())
-
+    let header = ArpPacket::new(ethernet.payload());
+	if let Some(header) = header {
+        println!("[{}]: ARP packet: {}({}) > {}({}); operation: {:?}",
+                interface_name,
+                ethernet.get_source(),
+                header.get_sender_proto_addr(),
+                ethernet.get_destination(),
+                header.get_target_proto_addr(),
+                header.get_operation());
+    } else {
+        println!("[{}]: Malformed ARP Packet", interface_name);
+    }
 }
 
 fn handle_packet(interface_name: &str, ethernet: &EthernetPacket) {
