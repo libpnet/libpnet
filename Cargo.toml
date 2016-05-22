@@ -60,6 +60,3 @@ time = ">=0.1"
 [build-dependencies]
 syntex = { version = "0.31.*", optional = true }
 pnet_macros = { path = "pnet_macros", version = ">=0.6" }
-
-[dev-dependencies.pcapng]
-git = "https://github.com/kornholi/pcapng.git"
