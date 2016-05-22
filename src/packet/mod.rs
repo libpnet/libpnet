@@ -97,3 +97,4 @@ pub mod ipv6;
 pub mod udp;
 pub mod tcp;
 pub mod arp;
+pub mod icmp;
