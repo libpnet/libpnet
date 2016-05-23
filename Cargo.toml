@@ -1,6 +1,6 @@
 [package]
 name = "pnet"
-version = "0.9.0"
+version = "0.10.0"
 authors = [ "Robert Clipsham <robert@octarineparrot.com>" ]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
@@ -43,7 +43,7 @@ optional = true
 default-features = false
 features = []
 path = "pnet_macros"
-version = ">=0.8"
+version = ">=0.9"
 
 [dependencies.pnet_macros_plugin]
 optional = true
