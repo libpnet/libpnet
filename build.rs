@@ -32,7 +32,8 @@ mod macros {
         "icmp.rs",
         "udp.rs",
         "tcp.rs",
-        "arp.rs"
+        "arp.rs",
+        "vlan.rs"
     ];
 
     pub fn expand() {
