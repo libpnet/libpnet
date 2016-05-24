@@ -68,6 +68,8 @@ pub mod EtherTypes {
     pub const Rarp: EtherType = EtherType(0x8035);
     /// Internet Protocol version 6 (IPv6) [RFC7042]
     pub const Ipv6: EtherType = EtherType(0x86DD);
+    /// VLAN-tagged frame (IEEE 802.1Q)
+    pub const Vlan: EtherType = EtherType(0x8100);
 }
 
 /// Represents the Ethernet ethertype field.
