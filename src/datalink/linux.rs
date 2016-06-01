@@ -117,6 +117,44 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
     let mut addr: libc::sockaddr_storage = unsafe { mem::zeroed() };
     let len = network_addr_to_sockaddr(network_interface, &mut addr, proto as i32);
 
+    // Enable hardware timestamps
+    if config.receive_hardware_timestamps {
+        // ioctl to set up hardware timestamping
+        let mut hwtstamp: linux::ifreq = unsafe { mem::zeroed() };
+        let mut hwconfig: linux::hwtstamp_config = unsafe { mem::zeroed() };
+        hwtstamp.ifr_name.clone_from_slice(network_interface.name.as_bytes());
+        hwtstamp.ifr_data = (&mut hwconfig as *mut linux::hwtstamp_config) as *mut libc::c_char;
+        hwconfig.tx_type = linux::HWTSTAMP_TX_OFF;
+        hwconfig.rx_filter = linux::HWTSTAMP_FILTER_ALL;
+        if unsafe {
+            linux::ioctl(socket,
+                         linux::SIOCSHWTSTAMP,
+                         (&mut hwtstamp as *mut linux::ifreq) as *mut libc::c_void)
+        } < 0 {
+            let err = io::Error::last_os_error();
+            unsafe {
+                internal::close(socket);
+            }
+            return Err(err);
+        }
+
+        // Set the sockopt for timestamping
+        let timestamp_flags = linux::SOF_TIMESTAMPING_RX_HARDWARE;
+        if unsafe {
+            libc::setsockopt(socket,
+                             libc::SOL_SOCKET,
+                             linux::SO_TIMESTAMPING,
+                             (&timestamp_flags as *const libc::c_uint) as *const libc::c_void,
+                             mem::size_of::<libc::c_uint>() as u32)
+        } == -1 {
+            let err = io::Error::last_os_error();
+            unsafe {
+                internal::close(socket);
+            }
+            return Err(err);
+        }
+    }
+
     let send_addr = (&addr as *const libc::sockaddr_storage) as *const libc::sockaddr;
 
     // Bind to interface
@@ -343,21 +381,31 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
 
 impl<'a> TimestampedEthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
     fn next(&mut self) -> io::Result<TimestampedEthernetPacket> {
-        let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
-        internal::recv_from(self.pc.socket.fd, &mut self.pc.read_buffer, &mut caddr)
-            .and_then(move |len| {
-                let mut tv_ioctl: libc::timeval = unsafe { mem::zeroed() };
-                if unsafe {
-                    linux::ioctl(self.pc.socket.fd,
-                                 linux::SIOCGSTAMP,
-                                 (&mut tv_ioctl as *mut libc::timeval))
-                } == -1 {
-                    Err(io::Error::last_os_error())
-                } else {
-                    Ok(TimestampedEthernetPacket(
-                        internal::timeval_to_duration(tv_ioctl),
-                        EthernetPacket::new(&self.pc.read_buffer[0..len]).unwrap()))
+        #[repr(C)]
+        struct Control {
+            cm: linux::cmsghdr,
+            control: [libc::c_char; 512]
+        }
+
+        let mut _ctrl: Control = unsafe { mem::zeroed() };
+        let mut msg: linux::msghdr = unsafe { mem::zeroed() };
+        msg.msg_control = (&mut _ctrl as *mut Control) as *mut libc::c_void;
+        msg.msg_controllen = mem::size_of::<Control>() as libc::size_t;
+        linux::recv_msg(self.pc.socket.fd, &mut msg, 0).and_then(move |len| {
+            let mut cmsg: *const linux::cmsghdr = unsafe { linux::cmsg_firsthdr(&msg) };
+            while !cmsg.is_null() {
+                let cmsg_level = unsafe { (*cmsg).cmsg_level };
+                let cmsg_type = unsafe { (*cmsg).cmsg_type };
+                if cmsg_level == libc::SOL_SOCKET && cmsg_type == linux::SO_TIMESTAMPING {
+                    let stamp: *const libc::timespec = unsafe { linux::cmsg_data(cmsg) as *const libc::timespec };
+                    return Ok(TimestampedEthernetPacket(
+                        unsafe { internal::timespec_to_duration(*stamp) },
+                        EthernetPacket::new(&self.pc.read_buffer[0..len]).unwrap()
+                    ));
                 }
-            })
+                cmsg = unsafe { linux::cmsg_nexthdr(&msg, cmsg) };
+            }
+            Err(io::Error::new(io::ErrorKind::Other, "timestamp not attached"))
+        })
     }
 }
