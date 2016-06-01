@@ -65,6 +65,9 @@ pub enum ChannelType {
     Layer3(EtherType),
 }
 
+/// Type of timestamped Ethernet packet (Linux only)
+pub struct TimestampedEthernetPacket<'a>(Duration, EthernetPacket<'a>);
+
 /// A channel for sending and receiving at the data link layer
 ///
 /// NOTE: It is important to always include a catch-all variant in match statements using this
@@ -79,6 +82,11 @@ pub enum ChannelType {
 pub enum Channel {
     /// A datalink channel which sends and receives Ethernet packets
     Ethernet(Box<EthernetDataLinkSender>, Box<EthernetDataLinkReceiver>),
+
+    // FIXME documentation sucks here
+    /// A datalink channel which receives timestamped Ethernet packets
+    /// and sends non-timestamped Ethernet packets.
+    TimestampedEthernet(Box<EthernetDataLinkSender>, Box<TimestampedEthernetDataLinkReceiver>),
 
     /// This variant should never be used
     ///
@@ -143,6 +151,39 @@ pub fn channel(network_interface: &NetworkInterface, configuration: Config)
     backend::channel(network_interface, (&configuration).into())
 }
 
+
+/// Represents a network interface and its associated addresses
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
+pub struct NetworkInterface {
+    /// The name of the interface
+    pub name: String,
+    /// The interface index (operating system specific)
+    pub index: u32,
+    /// A MAC address for the interface
+    pub mac: Option<MacAddr>,
+    /// An IP addresses for the interface
+    pub ips: Option<Vec<IpAddr>>,
+    /// Operating system specific flags for the interface
+    pub flags: u32,
+}
+
+impl NetworkInterface {
+    /// Retrieve the MAC address associated with the interface
+    pub fn mac_address(&self) -> MacAddr {
+        self.mac.unwrap()
+    }
+
+    /// Is the interface a loopback interface?
+    pub fn is_loopback(&self) -> bool {
+        self.flags & (sockets::IFF_LOOPBACK as u32) != 0
+    }
+}
+
+/// Get a list of available network interfaces for the current machine.
+pub fn interfaces() -> Vec<NetworkInterface> {
+    backend::interfaces()
+}
+
 macro_rules! dls {
     ($name:ident, $mut_packet:ident, $packet:ident) => {
         /// Trait to enable sending $packet packets
@@ -198,35 +239,6 @@ macro_rules! dlr {
 }
 
 dlr!(EthernetDataLinkReceiver, EthernetDataLinkChannelIterator, EthernetPacket);
-
-/// Represents a network interface and its associated addresses
-#[derive(Clone, PartialEq, Eq, Debug, Hash)]
-pub struct NetworkInterface {
-    /// The name of the interface
-    pub name: String,
-    /// The interface index (operating system specific)
-    pub index: u32,
-    /// A MAC address for the interface
-    pub mac: Option<MacAddr>,
-    /// An IP addresses for the interface
-    pub ips: Option<Vec<IpAddr>>,
-    /// Operating system specific flags for the interface
-    pub flags: u32,
-}
-
-impl NetworkInterface {
-    /// Retrieve the MAC address associated with the interface
-    pub fn mac_address(&self) -> MacAddr {
-        self.mac.unwrap()
-    }
-
-    /// Is the interface a loopback interface?
-    pub fn is_loopback(&self) -> bool {
-        self.flags & (sockets::IFF_LOOPBACK as u32) != 0
-    }
-}
-
-/// Get a list of available network interfaces for the current machine.
-pub fn interfaces() -> Vec<NetworkInterface> {
-    backend::interfaces()
-}
+dlr!(TimestampedEthernetDataLinkReceiver,
+     TimestampedEthernetDataLinkChannelIterator,
+     TimestampedEthernetPacket);

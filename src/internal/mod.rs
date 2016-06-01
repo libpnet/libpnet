@@ -10,6 +10,7 @@ extern crate libc;
 
 use std::io;
 use std::mem;
+use std::time::Duration;
 
 use sockets;
 
@@ -83,4 +84,8 @@ pub fn recv_from(socket: sockets::CSocket,
     } else {
         Ok(len as usize)
     }
+}
+
+pub fn timeval_to_duration(tv: libc::timeval) -> Duration {
+    Duration::new((tv.tv_sec as u64), (tv.tv_usec as u32) * 1_000)
 }

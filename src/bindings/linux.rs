@@ -12,6 +12,7 @@
 extern crate libc;
 
 pub const SOL_PACKET: libc::c_int = 263;
+pub const SIOCGSTAMP: libc::c_ulong = 0x8906;
 pub const PACKET_ADD_MEMBERSHIP: libc::c_int = 1;
 pub const PACKET_MR_PROMISC: libc::c_int = 1;
 
@@ -21,4 +22,9 @@ pub struct packet_mreq {
     pub mr_type: libc::c_ushort,
     pub mr_alen: libc::c_ushort,
     pub mr_address: [libc::c_uchar; 8],
+}
+
+#[cfg(not(windows))]
+extern {
+    pub fn ioctl(d: libc::c_int, request: libc::c_ulong, ...) -> libc::c_int;
 }
