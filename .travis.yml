@@ -1,7 +1,4 @@
 language: rust
-cache:
-    directories:
-        - $HOME/.cargo
 rust:
     - 1.7.0
     - stable
