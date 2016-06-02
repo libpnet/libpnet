@@ -21,6 +21,7 @@ pub const SIOCSHWTSTAMP: libc::c_ulong = 0x89b0;
 pub const HWTSTAMP_TX_OFF: libc::c_int = 0;
 pub const HWTSTAMP_FILTER_ALL: libc::c_int = 1;
 pub const SOF_TIMESTAMPING_RX_HARDWARE: libc::c_uint = (1 << 2);
+pub const SOF_TIMESTAMPING_RX_SOFTWARE: libc::c_uint = (1 << 3);
 pub const PACKET_ADD_MEMBERSHIP: libc::c_int = 1;
 pub const PACKET_MR_PROMISC: libc::c_int = 1;
 
