@@ -1327,7 +1327,7 @@ fn generate_accessor_str(name: &str,
     let op_strings = generate_accessor_op_str("_self.packet", ty, operations);
 
     let accessor = if let Some(struct_name) = inner {
-        format!("#[inline]
+        format!("#[inline(always)]
         #[allow(trivial_numeric_casts)]
         #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
         fn get_{name}(_self: &{struct_name}) -> {ty} {{
