@@ -27,6 +27,7 @@ mod macros {
 
     const FILES: &'static [&'static str] = &[
         "ethernet.rs",
+        "gre.rs",
         "ipv4.rs",
         "ipv6.rs",
         "icmp.rs",
