@@ -91,6 +91,7 @@ impl PrimitiveValues for ::std::net::Ipv6Addr {
 }
 
 pub mod ethernet;
+pub mod gre;
 pub mod ip;
 pub mod ipv4;
 pub mod ipv6;
