@@ -1173,6 +1173,37 @@ fn generate_accessor_op_str(name: &str,
     op_strings
 }
 
+#[test]
+fn test_generate_accessor_op_str() {
+
+    {
+        let ops = operations(0, 24).unwrap();
+        let result = generate_accessor_op_str("test", "u24be", &ops);
+        let expected = "let b0 = ((test[co + 0] as u24be) << 16) as u24be;\n\
+                    let b1 = ((test[co + 1] as u24be) << 8) as u24be;\n\
+                    let b2 = ((test[co + 2] as u24be)) as u24be;\n\n\
+                    b0 | b1 | b2\n";
+
+        assert_eq!(result, expected);
+    }
+
+    {
+        let ops = operations(0, 16).unwrap();
+        let result = generate_accessor_op_str("test", "u16be", &ops);
+        let expected = "let b0 = ((test[co + 0] as u16be) << 8) as u16be;\n\
+                    let b1 = ((test[co + 1] as u16be)) as u16be;\n\n\
+                    b0 | b1\n";
+        assert_eq!(result, expected);
+    }
+
+    {
+        let ops = operations(0, 8).unwrap();
+        let result = generate_accessor_op_str("test", "u8", &ops);
+        let expected = "(test[co] as u8)";
+        assert_eq!(result, expected);
+    }
+}
+
 /// Given the name of a field, and a set of operations required to get the value of that field,
 /// return the Rust code required to get the field.
 fn generate_accessor_str(name: &str,

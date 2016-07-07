@@ -10,6 +10,9 @@
 #![plugin(pnet_macros_plugin)]
 
 extern crate pnet;
+extern crate pnet_macros_support;
+
+use pnet_macros_support::types::*;
 
 #[packet]
 pub struct PacketWithPayload {
@@ -20,8 +23,34 @@ pub struct PacketWithPayload {
     payload: Vec<u8>
 }
 
+#[packet]
+pub struct PacketWithU16 {
+    length: u8,
+    #[length = "length"]
+    data: Vec<u16be>,
+    #[payload]
+    payload: Vec<u8>
+}
+
 fn length_fn(_: &PacketWithPayloadPacket) -> usize {
     unimplemented!()
 }
 
-fn main() {}
+fn main() {
+
+    // Test if we can add data to the u16be
+    let mut packet = [0u8; 7];
+    {
+        let mut p = MutablePacketWithU16Packet::new(&mut packet[..]).unwrap();
+        p.set_length(6);
+        p.set_data(&vec![0x0001, 0x1223, 0x3ff4]);
+    }
+
+    let ref_packet = [0x06, /* length */
+                      0x00, 0x01,
+                      0x12, 0x23,
+                      0x3f, 0xf4];
+
+    assert_eq!(&ref_packet[..], &packet[..]);
+
+}
