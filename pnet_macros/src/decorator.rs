@@ -517,12 +517,15 @@ fn handle_misc_field(cx: &mut GenContext,
 fn handle_vec_primitive(cx: &mut GenContext,
                         error: &mut bool,
                         inner_ty_str: &str,
+                        size: usize,
                         field: &Field,
                         accessors: &mut String,
                         mutators: &mut String,
                         co: &mut String) {
-    if inner_ty_str == "u8" {
+    if inner_ty_str == "u8" || (size % 8) == 0 {
+        let ops = operations(0, size).unwrap();
         if !field.is_payload {
+            let op_strings = generate_accessor_op_str("packet", inner_ty_str, &ops);
             *accessors = format!("{accessors}
                                     /// Get the value of the {name} field (copies contents)
                                     #[inline]
@@ -534,8 +537,14 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                         let end = current_offset + {packet_length};
 
                                         let packet = &_self.packet[current_offset..end];
-                                        let mut vec = Vec::with_capacity(packet.len());
-                                        vec.extend_from_slice(packet);
+                                        let mut vec: Vec<{inner_ty_str}> = Vec::with_capacity(packet.len());
+                                        let mut co = 0;
+                                        for _ in 0..vec.capacity() {{
+                                            vec.push({{
+                                                {ops}
+                                            }});
+                                            co += {size};
+                                        }}
                                         vec
                                     }}
                                     ",
@@ -543,7 +552,9 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                     name = field.name,
                                     co = co,
                                     packet_length = field.packet_length.as_ref().unwrap(),
-                                    inner_ty_str = inner_ty_str);
+                                    inner_ty_str = inner_ty_str,
+                                    ops = op_strings,
+                                    size = size/8);
         }
         let check_len = if field.packet_length.is_some() {
             format!("let len = {packet_length};
@@ -552,6 +563,31 @@ fn handle_vec_primitive(cx: &mut GenContext,
         } else {
             String::new()
         };
+
+        let copy_vals = if inner_ty_str == "u8" {
+            // Efficient copy_nonoverlapping (memcpy)
+            format!("
+                                    // &mut and & can never overlap
+                                    unsafe {{
+                                        copy_nonoverlapping(vals[..].as_ptr(),
+                                                            _self.packet[current_offset..].as_mut_ptr(),
+                                                            vals.len())
+                                    }}
+                                ")
+        } else {
+            // e.g. Vec<u16> -> Vec<u8>
+            let sop_strings = generate_sop_strings(&to_mutator(&ops));
+            format!("
+                                let mut co = current_offset;
+                                for i in 0..vals.len() {{
+                                    let val = vals[i];
+                                    {sop}
+                                    co += {size};
+                                }}",
+                                sop = sop_strings,
+                                size = size/8)
+        };
+
         *mutators = format!("{mutators}
                                 /// Set the value of the {name} field (copies contents)
                                 #[inline]
@@ -564,21 +600,17 @@ fn handle_vec_primitive(cx: &mut GenContext,
 
                                     {check_len}
 
-                                    // &mut and & can never overlap
-                                    unsafe {{
-                                        copy_nonoverlapping(vals[..].as_ptr(),
-                                                            _self.packet[current_offset..]
-                                                                 .as_mut_ptr(),
-                                                            vals.len())
-                                    }}
-                                }}
-                                ",
+                                    {copy_vals}
+                               }}",
                                 mutators = mutators,
                                 name = field.name,
                                 co = co,
                                 check_len = check_len,
-                                inner_ty_str = inner_ty_str);
+                                inner_ty_str = inner_ty_str,
+                                copy_vals = copy_vals);
+
     } else {
+
         cx.ecx.span_err(field.span, "unimplemented variable length field");
         *error = true;
     }
@@ -634,7 +666,7 @@ fn handle_vector_field(cx: &mut GenContext,
     }
     match **inner_ty {
         Type::Primitive(ref inner_ty_str, _size, _endianness) => {
-            handle_vec_primitive(cx, error, inner_ty_str, field, accessors, mutators, co)
+            handle_vec_primitive(cx, error, inner_ty_str, _size, field, accessors, mutators, co)
         },
         Type::Vector(_) => {
             cx.ecx.span_err(field.span, "variable length fields may not contain vectors");
@@ -1103,15 +1135,15 @@ fn generate_mutator_str(name: &str,
     mutator
 }
 
-/// Given the name of a field, and a set of operations required to get the value of that field,
-/// return the Rust code required to get the field.
-fn generate_accessor_str(name: &str,
-                         ty: &str,
-                         offset: &str,
-                         operations: &[GetOperation],
-                         inner: Option<&str>)
-    -> String
+/// Used to turn something like a u16be into
+/// "let b0 = ((_self.packet[co + 0] as u16be) << 8) as u16be;
+///  let b1 = ((_self.packet[co + 1] as u16be) as u16be;
+///  b0 | b1"
+fn generate_accessor_op_str(name: &str,
+                            ty: &str,
+                            operations: &[GetOperation]) -> String
 {
+
     fn build_return(max: usize) -> String {
         let mut ret = "".to_owned();
         for i in 0..max {
@@ -1124,12 +1156,12 @@ fn generate_accessor_str(name: &str,
     }
 
     let op_strings = if operations.len() == 1 {
-        let replacement_str = format!("(_self.packet[co] as {})", ty);
+        let replacement_str = format!("({}[co] as {})", name, ty);
         operations.first().unwrap().to_string().replace("{}", &replacement_str[..])
     } else {
         let mut op_strings = "".to_owned();
         for (idx, operation) in operations.iter().enumerate() {
-            let replacement_str = format!("(_self.packet[co + {}] as {})", idx, ty);
+            let replacement_str = format!("({}[co + {}] as {})", name, idx, ty);
             let operation = operation.to_string().replace("{}", &replacement_str[..]);
             op_strings = op_strings + &format!("let b{} = ({}) as {};\n", idx, operation, ty)[..];
         }
@@ -1137,6 +1169,52 @@ fn generate_accessor_str(name: &str,
 
         op_strings
     };
+
+    op_strings
+}
+
+#[test]
+fn test_generate_accessor_op_str() {
+
+    {
+        let ops = operations(0, 24).unwrap();
+        let result = generate_accessor_op_str("test", "u24be", &ops);
+        let expected = "let b0 = ((test[co + 0] as u24be) << 16) as u24be;\n\
+                    let b1 = ((test[co + 1] as u24be) << 8) as u24be;\n\
+                    let b2 = ((test[co + 2] as u24be)) as u24be;\n\n\
+                    b0 | b1 | b2\n";
+
+        assert_eq!(result, expected);
+    }
+
+    {
+        let ops = operations(0, 16).unwrap();
+        let result = generate_accessor_op_str("test", "u16be", &ops);
+        let expected = "let b0 = ((test[co + 0] as u16be) << 8) as u16be;\n\
+                    let b1 = ((test[co + 1] as u16be)) as u16be;\n\n\
+                    b0 | b1\n";
+        assert_eq!(result, expected);
+    }
+
+    {
+        let ops = operations(0, 8).unwrap();
+        let result = generate_accessor_op_str("test", "u8", &ops);
+        let expected = "(test[co] as u8)";
+        assert_eq!(result, expected);
+    }
+}
+
+/// Given the name of a field, and a set of operations required to get the value of that field,
+/// return the Rust code required to get the field.
+fn generate_accessor_str(name: &str,
+                         ty: &str,
+                         offset: &str,
+                         operations: &[GetOperation],
+                         inner: Option<&str>)
+    -> String
+{
+
+    let op_strings = generate_accessor_op_str("_self.packet", ty, operations);
 
     let accessor = if let Some(struct_name) = inner {
         format!("#[inline]
