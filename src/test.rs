@@ -290,10 +290,10 @@ fn layer3_ipv4() {
 }
 
 #[cfg(windows)]
-fn get_test_interface() -> util::NetworkInterface {
+fn get_test_interface() -> datalink::NetworkInterface {
     use std::clone::Clone;
     use std::env;
-    let interfaces = util::get_network_interfaces();
+    let interfaces = datalink::interfaces();
 
     interfaces.iter()
                 .filter(|x| {
@@ -308,10 +308,10 @@ fn get_test_interface() -> util::NetworkInterface {
 }
 
 #[cfg(not(windows))]
-fn get_test_interface() -> util::NetworkInterface {
+fn get_test_interface() -> datalink::NetworkInterface {
     use std::clone::Clone;
     use std::env;
-    let interfaces = util::get_network_interfaces();
+    let interfaces = datalink::interfaces();
 
     interfaces.iter()
                 .filter(|x| {
@@ -335,42 +335,6 @@ fn layer2() {
 
     const ETHERNET_HEADER_LEN: usize = 14;
 
-    #[cfg(windows)]
-    fn get_test_interface() -> datalink::NetworkInterface {
-        use std::clone::Clone;
-        use std::env;
-        let interfaces = datalink::interfaces();
-
-        interfaces.iter()
-                  .filter(|x| {
-                      match env::var("PNET_TEST_IFACE") {
-                          Ok(name) => x.name == name,
-                          Err(_) => true,
-                      }
-                  })
-                  .next()
-                  .unwrap()
-                  .clone()
-    }
-
-    #[cfg(not(windows))]
-    fn get_test_interface() -> datalink::NetworkInterface {
-        use std::clone::Clone;
-        use std::env;
-        let interfaces = datalink::interfaces();
-
-        interfaces.iter()
-                  .filter(|x| {
-                      match env::var("PNET_TEST_IFACE") {
-                          Ok(name) => x.name == name,
-                          Err(_) => x.is_loopback(),
-                      }
-                  })
-                  .next()
-                  .unwrap()
-                  .clone()
-    }
-
     let interface = get_test_interface();
 
     let mut packet = [0u8; ETHERNET_HEADER_LEN + IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN];
@@ -389,14 +353,14 @@ fn layer2() {
 
     let (tx, rx) = channel();
 
-    let dlc_sidea = datalink::channel(&interface, &Default::default());
+    let dlc_sidea = datalink::channel(&interface, Default::default());
     let (mut dltx, _) = match dlc_sidea {
         Ok(Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => panic!("layer2: unexpected L2 packet type"),
         Err(e) => panic!("layer2: unable to create channel: {}", e),
     };
 
-    let dlc_sideb = datalink::channel(&interface, &Default::default());
+    let dlc_sideb = datalink::channel(&interface, Default::default());
     let (_, mut dlrx) = match dlc_sideb {
         Ok(Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => panic!("layer2: unexpected L2 packet type"),
@@ -414,7 +378,7 @@ fn layer2() {
                     if i == 10_000 {
                         panic!("layer2: did not find matching packet after 10_000 iterations");
                     }
-                    if EthernetPacket::new(&packet[..]).unwrap() == eh {
+                    if EthernetPacket::new(&packet[..]).unwrap().payload() == eh.payload() {
                         return;
                     }
                     i += 1;
@@ -437,7 +401,7 @@ fn layer2() {
 }
 
 #[test]
-#[cfg(not(windows))]
+#[cfg(all(not(windows), not(target_os="linux")))]
 fn layer2_timeouts() {
     use std::time::Duration;
     use std::io::ErrorKind;
@@ -466,7 +430,7 @@ fn layer2_timeouts() {
     let (tx, rx) = channel();
 
     let cfg = datalink::Config {
-        read_timeout: Some(Duration::from_millis(30)),
+        read_timeout: Some(Duration::new(0, 1)),
         write_timeout: Some(Duration::from_millis(100)),
         ..Default::default()
     };

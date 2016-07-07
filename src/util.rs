@@ -8,6 +8,8 @@
 
 //! Miscellaneous utilities for low level networking
 
+extern crate libc;
+
 use packet::PrimitiveValues;
 use datalink::NetworkInterface;
 
@@ -15,6 +17,7 @@ use std::fmt;
 use std::str::FromStr;
 use std::u8;
 use std::net::IpAddr;
+use std::mem;
 
 use internal;
 use sockets;
@@ -122,35 +125,8 @@ fn mac_addr_from_str() {
                Err(ParseMacAddrErr::InvalidComponent));
 }
 
-/// Represents a network interface and its associated addresses
-#[derive(Clone, PartialEq, Eq, Debug, Hash)]
-pub struct NetworkInterface {
-    /// The name of the interface
-    pub name: String,
-    /// The interface index (operating system specific)
-    pub index: u32,
-    /// A MAC address for the interface
-    pub mac: Option<MacAddr>,
-    /// An IP addresses for the interface
-    pub ips: Option<Vec<IpAddr>>,
-    /// Operating system specific flags for the interface
-    pub flags: u32,
-}
-
-impl NetworkInterface {
-    /// Retrieve the MAC address associated with the interface
-    pub fn mac_address(&self) -> MacAddr {
-        self.mac.unwrap()
-    }
-
-    /// Is the interface a loopback interface?
-    pub fn is_loopback(&self) -> bool {
-        self.flags & (sockets::IFF_LOOPBACK as u32) != 0
-    }
-}
-
 #[cfg(target_os = "linux")]
-fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
+fn sockaddr_to_network_addr(sa: *const sockets::SockAddr) -> (Option<MacAddr>, Option<IpAddr>) {
     use std::net::SocketAddr;
 
     unsafe {
@@ -168,7 +144,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
             (Some(mac), None)
         } else {
             let addr = internal::sockaddr_to_addr(mem::transmute(sa),
-                                                  mem::size_of::<libc::sockaddr_storage>());
+                                                  mem::size_of::<sockets::SockAddrStorage>());
 
             match addr {
                 Ok(SocketAddr::V4(sa)) => (None, Some(IpAddr::V4(*sa.ip()))),
@@ -180,7 +156,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
 }
 
 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
-fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
+fn sockaddr_to_network_addr(sa: *const sockets::SockAddr) -> (Option<MacAddr>, Option<IpAddr>) {
     use bindings::bpf;
     use std::net::SocketAddr;
 
@@ -200,7 +176,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
             (Some(mac), None)
         } else {
             let addr = internal::sockaddr_to_addr(mem::transmute(sa),
-                                                  mem::size_of::<libc::sockaddr_storage>());
+                                                  mem::size_of::<sockets::SockAddrStorage>());
 
             match addr {
                 Ok(SocketAddr::V4(sa)) => (None, Some(IpAddr::V4(*sa.ip()))),

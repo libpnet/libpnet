@@ -40,7 +40,7 @@
 //! packet is received on an interface, it echo's the packet back; reversing the
 //! source and destination addresses.
 //!
-//! ```no_run
+//! ```rust,no_run
 //! extern crate pnet;
 //!
 //! use pnet::datalink::{self, NetworkInterface};
