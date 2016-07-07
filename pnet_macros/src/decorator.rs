@@ -537,7 +537,7 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                         let end = current_offset + {packet_length};
 
                                         let packet = &_self.packet[current_offset..end];
-                                        let mut vec : Vec<{inner_ty_str}> = Vec::with_capacity(packet.len());
+                                        let mut vec: Vec<{inner_ty_str}> = Vec::with_capacity(packet.len());
                                         let mut co = 0;
                                         for _ in 0..vec.capacity() {{
                                             vec.push({{
@@ -545,7 +545,6 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                             }});
                                             co += {size};
                                         }}
-                                        //vec.extend_from_slice(packet);
                                         vec
                                     }}
                                     ",
