@@ -148,21 +148,13 @@ impl NetworkInterface {
     }
 }
 
-#[cfg(windows)]
-#[path = "datalink/winpcap.rs"]
-mod interfaces;
-
-#[cfg(not(windows))]
-#[path = "datalink/unix_interfaces.rs"]
-mod interfaces;
-
 /// Get a list of available network interfaces for the current machine.
 /// Deprecated. Instead use the implementation available for your backend.
 /// The default one is at `pnet::datalink::interfaces`.
 #[deprecated]
 #[inline]
 pub fn get_network_interfaces() -> Vec<NetworkInterface> {
-    interfaces::interfaces()
+    ::datalink::interfaces()
 }
 
 /// Convert value to byte array
