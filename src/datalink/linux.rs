@@ -228,7 +228,7 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
 
 /// Get a list of available network interfaces for the current machine.
 pub fn interfaces() -> Vec<NetworkInterface> {
-    #[path = "ifaces.rs"]
-    mod ifaces;
-    ifaces::interfaces()
+    #[path = "unix_interfaces.rs"]
+    mod interfaces;
+    interfaces::interfaces()
 }

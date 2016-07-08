@@ -150,11 +150,11 @@ impl NetworkInterface {
 
 #[cfg(windows)]
 #[path = "datalink/winpcap.rs"]
-mod ifaces;
+mod interfaces;
 
 #[cfg(not(windows))]
-#[path = "datalink/ifaces.rs"]
-mod ifaces;
+#[path = "datalink/unix_interfaces.rs"]
+mod interfaces;
 
 /// Get a list of available network interfaces for the current machine.
 /// Deprecated. Instead use the implementation available for your backend.
@@ -162,7 +162,7 @@ mod ifaces;
 #[deprecated]
 #[inline]
 pub fn get_network_interfaces() -> Vec<NetworkInterface> {
-    ifaces::interfaces()
+    interfaces::interfaces()
 }
 
 /// Convert value to byte array
