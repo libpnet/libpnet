@@ -332,3 +332,10 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
         Ok(EthernetPacket::new(&self.pc.read_buffer[start..start + len]).unwrap())
     }
 }
+
+/// Get a list of available network interfaces for the current machine.
+pub fn interfaces() -> Vec<NetworkInterface> {
+    #[path = "ifaces.rs"]
+    mod ifaces;
+    ifaces::interfaces()
+}

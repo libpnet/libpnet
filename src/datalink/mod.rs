@@ -183,3 +183,8 @@ macro_rules! dlr {
 }
 
 dlr!(EthernetDataLinkReceiver, EthernetDataLinkChannelIterator, EthernetPacket);
+
+/// Get a list of available network interfaces for the current machine.
+pub fn interfaces() -> Vec<NetworkInterface> {
+    backend::interfaces()
+}
