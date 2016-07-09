@@ -23,20 +23,33 @@ use util::MacAddr;
 #[derive(Debug)]
 pub struct Config {
     /// The fake network will pull packets (or errors) form this `Receiver`
-    pub in_packets: Receiver<io::Result<Box<[u8]>>>,
+    pub in_packets_rx: Receiver<io::Result<Box<[u8]>>>,
+
+    in_packets_tx: Option<Sender<io::Result<Box<[u8]>>>>,
 
     /// All packets sent to this fake network will end up on this `Sender`
-    pub out_packets: Sender<Vec<u8>>,
+    pub out_packets_tx: Sender<Vec<u8>>,
+
+    out_packets_rx: Option<Receiver<Vec<u8>>>,
+}
+
+impl Config {
+    /// Get the `Sender` handle that can inject packets in the fake network
+    pub fn inject_handle(&mut self) -> Option<Sender<io::Result<Box<[u8]>>>> {
+        self.in_packets_tx.take()
+    }
+
+    /// Get the `Receiver` handle where packets sent to the fake network can be read
+    pub fn read_handle(&mut self) -> Option<Receiver<Vec<u8>>> {
+        self.out_packets_rx.take()
+    }
 }
 
 impl<'a> From<&'a datalink::Config> for Config {
     /// This conversion will not allow injecting and reading packets from the dummy network.
     /// To do that please create your own `dummy::Config`
     fn from(_config: &datalink::Config) -> Config {
-        Config {
-            in_packets: mpsc::channel().1,
-            out_packets: mpsc::channel().0,
-        }
+        Config::default()
     }
 }
 
@@ -44,9 +57,13 @@ impl Default for Config {
     /// This conversion will not allow injecting and reading packets from the dummy network.
     /// To do that please create your own `dummy::Config`
     fn default() -> Config {
+        let (in_tx, in_rx) = mpsc::channel();
+        let (out_tx, out_rx) = mpsc::channel();
         Config {
-            in_packets: mpsc::channel().1,
-            out_packets: mpsc::channel().0,
+            in_packets_rx: in_rx,
+            in_packets_tx: Some(in_tx),
+            out_packets_tx: out_tx,
+            out_packets_rx: Some(out_rx),
         }
     }
 }
