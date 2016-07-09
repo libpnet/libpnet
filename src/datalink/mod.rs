@@ -52,6 +52,8 @@ mod backend;
 #[cfg(feature = "netmap")]
 pub mod netmap;
 
+pub mod dummy;
+
 /// Type of data link channel to present (Linux only)
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChannelType {
