@@ -16,7 +16,6 @@ use pnet::packet::ipv4::MutableIpv4Packet;
 use pnet::packet::ipv4;
 use pnet::packet::udp::MutableUdpPacket;
 use pnet::packet::udp;
-use pnet::util::get_network_interfaces;
 
 use std::env;
 use std::net::Ipv4Addr;
@@ -81,7 +80,7 @@ fn main() {
     let interface_name = env::args().nth(1).unwrap();
     let destination = (&env::args().nth(2).unwrap()[..]).parse().unwrap();
     // Find the network interface with the provided name
-    let interfaces = get_network_interfaces();
+    let interfaces = datalink::interfaces();
     let interface = interfaces.iter()
                               .filter(|iface| iface.name == interface_name)
                               .next()
@@ -109,4 +108,3 @@ fn main() {
         tx.send_to(&ethernet_header, None);
     }
 }
-

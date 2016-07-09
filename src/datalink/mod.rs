@@ -115,7 +115,7 @@ impl Default for Config {
 ///
 /// This allows for sending and receiving packets at the data link layer.
 ///
-/// A list of network interfaces can be retrieved using util::get_network_interfaces().
+/// A list of network interfaces can be retrieved using datalink::interfaces().
 ///
 /// The configuration serves as a hint to the backend - some or all of it may be used or ignored,
 /// depending on which backend is used.

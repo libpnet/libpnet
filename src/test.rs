@@ -303,7 +303,7 @@ fn layer2() {
     fn get_test_interface() -> util::NetworkInterface {
         use std::clone::Clone;
         use std::env;
-        let interfaces = util::get_network_interfaces();
+        let interfaces = datalink::interfaces();
 
         interfaces.iter()
                   .filter(|x| {
@@ -321,7 +321,7 @@ fn layer2() {
     fn get_test_interface() -> util::NetworkInterface {
         use std::clone::Clone;
         use std::env;
-        let interfaces = util::get_network_interfaces();
+        let interfaces = datalink::interfaces();
 
         interfaces.iter()
                   .filter(|x| {
