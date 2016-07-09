@@ -353,7 +353,7 @@ fn layer2() {
 
     let (tx, rx) = channel();
 
-    let dlc = datalink::channel(&interface, &Default::default());
+    let dlc = datalink::channel(&interface, Default::default());
     let (mut dltx, mut dlrx) = match dlc {
         Ok(Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => panic!("layer2: unexpected L2 packet type"),

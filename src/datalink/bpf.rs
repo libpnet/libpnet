@@ -66,7 +66,7 @@ impl Default for Config {
 /// Create a datalink channel using the /dev/bpf device
 // NOTE buffer must be word aligned.
 #[inline]
-pub fn channel(network_interface: &NetworkInterface, config: &Config)
+pub fn channel(network_interface: &NetworkInterface, config: Config)
     -> io::Result<datalink::Channel> {
     #[cfg(target_os = "freebsd")]
     fn get_fd(_attempts: usize) -> libc::c_int {

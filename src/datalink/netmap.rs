@@ -110,7 +110,7 @@ impl Default for Config {
 
 /// Create a datalink channel using the netmap library
 #[inline]
-pub fn channel(network_interface: &NetworkInterface, _config: &Config)
+pub fn channel(network_interface: &NetworkInterface, _config: Config)
     -> io::Result<datalink::Channel> {
     // FIXME probably want one for each of send/recv
     let desc = NmDesc::new(network_interface);
