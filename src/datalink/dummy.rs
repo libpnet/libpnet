@@ -153,7 +153,7 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for MockEthernetDataLinkChannelIter
                 // inject_handle. This means there will never be any more packets sent to this
                 // dummy network. To simulate an idle network we block and sleep forever here.
                 loop {
-                    thread::sleep(time::Duration::new(::std::u64::MAX, 0));
+                    thread::sleep(time::Duration::new(10, 0));
                 }
             }
         }
