@@ -151,7 +151,7 @@ impl NetworkInterface {
 /// Get a list of available network interfaces for the current machine.
 /// Deprecated. Instead use the implementation available for your backend.
 /// The default one is at `pnet::datalink::interfaces`.
-#[deprecated]
+#[deprecated(note="Moved to datalink::interfaces()")]
 #[inline]
 pub fn get_network_interfaces() -> Vec<NetworkInterface> {
     ::datalink::interfaces()
