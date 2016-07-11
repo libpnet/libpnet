@@ -128,6 +128,7 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for MockEthernetDataLinkChannelIter
     fn next(&mut self) -> io::Result<EthernetPacket> {
         match self.in_packets.recv() {
             Ok(result) => {
+                // A network event happened. Might be a packet or a simulated error
                 match result {
                     Ok(buffer) => {
                         self.used_packets.push(buffer);
@@ -139,10 +140,11 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for MockEthernetDataLinkChannelIter
                 }
             }
             Err(_) => {
-                // When we run out of test packets we sleep forever.
-                // Simulating no more packets arrive
+                // The channel supplying fake packets is broken. The user lost/destroyed their
+                // inject_handle. This means there will never be any more packets sent to this
+                // dummy network. To simulate an idle network we block and sleep forever here.
                 loop {
-                    thread::sleep(time::Duration::new(1, 0));
+                    thread::sleep(time::Duration::new(::std::u64::MAX, 0));
                 }
             }
         }
