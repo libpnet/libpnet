@@ -17,6 +17,7 @@ use std::time;
 use datalink::{self, EthernetDataLinkChannelIterator, EthernetDataLinkReceiver,
                EthernetDataLinkSender, NetworkInterface};
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
+use packet::Packet;
 use util::MacAddr;
 
 /// Configuration for the dummy datalink backend
@@ -99,10 +100,12 @@ impl EthernetDataLinkSender for MockEthernetDataLinkSender {
     }
 
     fn send_to(&mut self,
-               _packet: &EthernetPacket,
+               packet: &EthernetPacket,
                _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
-        panic!("Not implemented in mock");
+        let buffer = packet.packet().to_vec();
+        self.out_packets.send(buffer).unwrap_or(());
+        Some(Ok(()))
     }
 }
 
