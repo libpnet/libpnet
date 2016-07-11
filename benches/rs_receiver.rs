@@ -10,7 +10,7 @@
 extern crate pnet;
 extern crate time;
 
-use pnet::datalink{self, NetworkInterface};
+use pnet::datalink::{self, NetworkInterface};
 
 use std::env;
 
