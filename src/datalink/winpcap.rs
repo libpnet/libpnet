@@ -12,7 +12,7 @@ extern crate libc;
 
 use std::cmp;
 use std::collections::VecDeque;
-use std::ffi::CString;
+use std::ffi::{CString, CStr};
 use std::str::from_utf8_unchecked;
 use std::io;
 use std::mem;
