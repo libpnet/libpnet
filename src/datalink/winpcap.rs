@@ -13,10 +13,12 @@ extern crate libc;
 use std::cmp;
 use std::collections::VecDeque;
 use std::ffi::CString;
+use std::str::from_utf8_unchecked;
 use std::io;
 use std::mem;
 use std::slice;
 use std::sync::Arc;
+use std::net::IpAddr;
 
 use bindings::{bpf, winpcap};
 use datalink::{self, NetworkInterface};
@@ -24,6 +26,7 @@ use datalink::Channel::Ethernet;
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
+use util::MacAddr;
 
 struct WinPcapAdapter {
     adapter: winpcap::LPADAPTER,
