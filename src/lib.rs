@@ -43,10 +43,9 @@
 //! ```no_run
 //! extern crate pnet;
 //!
-//! use pnet::datalink;
+//! use pnet::datalink::{self, NetworkInterface};
 //! use pnet::datalink::Channel::Ethernet;
 //! use pnet::packet::{Packet, MutablePacket};
-//! use pnet::util::{NetworkInterface, get_network_interfaces};
 //!
 //! use std::env;
 //!
@@ -57,7 +56,7 @@
 //!         |iface: &NetworkInterface| iface.name == interface_name;
 //!
 //!     // Find the network interface with the provided name
-//!     let interfaces = get_network_interfaces();
+//!     let interfaces = datalink::interfaces();
 //!     let interface = interfaces.into_iter()
 //!                               .filter(interface_names_match)
 //!                               .next()

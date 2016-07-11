@@ -27,12 +27,11 @@ use std::ptr;
 use std::slice;
 use std::sync::Arc;
 
-use datalink;
+use datalink::{self, NetworkInterface};
 use datalink::Channel::Ethernet;
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-use util::NetworkInterface;
 
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
 #[repr(C)]
@@ -219,4 +218,11 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
             slice::from_raw_parts(buf, h.len as usize)
         }).unwrap())
     }
+}
+
+/// Get a list of available network interfaces for the current machine.
+pub fn interfaces() -> Vec<NetworkInterface> {
+    #[path = "unix_interfaces.rs"]
+    mod interfaces;
+    interfaces::interfaces()
 }

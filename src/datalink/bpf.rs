@@ -20,11 +20,10 @@ use std::sync::Arc;
 use bindings::bpf;
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-use datalink;
+use datalink::{self, NetworkInterface};
 use datalink::Channel::Ethernet;
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use internal;
-use util::NetworkInterface;
 
 /// BPF-specific configuration
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -331,4 +330,11 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
         }
         Ok(EthernetPacket::new(&self.pc.read_buffer[start..start + len]).unwrap())
     }
+}
+
+/// Get a list of available network interfaces for the current machine.
+pub fn interfaces() -> Vec<NetworkInterface> {
+    #[path = "unix_interfaces.rs"]
+    mod interfaces;
+    interfaces::interfaces()
 }

@@ -17,14 +17,14 @@ use std::mem;
 use std::sync::Arc;
 
 use bindings::linux;
-use datalink;
+use datalink::{self, NetworkInterface};
 use datalink::Channel::Ethernet;
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use datalink::ChannelType::{Layer2, Layer3};
 use internal;
 use packet::Packet;
 use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
-use util::{MacAddr, NetworkInterface};
+use util::MacAddr;
 
 fn network_addr_to_sockaddr(ni: &NetworkInterface,
                             storage: *mut libc::sockaddr_storage,
@@ -224,4 +224,11 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
             Err(e) => Err(e),
         }
     }
+}
+
+/// Get a list of available network interfaces for the current machine.
+pub fn interfaces() -> Vec<NetworkInterface> {
+    #[path = "unix_interfaces.rs"]
+    mod interfaces;
+    interfaces::interfaces()
 }

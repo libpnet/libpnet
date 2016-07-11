@@ -8,11 +8,14 @@
 
 //! Support for sending and receiving data link layer packets
 
+extern crate libc;
+
 use std::io;
 use std::option::Option;
+use std::net::IpAddr;
 
 use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
-use util::NetworkInterface;
+use util::MacAddr;
 
 #[cfg(windows)]
 #[path = "winpcap.rs"]
@@ -115,7 +118,7 @@ impl Default for Config {
 ///
 /// This allows for sending and receiving packets at the data link layer.
 ///
-/// A list of network interfaces can be retrieved using util::get_network_interfaces().
+/// A list of network interfaces can be retrieved using datalink::interfaces().
 ///
 /// The configuration serves as a hint to the backend - some or all of it may be used or ignored,
 /// depending on which backend is used.
@@ -183,3 +186,35 @@ macro_rules! dlr {
 }
 
 dlr!(EthernetDataLinkReceiver, EthernetDataLinkChannelIterator, EthernetPacket);
+
+/// Represents a network interface and its associated addresses
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
+pub struct NetworkInterface {
+    /// The name of the interface
+    pub name: String,
+    /// The interface index (operating system specific)
+    pub index: u32,
+    /// A MAC address for the interface
+    pub mac: Option<MacAddr>,
+    /// An IP addresses for the interface
+    pub ips: Option<Vec<IpAddr>>,
+    /// Operating system specific flags for the interface
+    pub flags: u32,
+}
+
+impl NetworkInterface {
+    /// Retrieve the MAC address associated with the interface
+    pub fn mac_address(&self) -> MacAddr {
+        self.mac.unwrap()
+    }
+
+    /// Is the interface a loopback interface?
+    pub fn is_loopback(&self) -> bool {
+        self.flags & (libc::IFF_LOOPBACK as u32) != 0
+    }
+}
+
+/// Get a list of available network interfaces for the current machine.
+pub fn interfaces() -> Vec<NetworkInterface> {
+    backend::interfaces()
+}

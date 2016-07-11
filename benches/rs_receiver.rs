@@ -10,8 +10,7 @@
 extern crate pnet;
 extern crate time;
 
-use pnet::datalink;
-use pnet::util::{NetworkInterface, get_network_interfaces};
+use pnet::datalink::{self, NetworkInterface};
 
 use std::env;
 
@@ -22,7 +21,7 @@ fn main() {
     let interface_names_match = |iface: &NetworkInterface| iface.name == iface_name;
 
     // Find the network interface with the provided name
-    let interfaces = get_network_interfaces();
+    let interfaces = datalink::interfaces();
     let interface = interfaces.into_iter()
                               .filter(interface_names_match)
                               .next()
@@ -63,4 +62,3 @@ fn main() {
         println!("{}", *b - *a);
     }
 }
-

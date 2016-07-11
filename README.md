@@ -74,7 +74,7 @@ version = "0.10.0"
 ```
 
 `libpnet` should work on any Rust channel (stable, beta, or nightly), starting
-with Rust 1.7. When using a nightly version of Rust, you may wish to use pass
+with Rust 1.9. When using a nightly version of Rust, you may wish to use pass
 `--no-default-features --features nightly` to Cargo, to enable faster build
 times.
 

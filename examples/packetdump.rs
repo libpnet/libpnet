@@ -23,9 +23,7 @@ use pnet::packet::tcp::TcpPacket;
 use pnet::packet::arp::ArpPacket;
 use pnet::packet::icmp::{IcmpPacket, echo_reply, echo_request, icmp_types};
 
-use pnet::datalink;
-
-use pnet::util::{NetworkInterface, get_network_interfaces};
+use pnet::datalink::{self, NetworkInterface};
 
 fn handle_udp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8]) {
     let udp = UdpPacket::new(packet);
@@ -160,7 +158,7 @@ fn main() {
     let interface_names_match = |iface: &NetworkInterface| iface.name == iface_name;
 
     // Find the network interface with the provided name
-    let interfaces = get_network_interfaces();
+    let interfaces = datalink::interfaces();
     let interface = interfaces.into_iter()
                               .filter(interface_names_match)
                               .next()
