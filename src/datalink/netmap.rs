@@ -27,12 +27,11 @@ use std::ptr;
 use std::slice;
 use std::sync::Arc;
 
-use datalink;
+use datalink::{self, NetworkInterface};
 use datalink::Channel::Ethernet;
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-use util::NetworkInterface;
 
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
 #[repr(C)]

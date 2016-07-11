@@ -19,12 +19,11 @@ use std::slice;
 use std::sync::Arc;
 
 use bindings::{bpf, winpcap};
-use datalink;
+use datalink::{self, NetworkInterface};
 use datalink::Channel::Ethernet;
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-use util::NetworkInterface;
 
 struct WinPcapAdapter {
     adapter: winpcap::LPADAPTER,

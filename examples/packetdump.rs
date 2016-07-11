@@ -23,9 +23,7 @@ use pnet::packet::tcp::TcpPacket;
 use pnet::packet::arp::ArpPacket;
 use pnet::packet::icmp::{IcmpPacket, echo_reply, echo_request, icmp_types};
 
-use pnet::datalink;
-
-use pnet::util::NetworkInterface;
+use pnet::datalink::{self, NetworkInterface};
 
 fn handle_udp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8]) {
     let udp = UdpPacket::new(packet);

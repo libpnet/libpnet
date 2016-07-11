@@ -8,14 +8,12 @@
 
 //! Miscellaneous utilities for low level networking
 
-extern crate libc;
-
 use packet::PrimitiveValues;
+use datalink::NetworkInterface;
 
 use std::fmt;
 use std::str::FromStr;
 use std::u8;
-use std::net::IpAddr;
 
 
 /// A MAC address
@@ -119,33 +117,6 @@ fn mac_addr_from_str() {
                Err(ParseMacAddrErr::TooManyComponents));
     assert_eq!("xx:xx:xx:xx:xx:xx".parse::<MacAddr>(),
                Err(ParseMacAddrErr::InvalidComponent));
-}
-
-/// Represents a network interface and its associated addresses
-#[derive(Clone, PartialEq, Eq, Debug, Hash)]
-pub struct NetworkInterface {
-    /// The name of the interface
-    pub name: String,
-    /// The interface index (operating system specific)
-    pub index: u32,
-    /// A MAC address for the interface
-    pub mac: Option<MacAddr>,
-    /// An IP addresses for the interface
-    pub ips: Option<Vec<IpAddr>>,
-    /// Operating system specific flags for the interface
-    pub flags: u32,
-}
-
-impl NetworkInterface {
-    /// Retrieve the MAC address associated with the interface
-    pub fn mac_address(&self) -> MacAddr {
-        self.mac.unwrap()
-    }
-
-    /// Is the interface a loopback interface?
-    pub fn is_loopback(&self) -> bool {
-        self.flags & (libc::IFF_LOOPBACK as u32) != 0
-    }
 }
 
 /// Get a list of available network interfaces for the current machine.

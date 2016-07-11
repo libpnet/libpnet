@@ -20,11 +20,10 @@ use std::sync::Arc;
 use bindings::bpf;
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-use datalink;
+use datalink::{self, NetworkInterface};
 use datalink::Channel::Ethernet;
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use internal;
-use util::NetworkInterface;
 
 /// BPF-specific configuration
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

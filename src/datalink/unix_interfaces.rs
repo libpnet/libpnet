@@ -15,7 +15,8 @@ use std::net::IpAddr;
 
 use libc;
 
-use util::{MacAddr, NetworkInterface};
+use util::MacAddr;
+use datalink::NetworkInterface;
 
 use internal;
 

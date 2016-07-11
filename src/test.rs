@@ -23,7 +23,7 @@ use packet::udp;
 use transport::{TransportChannelType, TransportProtocol, ipv4_packet_iter, transport_channel,
                 udp_packet_iter};
 use transport::TransportProtocol::{Ipv4, Ipv6};
-use util;
+use datalink;
 
 const IPV4_HEADER_LEN: usize = 20;
 const IPV6_HEADER_LEN: usize = 40;
@@ -95,7 +95,7 @@ fn is_ipv4(ip: &IpAddr) -> bool {
 fn build_udp4_packet(packet: &mut [u8],
                      start: usize,
                      msg: &str,
-                     ni: Option<&util::NetworkInterface>) {
+                     ni: Option<&datalink::NetworkInterface>) {
     build_ipv4_header(packet, start);
     build_udp_header(packet, start + IPV4_HEADER_LEN as usize);
 
@@ -300,7 +300,7 @@ fn layer2() {
     const ETHERNET_HEADER_LEN: usize = 14;
 
     #[cfg(windows)]
-    fn get_test_interface() -> util::NetworkInterface {
+    fn get_test_interface() -> datalink::NetworkInterface {
         use std::clone::Clone;
         use std::env;
         let interfaces = datalink::interfaces();
@@ -318,7 +318,7 @@ fn layer2() {
     }
 
     #[cfg(not(windows))]
-    fn get_test_interface() -> util::NetworkInterface {
+    fn get_test_interface() -> datalink::NetworkInterface {
         use std::clone::Clone;
         use std::env;
         let interfaces = datalink::interfaces();

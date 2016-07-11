@@ -43,10 +43,9 @@
 //! ```no_run
 //! extern crate pnet;
 //!
-//! use pnet::datalink;
+//! use pnet::datalink::{self, NetworkInterface};
 //! use pnet::datalink::Channel::Ethernet;
 //! use pnet::packet::{Packet, MutablePacket};
-//! use pnet::util::NetworkInterface;
 //!
 //! use std::env;
 //!
