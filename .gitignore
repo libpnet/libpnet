@@ -1,3 +1,10 @@
 target/
 Cargo.lock
 *.lib
+*.orig
+*.rej
+*.png
+*.diff
+*.tar.gz
+*.patch
+*.txt
