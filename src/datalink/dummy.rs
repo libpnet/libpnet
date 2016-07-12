@@ -204,13 +204,13 @@ mod tests {
     use std::time::Duration;
 
     use packet::{MutablePacket, Packet};
-    use packet::ethernet::EthernetPacket;
+    use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
     use datalink::{EthernetDataLinkReceiver, EthernetDataLinkSender};
     use datalink::Channel::Ethernet;
 
     #[test]
     fn send_too_small_packet_size() {
-        let (_, read_handle, mut tx, _) = create_net();
+        let (_, _, mut tx, _) = create_net();
         // Check that it fails to send with too small packet sizes
         assert!(tx.build_and_send(1, 0, &mut |_| {}).is_none());
     }
@@ -219,13 +219,10 @@ mod tests {
     fn send_nothing() {
         let (_, read_handle, mut tx, _) = create_net();
         // Check that sending zero packets yields zero packets
-        tx.build_and_send(0,
-                            20,
-                            &mut |_| {
-                                panic!("Should not be called");
-                            })
-            .unwrap()
-            .unwrap();
+        let mut builder = |_: MutableEthernetPacket| {
+            panic!("Should not be called");
+        };
+        tx.build_and_send(0, 20, &mut builder).unwrap().unwrap();
         assert!(read_handle.try_recv().is_err());
     }
 
@@ -233,15 +230,12 @@ mod tests {
     fn send_one_packet() {
         let (_, read_handle, mut tx, _) = create_net();
         // Check that sending one packet yields one packet
-        tx.build_and_send(1,
-                            20,
-                            &mut |mut pkg| {
-                                assert_eq!(pkg.packet().len(), 20);
-                                pkg.packet_mut()[0] = 9;
-                                pkg.packet_mut()[19] = 201;
-                            })
-            .unwrap()
-            .unwrap();
+        let mut builder = |mut pkg: MutableEthernetPacket| {
+            assert_eq!(pkg.packet().len(), 20);
+            pkg.packet_mut()[0] = 9;
+            pkg.packet_mut()[19] = 201;
+        };
+        tx.build_and_send(1, 20, &mut builder).unwrap().unwrap();
         let pkg = read_handle.try_recv().expect("Expected one packet to be sent");
         assert!(read_handle.try_recv().is_err());
         assert_eq!(pkg.len(), 20);
@@ -254,14 +248,11 @@ mod tests {
         let (_, read_handle, mut tx, _) = create_net();
         // Check that sending multiple packets does the correct thing
         let mut closure_counter = 0;
-        tx.build_and_send(3,
-                            20,
-                            &mut |mut pkg| {
-                                pkg.packet_mut()[0] = closure_counter;
-                                closure_counter += 1;
-                            })
-            .unwrap()
-            .unwrap();
+        let mut builder = |mut pkg: MutableEthernetPacket| {
+            pkg.packet_mut()[0] = closure_counter;
+            closure_counter += 1;
+        };
+        tx.build_and_send(3, 20, &mut builder).unwrap().unwrap();
         for i in 0..3 {
             let pkg = read_handle.try_recv().expect("Expected a packet");
             assert_eq!(pkg[0], i);
@@ -287,7 +278,7 @@ mod tests {
 
     #[test]
     fn read_nothing() {
-        let (inject_handle, _, _, mut rx) = create_net();
+        let (_, _, _, mut rx) = create_net();
         let (control_tx, control_rx) = mpsc::channel();
         spawn(move || {
             let mut rx_iter = rx.iter();
