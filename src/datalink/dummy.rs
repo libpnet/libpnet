@@ -24,11 +24,11 @@ use util::MacAddr;
 /// channels that are used to communicate with the fake network.
 #[derive(Debug)]
 pub struct Config {
-    in_packets_rx: Receiver<io::Result<Box<[u8]>>>,
-    in_packets_tx: Option<Sender<io::Result<Box<[u8]>>>>,
+    receiver: Receiver<io::Result<Box<[u8]>>>,
+    inject_handle: Option<Sender<io::Result<Box<[u8]>>>>,
 
-    out_packets_tx: Sender<Box<[u8]>>,
-    out_packets_rx: Option<Receiver<Box<[u8]>>>,
+    sender: Sender<Box<[u8]>>,
+    read_handle: Option<Receiver<Box<[u8]>>>,
 }
 
 impl Config {
@@ -37,33 +37,31 @@ impl Config {
     /// Those handles must be kept track of elsewhere.
     ///
     /// The `EthernetDataLinkChannelIterator` created by the dummy backend will read packets from
-    /// `in_packets`. Both network errors and data can be sent on this channel.
-    /// When the `in_packets` channel is closed (`Sender` is dropped)
+    /// `receiver`. Both network errors and data can be sent on this channel.
+    /// When the `receiver` channel is closed (`Sender` is dropped)
     /// `EthernetDataLinkChannelIterator::next()` will sleep forever, simlating an idle network.
     ///
     /// The `EthernetDataLinkSender` created by the dummy backend will send all packets sent
-    /// through `build_and_send()` and `send_to()` to the `out_packets` channel.
-    pub fn new(in_packets: Receiver<io::Result<Box<[u8]>>>,
-               out_packets: Sender<Box<[u8]>>)
-        -> Config {
+    /// through `build_and_send()` and `send_to()` to the `sender` channel.
+    pub fn new(receiver: Receiver<io::Result<Box<[u8]>>>, sender: Sender<Box<[u8]>>) -> Config {
         Config {
-            in_packets_rx: in_packets,
-            in_packets_tx: None,
-            out_packets_tx: out_packets,
-            out_packets_rx: None,
+            receiver: receiver,
+            inject_handle: None,
+            sender: sender,
+            read_handle: None,
         }
     }
 
     /// Get the `Sender` handle that can inject packets in the fake network.
     /// Only usable with `Config`s generated from `default()`
     pub fn inject_handle(&mut self) -> Option<Sender<io::Result<Box<[u8]>>>> {
-        self.in_packets_tx.take()
+        self.inject_handle.take()
     }
 
     /// Get the `Receiver` handle where packets sent to the fake network can be read.
     /// Only usable with `Config`s generated from `default()`
     pub fn read_handle(&mut self) -> Option<Receiver<Box<[u8]>>> {
-        self.out_packets_rx.take()
+        self.read_handle.take()
     }
 }
 
@@ -81,10 +79,10 @@ impl Default for Config {
         let (in_tx, in_rx) = mpsc::channel();
         let (out_tx, out_rx) = mpsc::channel();
         Config {
-            in_packets_rx: in_rx,
-            in_packets_tx: Some(in_tx),
-            out_packets_tx: out_tx,
-            out_packets_rx: Some(out_rx),
+            receiver: in_rx,
+            inject_handle: Some(in_tx),
+            sender: out_tx,
+            read_handle: Some(out_rx),
         }
     }
 }
@@ -92,16 +90,15 @@ impl Default for Config {
 /// Create a data link channel backed by FIFO queues. Useful for debugging and testing.
 /// See `Config` for how to inject and read packets on this fake network.
 pub fn channel(_: &NetworkInterface, config: Config) -> io::Result<datalink::Channel> {
-    let sender = Box::new(MockEthernetDataLinkSender { out_packets: config.out_packets_tx });
-    let receiver =
-        Box::new(MockEthernetDataLinkReceiver { in_packets: Some(config.in_packets_rx) });
+    let sender = Box::new(MockEthernetDataLinkSender { sender: config.sender });
+    let receiver = Box::new(MockEthernetDataLinkReceiver { receiver: Some(config.receiver) });
 
     Ok(datalink::Channel::Ethernet(sender, receiver))
 }
 
 
 struct MockEthernetDataLinkSender {
-    out_packets: Sender<Box<[u8]>>,
+    sender: Sender<Box<[u8]>>,
 }
 
 impl EthernetDataLinkSender for MockEthernetDataLinkSender {
@@ -120,7 +117,7 @@ impl EthernetDataLinkSender for MockEthernetDataLinkSender {
                 func(pkg);
             }
             // Send the data to the queue. Don't care if it's closed
-            self.out_packets.send(buffer.into_boxed_slice()).unwrap_or(());
+            self.sender.send(buffer.into_boxed_slice()).unwrap_or(());
         }
         Some(Ok(()))
     }
@@ -130,32 +127,32 @@ impl EthernetDataLinkSender for MockEthernetDataLinkSender {
                _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
         let buffer = packet.packet().to_vec();
-        self.out_packets.send(buffer.into_boxed_slice()).unwrap_or(());
+        self.sender.send(buffer.into_boxed_slice()).unwrap_or(());
         Some(Ok(()))
     }
 }
 
 struct MockEthernetDataLinkReceiver {
-    in_packets: Option<Receiver<io::Result<Box<[u8]>>>>,
+    receiver: Option<Receiver<io::Result<Box<[u8]>>>>,
 }
 
 impl EthernetDataLinkReceiver for MockEthernetDataLinkReceiver {
     fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a> {
         Box::new(MockEthernetDataLinkChannelIterator {
-            in_packets: self.in_packets.take().expect("Only one receiver allowed"),
+            receiver: self.receiver.take().expect("Only one receiver allowed"),
             used_packets: vec![],
         })
     }
 }
 
 struct MockEthernetDataLinkChannelIterator {
-    in_packets: Receiver<io::Result<Box<[u8]>>>,
+    receiver: Receiver<io::Result<Box<[u8]>>>,
     used_packets: Vec<Box<[u8]>>,
 }
 
 impl<'a> EthernetDataLinkChannelIterator<'a> for MockEthernetDataLinkChannelIterator {
     fn next(&mut self) -> io::Result<EthernetPacket> {
-        match self.in_packets.recv() {
+        match self.receiver.recv() {
             Ok(result) => {
                 // A network event happened. Might be a packet or a simulated error
                 match result {
