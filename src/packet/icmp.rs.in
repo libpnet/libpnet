@@ -10,7 +10,7 @@ use packet::{Packet, PrimitiveValues};
 use pnet_macros_support::types::*;
 
 /// Represents the "ICMP type" header field.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct IcmpType(pub u8);
 
 impl IcmpType {
@@ -28,7 +28,7 @@ impl PrimitiveValues for IcmpType {
 }
 
 /// Represents the "ICMP code" header field.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct IcmpCode(pub u8);
 
 impl IcmpCode {
@@ -126,7 +126,7 @@ pub mod echo_reply {
     use pnet_macros_support::types::*;
 
     /// Represent the "identifier" field of the ICMP echo replay header.
-    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Identifier(pub u16);
 
     impl Identifier {
@@ -144,7 +144,7 @@ pub mod echo_reply {
     }
 
     /// Represent the "sequence number" field of the ICMP echo replay header.
-    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct SequenceNumber(pub u16);
 
     impl SequenceNumber {
@@ -193,7 +193,7 @@ pub mod echo_request {
     use pnet_macros_support::types::*;
 
     /// Represents an indentifier field
-    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Identifier(pub u16);
 
     impl Identifier {
@@ -211,7 +211,7 @@ pub mod echo_request {
     }
 
     /// Represents a sequence number field
-    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct SequenceNumber(pub u16);
 
     impl SequenceNumber {
