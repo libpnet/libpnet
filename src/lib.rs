@@ -63,7 +63,7 @@
 //!                               .unwrap();
 //!
 //!     // Create a new channel, dealing with layer 2 packets
-//!     let (mut tx, mut rx) = match datalink::channel(&interface, &Default::default()) {
+//!     let (mut tx, mut rx) = match datalink::channel(&interface, Default::default()) {
 //!         Ok(Ethernet(tx, rx)) => (tx, rx),
 //!         Ok(_) => panic!("Unhandled channel type"),
 //!         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)

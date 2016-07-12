@@ -87,7 +87,7 @@ fn main() {
                               .unwrap();
 
     // Create a channel to send on
-    let mut tx = match datalink::channel(interface, &Default::default()) {
+    let mut tx = match datalink::channel(interface, Default::default()) {
         Ok(Ethernet(tx, _)) => tx,
         Ok(_) => panic!("rs_sender: unhandled channel type"),
         Err(e) => panic!("rs_sender: unable to create channel: {}", e)

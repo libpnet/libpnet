@@ -52,6 +52,8 @@ mod backend;
 #[cfg(feature = "netmap")]
 pub mod netmap;
 
+pub mod dummy;
+
 /// Type of data link channel to present (Linux only)
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChannelType {
@@ -126,9 +128,9 @@ impl Default for Config {
 /// When matching on the returned channel, make sure to include a catch-all so that code doesn't
 /// break when new channel types are added.
 #[inline]
-pub fn channel(network_interface: &NetworkInterface, configuration: &Config)
+pub fn channel(network_interface: &NetworkInterface, configuration: Config)
     -> io::Result<Channel> {
-    backend::channel(network_interface, &configuration.into())
+    backend::channel(network_interface, (&configuration).into())
 }
 
 macro_rules! dls {

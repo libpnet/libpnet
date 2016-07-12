@@ -80,7 +80,7 @@ impl Default for Config {
 
 /// Create a data link channel using the Linux's AF_PACKET socket type
 #[inline]
-pub fn channel(network_interface: &NetworkInterface, config: &Config)
+pub fn channel(network_interface: &NetworkInterface, config: Config)
     -> io::Result<datalink::Channel> {
     let eth_p_all = 0x0003;
     let (typ, proto) = match config.channel_type {
