@@ -17,6 +17,7 @@ use std::time::Duration;
 
 use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
 use util::MacAddr;
+use sockets;
 
 #[cfg(windows)]
 #[path = "winpcap.rs"]
@@ -221,7 +222,7 @@ impl NetworkInterface {
 
     /// Is the interface a loopback interface?
     pub fn is_loopback(&self) -> bool {
-        self.flags & (libc::IFF_LOOPBACK as u32) != 0
+        self.flags & (sockets::IFF_LOOPBACK as u32) != 0
     }
 }
 

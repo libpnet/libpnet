@@ -401,7 +401,7 @@ fn layer2() {
 }
 
 #[test]
-#[cfg(all(not(windows), not(target_os="linux")))]
+#[cfg(target_os = "linux")]
 fn layer2_timeouts() {
     use std::time::Duration;
     use std::io::ErrorKind;
@@ -434,14 +434,14 @@ fn layer2_timeouts() {
         write_timeout: Some(Duration::from_millis(100)),
         ..Default::default()
     };
-    let dlc_sidea = datalink::channel(&interface, &cfg);
+    let dlc_sidea = datalink::channel(&interface, cfg.clone());
     let (_, mut dlrx) = match dlc_sidea {
         Ok(Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => panic!("layer2_timeouts: unexpected L2 packet type"),
         Err(e) => panic!("layer2_timeouts: unable to create channel: {}", e),
     };
 
-    let dlc_sideb = datalink::channel(&interface, &cfg);
+    let dlc_sideb = datalink::channel(&interface, cfg);
     let (mut dltx, _) = match dlc_sideb {
         Ok(Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => panic!("layer2_timeouts: unexpected L2 packet type"),
