@@ -69,7 +69,7 @@ pub struct TransportReceiver {
 }
 
 #[cfg(windows)]
-const INVALID_SOCKET: libc::SOCKET = libc::INVALID_SOCKET;
+const INVALID_SOCKET: winapi::SOCKET = winapi::INVALID_SOCKET;
 
 #[cfg(not(windows))]
 const INVALID_SOCKET: libc::c_int = -1;
@@ -100,9 +100,9 @@ pub fn transport_channel(buffer_size: usize,
     let socket = unsafe {
         match channel_type {
             Layer4(Ipv4(IpNextHeaderProtocol(proto))) | Layer3(IpNextHeaderProtocol(proto)) =>
-                libc::socket(libc::AF_INET, libc::SOCK_RAW, proto as libc::c_int),
+                internal::socket(internal::AF_INET, internal::SOCK_RAW, proto as libc::c_int),
             Layer4(Ipv6(IpNextHeaderProtocol(proto))) =>
-                libc::socket(libc::AF_INET6, libc::SOCK_RAW, proto as libc::c_int),
+                internal::socket(internal::AF_INET6, internal::SOCK_RAW, proto as libc::c_int),
         }
     };
     if socket == INVALID_SOCKET {
@@ -118,11 +118,11 @@ pub fn transport_channel(buffer_size: usize,
             _ => 1,
         };
         let res = unsafe {
-            libc::setsockopt(socket,
-                             libc::IPPROTO_IP,
-                             libc::IP_HDRINCL,
-                             (&hincl as *const libc::c_int) as *const libc::c_void,
-                             mem::size_of::<libc::c_int>() as libc::socklen_t)
+            internal::setsockopt(socket,
+                                 internal::IPPROTO_IP,
+                                 internal::IP_HDRINCL,
+                                 (&hincl as *const libc::c_int) as *const libc::c_void,
+                                 mem::size_of::<libc::c_int>() as internal::SockLen)
         };
         if res == -1 {
             let err = Error::last_os_error();
@@ -155,7 +155,7 @@ impl TransportSender {
             IpAddr::V6(ip_addr) => net::SocketAddr::V6(net::SocketAddrV6::new(ip_addr, 0, 0, 0)),
         };
         let slen = internal::addr_to_sockaddr(sockaddr, &mut caddr);
-        let caddr_ptr = (&caddr as *const libc::sockaddr_storage) as *const libc::sockaddr;
+        let caddr_ptr = (&caddr as *const internal::SockAddrStorage) as *const internal::SockAddr;
 
         internal::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen)
     }
@@ -225,7 +225,7 @@ macro_rules! transport_channel_iterator {
         impl<'a> $iter<'a> {
             /// Get the next ($ty, IpAddr) pair for the given channel
             pub fn next(&mut self) -> io::Result<($ty, IpAddr)> {
-                let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
+                let mut caddr: internal::SockAddrStorage = unsafe { mem::zeroed() };
                 let res = internal::recv_from(self.tr.socket.fd,
                                               &mut self.tr.buffer[..],
                                               &mut caddr);
@@ -248,7 +248,7 @@ macro_rules! transport_channel_iterator {
                         let packet = $ty::new(&self.tr.buffer[offset..len]).unwrap();
                         let addr = internal::sockaddr_to_addr(
                                         &caddr,
-                                        mem::size_of::<libc::sockaddr_storage>()
+                                        mem::size_of::<internal::SockAddrStorage>()
                                    );
                         let ip = match addr.unwrap() {
                             net::SocketAddr::V4(sa) => IpAddr::V4(*sa.ip()),

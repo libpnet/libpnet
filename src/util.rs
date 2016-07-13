@@ -15,6 +15,7 @@ use std::fmt;
 use std::str::FromStr;
 use std::u8;
 
+use internal;
 
 /// A MAC address
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
@@ -117,6 +118,95 @@ fn mac_addr_from_str() {
                Err(ParseMacAddrErr::TooManyComponents));
     assert_eq!("xx:xx:xx:xx:xx:xx".parse::<MacAddr>(),
                Err(ParseMacAddrErr::InvalidComponent));
+}
+
+/// Represents a network interface and its associated addresses
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
+pub struct NetworkInterface {
+    /// The name of the interface
+    pub name: String,
+    /// The interface index (operating system specific)
+    pub index: u32,
+    /// A MAC address for the interface
+    pub mac: Option<MacAddr>,
+    /// An IP addresses for the interface
+    pub ips: Option<Vec<IpAddr>>,
+    /// Operating system specific flags for the interface
+    pub flags: u32,
+}
+
+impl NetworkInterface {
+    /// Retrieve the MAC address associated with the interface
+    pub fn mac_address(&self) -> MacAddr {
+        self.mac.unwrap()
+    }
+
+    /// Is the interface a loopback interface?
+    pub fn is_loopback(&self) -> bool {
+        self.flags & (internal::IFF_LOOPBACK as u32) != 0
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
+    use std::net::SocketAddr;
+
+    unsafe {
+        if sa.is_null() {
+            (None, None)
+        } else if (*sa).sa_family as libc::c_int == libc::AF_PACKET {
+            let sll: *const libc::sockaddr_ll = mem::transmute(sa);
+            let mac = MacAddr((*sll).sll_addr[0],
+                              (*sll).sll_addr[1],
+                              (*sll).sll_addr[2],
+                              (*sll).sll_addr[3],
+                              (*sll).sll_addr[4],
+                              (*sll).sll_addr[5]);
+
+            (Some(mac), None)
+        } else {
+            let addr = internal::sockaddr_to_addr(mem::transmute(sa),
+                                                  mem::size_of::<libc::sockaddr_storage>());
+
+            match addr {
+                Ok(SocketAddr::V4(sa)) => (None, Some(IpAddr::V4(*sa.ip()))),
+                Ok(SocketAddr::V6(sa)) => (None, Some(IpAddr::V6(*sa.ip()))),
+                Err(_) => (None, None),
+            }
+        }
+    }
+}
+
+#[cfg(any(target_os = "freebsd", target_os = "macos"))]
+fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
+    use bindings::bpf;
+    use std::net::SocketAddr;
+
+    unsafe {
+        if sa.is_null() {
+            (None, None)
+        } else if (*sa).sa_family as libc::c_int == bpf::AF_LINK {
+            let sdl: *const bpf::sockaddr_dl = mem::transmute(sa);
+            let nlen = (*sdl).sdl_nlen as usize;
+            let mac = MacAddr((*sdl).sdl_data[nlen] as u8,
+                              (*sdl).sdl_data[nlen + 1] as u8,
+                              (*sdl).sdl_data[nlen + 2] as u8,
+                              (*sdl).sdl_data[nlen + 3] as u8,
+                              (*sdl).sdl_data[nlen + 4] as u8,
+                              (*sdl).sdl_data[nlen + 5] as u8);
+
+            (Some(mac), None)
+        } else {
+            let addr = internal::sockaddr_to_addr(mem::transmute(sa),
+                                                  mem::size_of::<libc::sockaddr_storage>());
+
+            match addr {
+                Ok(SocketAddr::V4(sa)) => (None, Some(IpAddr::V4(*sa.ip()))),
+                Ok(SocketAddr::V6(sa)) => (None, Some(IpAddr::V6(*sa.ip()))),
+                Err(_) => (None, None),
+            }
+        }
+    }
 }
 
 /// Get a list of available network interfaces for the current machine.

@@ -15,6 +15,7 @@ use std::io;
 use std::iter::repeat;
 use std::mem;
 use std::sync::Arc;
+use std::time::Duration;
 
 use bindings::linux;
 use datalink::{self, NetworkInterface};
@@ -52,6 +53,12 @@ pub struct Config {
     /// The size of buffer to use when reading packets. Defaults to 4096
     pub read_buffer_size: usize,
 
+    /// The read timeout. Defaults to None.
+    pub read_timeout: Option<Duration>,
+
+    /// The write timeout. Defaults to None.
+    pub write_timeout: Option<Duration>,
+
     /// Specifies whether to read packets at the datalink layer or network layer.
     /// NOTE FIXME Currently ignored
     /// Defaults to Layer2
@@ -64,6 +71,8 @@ impl<'a> From<&'a datalink::Config> for Config {
             write_buffer_size: config.write_buffer_size,
             read_buffer_size: config.read_buffer_size,
             channel_type: config.channel_type,
+            read_timeout: config.read_timeout,
+            write_timeout: config.write_timeout,
         }
     }
 }
@@ -73,9 +82,30 @@ impl Default for Config {
         Config {
             write_buffer_size: 4096,
             read_buffer_size: 4096,
+            read_timeout: None,
+            write_timeout: None,
             channel_type: Layer2,
         }
     }
+}
+
+#[inline]
+fn set_timeout_sockopt(socket: i32, to: Duration, sockopt: i32) -> io::Result<()> {
+    let timeout = internal::duration_to_timeval(to);
+    if unsafe {
+        libc::setsockopt(socket,
+                         libc::SOL_SOCKET,
+                         sockopt,
+                         (&timeout as *const libc::timeval) as *const libc::c_void,
+                         mem::size_of::<libc::timeval>() as u32)
+    } == -1 {
+        let err = io::Error::last_os_error();
+        unsafe {
+            internal::close(socket);
+        }
+        return Err(err);
+    }
+    Ok(())
 }
 
 /// Create a data link channel using the Linux's AF_PACKET socket type
@@ -95,6 +125,14 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
     let len = network_addr_to_sockaddr(network_interface, &mut addr, proto as i32);
 
     let send_addr = (&addr as *const libc::sockaddr_storage) as *const libc::sockaddr;
+
+    // Set timeouts
+    if let Some(read_timeout) = config.read_timeout {
+        try!(set_timeout_sockopt(socket, read_timeout, libc::SO_RCVTIMEO));
+    }
+    if let Some(write_timeout) = config.write_timeout {
+        try!(set_timeout_sockopt(socket, write_timeout, libc::SO_SNDTIMEO));
+    }
 
     // Bind to interface
     if unsafe { libc::bind(socket, send_addr, len as libc::socklen_t) } == -1 {

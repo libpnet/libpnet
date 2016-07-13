@@ -112,6 +112,7 @@
 #![cfg_attr(feature="clippy", allow(should_implement_trait))]
 
 extern crate libc;
+extern crate winapi;
 extern crate pnet_macros_support;
 
 pub mod datalink;
