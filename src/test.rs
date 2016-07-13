@@ -437,6 +437,7 @@ fn layer2() {
 }
 
 #[test]
+#[cfg(not(windows))]
 fn layer2_timeouts() {
     use std::time::Duration;
     use std::io::ErrorKind;
@@ -494,7 +495,8 @@ fn layer2_timeouts() {
                            eh.packet().len(), packet_len);
                 },
                 Err(e) => {
-                    assert!(e.kind() == ErrorKind::WouldBlock);
+                    assert!(e.kind() == ErrorKind::TimedOut);
+                    return;
                 }
             }
         }

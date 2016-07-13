@@ -11,6 +11,8 @@ extern crate libc;
 use std::io;
 use std::mem;
 
+use sockets;
+
 pub use self::native::{addr_to_sockaddr, sockaddr_to_addr};
 
 
@@ -29,30 +31,30 @@ mod native;
 
 // Any file descriptor on unix, only sockets on Windows.
 pub struct FileDesc {
-    pub fd: CSocket,
+    pub fd: sockets::CSocket,
 }
 
 impl Drop for FileDesc {
     fn drop(&mut self) {
         unsafe {
-            close(self.fd);
+            sockets::close(self.fd);
         }
     }
 }
 
-pub fn send_to(socket: CSocket,
+pub fn send_to(socket: sockets::CSocket,
                buffer: &[u8],
-               dst: *const self::SockAddr,
-               slen: self::SockLen)
+               dst: *const sockets::SockAddr,
+               slen: sockets::SockLen)
     -> io::Result<usize> {
 
     let send_len = retry(&mut || unsafe {
-        libc::sendto(socket,
-                     buffer.as_ptr() as *const libc::c_void,
-                     buffer.len() as BufLen,
-                     0,
-                     dst,
-                     slen)
+        sockets::sendto(socket,
+                        buffer.as_ptr() as sockets::Buf,
+                        buffer.len() as sockets::BufLen,
+                        0,
+                        dst,
+                        slen)
     });
 
     if send_len < 0 {
@@ -62,18 +64,18 @@ pub fn send_to(socket: CSocket,
     }
 }
 
-pub fn recv_from(socket: CSocket,
+pub fn recv_from(socket: sockets::CSocket,
                  buffer: &mut [u8],
-                 caddr: *mut self::SockAddrStorage)
+                 caddr: *mut sockets::SockAddrStorage)
     -> io::Result<usize> {
-    let mut caddrlen = mem::size_of::<self::SockAddrStorage>() as self::SockLen;
+    let mut caddrlen = mem::size_of::<sockets::SockAddrStorage>() as sockets::SockLen;
     let len = retry(&mut || unsafe {
-        libc::recvfrom(socket,
-                       buffer.as_ptr() as *mut libc::c_void,
-                       buffer.len() as BufLen,
-                       0,
-                       caddr as *mut libc::sockaddr,
-                       &mut caddrlen)
+        sockets::recvfrom(socket,
+                          buffer.as_ptr() as sockets::MutBuf,
+                          buffer.len() as sockets::BufLen,
+                          0,
+                          caddr as *mut sockets::SockAddr,
+                          &mut caddrlen)
     });
 
     if len < 0 {

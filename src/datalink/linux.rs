@@ -14,6 +14,7 @@ use std::cmp;
 use std::io;
 use std::iter::repeat;
 use std::mem;
+use std::ptr;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -23,6 +24,7 @@ use datalink::Channel::Ethernet;
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use datalink::ChannelType::{Layer2, Layer3};
 use internal;
+use sockets;
 use packet::Packet;
 use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
 use util::MacAddr;
@@ -89,25 +91,6 @@ impl Default for Config {
     }
 }
 
-#[inline]
-fn set_timeout_sockopt(socket: i32, to: Duration, sockopt: i32) -> io::Result<()> {
-    let timeout = internal::duration_to_timeval(to);
-    if unsafe {
-        libc::setsockopt(socket,
-                         libc::SOL_SOCKET,
-                         sockopt,
-                         (&timeout as *const libc::timeval) as *const libc::c_void,
-                         mem::size_of::<libc::timeval>() as u32)
-    } == -1 {
-        let err = io::Error::last_os_error();
-        unsafe {
-            internal::close(socket);
-        }
-        return Err(err);
-    }
-    Ok(())
-}
-
 /// Create a data link channel using the Linux's AF_PACKET socket type
 #[inline]
 pub fn channel(network_interface: &NetworkInterface, config: Config)
@@ -126,19 +109,11 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
 
     let send_addr = (&addr as *const libc::sockaddr_storage) as *const libc::sockaddr;
 
-    // Set timeouts
-    if let Some(read_timeout) = config.read_timeout {
-        try!(set_timeout_sockopt(socket, read_timeout, libc::SO_RCVTIMEO));
-    }
-    if let Some(write_timeout) = config.write_timeout {
-        try!(set_timeout_sockopt(socket, write_timeout, libc::SO_SNDTIMEO));
-    }
-
     // Bind to interface
     if unsafe { libc::bind(socket, send_addr, len as libc::socklen_t) } == -1 {
         let err = io::Error::last_os_error();
         unsafe {
-            internal::close(socket);
+            sockets::close(socket);
         }
         return Err(err);
     }
@@ -157,34 +132,61 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
     } == -1 {
         let err = io::Error::last_os_error();
         unsafe {
-            internal::close(socket);
+            sockets::close(socket);
+        }
+        return Err(err);
+    }
+
+    // Enable nonblocking
+    if unsafe {
+        libc::fcntl(socket,
+                    libc::F_SETFL,
+                    libc::O_NONBLOCK)
+    } == -1 {
+        let err = io::Error::last_os_error();
+        unsafe {
+            sockets::close(socket);
         }
         return Err(err);
     }
 
     let fd = Arc::new(internal::FileDesc { fd: socket });
-    let sender = Box::new(DataLinkSenderImpl {
+    let mut sender = Box::new(DataLinkSenderImpl {
         socket: fd.clone(),
+        fd_set: unsafe { mem::zeroed() },
         write_buffer: repeat(0u8).take(config.write_buffer_size).collect(),
         _channel_type: config.channel_type,
         send_addr: unsafe { *(send_addr as *const libc::sockaddr_ll) },
         send_addr_len: len,
+        timeout: config.write_timeout.map(|to| internal::duration_to_timespec(to))
     });
-    let receiver = Box::new(DataLinkReceiverImpl {
-        socket: fd,
+    unsafe {
+        libc::FD_ZERO(&mut sender.fd_set as *mut libc::fd_set);
+        libc::FD_SET(fd.fd, &mut sender.fd_set as *mut libc::fd_set);
+    }
+    let mut receiver = Box::new(DataLinkReceiverImpl {
+        socket: fd.clone(),
+        fd_set: unsafe { mem::zeroed() },
         read_buffer: repeat(0u8).take(config.read_buffer_size).collect(),
         _channel_type: config.channel_type,
+        timeout: config.read_timeout.map(|to| internal::duration_to_timespec(to))
     });
+    unsafe {
+        libc::FD_ZERO(&mut receiver.fd_set as *mut libc::fd_set);
+        libc::FD_SET(fd.fd, &mut receiver.fd_set as *mut libc::fd_set);
+    }
 
     Ok(Ethernet(sender, receiver))
 }
 
 struct DataLinkSenderImpl {
     socket: Arc<internal::FileDesc>,
+    fd_set: libc::fd_set,
     write_buffer: Vec<u8>,
     _channel_type: datalink::ChannelType,
     send_addr: libc::sockaddr_ll,
     send_addr_len: usize,
+    timeout: Option<libc::timespec>,
 }
 
 impl EthernetDataLinkSender for DataLinkSenderImpl {
@@ -207,11 +209,26 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                 let send_addr =
                     (&self.send_addr as *const libc::sockaddr_ll) as *const libc::sockaddr;
 
-                if let Err(e) =  internal::send_to(self.socket.fd,
-                                                   chunk,
-                                                   send_addr,
-                                                   self.send_addr_len as libc::socklen_t) {
-                    return Some(Err(e));
+                let ret = unsafe {
+                    libc::pselect(self.socket.fd + 1,
+                                  ptr::null_mut(),
+                                  &mut self.fd_set as *mut libc::fd_set,
+                                  ptr::null_mut(),
+                                  self.timeout.map(|to| &to as *const libc::timespec)
+                                  .unwrap_or(ptr::null()),
+                                  ptr::null())
+                };
+                if ret == -1 {
+                    return Some(Err(io::Error::last_os_error()));
+                } else if ret == 0 {
+                    return Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")));
+                } else {
+                    if let Err(e) =  internal::send_to(self.socket.fd,
+                                                    chunk,
+                                                    send_addr,
+                                                    self.send_addr_len as libc::socklen_t) {
+                        return Some(Err(e));
+                    }
                 }
             }
 
@@ -226,20 +243,37 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                packet: &EthernetPacket,
                _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
-        match internal::send_to(self.socket.fd,
-                                packet.packet(),
-                                (&self.send_addr as *const libc::sockaddr_ll) as *const _,
-                                self.send_addr_len as libc::socklen_t) {
-            Err(e) => Some(Err(e)),
-            Ok(_) => Some(Ok(())),
+        let ret = unsafe {
+            libc::pselect(self.socket.fd + 1,
+                          ptr::null_mut(),
+                          &mut self.fd_set as *mut libc::fd_set,
+                          ptr::null_mut(),
+                          self.timeout.map(|to| &to as *const libc::timespec)
+                          .unwrap_or(ptr::null()),
+                          ptr::null())
+        };
+        if ret == -1 {
+            Some(Err(io::Error::last_os_error()))
+        } else if ret == 0 {
+            Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")))
+        } else {
+            match internal::send_to(self.socket.fd,
+                                    packet.packet(),
+                                    (&self.send_addr as *const libc::sockaddr_ll) as *const _,
+                                    self.send_addr_len as libc::socklen_t) {
+                Err(e) => Some(Err(e)),
+                Ok(_) => Some(Ok(())),
+            }
         }
     }
 }
 
 struct DataLinkReceiverImpl {
     socket: Arc<internal::FileDesc>,
+    fd_set: libc::fd_set,
     read_buffer: Vec<u8>,
     _channel_type: datalink::ChannelType,
+    timeout: Option<libc::timespec>,
 }
 
 impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
@@ -256,10 +290,25 @@ struct DataLinkChannelIteratorImpl<'a> {
 impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
     fn next(&mut self) -> io::Result<EthernetPacket> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
-        let res = internal::recv_from(self.pc.socket.fd, &mut self.pc.read_buffer, &mut caddr);
-        match res {
-            Ok(len) => Ok(EthernetPacket::new(&self.pc.read_buffer[0..len]).unwrap()),
-            Err(e) => Err(e),
+        let ret = unsafe {
+            libc::pselect(self.pc.socket.fd + 1,
+                          &mut self.pc.fd_set as *mut libc::fd_set,
+                          ptr::null_mut(),
+                          ptr::null_mut(),
+                          self.pc.timeout.map(|to| &to as *const libc::timespec)
+                          .unwrap_or(ptr::null()),
+                          ptr::null())
+        };
+        if ret == -1 {
+            Err(io::Error::last_os_error())
+        } else if ret == 0 {
+            Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out"))
+        } else {
+            let res = internal::recv_from(self.pc.socket.fd, &mut self.pc.read_buffer, &mut caddr);
+            match res {
+                Ok(len) => Ok(EthernetPacket::new(&self.pc.read_buffer[0..len]).unwrap()),
+                Err(e) => Err(e),
+            }
         }
     }
 }

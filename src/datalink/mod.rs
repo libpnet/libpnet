@@ -97,11 +97,10 @@ pub struct Config {
     /// The size of buffer to use when reading packets. Defaults to 4096
     pub read_buffer_size: usize,
 
-    /// The read timeout. Defaults to None.
+    /// Linux/BPF/Netmap only: The read timeout. Defaults to None.
     pub read_timeout: Option<Duration>,
 
-    /// The write timeout. Has no effect on the WinPcap backend.
-    /// Defaults to None.
+    /// Linux/BPF/Netmap only: The write timeout. Defaults to None.
     pub write_timeout: Option<Duration>,
 
     /// Linux only: Specifies whether to read packets at the datalink layer or network layer.

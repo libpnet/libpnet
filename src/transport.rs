@@ -36,6 +36,7 @@ use packet::ipv4::Ipv4Packet;
 use packet::udp::UdpPacket;
 
 use internal;
+use sockets;
 
 /// Represents a transport layer protocol
 #[derive(Clone, Copy)]
@@ -68,12 +69,6 @@ pub struct TransportReceiver {
     channel_type: TransportChannelType,
 }
 
-#[cfg(windows)]
-const INVALID_SOCKET: winapi::SOCKET = winapi::INVALID_SOCKET;
-
-#[cfg(not(windows))]
-const INVALID_SOCKET: libc::c_int = -1;
-
 /// Create a new (TransportSender, TransportReceiver) pair
 ///
 /// This allows for sending and receiving packets at the transport layer. The buffer size should be
@@ -100,12 +95,12 @@ pub fn transport_channel(buffer_size: usize,
     let socket = unsafe {
         match channel_type {
             Layer4(Ipv4(IpNextHeaderProtocol(proto))) | Layer3(IpNextHeaderProtocol(proto)) =>
-                internal::socket(internal::AF_INET, internal::SOCK_RAW, proto as libc::c_int),
+                sockets::socket(sockets::AF_INET, sockets::SOCK_RAW, proto as libc::c_int),
             Layer4(Ipv6(IpNextHeaderProtocol(proto))) =>
-                internal::socket(internal::AF_INET6, internal::SOCK_RAW, proto as libc::c_int),
+                sockets::socket(sockets::AF_INET6, sockets::SOCK_RAW, proto as libc::c_int),
         }
     };
-    if socket == INVALID_SOCKET {
+    if socket == sockets::INVALID_SOCKET {
         return Err(Error::last_os_error());
     }
 
@@ -118,16 +113,16 @@ pub fn transport_channel(buffer_size: usize,
             _ => 1,
         };
         let res = unsafe {
-            internal::setsockopt(socket,
-                                 internal::IPPROTO_IP,
-                                 internal::IP_HDRINCL,
-                                 (&hincl as *const libc::c_int) as *const libc::c_void,
-                                 mem::size_of::<libc::c_int>() as internal::SockLen)
+            sockets::setsockopt(socket,
+                                sockets::IPPROTO_IP,
+                                sockets::IP_HDRINCL,
+                                (&hincl as *const libc::c_int) as sockets::Buf,
+                                mem::size_of::<libc::c_int>() as sockets::SockLen)
         };
         if res == -1 {
             let err = Error::last_os_error();
             unsafe {
-                internal::close(socket);
+                sockets::close(socket);
             }
             return Err(err);
         }
@@ -155,7 +150,7 @@ impl TransportSender {
             IpAddr::V6(ip_addr) => net::SocketAddr::V6(net::SocketAddrV6::new(ip_addr, 0, 0, 0)),
         };
         let slen = internal::addr_to_sockaddr(sockaddr, &mut caddr);
-        let caddr_ptr = (&caddr as *const internal::SockAddrStorage) as *const internal::SockAddr;
+        let caddr_ptr = (&caddr as *const sockets::SockAddrStorage) as *const sockets::SockAddr;
 
         internal::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen)
     }
@@ -225,7 +220,7 @@ macro_rules! transport_channel_iterator {
         impl<'a> $iter<'a> {
             /// Get the next ($ty, IpAddr) pair for the given channel
             pub fn next(&mut self) -> io::Result<($ty, IpAddr)> {
-                let mut caddr: internal::SockAddrStorage = unsafe { mem::zeroed() };
+                let mut caddr: sockets::SockAddrStorage = unsafe { mem::zeroed() };
                 let res = internal::recv_from(self.tr.socket.fd,
                                               &mut self.tr.buffer[..],
                                               &mut caddr);
@@ -248,7 +243,7 @@ macro_rules! transport_channel_iterator {
                         let packet = $ty::new(&self.tr.buffer[offset..len]).unwrap();
                         let addr = internal::sockaddr_to_addr(
                                         &caddr,
-                                        mem::size_of::<internal::SockAddrStorage>()
+                                        mem::size_of::<sockets::SockAddrStorage>()
                                    );
                         let ip = match addr.unwrap() {
                             net::SocketAddr::V4(sa) => IpAddr::V4(*sa.ip()),

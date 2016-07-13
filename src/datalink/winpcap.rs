@@ -61,9 +61,6 @@ pub struct Config {
 
     /// The size of buffer to use when reading packets. Defaults to 4096
     pub read_buffer_size: usize,
-
-    /// The read timeout. Defaults to None.
-    pub read_timeout: Option<Duration>,
 }
 
 impl<'a> From<&'a datalink::Config> for Config {
@@ -71,7 +68,6 @@ impl<'a> From<&'a datalink::Config> for Config {
         Config {
             write_buffer_size: config.write_buffer_size,
             read_buffer_size: config.read_buffer_size,
-            read_timeout: config.read_timeout,
         }
     }
 }
@@ -81,7 +77,6 @@ impl Default for Config {
         Config {
             write_buffer_size: 4096,
             read_buffer_size: 4096,
-            read_timeout: None,
         }
     }
 }
@@ -111,16 +106,6 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
 
     // Set kernel buffer size
     let ret = unsafe { winpcap::PacketSetBuff(adapter, config.read_buffer_size as libc::c_int) };
-    if ret == 0 {
-        return Err(io::Error::last_os_error());
-    }
-
-    // Set the read timeout
-    let read_to = match config.read_timeout {
-        Some(read_to) => read_to.as_secs() * 1_000_000 + (read_to.subsec_nanos() / 1_000_000) as u64,
-        None => 0
-    } as i32;
-    let ret = unsafe { winpcap::PacketSetReadTimeout(adapter, read_to) };
     if ret == 0 {
         return Err(io::Error::last_os_error());
     }

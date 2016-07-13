@@ -123,6 +123,7 @@ pub mod util;
 
 mod bindings;
 mod internal;
+mod sockets;
 
 // NOTE should probably have a cfg(pnet_test_network) here, but cargo doesn't
 //      allow custom --cfg flags
