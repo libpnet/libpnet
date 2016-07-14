@@ -32,13 +32,13 @@ optional = true
 version = ">=0.0"
 
 [dependencies.libc]
-version = "=0.2.11"
+version = "0.2.*"
 
 [dependencies.winapi]
-version = "=0.2.7"
+version = "0.2.*"
 
 [dependencies.ws2_32-sys]
-version = "=0.2.1"
+version = "0.2.*"
 
 [dependencies.syntex]
 version = "0.31.*"
