@@ -16,6 +16,8 @@ use std::io;
 use std::iter::repeat;
 use std::mem;
 use std::sync::Arc;
+use std::ptr;
+use std::time::Duration;
 
 use bindings::bpf;
 use packet::Packet;
@@ -24,6 +26,7 @@ use datalink::{self, NetworkInterface};
 use datalink::Channel::Ethernet;
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use internal;
+use sockets;
 
 /// BPF-specific configuration
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -33,6 +36,12 @@ pub struct Config {
 
     /// The size of buffer to use when reading packets. Defaults to 4096
     pub read_buffer_size: usize,
+
+    /// The read timeout. Defaults to None.
+    pub read_timeout: Option<Duration>,
+
+    /// The write timeout. Defaults to None.
+    pub write_timeout: Option<Duration>,
 
     /// The number of /dev/bpf* file descriptors to attempt before failing.
     ///
@@ -49,6 +58,8 @@ impl<'a> From<&'a datalink::Config> for Config {
             write_buffer_size: config.write_buffer_size,
             read_buffer_size: config.read_buffer_size,
             bpf_fd_attempts: config.bpf_fd_attempts,
+            read_timeout: config.read_timeout,
+            write_timeout: config.write_timeout,
         }
     }
 }
@@ -59,6 +70,8 @@ impl Default for Config {
             write_buffer_size: 4096,
             read_buffer_size: 4096,
             bpf_fd_attempts: 1000,
+            read_timeout: None,
+            write_timeout: None,
         }
     }
 }
@@ -187,25 +200,52 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
         }
     }
 
+    // Enable nonblocking
+    if unsafe {
+        libc::fcntl(fd,
+                    libc::F_SETFL,
+                    libc::O_NONBLOCK)
+    } == -1 {
+        let err = io::Error::last_os_error();
+        unsafe {
+            sockets::close(fd);
+        }
+        return Err(err);
+    }
+
     let fd = Arc::new(internal::FileDesc { fd: fd });
-    let sender = Box::new(DataLinkSenderImpl {
+    let mut sender = Box::new(DataLinkSenderImpl {
         fd: fd.clone(),
+        fd_set: unsafe { mem::zeroed() },
         write_buffer: repeat(0u8).take(config.write_buffer_size).collect(),
         loopback: loopback,
+        timeout: config.write_timeout.map(|to| internal::duration_to_timespec(to))
     });
-    let receiver = Box::new(DataLinkReceiverImpl {
-        fd: fd,
+    unsafe {
+        libc::FD_ZERO(&mut sender.fd_set as *mut libc::fd_set);
+        libc::FD_SET(fd.fd, &mut sender.fd_set as *mut libc::fd_set);
+    }
+    let mut receiver = Box::new(DataLinkReceiverImpl {
+        fd: fd.clone(),
+        fd_set: unsafe { mem::zeroed() },
         read_buffer: repeat(0u8).take(allocated_read_buffer_size).collect(),
         loopback: loopback,
+        timeout: config.read_timeout.map(|to| internal::duration_to_timespec(to))
     });
+    unsafe {
+        libc::FD_ZERO(&mut receiver.fd_set as *mut libc::fd_set);
+        libc::FD_SET(fd.fd, &mut receiver.fd_set as *mut libc::fd_set);
+    }
 
     Ok(Ethernet(sender, receiver))
 }
 
 struct DataLinkSenderImpl {
     fd: Arc<internal::FileDesc>,
+    fd_set: libc::fd_set,
     write_buffer: Vec<u8>,
     loopback: bool,
+    timeout: Option<libc::timespec>,
 }
 
 impl EthernetDataLinkSender for DataLinkSenderImpl {
@@ -231,13 +271,29 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                     let eh = MutableEthernetPacket::new(chunk).unwrap();
                     func(eh);
                 }
-                match unsafe {
-                    libc::write(self.fd.fd,
-                                chunk.as_ptr().offset(offset as isize) as *const libc::c_void,
-                                (chunk.len() - offset) as libc::size_t)
-                } {
-                    len if len == -1 => return Some(Err(io::Error::last_os_error())),
-                    _ => (),
+                let ret = unsafe {
+                    libc::pselect(self.fd.fd + 1,
+                                  ptr::null_mut(),
+                                  &mut self.fd_set as *mut libc::fd_set,
+                                  ptr::null_mut(),
+                                  self.timeout.map(|to| &to as *const libc::timespec)
+                                  .unwrap_or(ptr::null()),
+                                  ptr::null())
+                };
+                if ret == -1 {
+                    // Error occured!
+                    return Some(Err(io::Error::last_os_error()));
+                } else if ret == 0 {
+                    return Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")));
+                } else {
+                    match unsafe {
+                        libc::write(self.fd.fd,
+                                    chunk.as_ptr().offset(offset as isize) as *const libc::c_void,
+                                    (chunk.len() - offset) as libc::size_t)
+                    } {
+                        len if len == -1 => return Some(Err(io::Error::last_os_error())),
+                        _ => (),
+                    }
                 }
             }
             Some(Ok(()))
@@ -256,21 +312,39 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
         } else {
             0
         };
-        match unsafe {
-            libc::write(self.fd.fd,
-                        packet.packet().as_ptr().offset(offset as isize) as *const libc::c_void,
-                        (packet.packet().len() - offset) as libc::size_t)
-        } {
-            len if len == -1 => Some(Err(io::Error::last_os_error())),
-            _ => Some(Ok(())),
+        let ret = unsafe {
+            libc::pselect(self.fd.fd + 1,
+                          ptr::null_mut(),
+                          &mut self.fd_set as *mut libc::fd_set,
+                          ptr::null_mut(),
+                          self.timeout.map(|to| &to as *const libc::timespec)
+                          .unwrap_or(ptr::null()),
+                          ptr::null())
+        };
+        if ret == -1 {
+            // Error occured!
+            return Some(Err(io::Error::last_os_error()));
+        } else if ret == 0 {
+            return Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")));
+        } else {
+            match unsafe {
+                libc::write(self.fd.fd,
+                            packet.packet().as_ptr().offset(offset as isize) as *const libc::c_void,
+                            (packet.packet().len() - offset) as libc::size_t)
+            } {
+                len if len == -1 => Some(Err(io::Error::last_os_error())),
+                _ => Some(Ok(())),
+            }
         }
     }
 }
 
 struct DataLinkReceiverImpl {
     fd: Arc<internal::FileDesc>,
+    fd_set: libc::fd_set,
     read_buffer: Vec<u8>,
     loopback: bool,
+    timeout: Option<libc::timespec>,
 }
 
 impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
@@ -300,25 +374,40 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
         };
         if self.packets.is_empty() {
             let buffer = &mut self.pc.read_buffer[buffer_offset..];
-            let buflen = match unsafe {
-                libc::read(self.pc.fd.fd,
-                           buffer.as_ptr() as *mut libc::c_void,
-                           buffer.len() as libc::size_t)
-            } {
-                len if len > 0 => len,
-                _ => return Err(io::Error::last_os_error()),
+            let ret = unsafe {
+                libc::pselect(self.pc.fd.fd + 1,
+                              &mut self.pc.fd_set as *mut libc::fd_set,
+                              ptr::null_mut(),
+                              ptr::null_mut(),
+                              self.pc.timeout.map(|to| &to as *const libc::timespec)
+                              .unwrap_or(ptr::null()),
+                              ptr::null())
             };
-            let mut ptr = buffer.as_mut_ptr();
-            let end = unsafe { buffer.as_ptr().offset(buflen as isize) };
-            while (ptr as *const u8) < end {
-                unsafe {
-                    let packet: *const bpf::bpf_hdr = mem::transmute(ptr);
-                    let start = ptr as isize + (*packet).bh_hdrlen as isize -
-                                buffer.as_ptr() as isize;
-                    self.packets.push_back((start as usize + header_size,
-                                            (*packet).bh_caplen as usize - header_size));
-                    let offset = (*packet).bh_hdrlen as isize + (*packet).bh_caplen as isize;
-                    ptr = ptr.offset(bpf::BPF_WORDALIGN(offset));
+            if ret == -1 {
+                return Err(io::Error::last_os_error())
+            } else if ret == 0 {
+                return Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out"))
+            } else {
+                let buflen = match unsafe {
+                    libc::read(self.pc.fd.fd,
+                            buffer.as_ptr() as *mut libc::c_void,
+                            buffer.len() as libc::size_t)
+                } {
+                    len if len > 0 => len,
+                    _ => return Err(io::Error::last_os_error()),
+                };
+                let mut ptr = buffer.as_mut_ptr();
+                let end = unsafe { buffer.as_ptr().offset(buflen as isize) };
+                while (ptr as *const u8) < end {
+                    unsafe {
+                        let packet: *const bpf::bpf_hdr = mem::transmute(ptr);
+                        let start = ptr as isize + (*packet).bh_hdrlen as isize -
+                                    buffer.as_ptr() as isize;
+                        self.packets.push_back((start as usize + header_size,
+                                                (*packet).bh_caplen as usize - header_size));
+                        let offset = (*packet).bh_hdrlen as isize + (*packet).bh_caplen as isize;
+                        ptr = ptr.offset(bpf::BPF_WORDALIGN(offset));
+                    }
                 }
             }
         }

@@ -11,8 +11,10 @@
 #![allow(dead_code)]
 
 extern crate libc;
+extern crate winapi;
 
-use libc::types::os::arch::extra as win;
+use winapi as win;
+use sockets;
 
 #[repr(C)]
 struct _ADAPTER;
@@ -103,7 +105,7 @@ pub type PIP_ADAPTER_INFO = *mut _IP_ADAPTER_INFO;
 const MAX_DHCPV6_DUID_LENGTH: usize = 130;
 const MAX_DNS_SUFFIX_STRING_LENGTH: usize = 256;
 
-pub type LPSOCKADDR = *mut libc::sockaddr;
+pub type LPSOCKADDR = *mut sockets::SockAddr;
 
 #[repr(C)]
 struct _SOCKET_ADDRESS {
@@ -158,7 +160,7 @@ pub enum IF_OPER_STATUS {
 #[repr(C)]
 struct _IP_ADAPTER_UNICAST_ADDRESS {
     pub Length: ULONG,
-    pub Flags: libc::DWORD,
+    pub Flags: win::DWORD,
     pub Next: *mut _IP_ADAPTER_UNICAST_ADDRESS,
     pub Address: SOCKET_ADDRESS,
     pub PrefixOrigin: IP_PREFIX_ORIGIN,
@@ -176,7 +178,7 @@ pub type PIP_ADAPTER_UNICAST_ADDRESS = *mut _IP_ADAPTER_UNICAST_ADDRESS;
 #[repr(C)]
 struct _IP_ADAPTER_ANYCAST_ADDRESS {
     pub Length: ULONG,
-    pub Flags: libc::DWORD,
+    pub Flags: win::DWORD,
     pub Next: *mut _IP_ADAPTER_ANYCAST_ADDRESS,
     pub Address: SOCKET_ADDRESS,
 }
@@ -187,7 +189,7 @@ pub type PIP_ADAPTER_ANYCAST_ADDRESS = *mut _IP_ADAPTER_ANYCAST_ADDRESS;
 #[repr(C)]
 struct _IP_ADAPTER_MULTICAST_ADDRESS {
     pub Length: ULONG,
-    pub Flags: libc::DWORD,
+    pub Flags: win::DWORD,
     pub Next: *mut _IP_ADAPTER_MULTICAST_ADDRESS,
     pub Address: SOCKET_ADDRESS,
 }
@@ -198,7 +200,7 @@ pub type PIP_ADAPTER_MULTICAST_ADDRESS = *mut _IP_ADAPTER_MULTICAST_ADDRESS;
 #[repr(C)]
 struct _IP_ADAPTER_DNS_SERVER_ADDRESS {
     pub Length: ULONG,
-    pub Flags: libc::DWORD,
+    pub Flags: win::DWORD,
     pub Next: *mut _IP_ADAPTER_DNS_SERVER_ADDRESS,
     pub Address: SOCKET_ADDRESS,
 }
@@ -209,7 +211,7 @@ pub type PIP_ADAPTER_DNS_SERVER_ADDRESS = *mut _IP_ADAPTER_DNS_SERVER_ADDRESS;
 #[repr(C)]
 struct _IP_ADAPTER_PREFIX {
     pub Length: ULONG,
-    pub Flags: libc::DWORD,
+    pub Flags: win::DWORD,
     pub Next: *mut _IP_ADAPTER_PREFIX,
     pub Address: SOCKET_ADDRESS,
     pub PrefixLength: ULONG,
@@ -221,7 +223,7 @@ pub type PIP_ADAPTER_PREFIX = *mut _IP_ADAPTER_PREFIX;
 #[repr(C)]
 struct _IP_ADAPTER_WINS_SERVER_ADDRESS_LH {
     pub Length: ULONG,
-    pub Reserved: libc::DWORD,
+    pub Reserved: win::DWORD,
     pub Next: *mut _IP_ADAPTER_WINS_SERVER_ADDRESS_LH,
     pub Address: SOCKET_ADDRESS,
 }
@@ -234,7 +236,7 @@ pub type PIP_ADAPTER_WINS_SERVER_ADDRESS = *mut _IP_ADAPTER_WINS_SERVER_ADDRESS_
 #[repr(C)]
 struct _IP_ADAPTER_GATEWAY_ADDRESS_LH {
     pub Length: ULONG,
-    pub Reserved: libc::DWORD,
+    pub Reserved: win::DWORD,
     pub Next: *mut _IP_ADAPTER_GATEWAY_ADDRESS_LH,
     pub Address: SOCKET_ADDRESS,
 }
@@ -296,7 +298,7 @@ pub type PIP_ADAPTER_DNS_SUFFIX = *mut _IP_ADAPTER_DNS_SUFFIX;
 #[repr(C)]
 struct _IP_ADAPTER_ADDRESSES {
     pub Length: ULONG,
-    pub IfIndex: libc::DWORD,
+    pub IfIndex: win::DWORD,
     pub Next: *mut _IP_ADAPTER_ADDRESSES,
     pub AdapterName: PCHAR,
     pub FirstUnicastAddress: PIP_ADAPTER_UNICAST_ADDRESS,
@@ -307,13 +309,13 @@ struct _IP_ADAPTER_ADDRESSES {
     pub Description: PWCHAR,
     pub FriendlyName: PWCHAR,
     pub PhysicalAddress: [win::BYTE; MAX_ADAPTER_ADDRESS_LENGTH],
-    pub PhysicalAddressLength: libc::DWORD,
-    pub Flags: libc::DWORD,
-    pub Mtu: libc::DWORD,
-    pub IfType: libc::DWORD,
+    pub PhysicalAddressLength: win::DWORD,
+    pub Flags: win::DWORD,
+    pub Mtu: win::DWORD,
+    pub IfType: win::DWORD,
     pub OperStatus: IF_OPER_STATUS,
-    pub Ipv6IfIndex: libc::DWORD,
-    pub ZoneIndices: [libc::DWORD; 16],
+    pub Ipv6IfIndex: win::DWORD,
+    pub ZoneIndices: [win::DWORD; 16],
     pub FirstPrefix: PIP_ADAPTER_PREFIX,
     pub TransmitLinkSpeed: ULONG64,
     pub ReceiveLinkSpeed: ULONG64,
@@ -341,13 +343,13 @@ pub type PIP_ADAPTER_ADDRESSES = *mut _IP_ADAPTER_ADDRESSES;
 extern "system" {
 
     // from IPHlpApi.h
-    pub fn GetAdaptersInfo(pAdapterInfo: PIP_ADAPTER_INFO, pOutBufLen: PULONG) -> libc::DWORD;
+    pub fn GetAdaptersInfo(pAdapterInfo: PIP_ADAPTER_INFO, pOutBufLen: PULONG) -> win::DWORD;
     pub fn GetAdaptersAddresses(Family: ULONG,
                                 Flags: ULONG,
                                 Reserved: PVOID,
                                 AdapterAddresses: PIP_ADAPTER_ADDRESSES,
                                 SizePointer: PULONG)
-        -> libc::DWORD;
+        -> win::DWORD;
 }
 
 #[link(name = "Packet")]

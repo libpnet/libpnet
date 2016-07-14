@@ -19,6 +19,7 @@ use std::mem;
 use std::slice;
 use std::sync::Arc;
 use std::net::IpAddr;
+use std::time::Duration;
 
 use bindings::{bpf, winpcap};
 use datalink::{self, NetworkInterface};
@@ -105,11 +106,6 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
 
     // Set kernel buffer size
     let ret = unsafe { winpcap::PacketSetBuff(adapter, config.read_buffer_size as libc::c_int) };
-    if ret == 0 {
-        return Err(io::Error::last_os_error());
-    }
-
-    let ret = unsafe { winpcap::PacketSetReadTimeout(adapter, 0) };
     if ret == 0 {
         return Err(io::Error::last_os_error());
     }

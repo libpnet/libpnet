@@ -12,6 +12,8 @@
 
 extern crate libc;
 
+use sockets;
+
 pub const AF_LINK: libc::c_int = 18;
 
 const IF_NAMESIZE: usize = 16;
@@ -22,6 +24,7 @@ const IOC_INOUT: libc::c_ulong = IOC_IN | IOC_OUT;
 const IOCPARM_SHIFT: libc::c_ulong = 13;
 const IOCPARM_MASK: libc::c_ulong = (1 << (IOCPARM_SHIFT as usize)) - 1;
 
+const SIZEOF_TIMEVAL: libc::c_ulong = 16;
 const SIZEOF_IFREQ: libc::c_ulong = 32;
 const SIZEOF_C_UINT: libc::c_ulong = 4;
 #[cfg(target_os = "freebsd")]
@@ -46,6 +49,9 @@ pub const BIOCSBLEN: libc::c_ulong = IOC_INOUT | ((SIZEOF_C_UINT & IOCPARM_MASK)
 pub const BIOCSHDRCMPLT: libc::c_ulong = IOC_IN | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
                                          (('B' as libc::c_ulong) << 8) |
                                          117;
+pub const BIOCSRTIMEOUT: libc::c_ulong = IOC_IN | ((SIZEOF_TIMEVAL & IOCPARM_MASK) << 16) |
+                                         (('B' as libc::c_ulong) << 8) |
+                                         109;
 
 #[cfg(target_os = "freebsd")]
 pub const BIOCFEEDBACK: libc::c_ulong = IOC_IN | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
@@ -70,7 +76,7 @@ pub fn BPF_WORDALIGN(x: isize) -> isize {
 // See /usr/include/net/if.h
 pub struct ifreq {
     pub ifr_name: [libc::c_char; IFNAMSIZ],
-    pub ifru_addr: libc::sockaddr, // NOTE Should be a union
+    pub ifru_addr: sockets::SockAddr, // NOTE Should be a union
 }
 
 // See /usr/include/net/if_dl.h

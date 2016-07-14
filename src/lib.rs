@@ -40,7 +40,7 @@
 //! packet is received on an interface, it echo's the packet back; reversing the
 //! source and destination addresses.
 //!
-//! ```no_run
+//! ```rust,no_run
 //! extern crate pnet;
 //!
 //! use pnet::datalink::{self, NetworkInterface};
@@ -112,6 +112,7 @@
 #![cfg_attr(feature="clippy", allow(should_implement_trait))]
 
 extern crate libc;
+extern crate winapi;
 extern crate pnet_macros_support;
 
 pub mod datalink;
@@ -122,6 +123,7 @@ pub mod util;
 
 mod bindings;
 mod internal;
+mod sockets;
 
 // NOTE should probably have a cfg(pnet_test_network) here, but cargo doesn't
 //      allow custom --cfg flags
