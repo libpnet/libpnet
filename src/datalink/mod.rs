@@ -120,6 +120,11 @@ pub struct Config {
     /// Defaults to false
     pub receive_hardware_timestamps: bool,
 
+    /// Linux only: Specifies whether, if hardware timestamps are unavailable, software timestamps
+    /// are an acceptable substitute.
+    /// Defaults to false
+    pub allow_software_timestamps: bool,
+
     /// BPF/OS X only: The number of /dev/bpf* file descriptors to attempt before failing. Defaults
     /// to: 1000
     pub bpf_fd_attempts: usize
@@ -135,6 +140,7 @@ impl Default for Config {
             read_timeout: None,
             write_timeout: None,
             receive_hardware_timestamps: false,
+            allow_software_timestamps: false,
         }
     }
 }

@@ -22,6 +22,7 @@ pub const HWTSTAMP_TX_OFF: libc::c_int = 0;
 pub const HWTSTAMP_FILTER_ALL: libc::c_int = 1;
 pub const SOF_TIMESTAMPING_RX_HARDWARE: libc::c_uint = (1 << 2);
 pub const SOF_TIMESTAMPING_RX_SOFTWARE: libc::c_uint = (1 << 3);
+pub const MSG_DONTWAIT: libc::c_int = 0x0040;
 pub const PACKET_ADD_MEMBERSHIP: libc::c_int = 1;
 pub const PACKET_MR_PROMISC: libc::c_int = 1;
 
@@ -40,6 +41,7 @@ pub struct ifreq {
 }
 
 // man 3 cmsg
+#[repr(C)]
 pub struct cmsghdr {
     pub cmsg_len: libc::size_t,
     pub cmsg_level: libc::c_int,
@@ -53,30 +55,14 @@ pub struct hwtstamp_config {
     pub rx_filter: libc::c_int,
 }
 
-#[repr(C)]
-pub struct iovec {
-    pub iov_base: *mut libc::c_void,
-    pub iov_len: libc::size_t,
-}
-
-#[repr(C)]
-pub struct msghdr {
-    pub msg_name: *mut libc::c_void,
-    pub msg_namelen: libc::socklen_t,
-    pub msg_iov: *mut iovec,
-    pub msg_control: *mut libc::c_void,
-    pub msg_controllen: libc::size_t,
-    pub msg_flags: libc::c_int,
-}
-
 #[cfg(not(windows))]
 extern {
     pub fn ioctl(d: libc::c_int, request: libc::c_ulong, ...) -> libc::c_int;
 
-    pub fn recvmsg(fd: libc::c_int, msg: *mut msghdr, flags: libc::c_int) -> libc::ssize_t;
+    pub fn recvmsg(fd: libc::c_int, msg: *mut libc::msghdr, flags: libc::c_int) -> libc::ssize_t;
 }
 
-pub fn recv_msg(fd: libc::c_int, msg: *mut msghdr, flags: libc::c_int) -> io::Result<usize> {
+pub fn recv_msg(fd: libc::c_int, msg: *mut libc::msghdr, flags: libc::c_int) -> io::Result<usize> {
     let len = unsafe { recvmsg(fd, msg, flags) };
     if len < 0 {
         Err(io::Error::last_os_error())
@@ -87,7 +73,7 @@ pub fn recv_msg(fd: libc::c_int, msg: *mut msghdr, flags: libc::c_int) -> io::Re
 
 // All of these are from socket.h
 #[inline]
-pub unsafe fn cmsg_firsthdr(msg: *const msghdr) -> *const cmsghdr {
+pub unsafe fn cmsg_firsthdr(msg: *const libc::msghdr) -> *const cmsghdr {
     if (*msg).msg_controllen >= (mem::size_of::<cmsghdr>() as libc::size_t) {
         mem::transmute((*msg).msg_control)
     } else {
@@ -102,7 +88,7 @@ fn cmsg_align(len: usize) -> isize {
 }
 
 #[inline]
-pub unsafe fn cmsg_nexthdr(msg: *const msghdr, cmsg: *const cmsghdr) -> *const cmsghdr {
+pub unsafe fn cmsg_nexthdr(msg: *const libc::msghdr, cmsg: *const cmsghdr) -> *const cmsghdr {
     if (*cmsg).cmsg_len < (mem::size_of::<cmsghdr>() as libc::size_t) {
         return ptr::null();
     }

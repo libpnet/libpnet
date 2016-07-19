@@ -427,12 +427,12 @@ fn layer2_incoming_timestamps() {
 
     let (tx, rx) = channel();
 
-    let config = {
-        let mut cfg : datalink::Config = Default::default();
-        cfg.receive_hardware_timestamps = true;
-        cfg
+    let config = datalink::Config {
+        receive_hardware_timestamps: true,
+        allow_software_timestamps: true,
+        ..Default::default()
     };
-    let dlc = datalink::channel(&interface, &config);
+    let dlc = datalink::channel(&interface, config);
     let (mut dltx, mut dlrx) = match dlc {
         Ok(TimestampedEthernet(tx, rx)) => (tx, rx),
         Ok(_) => panic!("layer2: unexpected L2 packet type"),
