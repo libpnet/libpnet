@@ -62,7 +62,7 @@ pub struct TransportSender {
     _channel_type: TransportChannelType,
 }
 
-/// Structure used for sending at the transport layer. Should be created with transport_channel()
+/// Structure used for receiving at the transport layer. Should be created with transport_channel()
 pub struct TransportReceiver {
     socket: Arc<internal::FileDesc>,
     buffer: Vec<u8>,
@@ -155,7 +155,7 @@ impl TransportSender {
         internal::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen)
     }
 
-    /// Send a packet to the provided desination
+    /// Send a packet to the provided destination
     #[inline]
     pub fn send_to<T: Packet>(&mut self, packet: T, destination: IpAddr) -> io::Result<usize> {
         self.send_to_impl(packet, destination)
