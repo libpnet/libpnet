@@ -12,8 +12,8 @@ use regex::Regex;
 use std::rc::Rc;
 
 use syntax::ast;
-use syntax::ast::Delimited;
-use syntax::ast::TokenTree::{self, Sequence, Token};
+use syntax::tokenstream::Delimited;
+use syntax::tokenstream::TokenTree::{self, Sequence, Token};
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::quote::rt::ExtParseUtils;
@@ -325,7 +325,7 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &[TokenTree], field_names: &[String
                      (+ - * / %) and parentheses are allowed in the \"length\" attribute";
     let tokens_packet = tts.iter().fold(Vec::new(), |mut acc_packet, tt_token| {
         match *tt_token {
-            Token(span, token::Ident(name, token::IdentStyle::Plain)) => {
+            Token(span, token::Ident(name)) => {
                 if name.to_string().chars().any(|c| c.is_lowercase()) {
                     if field_names.contains(&name.to_string()) {
                         let mut modified_packet_tokens = ecx.parse_tts(
@@ -343,9 +343,6 @@ fn parse_length_expr(ecx: &mut ExtCtxt, tts: &[TokenTree], field_names: &[String
                         format!("{} as usize", name).to_owned());
                     acc_packet.append(&mut modified_packet_tokens);
                 }
-            },
-            Token(_, token::Ident(_, token::IdentStyle::ModName)) => {
-                acc_packet.push(tt_token.clone());
             },
             Token(_, token::ModSep) => {
                 acc_packet.push(tt_token.clone());

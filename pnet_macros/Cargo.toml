@@ -38,8 +38,8 @@ version = ">=0.1"
 
 [dependencies]
 regex = ">=0.1"
-syntex = { version = "0.31.*", optional = true }
-syntex_syntax = { version = "0.31.*", optional = true }
+syntex = { version = "0.42.*", optional = true }
+syntex_syntax = { version = "0.42.*", optional = true }
 
 [dependencies.clippy]
 optional = true
