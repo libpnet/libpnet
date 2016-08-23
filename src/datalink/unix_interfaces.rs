@@ -10,9 +10,9 @@
 
 use std::mem;
 use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
 use std::str::from_utf8_unchecked;
 use std::net::IpAddr;
-
 use libc;
 
 use util::MacAddr;
@@ -45,7 +45,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
         }
         let mut addr = addrs;
         while !addr.is_null() {
-            let c_str = (*addr).ifa_name as *const i8;
+            let c_str = (*addr).ifa_name as *const c_char;
             let bytes = CStr::from_ptr(c_str).to_bytes();
             let name = from_utf8_unchecked(bytes).to_owned();
             let (mac, ip) = sockaddr_to_network_addr((*addr).ifa_addr as *const libc::sockaddr);
