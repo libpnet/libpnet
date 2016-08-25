@@ -155,17 +155,25 @@ pub struct Ipv4 {
     payload: Vec<u8>,
 }
 
-/// Calculates the checksum of an IPv4 packet
+/// Calculates the checksum of an IPv4 packet.
+/// The checksum field of the packet is regarded as zeros during the calculation
 pub fn checksum(packet: &Ipv4Packet) -> u16be {
     use packet::Packet;
 
     let len = packet.get_header_length() as usize * 4;
+    let data = &packet.packet()[..len];
     let mut sum = 0u32;
     let mut i = 0;
-    while i < len {
-        let word = (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        sum = sum + word;
-        i = i + 2;
+    // Sum up until checksum field
+    while i < 10 {
+        sum += (data[i] as u32) << 8 | data[i + 1] as u32;
+        i += 2;
+    }
+    // Skip the checksum field
+    i += 2;
+    while i < data.len() {
+        sum += (data[i] as u32) << 8 | data[i + 1] as u32;
+        i += 2;
     }
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);
