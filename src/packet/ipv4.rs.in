@@ -159,27 +159,11 @@ pub struct Ipv4 {
 /// The checksum field of the packet is regarded as zeros during the calculation
 pub fn checksum(packet: &Ipv4Packet) -> u16be {
     use packet::Packet;
+    use util;
 
     let len = packet.get_header_length() as usize * 4;
     let data = &packet.packet()[..len];
-    let mut sum = 0u32;
-    let mut i = 0;
-    // Sum up until checksum field
-    while i < 10 {
-        sum += (data[i] as u32) << 8 | data[i + 1] as u32;
-        i += 2;
-    }
-    // Skip the checksum field
-    i += 2;
-    while i < data.len() {
-        sum += (data[i] as u32) << 8 | data[i + 1] as u32;
-        i += 2;
-    }
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
-
-    !sum as u16
+    util::checksum(data, 5)
 }
 
 #[cfg(test)]

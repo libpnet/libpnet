@@ -63,21 +63,9 @@ pub struct Icmp {
 /// Calculates the checksum of an ICMP packet
 pub fn checksum(packet: &IcmpPacket) -> u16be {
     use packet::Packet;
+    use util;
 
-    let data = packet.packet();
-    // Start with sum of two bytes before checksum
-    let mut sum = (data[0] as u32) << 8 | data[1] as u32;
-    // Sum everything after the checksum field
-    let mut i = 4;
-    while i < data.len() {
-        sum += (data[i] as u32) << 8 | data[i + 1] as u32;
-        i += 2;
-    }
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
-
-    !sum as u16
+    util::checksum(packet.packet(), 1)
 }
 
 #[cfg(test)]

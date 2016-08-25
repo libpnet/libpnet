@@ -12,6 +12,7 @@ extern crate libc;
 
 use packet::PrimitiveValues;
 use datalink::NetworkInterface;
+use pnet_macros_support::types::u16be;
 
 use std::fmt;
 use std::str::FromStr;
@@ -236,4 +237,29 @@ impl Octets for u8 {
     fn octets(&self) -> Self::Output {
         [*self]
     }
+}
+
+/// Calculates a checksum. Used by ipv4 and icmp. The two bytes starting at `skipword * 2` will be
+/// ignored. Supposed to be the checksum field, which is regarded as zero during calculation.
+/// To not skip any word, set `skipword` to `data.len()`.
+pub fn checksum(data: &[u8], skipword: usize) -> u16be {
+    use std::slice::from_raw_parts;
+    let wdata: &[u16] = unsafe {from_raw_parts(data.as_ptr() as *const u16, data.len() / 2)};
+    assert!(skipword <= wdata.len());
+    let mut sum = 0u32;
+    let mut i = 0;
+    while i < skipword {
+        sum += u16::from_be(unsafe{*wdata.get_unchecked(i)}) as u32;
+        i += 1;
+    }
+    i += 1;
+    while i < wdata.len() {
+        sum += u16::from_be(unsafe{*wdata.get_unchecked(i)}) as u32;
+        i += 1;
+    }
+    while sum >> 16 != 0 {
+        sum = (sum >> 16) + (sum & 0xFFFF);
+    }
+
+    !sum as u16
 }
