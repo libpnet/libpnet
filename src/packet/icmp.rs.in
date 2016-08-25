@@ -64,12 +64,14 @@ pub struct Icmp {
 pub fn checksum(packet: &IcmpPacket) -> u16be {
     use packet::Packet;
 
-    let mut sum = 0u32;
-    let mut i = 0;
-    while i < packet.packet().len() {
-        let word = (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        sum = sum + word;
-        i = i + 2;
+    let data = packet.packet();
+    // Start with sum of two bytes before checksum
+    let mut sum = (data[0] as u32) << 8 | data[1] as u32;
+    // Sum everything after the checksum field
+    let mut i = 4;
+    while i < data.len() {
+        sum += (data[i] as u32) << 8 | data[i + 1] as u32;
+        i += 2;
     }
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);
