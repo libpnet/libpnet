@@ -78,6 +78,26 @@ pub fn checksum(packet: &IcmpPacket) -> u16be {
     !sum as u16
 }
 
+#[test]
+fn checksum_zeros() {
+    let mut data = vec![0u8; 8];
+    let expected = 65535;
+    let mut pkg = MutableIcmpPacket::new(&mut data[..]).unwrap();
+    assert_eq!(checksum(&pkg.to_immutable()), expected);
+    pkg.set_checksum(123);
+    assert_eq!(checksum(&pkg.to_immutable()), expected);
+}
+
+#[test]
+fn checksum_nonzero() {
+    let mut data = vec![255u8; 8];
+    let expected = 0;
+    let mut pkg = MutableIcmpPacket::new(&mut data[..]).unwrap();
+    assert_eq!(checksum(&pkg.to_immutable()), expected);
+    pkg.set_checksum(0);
+    assert_eq!(checksum(&pkg.to_immutable()), expected);
+}
+
 /// Enumeration of the recognized ICMP types
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
