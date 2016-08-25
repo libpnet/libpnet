@@ -203,3 +203,31 @@ fn main() {
 }
 
 ```
+
+Upstreaming Packet Definitions
+------------------------------
+
+If the packet modules you've built implement packet types that are generally
+useful, please consider contributing them to the `libpnet` project! The method
+described here for using `#[packet]` is based on the packet definitions in
+`libpnet`, so any packet modules you create should be fairly easy to move over
+into the `src/packet` directory of a fork of `libpnet`.
+
+You'll need to modify the stub source file to use `syntex` conditionally based
+on the `with-syntex` feature of the `libpnet` crate. It should look like this:
+
+```rust
+
+#[cfg(feature = "with-syntex")]
+include!(concat!(env!("OUT_DIR"), "/my_protocol.rs"));
+
+#[cfg(not(feature = "with-syntex"))]
+include!("my_protocol.rs.in");
+
+```
+
+And you'll need to update the `build.rs` file to include the base name of your
+protocol stub soure file(s) in the static `FILES` array.
+
+Once you've got your new packet type building and tested in the `libpnet` tree,
+just push them to your fork on github and open a pull request!
