@@ -107,9 +107,13 @@
 #![cfg_attr(feature = "nightly", feature(custom_attribute, plugin))]
 #![cfg_attr(feature = "nightly", plugin(pnet_macros_plugin))]
 #![cfg_attr(feature = "clippy", feature(plugin))]
+#![cfg_attr(feature = "benchmark", feature(test))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
 // We can't implement Iterator since we use streaming iterators
 #![cfg_attr(feature="clippy", allow(should_implement_trait))]
+
+#[cfg(feature = "benchmark")]
+extern crate test;
 
 extern crate libc;
 extern crate winapi;
