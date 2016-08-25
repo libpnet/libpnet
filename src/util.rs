@@ -263,3 +263,25 @@ pub fn checksum(data: &[u8], skipword: usize) -> u16be {
 
     !sum as u16
 }
+
+#[cfg(all(test, feature = "benchmark"))]
+mod checksum_benchmarks {
+    use super::checksum;
+    use test::{black_box, Bencher};
+
+    #[bench]
+    fn bench_checksum_small(b: &mut Bencher) {
+        let data = vec![99u8; 20];
+        b.iter(|| {
+            checksum(black_box(&data), 5)
+        });
+    }
+
+    #[bench]
+    fn bench_checksum_large(b: &mut Bencher) {
+        let data = vec![123u8; 1024];
+        b.iter(|| {
+            checksum(black_box(&data), 5)
+        });
+    }
+}

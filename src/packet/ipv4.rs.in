@@ -170,9 +170,6 @@ pub fn checksum(packet: &Ipv4Packet) -> u16be {
 mod checksum_tests {
     use super::*;
 
-    #[cfg(feature = "benchmark")]
-    use test::{black_box, Bencher};
-
     #[test]
     fn checksum_zeros() {
         let mut data = vec![0u8; 20];
@@ -193,28 +190,6 @@ mod checksum_tests {
         assert_eq!(checksum(&pkg.to_immutable()), expected);
         pkg.set_checksum(123);
         assert_eq!(checksum(&pkg.to_immutable()), expected);
-    }
-
-    #[cfg(feature = "benchmark")]
-    #[bench]
-    fn bench_checksum_small(b: &mut Bencher) {
-    let mut data = vec![0u8; 20];
-    let mut pkg = MutableIpv4Packet::new(&mut data[..]).unwrap();
-    pkg.set_header_length(5);
-        b.iter(|| {
-            checksum(black_box(&pkg.to_immutable()))
-        });
-    }
-
-    #[cfg(feature = "benchmark")]
-    #[bench]
-    fn bench_checksum_large(b: &mut Bencher) {
-        let mut data = vec![0u8; 1024];
-        let mut pkg = MutableIpv4Packet::new(&mut data[..]).unwrap();
-        pkg.set_header_length(5);
-        b.iter(|| {
-            checksum(black_box(&pkg.to_immutable()))
-        });
     }
 }
 
