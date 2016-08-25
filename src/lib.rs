@@ -128,7 +128,7 @@ mod sockets;
 // NOTE should probably have a cfg(pnet_test_network) here, but cargo doesn't
 //      allow custom --cfg flags
 #[cfg(test)]
-mod test;
+mod pnettest;
 
 // Required to make sure that imports from pnet_macros work
 mod pnet {
