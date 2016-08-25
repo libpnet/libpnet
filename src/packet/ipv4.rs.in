@@ -174,6 +174,28 @@ pub fn checksum(packet: &Ipv4Packet) -> u16be {
     !sum as u16
 }
 
+#[test]
+fn checksum_zeros() {
+    let mut data = vec![0u8; 20];
+    let expected = 64255;
+    let mut pkg = MutableIpv4Packet::new(&mut data[..]).unwrap();
+    pkg.set_header_length(5);
+    assert_eq!(checksum(&pkg.to_immutable()), expected);
+    pkg.set_checksum(123);
+    assert_eq!(checksum(&pkg.to_immutable()), expected);
+}
+
+#[test]
+fn checksum_nonzero() {
+    let mut data = vec![255u8; 20];
+    let expected = 2560;
+    let mut pkg = MutableIpv4Packet::new(&mut data[..]).unwrap();
+    pkg.set_header_length(5);
+    assert_eq!(checksum(&pkg.to_immutable()), expected);
+    pkg.set_checksum(123);
+    assert_eq!(checksum(&pkg.to_immutable()), expected);
+}
+
 fn ipv4_options_length(ipv4: &Ipv4Packet) -> usize {
     // the header_length unit is the "word"
     // - and a word is made of 4 bytes,
