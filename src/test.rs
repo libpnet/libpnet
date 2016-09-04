@@ -400,6 +400,78 @@ fn layer2() {
     assert!(res.join().is_ok())
 }
 
+#[cfg(target_os = "linux")]
+#[test]
+fn layer2_incoming_timestamps() {
+    use datalink;
+    use datalink::Channel::TimestampedEthernet;
+    use packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
+
+    const ETHERNET_HEADER_LEN: usize = 14;
+
+    let interface = get_test_interface(); // this should be a loopback interface
+
+    let mut packet = [0u8; ETHERNET_HEADER_LEN + IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN];
+
+    {
+        let mut ethernet_header = MutableEthernetPacket::new(&mut packet[..]).unwrap();
+        ethernet_header.set_source(interface.mac_address());
+        ethernet_header.set_destination(interface.mac_address());
+        ethernet_header.set_ethertype(EtherTypes::Ipv4);
+    }
+
+    build_udp4_packet(&mut packet[..],
+                      ETHERNET_HEADER_LEN as usize,
+                      "l2tt",
+                      Some(&interface));
+
+    let (tx, rx) = channel();
+
+    let config = datalink::Config {
+        receive_hardware_timestamps: true,
+        allow_software_timestamps: true,
+        ..Default::default()
+    };
+    let dlc = datalink::channel(&interface, config);
+    let (mut dltx, mut dlrx) = match dlc {
+        Ok(TimestampedEthernet(tx, rx)) => (tx, rx),
+        Ok(_) => panic!("layer2: unexpected L2 packet type"),
+        Err(e) => panic!("layer2: unable to create channel: {}", e),
+    };
+
+    let res = thread::spawn(move || {
+        tx.send(()).unwrap();
+        let mut i = 0usize;
+        let mut iter = dlrx.iter();
+        loop {
+            let next = iter.next();
+            match next {
+                Ok((_, eh)) => {
+                    if i == 10_000 {
+                        panic!("layer2: did not find matching packet after 10_000 iterations");
+                    }
+                    if EthernetPacket::new(&packet[..]).unwrap() == eh {
+                        return;
+                    }
+                    i += 1;
+                }
+                Err(e) => {
+                    panic!("layer2 failed: {}", e);
+                }
+            }
+        }
+    });
+
+    rx.recv().unwrap();
+    match dltx.send_to(&EthernetPacket::new(&packet[..]).unwrap(), None) {
+        Some(Ok(())) => (),
+        Some(Err(e)) => panic!("layer2_test failed: {}", e),
+        None => panic!("Provided buffer too small"),
+    }
+
+    assert!(res.join().is_ok())
+}
+
 #[test]
 #[cfg(target_os = "linux")]
 fn layer2_timeouts() {

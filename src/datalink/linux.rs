@@ -20,8 +20,13 @@ use std::time::Duration;
 
 use bindings::linux;
 use datalink::{self, NetworkInterface};
-use datalink::Channel::Ethernet;
-use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
+use datalink::Channel::{Ethernet, TimestampedEthernet};
+use datalink::{EthernetDataLinkChannelIterator,
+               EthernetDataLinkReceiver,
+               EthernetDataLinkSender,
+               TimestampedEthernetDataLinkChannelIterator,
+               TimestampedEthernetDataLinkReceiver,
+               EthernetPacketTimestamped};
 use datalink::ChannelType::{Layer2, Layer3};
 use internal;
 use sockets;
@@ -61,6 +66,13 @@ pub struct Config {
     /// The write timeout. Defaults to None.
     pub write_timeout: Option<Duration>,
 
+    /// Specifies whether timestamps should be received. Defaults to false.
+    pub receive_hardware_timestamps: bool,
+
+    /// Specifies whether software timestamps are an adequate substitute
+    /// if hardware timestamps cannot be used. Defaults to false.
+    pub allow_software_timestamps: bool,
+
     /// Specifies whether to read packets at the datalink layer or network layer.
     /// NOTE FIXME Currently ignored
     /// Defaults to Layer2
@@ -75,6 +87,8 @@ impl<'a> From<&'a datalink::Config> for Config {
             channel_type: config.channel_type,
             read_timeout: config.read_timeout,
             write_timeout: config.write_timeout,
+            receive_hardware_timestamps: config.receive_hardware_timestamps,
+            allow_software_timestamps: config.allow_software_timestamps,
         }
     }
 }
@@ -87,6 +101,8 @@ impl Default for Config {
             read_timeout: None,
             write_timeout: None,
             channel_type: Layer2,
+            receive_hardware_timestamps: false,
+            allow_software_timestamps: false,
         }
     }
 }
@@ -106,6 +122,46 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
     }
     let mut addr: libc::sockaddr_storage = unsafe { mem::zeroed() };
     let len = network_addr_to_sockaddr(network_interface, &mut addr, proto as i32);
+    let mut can_receive_timestamps = true;
+
+    // Enable hardware timestamps
+    if config.receive_hardware_timestamps {
+        // ioctl to set up hardware timestamping
+        let mut hwtstamp: linux::ifreq = unsafe { mem::zeroed() };
+        let mut hwconfig: linux::hwtstamp_config = unsafe { mem::zeroed() };
+        {
+            let mut ifr_name_subset = &mut hwtstamp.ifr_name[0..network_interface.name.len()];
+            ifr_name_subset.copy_from_slice(network_interface.name.as_bytes());
+        }
+        hwtstamp.ifr_name[network_interface.name.len()] = '\0' as u8;
+        hwtstamp.ifr_data = (&mut hwconfig as *mut linux::hwtstamp_config) as *mut libc::c_char;
+        hwconfig.tx_type = linux::HWTSTAMP_TX_OFF;
+        hwconfig.rx_filter = linux::HWTSTAMP_FILTER_ALL;
+        if unsafe {
+            linux::ioctl(socket,
+                         linux::SIOCSHWTSTAMP,
+                         (&mut hwtstamp as *mut linux::ifreq) as *mut libc::c_void)
+        } < 0 && !config.allow_software_timestamps {
+            can_receive_timestamps = false;
+        }
+
+        // Set the sockopt for timestamping
+        let timestamp_flags = if config.allow_software_timestamps {
+            linux::SOF_TIMESTAMPING_RX_HARDWARE | linux::SOF_TIMESTAMPING_RX_SOFTWARE
+        } else {
+            linux::SOF_TIMESTAMPING_RX_HARDWARE
+        };
+        if unsafe {
+            libc::setsockopt(socket,
+                             libc::SOL_SOCKET,
+                             linux::SO_TIMESTAMPING,
+                             (&timestamp_flags as *const libc::c_uint) as *const libc::c_void,
+                             mem::size_of::<libc::c_uint>() as u32)
+        } < 0 {
+            println!("failed to set timestamps sockopt");
+            can_receive_timestamps = false;
+        }
+    }
 
     let send_addr = (&addr as *const libc::sockaddr_storage) as *const libc::sockaddr;
 
@@ -176,7 +232,19 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
         libc::FD_SET(fd.fd, &mut receiver.fd_set as *mut libc::fd_set);
     }
 
-    Ok(Ethernet(sender, receiver))
+    if config.receive_hardware_timestamps && can_receive_timestamps {
+        // at this point, we've resolved software timestamps
+        Ok(TimestampedEthernet(sender, receiver))
+    } else {
+        Ok(Ethernet(sender, receiver))
+    }
+}
+
+/// Get a list of available network interfaces for the current machine.
+pub fn interfaces() -> Vec<NetworkInterface> {
+    #[path = "unix_interfaces.rs"]
+    mod interfaces;
+    interfaces::interfaces()
 }
 
 struct DataLinkSenderImpl {
@@ -283,6 +351,13 @@ impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
     }
 }
 
+impl TimestampedEthernetDataLinkReceiver for DataLinkReceiverImpl {
+    // FIXME Layer 3
+    fn iter<'a>(&'a mut self) -> Box<TimestampedEthernetDataLinkChannelIterator + 'a> {
+        Box::new(DataLinkChannelIteratorImpl { pc: self })
+    }
+}
+
 struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
 }
@@ -313,9 +388,42 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
     }
 }
 
-/// Get a list of available network interfaces for the current machine.
-pub fn interfaces() -> Vec<NetworkInterface> {
-    #[path = "unix_interfaces.rs"]
-    mod interfaces;
-    interfaces::interfaces()
+impl<'a> TimestampedEthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+    fn next(&mut self) -> io::Result<EthernetPacketTimestamped> {
+        #[repr(C)]
+        struct Control {
+            cm: linux::cmsghdr,
+            control: [libc::c_char; 512]
+        }
+
+        let mut _ctrl: Control = unsafe { mem::zeroed() };
+        let mut _mem: [libc::c_char; 256] = unsafe { mem::zeroed() };
+        let mut msg: libc::msghdr = unsafe { mem::zeroed() };
+        msg.msg_iov = &mut libc::iovec {
+            iov_base: _mem.as_ptr() as *mut libc::c_void,
+            iov_len: _mem.len() as libc::size_t,
+        } as *mut libc::iovec;
+        msg.msg_iovlen = 1;
+        msg.msg_control = (&mut _ctrl as *mut Control) as *mut libc::c_void;
+        msg.msg_controllen = mem::size_of::<Control>() as libc::size_t;
+        linux::recv_msg(self.pc.socket.fd, &mut msg, linux::MSG_DONTWAIT).and_then(move |len| {
+            let mut cmsg: *const linux::cmsghdr = unsafe { linux::cmsg_firsthdr(&msg) };
+            while !cmsg.is_null() {
+                let cmsg_level = unsafe { (*cmsg).cmsg_level };
+                let cmsg_type = unsafe { (*cmsg).cmsg_type };
+                if cmsg_level == libc::SOL_SOCKET && cmsg_type == linux::SO_TIMESTAMPING {
+                    let stamp: *const libc::timespec = unsafe { linux::cmsg_data(cmsg) as *const libc::timespec };
+                    return Ok((
+                        unsafe { internal::timespec_to_duration(*stamp) },
+                        EthernetPacket::new(&self.pc.read_buffer[0..len]).unwrap()
+                    ));
+                }
+                cmsg = unsafe { linux::cmsg_nexthdr(&msg, cmsg) };
+            }
+            Err(io::Error::new(io::ErrorKind::Other, "timestamp not attached"))
+        }).map_err(|err| {
+            println!("the msg_flags header looks like {}", msg.msg_flags);
+            err
+        })
+    }
 }

@@ -10,6 +10,7 @@ extern crate libc;
 
 use std::io;
 use std::mem;
+use std::time::Duration;
 
 use sockets;
 
@@ -27,7 +28,6 @@ mod windows;
 pub use self::windows::*;
 
 mod native;
-
 
 // Any file descriptor on unix, only sockets on Windows.
 pub struct FileDesc {
@@ -83,4 +83,8 @@ pub fn recv_from(socket: sockets::CSocket,
     } else {
         Ok(len as usize)
     }
+}
+
+pub fn timespec_to_duration(tv: libc::timespec) -> Duration {
+    Duration::new((tv.tv_sec as u64), (tv.tv_nsec as u32))
 }
