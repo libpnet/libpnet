@@ -319,21 +319,17 @@ fn sum_be_words(data: &[u8], skipword: Option<usize>) -> u32 {
 #[cfg(all(test, feature = "benchmark"))]
 mod checksum_benchmarks {
     use super::checksum;
-    use test::{black_box, Bencher};
+    use test::{Bencher, black_box};
 
     #[bench]
     fn bench_checksum_small(b: &mut Bencher) {
         let data = vec![99u8; 20];
-        b.iter(|| {
-            checksum(black_box(&data), Some(5))
-        });
+        b.iter(|| checksum(black_box(&data), Some(5)));
     }
 
     #[bench]
     fn bench_checksum_large(b: &mut Bencher) {
         let data = vec![123u8; 1024];
-        b.iter(|| {
-            checksum(black_box(&data), Some(5))
-        });
+        b.iter(|| checksum(black_box(&data), Some(5)));
     }
 }
