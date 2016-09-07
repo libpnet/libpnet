@@ -65,7 +65,7 @@ pub fn checksum(packet: &IcmpPacket) -> u16be {
     use packet::Packet;
     use util;
 
-    util::checksum(packet.packet(), 1)
+    util::checksum(packet.packet(), Some(1))
 }
 
 #[cfg(test)]
