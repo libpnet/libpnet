@@ -261,21 +261,12 @@ pub fn ipv4_checksum(data: &[u8],
     let mut sum = 0u32;
 
     // Checksum pseudo-header
-    // IPv4 source
-    let octets = ipv4_source.octets();
-    sum += (octets[0] as u32) << 8 | octets[1] as u32;
-    sum += (octets[2] as u32) << 8 | octets[3] as u32;
+    sum += ipv4_word_sum(ipv4_source);
+    sum += ipv4_word_sum(ipv4_destination);
 
-    // IPv4 destination
-    let octets = ipv4_destination.octets();
-    sum += (octets[0] as u32) << 8 | octets[1] as u32;
-    sum += (octets[2] as u32) << 8 | octets[3] as u32;
-
-    // IPv4 Next level protocol
     let IpNextHeaderProtocol(next_level_protocol) = next_level_protocol;
     sum += next_level_protocol as u32;
 
-    // Length
     sum += data.len() as u32;
 
     // Checksum packet header and data
@@ -286,6 +277,11 @@ pub fn ipv4_checksum(data: &[u8],
     }
 
     !sum as u16
+}
+
+fn ipv4_word_sum(ip: Ipv4Addr) -> u32 {
+    let octets = ip.octets();
+    ((octets[0] as u32) << 8 | octets[1] as u32) + ((octets[2] as u32) << 8 | octets[3] as u32)
 }
 
 /// Sum all words (16 bit chunks) in the given data. The word at word offset `skipword` will be
