@@ -243,7 +243,6 @@ impl Octets for u8 {
 
 /// Calculates a checksum. Used by ipv4 and icmp. The two bytes starting at `skipword * 2` will be
 /// ignored. Supposed to be the checksum field, which is regarded as zero during calculation.
-/// To not skip any word, set `skipword` to `data.len()`.
 pub fn checksum(data: &[u8], skipword: Option<usize>) -> u16be {
     let mut sum = sum_be_words(data, skipword);
     while sum >> 16 != 0 {
@@ -252,7 +251,7 @@ pub fn checksum(data: &[u8], skipword: Option<usize>) -> u16be {
     !sum as u16
 }
 
-/// Calculate the checksum for a packet built on IPv4
+/// Calculate the checksum for a packet built on IPv4. Used by udp and tcp.
 pub fn ipv4_checksum(data: &[u8],
                      ipv4_source: Ipv4Addr,
                      ipv4_destination: Ipv4Addr,
