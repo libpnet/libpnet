@@ -11,13 +11,14 @@
 extern crate libc;
 
 use packet::PrimitiveValues;
+use packet::ip::IpNextHeaderProtocol;
 use datalink::NetworkInterface;
 use pnet_macros_support::types::u16be;
 
 use std::fmt;
 use std::str::FromStr;
 use std::u8;
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr};
 use std::mem;
 use std::slice;
 
