@@ -305,7 +305,7 @@ fn sum_be_words(data: &[u8], skipword: Option<usize>) -> u32 {
     }
     // If the length is odd, make sure to checksum the final byte
     if len & 1 != 0 {
-        sum += (data[len - 1] as u32) << 8;
+        sum += (unsafe { *data.get_unchecked(len - 1) } as u32) << 8;
     }
 
     sum
