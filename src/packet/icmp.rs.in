@@ -65,7 +65,7 @@ pub fn checksum(packet: &IcmpPacket) -> u16be {
     use packet::Packet;
     use util;
 
-    util::checksum(packet.packet(), Some(1))
+    util::checksum(packet.packet(), 1)
 }
 
 #[cfg(test)]
@@ -93,10 +93,9 @@ mod checksum_tests {
     }
 
     #[test]
-    #[ignore]
     fn checksum_odd_bytes() {
         let mut data = vec![191u8; 7];
-        let expected = 0;
+        let expected = 49535;
         let mut pkg = MutableIcmpPacket::new(&mut data[..]).unwrap();
         assert_eq!(checksum(&pkg.to_immutable()), expected);
     }

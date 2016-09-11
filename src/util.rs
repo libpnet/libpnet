@@ -243,7 +243,7 @@ impl Octets for u8 {
 
 /// Calculates a checksum. Used by ipv4 and icmp. The two bytes starting at `skipword * 2` will be
 /// ignored. Supposed to be the checksum field, which is regarded as zero during calculation.
-pub fn checksum(data: &[u8], skipword: Option<usize>) -> u16be {
+pub fn checksum(data: &[u8], skipword: usize) -> u16be {
     let mut sum = sum_be_words(data, skipword);
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);
@@ -255,7 +255,8 @@ pub fn checksum(data: &[u8], skipword: Option<usize>) -> u16be {
 pub fn ipv4_checksum(data: &[u8],
                      ipv4_source: Ipv4Addr,
                      ipv4_destination: Ipv4Addr,
-                     next_level_protocol: IpNextHeaderProtocol)
+                     next_level_protocol: IpNextHeaderProtocol,
+                     skipword: usize)
     -> u16be {
     let mut sum = 0u32;
 
@@ -269,7 +270,7 @@ pub fn ipv4_checksum(data: &[u8],
     sum += data.len() as u32;
 
     // Checksum packet header and data
-    sum += sum_be_words(data, None);
+    sum += sum_be_words(data, skipword);
 
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);
@@ -283,22 +284,20 @@ fn ipv4_word_sum(ip: Ipv4Addr) -> u32 {
     ((octets[0] as u32) << 8 | octets[1] as u32) + ((octets[2] as u32) << 8 | octets[3] as u32)
 }
 
-/// Sum all words (16 bit chunks) in the given data. The word at word offset `skipword` will be
-/// ignored if passed. Each word is treated as big endian.
-fn sum_be_words(data: &[u8], skipword: Option<usize>) -> u32 {
+/// Sum all words (16 bit chunks) in the given data. The word at word offset
+/// `skipword` will be skipped. Each word is treated as big endian.
+fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
     let len = data.len();
     let wdata: &[u16] = unsafe { slice::from_raw_parts(data.as_ptr() as *const u16, len / 2) };
+    assert!(skipword <= wdata.len());
 
     let mut sum = 0u32;
     let mut i = 0;
-    if let Some(skipword) = skipword {
-        assert!(skipword <= wdata.len());
-        while i < skipword {
-            sum += u16::from_be(unsafe { *wdata.get_unchecked(i) }) as u32;
-            i += 1;
-        }
+    while i < skipword {
+        sum += u16::from_be(unsafe { *wdata.get_unchecked(i) }) as u32;
         i += 1;
     }
+    i += 1;
     while i < wdata.len() {
         sum += u16::from_be(unsafe { *wdata.get_unchecked(i) }) as u32;
         i += 1;
@@ -319,12 +318,12 @@ mod checksum_benchmarks {
     #[bench]
     fn bench_checksum_small(b: &mut Bencher) {
         let data = vec![99u8; 20];
-        b.iter(|| checksum(black_box(&data), Some(5)));
+        b.iter(|| checksum(black_box(&data), 5));
     }
 
     #[bench]
     fn bench_checksum_large(b: &mut Bencher) {
         let data = vec![123u8; 1024];
-        b.iter(|| checksum(black_box(&data), Some(5)));
+        b.iter(|| checksum(black_box(&data), 5));
     }
 }

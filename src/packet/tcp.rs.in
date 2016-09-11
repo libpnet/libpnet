@@ -232,7 +232,7 @@ pub fn ipv4_checksum(packet: &TcpPacket,
                      source: Ipv4Addr,
                      destination: Ipv4Addr,
                      next_level_protocol: IpNextHeaderProtocol) -> u16 {
-    util::ipv4_checksum(packet.packet(), source, destination, next_level_protocol)
+    util::ipv4_checksum(packet.packet(), source, destination, next_level_protocol, 8)
 }
 
 #[test]

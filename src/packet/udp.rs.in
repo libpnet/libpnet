@@ -34,7 +34,7 @@ pub fn ipv4_checksum(packet: &UdpPacket,
     let len = packet.get_length() as usize;
     assert!(len <= packet.packet().len());
     let data = &packet.packet()[..len];
-    util::ipv4_checksum(data, source, destination, next_level_protocol)
+    util::ipv4_checksum(data, source, destination, next_level_protocol, 3)
 }
 
 #[test]

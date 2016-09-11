@@ -163,7 +163,7 @@ pub fn checksum(packet: &Ipv4Packet) -> u16be {
 
     let len = packet.get_header_length() as usize * 4;
     let data = &packet.packet()[..len];
-    util::checksum(data, Some(5))
+    util::checksum(data, 5)
 }
 
 #[cfg(test)]
