@@ -11,13 +11,16 @@
 extern crate libc;
 
 use packet::PrimitiveValues;
+use packet::ip::IpNextHeaderProtocol;
 use datalink::NetworkInterface;
+use pnet_macros_support::types::u16be;
 
 use std::fmt;
 use std::str::FromStr;
 use std::u8;
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr};
 use std::mem;
+use std::slice;
 
 use internal;
 use sockets;
@@ -235,5 +238,92 @@ impl Octets for u8 {
 
     fn octets(&self) -> Self::Output {
         [*self]
+    }
+}
+
+/// Calculates a checksum. Used by ipv4 and icmp. The two bytes starting at `skipword * 2` will be
+/// ignored. Supposed to be the checksum field, which is regarded as zero during calculation.
+pub fn checksum(data: &[u8], skipword: usize) -> u16be {
+    let mut sum = sum_be_words(data, skipword);
+    while sum >> 16 != 0 {
+        sum = (sum >> 16) + (sum & 0xFFFF);
+    }
+    !sum as u16
+}
+
+/// Calculate the checksum for a packet built on IPv4. Used by udp and tcp.
+pub fn ipv4_checksum(data: &[u8],
+                     ipv4_source: Ipv4Addr,
+                     ipv4_destination: Ipv4Addr,
+                     next_level_protocol: IpNextHeaderProtocol,
+                     skipword: usize)
+    -> u16be {
+    let mut sum = 0u32;
+
+    // Checksum pseudo-header
+    sum += ipv4_word_sum(ipv4_source);
+    sum += ipv4_word_sum(ipv4_destination);
+
+    let IpNextHeaderProtocol(next_level_protocol) = next_level_protocol;
+    sum += next_level_protocol as u32;
+
+    sum += data.len() as u32;
+
+    // Checksum packet header and data
+    sum += sum_be_words(data, skipword);
+
+    while sum >> 16 != 0 {
+        sum = (sum >> 16) + (sum & 0xFFFF);
+    }
+
+    !sum as u16
+}
+
+fn ipv4_word_sum(ip: Ipv4Addr) -> u32 {
+    let octets = ip.octets();
+    ((octets[0] as u32) << 8 | octets[1] as u32) + ((octets[2] as u32) << 8 | octets[3] as u32)
+}
+
+/// Sum all words (16 bit chunks) in the given data. The word at word offset
+/// `skipword` will be skipped. Each word is treated as big endian.
+fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
+    let len = data.len();
+    let wdata: &[u16] = unsafe { slice::from_raw_parts(data.as_ptr() as *const u16, len / 2) };
+    assert!(skipword <= wdata.len());
+
+    let mut sum = 0u32;
+    let mut i = 0;
+    while i < skipword {
+        sum += u16::from_be(unsafe { *wdata.get_unchecked(i) }) as u32;
+        i += 1;
+    }
+    i += 1;
+    while i < wdata.len() {
+        sum += u16::from_be(unsafe { *wdata.get_unchecked(i) }) as u32;
+        i += 1;
+    }
+    // If the length is odd, make sure to checksum the final byte
+    if len & 1 != 0 {
+        sum += (unsafe { *data.get_unchecked(len - 1) } as u32) << 8;
+    }
+
+    sum
+}
+
+#[cfg(all(test, feature = "benchmark"))]
+mod checksum_benchmarks {
+    use super::checksum;
+    use test::{Bencher, black_box};
+
+    #[bench]
+    fn bench_checksum_small(b: &mut Bencher) {
+        let data = vec![99u8; 20];
+        b.iter(|| checksum(black_box(&data), 5));
+    }
+
+    #[bench]
+    fn bench_checksum_large(b: &mut Bencher) {
+        let data = vec![123u8; 1024];
+        b.iter(|| checksum(black_box(&data), 5));
     }
 }

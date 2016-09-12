@@ -10,7 +10,7 @@ use packet::Packet;
 use packet::PacketSize;
 use packet::PrimitiveValues;
 use packet::ip::IpNextHeaderProtocol;
-use util::Octets;
+use util::{self, Octets};
 
 use pnet_macros_support::types::*;
 
@@ -228,33 +228,11 @@ fn tcp_options_length(tcp: &TcpPacket) -> usize {
 }
 
 /// Calculate the checksum for a packet built on IPv4
-pub fn ipv4_checksum(packet: &TcpPacket, ipv4_source: Ipv4Addr,
-                     ipv4_destination: Ipv4Addr,
+pub fn ipv4_checksum(packet: &TcpPacket,
+                     source: Ipv4Addr,
+                     destination: Ipv4Addr,
                      next_level_protocol: IpNextHeaderProtocol) -> u16 {
-    let IpNextHeaderProtocol(next_level_protocol) = next_level_protocol;
-    let mut sum = 0u32;
-    let octets = ipv4_source.octets();
-    sum += ((octets[0] as u16) << 8 | (octets[1] as u16)) as u32;
-    sum += ((octets[2] as u16) << 8 | (octets[3] as u16)) as u32;
-
-    let octets = ipv4_destination.octets();
-    sum += ((octets[0] as u16) << 8 | (octets[1] as u16)) as u32;
-    sum += ((octets[2] as u16) << 8 | (octets[3] as u16)) as u32;
-
-    sum += next_level_protocol as u32;
-    let bytes = packet.packet();
-    let len = bytes.len();
-    sum += len as u32;
-    let mut i = 0;
-
-    while i + 1 < len {
-        sum += ((bytes[i] as u16) << 8 | (bytes[i + 1] as u16)) as u32;
-        i += 2;
-    }
-
-    if len & 1 != 0 { sum += (bytes[len - 1] as u32) << 8; }
-    while sum >> 16 != 0 { sum = (sum >> 16) + (sum & 65535); }
-    !sum as u16
+    util::ipv4_checksum(packet.packet(), source, destination, next_level_protocol, 8)
 }
 
 #[test]

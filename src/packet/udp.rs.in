@@ -8,6 +8,7 @@
 
 use packet::Packet;
 use packet::ip::IpNextHeaderProtocol;
+use util;
 
 use pnet_macros_support::types::*;
 
@@ -26,46 +27,14 @@ pub struct Udp {
 
 /// Calculate the checksum for a packet built on IPv4
 pub fn ipv4_checksum(packet: &UdpPacket,
-                     ipv4_source: Ipv4Addr,
-                     ipv4_destination: Ipv4Addr,
+                     source: Ipv4Addr,
+                     destination: Ipv4Addr,
                      next_level_protocol: IpNextHeaderProtocol)
     -> u16be {
-    let IpNextHeaderProtocol(next_level_protocol) = next_level_protocol;
-    let mut sum = 0u32;
-
-    // Checksum pseudo-header
-    // IPv4 source
-    let octets = ipv4_source.octets();
-    sum += (octets[0] as u32) << 8 | octets[1] as u32;
-    sum += (octets[2] as u32) << 8 | octets[3] as u32;
-
-    // IPv4 destination
-    let octets = ipv4_destination.octets();
-    sum += (octets[0] as u32) << 8 | octets[1] as u32;
-    sum += (octets[2] as u32) << 8 | octets[3] as u32;
-
-    // IPv4 Next level protocol
-    sum += next_level_protocol as u32;
-
-    // UDP Length
-    sum += (packet.packet()[4] as u32) << 8 | packet.packet()[5] as u32;
-
-    // Checksum UDP header/packet
-    let mut i = 0;
     let len = packet.get_length() as usize;
-    while i < len && i + 1 < packet.packet().len() {
-        sum += (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        i += 2;
-    }
-    // If the length is odd, make sure to checksum the final byte
-    if len & 1 != 0 && len <= packet.packet().len() {
-        sum += (packet.packet()[len - 1] as u32) << 8;
-    }
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
-
-    !sum as u16
+    assert!(len <= packet.packet().len());
+    let data = &packet.packet()[..len];
+    util::ipv4_checksum(data, source, destination, next_level_protocol, 3)
 }
 
 #[test]

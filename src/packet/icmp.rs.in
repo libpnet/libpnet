@@ -63,20 +63,44 @@ pub struct Icmp {
 /// Calculates the checksum of an ICMP packet
 pub fn checksum(packet: &IcmpPacket) -> u16be {
     use packet::Packet;
+    use util;
 
-    let mut sum = 0u32;
-    let mut i = 0;
-    while i < packet.packet().len() {
-        let word = (packet.packet()[i] as u32) << 8 | packet.packet()[i + 1] as u32;
-        sum = sum + word;
-        i = i + 2;
-    }
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
-
-    !sum as u16
+    util::checksum(packet.packet(), 1)
 }
+
+#[cfg(test)]
+mod checksum_tests {
+    use super::*;
+
+    #[test]
+    fn checksum_zeros() {
+        let mut data = vec![0u8; 8];
+        let expected = 65535;
+        let mut pkg = MutableIcmpPacket::new(&mut data[..]).unwrap();
+        assert_eq!(checksum(&pkg.to_immutable()), expected);
+        pkg.set_checksum(123);
+        assert_eq!(checksum(&pkg.to_immutable()), expected);
+    }
+
+    #[test]
+    fn checksum_nonzero() {
+        let mut data = vec![255u8; 8];
+        let expected = 0;
+        let mut pkg = MutableIcmpPacket::new(&mut data[..]).unwrap();
+        assert_eq!(checksum(&pkg.to_immutable()), expected);
+        pkg.set_checksum(0);
+        assert_eq!(checksum(&pkg.to_immutable()), expected);
+    }
+
+    #[test]
+    fn checksum_odd_bytes() {
+        let mut data = vec![191u8; 7];
+        let expected = 49535;
+        let mut pkg = MutableIcmpPacket::new(&mut data[..]).unwrap();
+        assert_eq!(checksum(&pkg.to_immutable()), expected);
+    }
+}
+
 
 /// Enumeration of the recognized ICMP types
 #[allow(non_snake_case)]

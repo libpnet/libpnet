@@ -17,6 +17,7 @@ name = "pnet"
 [features]
 default = ["with-syntex"]
 nightly = ["pnet_macros_plugin"]
+benchmark = []
 netmap = ["netmap_sys"]
 appveyor = []
 travis = []
