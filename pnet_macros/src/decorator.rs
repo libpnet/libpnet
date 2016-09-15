@@ -434,15 +434,13 @@ pub fn generate_packet(ecx: &mut ExtCtxt,
 }
 
 fn generate_packet_structs(cx: &mut GenContext, packet: &Packet) {
-    for (name, mutable) in vec![(packet.packet_name(), ""), (packet.packet_name_mut(), " mut")] {
+    for (name, mutable) in vec![(packet.packet_name(), ""), (packet.packet_name_mut(), "Mut")] {
         cx.push_item_from_string(format!("
             #[derive(PartialEq)]
             /// A structure enabling manipulation of on the wire packets
             pub struct {}<'p> {{
-                packet: &'p{} [u8],
-            }}",
-                                         name,
-                                         mutable));
+                packet: {}PacketData<'p>,
+            }}", name, mutable));
     }
 }
 
@@ -925,7 +923,17 @@ fn generate_packet_impl(cx: &mut GenContext,
         #[inline]
         pub fn new<'p>(packet: &'p {mut} [u8]) -> Option<{name}<'p>> {{
             if packet.len() >= {name}::minimum_packet_size() {{
-                Some({name} {{ packet: packet }})
+                Some({name} {{ packet: {cap_mut}PacketData::Borrowed(packet) }})
+            }} else {{
+                None
+            }}
+        }}
+
+        /// Constructs a new {name}. If the provided buffer is less than the minimum required
+        /// packet size, this will return None.
+        pub fn owned(packet: Vec<u8>) -> Option<{name}<'static>> {{
+            if packet.len() >= {name}::minimum_packet_size() {{
+                Some({name} {{ packet: {cap_mut}PacketData::Owned(packet) }})
             }} else {{
                 None
             }}
@@ -935,7 +943,7 @@ fn generate_packet_impl(cx: &mut GenContext,
         #[inline]
         pub fn to_immutable<'p>(&'p self) -> {imm_name}<'p> {{
             match *self {{
-                {name} {{ ref packet }} => {imm_name} {{ packet: packet }}
+                {name} {{ ref packet }} => {imm_name} {{ packet: PacketData::Borrowed(packet.as_slice()) }}
             }}
         }}
 
@@ -956,6 +964,7 @@ fn generate_packet_impl(cx: &mut GenContext,
     }}", name = name,
     imm_name = packet.packet_name(),
     mut = if mutable { "mut" } else { "" },
+    cap_mut = if mutable { "Mut" } else { "" },
     byte_size = byte_size,
     accessors = accessors,
     mutators = if mutable { &mutators[..] } else { "" },

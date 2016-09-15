@@ -8,6 +8,7 @@
 
 #[cfg(test)]
 use packet::Packet;
+use packet::{PacketData, MutPacketData};
 
 use packet::PrimitiveValues;
 

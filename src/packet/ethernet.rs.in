@@ -7,8 +7,9 @@
 // except according to those terms.
 
 use packet::{Packet, PrimitiveValues};
-use std::fmt;
+use packet::{PacketData, MutPacketData};
 
+use std::fmt;
 use util::MacAddr;
 
 /// Represents an Ethernet packet

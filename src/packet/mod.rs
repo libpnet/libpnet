@@ -10,6 +10,8 @@
 
 #![macro_use]
 
+use std::ops::{Index, IndexMut, Range, RangeTo, RangeFrom, RangeFull};
+
 /// Represents a generic network packet
 pub trait Packet {
     /// Retreive the underlying buffer for the packet
@@ -55,6 +57,92 @@ pub trait PacketSize: Packet {
     /// Get the calculated size of the packet
     fn packet_size(&self) -> usize;
 }
+
+macro_rules! impl_index {
+    ($t:ident, $index_t:ty, $output_t:ty) => {
+        impl<'p> Index<$index_t> for $t<'p> {
+            type Output = $output_t;
+
+            fn index(&self, index: $index_t) -> &$output_t {
+                &self.as_slice().index(index)
+            }
+        }
+    };
+}
+
+macro_rules! impl_index_mut {
+    ($t:ident, $index_t:ty, $output_t:ty) => {
+        impl<'p> IndexMut<$index_t> for $t<'p> {
+            fn index_mut(&mut self, index: $index_t) -> &mut $output_t {
+                self.as_mut_slice().index_mut(index)
+            }
+        }
+    };
+}
+
+#[derive(PartialEq)]
+enum PacketData<'p> {
+    Owned(Vec<u8>),
+    Borrowed(&'p [u8])
+}
+
+impl<'p> PacketData<'p> {
+    fn as_slice(&self) -> &[u8] {
+        match self {
+            &PacketData::Owned(ref data) => data.as_slice(),
+            &PacketData::Borrowed(ref data) => data,
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.as_slice().len()
+    }
+}
+
+impl_index!(PacketData, usize, u8);
+impl_index!(PacketData, Range<usize>, [u8]);
+impl_index!(PacketData, RangeTo<usize>, [u8]);
+impl_index!(PacketData, RangeFrom<usize>, [u8]);
+impl_index!(PacketData, RangeFull, [u8]);
+
+#[derive(PartialEq)]
+enum MutPacketData<'p> {
+    Owned(Vec<u8>),
+    Borrowed(&'p mut [u8])
+}
+
+impl<'p> MutPacketData<'p> {
+    fn as_slice(&self) -> &[u8] {
+        match self {
+            &MutPacketData::Owned(ref data) => data.as_slice(),
+            &MutPacketData::Borrowed(ref data) => data,
+        }
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [u8] {
+        match self {
+            &mut MutPacketData::Owned(ref mut data) => data.as_mut_slice(),
+            &mut MutPacketData::Borrowed(ref mut data) => data,
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.as_slice().len()
+    }
+}
+
+impl_index!(MutPacketData, usize, u8);
+impl_index!(MutPacketData, Range<usize>, [u8]);
+impl_index!(MutPacketData, RangeTo<usize>, [u8]);
+impl_index!(MutPacketData, RangeFrom<usize>, [u8]);
+impl_index!(MutPacketData, RangeFull, [u8]);
+
+impl_index_mut!(MutPacketData, usize, u8);
+impl_index_mut!(MutPacketData, Range<usize>, [u8]);
+impl_index_mut!(MutPacketData, RangeTo<usize>, [u8]);
+impl_index_mut!(MutPacketData, RangeFrom<usize>, [u8]);
+impl_index_mut!(MutPacketData, RangeFull, [u8]);
+
 
 /// Used to convert a type to primitive values representing it
 pub trait PrimitiveValues {
