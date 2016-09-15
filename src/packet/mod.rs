@@ -10,7 +10,7 @@
 
 #![macro_use]
 
-use std::ops::{Index, IndexMut, Range, RangeTo, RangeFrom, RangeFull};
+use std::ops::{Deref, DerefMut, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
 
 /// Represents a generic network packet
 pub trait Packet {
@@ -82,14 +82,14 @@ macro_rules! impl_index_mut {
 
 #[derive(PartialEq)]
 enum PacketData<'p> {
-    Owned(Vec<u8>),
-    Borrowed(&'p [u8])
+    Owned(Box<[u8]>),
+    Borrowed(&'p [u8]),
 }
 
 impl<'p> PacketData<'p> {
     fn as_slice(&self) -> &[u8] {
         match self {
-            &PacketData::Owned(ref data) => data.as_slice(),
+            &PacketData::Owned(ref data) => data.deref(),
             &PacketData::Borrowed(ref data) => data,
         }
     }
@@ -107,21 +107,21 @@ impl_index!(PacketData, RangeFull, [u8]);
 
 #[derive(PartialEq)]
 enum MutPacketData<'p> {
-    Owned(Vec<u8>),
-    Borrowed(&'p mut [u8])
+    Owned(Box<[u8]>),
+    Borrowed(&'p mut [u8]),
 }
 
 impl<'p> MutPacketData<'p> {
     fn as_slice(&self) -> &[u8] {
         match self {
-            &MutPacketData::Owned(ref data) => data.as_slice(),
+            &MutPacketData::Owned(ref data) => data.deref(),
             &MutPacketData::Borrowed(ref data) => data,
         }
     }
 
     fn as_mut_slice(&mut self) -> &mut [u8] {
         match self {
-            &mut MutPacketData::Owned(ref mut data) => data.as_mut_slice(),
+            &mut MutPacketData::Owned(ref mut data) => data.deref_mut(),
             &mut MutPacketData::Borrowed(ref mut data) => data,
         }
     }

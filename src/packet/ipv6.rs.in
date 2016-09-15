@@ -7,7 +7,6 @@
 // except according to those terms.
 
 use packet::ip::IpNextHeaderProtocol;
-use packet::{PacketData, MutPacketData};
 
 use pnet_macros_support::types::*;
 

@@ -7,7 +7,6 @@
 // except according to those terms.
 
 use packet::{Packet, PrimitiveValues};
-use packet::{PacketData, MutPacketData};
 use pnet_macros_support::types::*;
 
 /// Represents the "ICMP type" header field.
@@ -147,7 +146,6 @@ pub mod IcmpTypes {
 /// abstraction for ICMP echo reply packets
 pub mod echo_reply {
     use packet::{Packet, PrimitiveValues};
-    use packet::{PacketData, MutPacketData};
     use packet::icmp::{IcmpCode, IcmpType};
     use pnet_macros_support::types::*;
 
@@ -215,7 +213,6 @@ pub mod echo_reply {
 /// abstraction for "echo request" ICMP packets.
 pub mod echo_request {
     use packet::{Packet, PrimitiveValues};
-    use packet::{PacketData, MutPacketData};
     use packet::icmp::{IcmpCode, IcmpType};
     use pnet_macros_support::types::*;
 
@@ -282,7 +279,6 @@ pub mod echo_request {
 
 /// abstraction for "destination unreachable" ICMP packets.
 pub mod destination_unreachable {
-    use packet::{PacketData, MutPacketData};
     use packet::icmp::{IcmpCode, IcmpType};
     use pnet_macros_support::types::*;
 
@@ -351,7 +347,6 @@ pub mod time_exceeded {
     //!  |      Internet Header + 64 bits of Original Data Datagram      |
     //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-    use packet::{PacketData, MutPacketData};
     use packet::icmp::{IcmpCode, IcmpType};
     use pnet_macros_support::types::*;
 

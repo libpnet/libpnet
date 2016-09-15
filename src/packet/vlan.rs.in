@@ -1,5 +1,4 @@
 use packet::{Packet, PrimitiveValues};
-use packet::{PacketData, MutPacketData};
 use packet::ethernet::{EtherType, EtherTypes};
 use pnet_macros_support::types::*;
 

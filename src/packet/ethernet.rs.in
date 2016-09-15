@@ -7,7 +7,6 @@
 // except according to those terms.
 
 use packet::{Packet, PrimitiveValues};
-use packet::{PacketData, MutPacketData};
 
 use std::fmt;
 use util::MacAddr;

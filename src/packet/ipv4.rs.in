@@ -7,7 +7,6 @@
 // except according to those terms.
 
 use packet::{PacketData, MutPacketData};
-
 use packet::PrimitiveValues;
 use packet::ip::IpNextHeaderProtocol;
 

@@ -439,7 +439,7 @@ fn generate_packet_structs(cx: &mut GenContext, packet: &Packet) {
             #[derive(PartialEq)]
             /// A structure enabling manipulation of on the wire packets
             pub struct {}<'p> {{
-                packet: {}PacketData<'p>,
+                packet: ::pnet::packet::{}PacketData<'p>,
             }}", name, mutable));
     }
 }
@@ -923,6 +923,7 @@ fn generate_packet_impl(cx: &mut GenContext,
         #[inline]
         pub fn new<'p>(packet: &'p {mut} [u8]) -> Option<{name}<'p>> {{
             if packet.len() >= {name}::minimum_packet_size() {{
+                use ::pnet::packet::{cap_mut}PacketData;
                 Some({name} {{ packet: {cap_mut}PacketData::Borrowed(packet) }})
             }} else {{
                 None
@@ -931,8 +932,9 @@ fn generate_packet_impl(cx: &mut GenContext,
 
         /// Constructs a new {name}. If the provided buffer is less than the minimum required
         /// packet size, this will return None.
-        pub fn owned(packet: Vec<u8>) -> Option<{name}<'static>> {{
+        pub fn owned(packet: Box<[u8]>) -> Option<{name}<'static>> {{
             if packet.len() >= {name}::minimum_packet_size() {{
+                use ::pnet::packet::{cap_mut}PacketData;
                 Some({name} {{ packet: {cap_mut}PacketData::Owned(packet) }})
             }} else {{
                 None
@@ -942,6 +944,7 @@ fn generate_packet_impl(cx: &mut GenContext,
         /// Maps from a {name} to a {imm_name}
         #[inline]
         pub fn to_immutable<'p>(&'p self) -> {imm_name}<'p> {{
+            use ::pnet::packet::PacketData;
             match *self {{
                 {name} {{ ref packet }} => {imm_name} {{ packet: PacketData::Borrowed(packet.as_slice()) }}
             }}
