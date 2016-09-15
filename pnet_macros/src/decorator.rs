@@ -951,6 +951,12 @@ fn generate_packet_impl(cx: &mut GenContext,
             }}
         }}
 
+        /// Maps from a {name} to a {imm_name} while consuming the source
+        #[inline]
+        pub fn consume_to_immutable(self) -> {imm_name}<'a> {{
+            {imm_name} {{ packet: self.packet.to_immutable() }}
+        }}
+
         /// The minimum size (in bytes) a packet of this type can be. It's based on the total size
         /// of the fixed-size fields.
         #[inline]

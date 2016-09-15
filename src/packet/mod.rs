@@ -94,6 +94,10 @@ impl<'p> PacketData<'p> {
         }
     }
 
+    fn to_immutable(self) -> PacketData<'p> {
+        self
+    }
+
     pub fn len(&self) -> usize {
         self.as_slice().len()
     }
@@ -123,6 +127,13 @@ impl<'p> MutPacketData<'p> {
         match self {
             &mut MutPacketData::Owned(ref mut data) => data.deref_mut(),
             &mut MutPacketData::Borrowed(ref mut data) => data,
+        }
+    }
+
+    fn to_immutable(self) -> PacketData<'p> {
+        match self {
+            MutPacketData::Owned(data) => PacketData::Owned(data),
+            MutPacketData::Borrowed(data) => PacketData::Borrowed(data),
         }
     }
 
