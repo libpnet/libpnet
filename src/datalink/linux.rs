@@ -214,7 +214,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                                   ptr::null_mut(),
                                   &mut self.fd_set as *mut libc::fd_set,
                                   ptr::null_mut(),
-                                  self.timeout.map(|to| &to as *const libc::timespec)
+                                  self.timeout.as_ref().map(|to| to as *const libc::timespec)
                                   .unwrap_or(ptr::null()),
                                   ptr::null())
                 };
@@ -248,7 +248,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                           ptr::null_mut(),
                           &mut self.fd_set as *mut libc::fd_set,
                           ptr::null_mut(),
-                          self.timeout.map(|to| &to as *const libc::timespec)
+                          self.timeout.as_ref().map(|to| to as *const libc::timespec)
                           .unwrap_or(ptr::null()),
                           ptr::null())
         };
@@ -295,7 +295,7 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
                           &mut self.pc.fd_set as *mut libc::fd_set,
                           ptr::null_mut(),
                           ptr::null_mut(),
-                          self.pc.timeout.map(|to| &to as *const libc::timespec)
+                          self.pc.timeout.as_ref().map(|to| to as *const libc::timespec)
                           .unwrap_or(ptr::null()),
                           ptr::null())
         };
