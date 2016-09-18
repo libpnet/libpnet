@@ -122,14 +122,13 @@ impl Default for Config {
 }
 
 #[inline]
-fn get_timeout(to: Option<Duration>) -> *const libc::timespec {
-    match to {
-        Some(to) => &libc::timespec {
-            tv_sec: to.as_secs() as libc::time_t,
-            tv_nsec: to.subsec_nanos() as libc::c_long
-        } as *const libc::timespec,
-        None => ptr::null()
-    }
+fn get_timeout(to: Option<Duration>) -> Option<libc::timespec> {
+    to.map(|dur| {
+        libc::timespec {
+            tv_sec: dur.as_secs() as libc::time_t,
+            tv_nsec: dur.subsec_nanos() as libc::c_long
+        }
+    })
 }
 
 /// Create a datalink channel using the netmap library
@@ -158,7 +157,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
 
 struct DataLinkSenderImpl {
     desc: Arc<NmDesc>,
-    timeout: *const libc::timespec,
+    timeout: Option<libc::timespec>,
 }
 
 impl EthernetDataLinkSender for DataLinkSenderImpl {
@@ -178,7 +177,8 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
         let mut packet_idx = 0usize;
         while packet_idx < num_packets {
             unsafe {
-                if ppoll(&mut fds, 1, self.timeout, ptr::null()) < 0 {
+                let timespec = self.timeout.as_ref().map(|ts| ts as *const _).unwrap_or(ptr::null());
+                if ppoll(&mut fds, 1, timespec, ptr::null()) < 0 {
                     return Some(Err(io::Error::last_os_error()));
                 }
                 let ring = NETMAP_TXRING((*desc).nifp, 0);
@@ -217,7 +217,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
 
 struct DataLinkReceiverImpl {
     desc: Arc<NmDesc>,
-    timeout: *const libc::timespec,
+    timeout: Option<libc::timespec>,
 }
 
 impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
@@ -242,7 +242,8 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
                 events: POLLIN,
                 revents: 0,
             };
-            if unsafe { ppoll(&mut fds, 1, self.timeout, ptr::null()) } < 0 {
+            let timespec = self.timeout.as_ref().map(|ts| ts as *const _).unwrap_or(ptr::null());
+            if unsafe { ppoll(&mut fds, 1, timespec, ptr::null()) } < 0 {
                 return Err(io::Error::last_os_error());
             }
             buf = unsafe { nm_nextpkt(desc, &mut h) };
