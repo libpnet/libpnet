@@ -102,3 +102,14 @@ impl fmt::Display for EtherType       {
             _                       => "unknown"
         })
     }
+}
+
+#[test]
+fn EtherType_to_str() {
+    let ipv4 = EtherType(0x0800);
+    assert_eq!(format!("{}",ipv4),"Ipv4");
+    let arp = EtherType(0x0806);
+    assert_eq!(format!("{}",arp),"Arp");
+    let unknown = EtherType(0x0666);
+    assert_eq!(format!("{}",unknown),"unknown");
+}
