@@ -46,7 +46,7 @@ impl PrimitiveValues for MacAddr {
 impl fmt::Display for MacAddr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt,
-               "{:x}:{:x}:{:x}:{:x}:{:x}:{:x}",
+               "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
                self.0,
                self.1,
                self.2,
@@ -126,6 +126,22 @@ fn mac_addr_from_str() {
                Err(ParseMacAddrErr::TooManyComponents));
     assert_eq!("xx:xx:xx:xx:xx:xx".parse::<MacAddr>(),
                Err(ParseMacAddrErr::InvalidComponent));
+}
+
+#[test]
+fn str_from_mac_addr() {
+    assert_eq!(
+        format!("{}", MacAddr(0, 0, 0, 0, 0, 0)),
+        "00:00:00:00:00:00"
+        );
+    assert_eq!(
+        format!("{}",MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)),
+        "ff:ff:ff:ff:ff:ff"
+        );
+    assert_eq!(
+        format!("{}",MacAddr(0x12, 0x34, 0x56, 0x78, 0x09, 0xAB)),
+        "12:34:56:78:09:ab"
+        );
 }
 
 #[cfg(target_os = "linux")]
