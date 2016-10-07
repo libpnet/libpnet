@@ -974,11 +974,13 @@ fn generate_iterables(cx: &mut GenContext, packet: &Packet) {
 
         fn next(&mut self) -> Option<{name}Packet<'a>> {{
             use pnet::packet::PacketSize;
+            use std::cmp::min;
             if self.buf.len() > 0 {{
-                let ret = {name}Packet::new(self.buf).unwrap();
-                self.buf = &self.buf[ret.packet_size()..];
-
-                return Some(ret);
+                if let Some(ret) = {name}Packet::new(self.buf) {{
+                    let start = min(ret.packet_size(), self.buf.len());
+                    self.buf = &self.buf[start..];
+                    return Some(ret);
+                }}
             }}
 
             None
