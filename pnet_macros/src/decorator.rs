@@ -634,9 +634,10 @@ fn handle_vector_field(cx: &mut GenContext,
                                 #[allow(trivial_numeric_casts)]
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}_raw(&self) -> &[u8] {{
+                                    use std::cmp::min;
                                     let _self = self;
                                     let current_offset = {co};
-                                    let end = current_offset + {packet_length};
+                                    let end = min(current_offset + {packet_length}, _self.packet.len());
 
                                     &_self.packet[current_offset..end]
                                 }}
@@ -651,9 +652,10 @@ fn handle_vector_field(cx: &mut GenContext,
                                 #[allow(trivial_numeric_casts)]
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}_raw_mut(&mut self) -> &mut [u8] {{
+                                    use std::cmp::min;
                                     let _self = self;
                                     let current_offset = {co};
-                                    let end = current_offset + {packet_length};
+                                    let end = min(current_offset + {packet_length}, _self.packet.len());
 
                                     &mut _self.packet[current_offset..end]
                                 }}
@@ -679,9 +681,10 @@ fn handle_vector_field(cx: &mut GenContext,
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
                                     use pnet::packet::FromPacket;
+                                    use std::cmp::min;
                                     let _self = self;
                                     let current_offset = {co};
-                                    let end = current_offset + {packet_length};
+                                    let end = min(current_offset + {packet_length}, _self.packet.len());
 
                                     {inner_ty_str}Iterable {{
                                         buf: &_self.packet[current_offset..end]
@@ -695,9 +698,10 @@ fn handle_vector_field(cx: &mut GenContext,
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}_iter(&self) -> {inner_ty_str}Iterable {{
                                     use pnet::packet::FromPacket;
+                                    use std::cmp::min;
                                     let _self = self;
                                     let current_offset = {co};
-                                    let end = current_offset + {packet_length};
+                                    let end = min(current_offset + {packet_length}, _self.packet.len());
 
                                     {inner_ty_str}Iterable {{
                                         buf: &_self.packet[current_offset..end]
