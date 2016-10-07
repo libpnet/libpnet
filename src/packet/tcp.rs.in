@@ -224,7 +224,13 @@ impl PrimitiveValues for TcpOptionNumber {
 }
 
 fn tcp_options_length(tcp: &TcpPacket) -> usize {
-  tcp.get_data_offset() as usize * 4 - 20
+    let data_offset = tcp.get_data_offset();
+
+    if data_offset > 5 {
+        data_offset as usize * 4 - 20
+    } else {
+        0
+    }
 }
 
 /// Calculate the checksum for a packet built on IPv4
