@@ -529,9 +529,11 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                     #[allow(trivial_numeric_casts)]
                                     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                     pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
+                                        use std::cmp::min;
                                         let _self = self;
                                         let current_offset = {co};
-                                        let end = current_offset + {packet_length};
+                                        let pkt_len = self.packet.len();
+                                        let end = min(current_offset + {packet_length}, pkt_len);
 
                                         let packet = &_self.packet[current_offset..end];
                                         let mut vec: Vec<{inner_ty_str}> = Vec::with_capacity(packet.len());
