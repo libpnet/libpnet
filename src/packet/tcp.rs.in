@@ -224,7 +224,13 @@ impl PrimitiveValues for TcpOptionNumber {
 }
 
 fn tcp_options_length(tcp: &TcpPacket) -> usize {
-  tcp.get_data_offset() as usize * 4 - 20
+    let data_offset = tcp.get_data_offset();
+
+    if data_offset > 5 {
+        data_offset as usize * 4 - 20
+    } else {
+        0
+    }
 }
 
 /// Calculate the checksum for a packet built on IPv4
@@ -308,4 +314,65 @@ fn tcp_header_ipv4_test() {
                       0x74, 0x65, 0x73, 0x74 /* "test" */
                       ];
     assert_eq!(&ref_packet[..], &packet[20..]);
+}
+
+#[test]
+fn tcp_test_options_invalid_offset() {
+    let mut buf = [0;20]; // no space for options
+    {
+        if let Some(mut tcp) = MutableTcpPacket::new(&mut buf[..]) {
+            tcp.set_data_offset(10); // set invalid offset
+        }
+    }
+
+    if let Some(tcp) = TcpPacket::new(&buf[..]) {
+        let options = tcp.get_options_iter(); // shouldn't crash here
+    }
+}
+
+#[test]
+fn tcp_test_options_vec_invalid_offset() {
+    let mut buf = [0;20]; // no space for options
+    {
+        if let Some(mut tcp) = MutableTcpPacket::new(&mut buf[..]) {
+            tcp.set_data_offset(10); // set invalid offset
+        }
+    }
+
+    if let Some(tcp) = TcpPacket::new(&buf[..]) {
+        let options = tcp.get_options(); // shouldn't crash here
+    }
+}
+
+#[test]
+fn tcp_test_options_slice_invalid_offset() {
+    let mut buf = [0;20]; // no space for options
+    {
+        if let Some(mut tcp) = MutableTcpPacket::new(&mut buf[..]) {
+            tcp.set_data_offset(10); // set invalid offset
+        }
+    }
+
+    if let Some(tcp) = TcpPacket::new(&buf[..]) {
+        let options = tcp.get_options_raw(); // shouldn't crash here
+    }
+}
+
+#[test]
+fn tcp_test_option_invalid_len() {
+    let mut buf = [0;24];
+    {
+        if let Some(mut tcp) = MutableTcpPacket::new(&mut buf[..]) {
+            tcp.set_data_offset(6);
+        }
+        buf[20] = 2; // option type
+        buf[21] = 8; // option len, not enough space for it
+    }
+
+    if let Some(tcp) = TcpPacket::new(&buf[..]) {
+        let options = tcp.get_options_iter();
+        for opt in options {
+            println!("{:?}", opt);
+        }
+    }
 }
