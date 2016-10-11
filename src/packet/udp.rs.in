@@ -27,14 +27,17 @@ pub struct Udp {
 
 /// Calculate the checksum for a packet built on IPv4
 pub fn ipv4_checksum(packet: &UdpPacket,
+                     extra_data: &[u8],
                      source: Ipv4Addr,
                      destination: Ipv4Addr,
                      next_level_protocol: IpNextHeaderProtocol)
     -> u16be {
-    let len = packet.get_length() as usize;
-    assert!(len <= packet.packet().len());
-    let data = &packet.packet()[..len];
-    util::ipv4_checksum(data, source, destination, next_level_protocol, 3)
+    util::ipv4_checksum(packet.packet(),
+                        3,
+                        extra_data,
+                        source,
+                        destination,
+                        next_level_protocol)
 }
 
 #[test]
@@ -71,6 +74,7 @@ fn udp_header_ipv4_test() {
         assert_eq!(udp_header.get_length(), 8 + 4);
 
         let checksum = ipv4_checksum(&udp_header.to_immutable(),
+                                     &[],
                                      ipv4_source,
                                      ipv4_destination,
                                      next_level_protocol);

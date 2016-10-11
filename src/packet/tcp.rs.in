@@ -235,10 +235,17 @@ fn tcp_options_length(tcp: &TcpPacket) -> usize {
 
 /// Calculate the checksum for a packet built on IPv4
 pub fn ipv4_checksum(packet: &TcpPacket,
+                     extra_data: &[u8],
                      source: Ipv4Addr,
                      destination: Ipv4Addr,
-                     next_level_protocol: IpNextHeaderProtocol) -> u16 {
-    util::ipv4_checksum(packet.packet(), source, destination, next_level_protocol, 8)
+                     next_level_protocol: IpNextHeaderProtocol)
+    -> u16 {
+    util::ipv4_checksum(packet.packet(),
+                        8,
+                        extra_data,
+                        source,
+                        destination,
+                        next_level_protocol)
 }
 
 #[test]
@@ -294,6 +301,7 @@ fn tcp_header_ipv4_test() {
         tcp_header.set_options(&vec![TcpOption::nop(), TcpOption::nop(), ts]);
 
         let checksum = ipv4_checksum(&tcp_header.to_immutable(),
+                                     &[],
                                      ipv4_source,
                                      ipv4_destination,
                                      next_level_protocol);

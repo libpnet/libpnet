@@ -269,24 +269,27 @@ pub fn checksum(data: &[u8], skipword: usize) -> u16be {
 
 /// Calculate the checksum for a packet built on IPv4. Used by udp and tcp.
 pub fn ipv4_checksum(data: &[u8],
-                     ipv4_source: Ipv4Addr,
-                     ipv4_destination: Ipv4Addr,
-                     next_level_protocol: IpNextHeaderProtocol,
-                     skipword: usize)
+                     skipword: usize,
+                     extra_data: &[u8],
+                     source: Ipv4Addr,
+                     destination: Ipv4Addr,
+                     next_level_protocol: IpNextHeaderProtocol)
     -> u16be {
     let mut sum = 0u32;
 
     // Checksum pseudo-header
-    sum += ipv4_word_sum(ipv4_source);
-    sum += ipv4_word_sum(ipv4_destination);
+    sum += ipv4_word_sum(source);
+    sum += ipv4_word_sum(destination);
 
     let IpNextHeaderProtocol(next_level_protocol) = next_level_protocol;
     sum += next_level_protocol as u32;
 
-    sum += data.len() as u32;
+    let len = data.len() + extra_data.len();
+    sum += len as u32;
 
     // Checksum packet header and data
     sum += sum_be_words(data, skipword);
+    sum += sum_be_words(extra_data, extra_data.len()/2);
 
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);

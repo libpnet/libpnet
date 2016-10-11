@@ -8,7 +8,7 @@
 
 extern crate libc;
 
-use std::net::{Ipv4Addr, Ipv6Addr, IpAddr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::mpsc::channel;
 use std::thread;
 use std::iter::Iterator;
@@ -118,7 +118,11 @@ fn build_udp4_packet(packet: &mut [u8],
     };
 
     let slice = &mut packet[(start + IPV4_HEADER_LEN as usize)..];
-    let checksum = udp::ipv4_checksum(&UdpPacket::new(slice).unwrap(), source, dest, TEST_PROTO);
+    let checksum = udp::ipv4_checksum(&UdpPacket::new(slice).unwrap(),
+                                      &[],
+                                      source,
+                                      dest,
+                                      TEST_PROTO);
     MutableUdpPacket::new(slice).unwrap().set_checksum(checksum);
 }
 
