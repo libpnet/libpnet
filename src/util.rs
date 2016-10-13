@@ -260,7 +260,11 @@ impl Octets for u8 {
 /// Calculates a checksum. Used by ipv4 and icmp. The two bytes starting at `skipword * 2` will be
 /// ignored. Supposed to be the checksum field, which is regarded as zero during calculation.
 pub fn checksum(data: &[u8], skipword: usize) -> u16be {
-    let mut sum = sum_be_words(data, skipword);
+    let sum = sum_be_words(data, skipword);
+    finalize_checksum(sum)
+}
+
+fn finalize_checksum(mut sum: u32) -> u16be {
     while sum >> 16 != 0 {
         sum = (sum >> 16) + (sum & 0xFFFF);
     }
@@ -291,11 +295,7 @@ pub fn ipv4_checksum(data: &[u8],
     sum += sum_be_words(data, skipword);
     sum += sum_be_words(extra_data, extra_data.len()/2);
 
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
-
-    !sum as u16
+    finalize_checksum(sum)
 }
 
 fn ipv4_word_sum(ip: Ipv4Addr) -> u32 {
@@ -327,11 +327,7 @@ pub fn ipv6_checksum(data: &[u8],
     sum += sum_be_words(data, skipword);
     sum += sum_be_words(extra_data, extra_data.len()/2);
 
-    while sum >> 16 != 0 {
-        sum = (sum >> 16) + (sum & 0xFFFF);
-    }
-
-    !sum as u16
+    finalize_checksum(sum)
 }
 
 fn ipv6_word_sum(ip: Ipv6Addr) -> u32 {
