@@ -7,7 +7,7 @@
 // except according to those terms.
 
 use packet::Packet;
-use packet::ip::IpNextHeaderProtocol;
+use packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
 use util;
 
 use pnet_macros_support::types::*;
@@ -29,15 +29,14 @@ pub struct Udp {
 pub fn ipv4_checksum(packet: &UdpPacket,
                      extra_data: &[u8],
                      source: Ipv4Addr,
-                     destination: Ipv4Addr,
-                     next_level_protocol: IpNextHeaderProtocol)
+                     destination: Ipv4Addr)
     -> u16be {
     util::ipv4_checksum(packet.packet(),
                         3,
                         extra_data,
                         source,
                         destination,
-                        next_level_protocol)
+                        IpNextHeaderProtocols::Udp)
 }
 
 #[test]
@@ -48,10 +47,9 @@ fn udp_header_ipv4_test() {
     let mut packet = [0u8; 20 + 8 + 4];
     let ipv4_source = Ipv4Addr::new(192, 168, 0, 1);
     let ipv4_destination = Ipv4Addr::new(192, 168, 0, 199);
-    let next_level_protocol = IpNextHeaderProtocols::Udp;
     {
         let mut ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
-        ip_header.set_next_level_protocol(next_level_protocol);
+        ip_header.set_next_level_protocol(IpNextHeaderProtocols::Udp);
         ip_header.set_source(ipv4_source);
         ip_header.set_destination(ipv4_destination);
     }
@@ -76,8 +74,7 @@ fn udp_header_ipv4_test() {
         let checksum = ipv4_checksum(&udp_header.to_immutable(),
                                      &[],
                                      ipv4_source,
-                                     ipv4_destination,
-                                     next_level_protocol);
+                                     ipv4_destination);
         udp_header.set_checksum(checksum);
         assert_eq!(udp_header.get_checksum(), 0x9178);
     }

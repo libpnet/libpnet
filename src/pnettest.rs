@@ -121,8 +121,7 @@ fn build_udp4_packet(packet: &mut [u8],
     let checksum = udp::ipv4_checksum(&UdpPacket::new(slice).unwrap(),
                                       &[],
                                       source,
-                                      dest,
-                                      TEST_PROTO);
+                                      dest);
     MutableUdpPacket::new(slice).unwrap().set_checksum(checksum);
 }
 
