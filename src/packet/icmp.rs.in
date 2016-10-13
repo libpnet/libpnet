@@ -105,7 +105,7 @@ mod checksum_tests {
 /// Enumeration of the recognized ICMP types
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
-pub mod icmp_types {
+pub mod IcmpTypes {
 
     use packet::icmp::IcmpType;
     /// ICMP type for "echo reply" packet
@@ -189,7 +189,7 @@ pub mod echo_reply {
     /// one, since the only valid ICMP code is 0.
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
-    pub mod icmp_codes {
+    pub mod IcmpCodes {
         use packet::icmp::IcmpCode;
         /// 0 is the only available ICMP code for "echo reply" ICMP packets.
         pub const NoCode: IcmpCode = IcmpCode(0);
@@ -256,7 +256,7 @@ pub mod echo_request {
     /// one, since the only valid ICMP code is 0.
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
-    pub mod icmp_codes {
+    pub mod IcmpCodes {
         use packet::icmp::IcmpCode;
         /// 0 is the only available ICMP code for "echo reply" ICMP packets.
         pub const NoCode: IcmpCode = IcmpCode(0);
@@ -285,7 +285,7 @@ pub mod destination_unreachable {
     /// Enumeration of the recognized ICMP codes for "destination unreachable" ICMP packets.
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
-    pub mod icmp_codes {
+    pub mod IcmpCodes {
         use packet::icmp::IcmpCode;
         /// ICMP code for "destination network unreachable" packet
         pub const DestinationNetworkUnreachable: IcmpCode = IcmpCode(0);
@@ -353,7 +353,7 @@ pub mod time_exceeded {
     /// Enumeration of the recognized ICMP codes for "time exceeded" ICMP packets.
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
-    pub mod icmp_codes {
+    pub mod IcmpCodes {
         use packet::icmp::IcmpCode;
         /// ICMP code for "time to live exceeded in transit" packet.
         pub const TimeToLiveExceededInTransit: IcmpCode = IcmpCode(0);
