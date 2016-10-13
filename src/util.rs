@@ -18,7 +18,7 @@ use pnet_macros_support::types::u16be;
 use std::fmt;
 use std::str::FromStr;
 use std::u8;
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::mem;
 use std::slice;
 
@@ -301,6 +301,41 @@ pub fn ipv4_checksum(data: &[u8],
 fn ipv4_word_sum(ip: Ipv4Addr) -> u32 {
     let octets = ip.octets();
     ((octets[0] as u32) << 8 | octets[1] as u32) + ((octets[2] as u32) << 8 | octets[3] as u32)
+}
+
+/// Calculate the checksum for a packet built on IPv6
+pub fn ipv6_checksum(data: &[u8],
+                     skipword: usize,
+                     extra_data: &[u8],
+                     source: Ipv6Addr,
+                     destination: Ipv6Addr,
+                     next_level_protocol: IpNextHeaderProtocol)
+    -> u16be {
+    let mut sum = 0u32;
+
+    // Checksum pseudo-header
+    sum += ipv6_word_sum(source);
+    sum += ipv6_word_sum(destination);
+
+    let IpNextHeaderProtocol(next_level_protocol) = next_level_protocol;
+    sum += next_level_protocol as u32;
+
+    let len = data.len() + extra_data.len();
+    sum += len as u32;
+
+    // Checksum packet header and data
+    sum += sum_be_words(data, skipword);
+    sum += sum_be_words(extra_data, extra_data.len()/2);
+
+    while sum >> 16 != 0 {
+        sum = (sum >> 16) + (sum & 0xFFFF);
+    }
+
+    !sum as u16
+}
+
+fn ipv6_word_sum(ip: Ipv6Addr) -> u32 {
+    ip.segments().iter().map(|x| *x as u32).sum()
 }
 
 /// Sum all words (16 bit chunks) in the given data. The word at word offset
