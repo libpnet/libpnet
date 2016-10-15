@@ -21,7 +21,7 @@ use pnet::packet::ipv6::Ipv6Packet;
 use pnet::packet::udp::UdpPacket;
 use pnet::packet::tcp::TcpPacket;
 use pnet::packet::arp::ArpPacket;
-use pnet::packet::icmp::{IcmpPacket, echo_reply, echo_request, icmp_types};
+use pnet::packet::icmp::{IcmpPacket, echo_reply, echo_request, IcmpTypes};
 
 use pnet::datalink::{self, NetworkInterface};
 
@@ -40,7 +40,7 @@ fn handle_icmp_packet(interface_name: &str, source: IpAddr, destination: IpAddr,
     let icmp_packet = IcmpPacket::new(packet);
     if let Some(icmp_packet) = icmp_packet {
         match icmp_packet.get_icmp_type() {
-            icmp_types::EchoReply => {
+            IcmpTypes::EchoReply => {
                 let echo_reply_packet = echo_reply::EchoReplyPacket::new(packet).unwrap();
                 println!("[{}]: ICMP echo reply {} -> {} (seq={:?}, id={:?})",
                         interface_name,
@@ -49,7 +49,7 @@ fn handle_icmp_packet(interface_name: &str, source: IpAddr, destination: IpAddr,
                         echo_reply_packet.get_sequence_number(),
                         echo_reply_packet.get_identifier());
             },
-            icmp_types::EchoRequest => {
+            IcmpTypes::EchoRequest => {
                 let echo_request_packet = echo_request::EchoRequestPacket::new(packet).unwrap();
                 println!("[{}]: ICMP echo request {} -> {} (seq={:?}, id={:?})",
                         interface_name,

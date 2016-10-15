@@ -105,7 +105,49 @@ mod checksum_tests {
 /// Enumeration of the recognized ICMP types
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
+#[deprecated(since = "0.14.0", note = "Renamed to IcmpTypes")]
 pub mod icmp_types {
+
+    use packet::icmp::IcmpType;
+    /// ICMP type for "echo reply" packet
+    pub const EchoReply: IcmpType = IcmpType(0);
+    /// ICMP type for "destination unreachable" packet
+    pub const DestinationUnreachable: IcmpType = IcmpType(3);
+    /// ICMP type for "source quench" packet
+    pub const SourceQuench: IcmpType = IcmpType(4);
+    /// ICMP type for "redirect message" packet
+    pub const RedirectMessage: IcmpType = IcmpType(5);
+    /// ICMP type for "echo request" packet
+    pub const EchoRequest: IcmpType = IcmpType(8);
+    /// ICMP type for "router advertisement" packet
+    pub const RouterAdvertisement: IcmpType = IcmpType(9);
+    /// ICMP type for "router solicitation" packet
+    pub const RouterSolicitation: IcmpType = IcmpType(10);
+    /// ICMP type for "time exceeded" packet
+    pub const TimeExceeded: IcmpType = IcmpType(11);
+    /// ICMP type for "parameter problem" packet
+    pub const ParameterProblem: IcmpType = IcmpType(12);
+    /// ICMP type for "timestamp" packet
+    pub const Timestamp: IcmpType = IcmpType(13);
+    /// ICMP type for "timestamp reply" packet
+    pub const TimestampReply: IcmpType = IcmpType(14);
+    /// ICMP type for "information request" packet
+    pub const InformationRequest: IcmpType = IcmpType(15);
+    /// ICMP type for "information reply" packet
+    pub const InformationReply: IcmpType = IcmpType(16);
+    /// ICMP type for "address mask request" packet
+    pub const AddressMaskRequest: IcmpType = IcmpType(17);
+    /// ICMP type for "address mask reply" packet
+    pub const AddressMaskReply: IcmpType = IcmpType(18);
+    /// ICMP type for "traceroute" packet
+    pub const Traceroute: IcmpType = IcmpType(30);
+}
+
+
+/// Enumeration of the recognized ICMP types
+#[allow(non_snake_case)]
+#[allow(non_upper_case_globals)]
+pub mod IcmpTypes {
 
     use packet::icmp::IcmpType;
     /// ICMP type for "echo reply" packet
@@ -189,7 +231,18 @@ pub mod echo_reply {
     /// one, since the only valid ICMP code is 0.
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
+    #[deprecated(since = "0.14.0", note = "Renamed to IcmpCodes")]
     pub mod icmp_codes {
+        use packet::icmp::IcmpCode;
+        /// 0 is the only available ICMP code for "echo reply" ICMP packets.
+        pub const NoCode: IcmpCode = IcmpCode(0);
+    }
+
+    /// Enumeration of available ICMP codes for ICMP echo replay packets. There is actually only
+    /// one, since the only valid ICMP code is 0.
+    #[allow(non_snake_case)]
+    #[allow(non_upper_case_globals)]
+    pub mod IcmpCodes {
         use packet::icmp::IcmpCode;
         /// 0 is the only available ICMP code for "echo reply" ICMP packets.
         pub const NoCode: IcmpCode = IcmpCode(0);
@@ -256,7 +309,18 @@ pub mod echo_request {
     /// one, since the only valid ICMP code is 0.
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
+    #[deprecated(since = "0.14.0", note = "Renamed to IcmpCodes")]
     pub mod icmp_codes {
+        use packet::icmp::IcmpCode;
+        /// 0 is the only available ICMP code for "echo reply" ICMP packets.
+        pub const NoCode: IcmpCode = IcmpCode(0);
+    }
+
+    /// Enumeration of available ICMP codes for "echo reply" ICMP packets. There is actually only
+    /// one, since the only valid ICMP code is 0.
+    #[allow(non_snake_case)]
+    #[allow(non_upper_case_globals)]
+    pub mod IcmpCodes {
         use packet::icmp::IcmpCode;
         /// 0 is the only available ICMP code for "echo reply" ICMP packets.
         pub const NoCode: IcmpCode = IcmpCode(0);
@@ -285,7 +349,47 @@ pub mod destination_unreachable {
     /// Enumeration of the recognized ICMP codes for "destination unreachable" ICMP packets.
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
+    #[deprecated(since = "0.14.0", note = "Renamed to IcmpCodes")]
     pub mod icmp_codes {
+        use packet::icmp::IcmpCode;
+        /// ICMP code for "destination network unreachable" packet
+        pub const DestinationNetworkUnreachable: IcmpCode = IcmpCode(0);
+        /// ICMP code for "destination host unreachable" packet
+        pub const DestinationHostUnreachable: IcmpCode = IcmpCode(1);
+        /// ICMP code for "destination protocol unreachable" packet
+        pub const DestinationProtocolUnreachable: IcmpCode = IcmpCode(2);
+        /// ICMP code for "destination port unreachable" packet
+        pub const DestinationPortUnreachable: IcmpCode = IcmpCode(3);
+        /// ICMP code for "fragmentation required and DFF flag set" packet
+        pub const FragmentationRequiredAndDFFlagSet: IcmpCode = IcmpCode(4);
+        /// ICMP code for "source route failed" packet
+        pub const SourceRouteFailed: IcmpCode = IcmpCode(5);
+        /// ICMP code for "destination network unknown" packet
+        pub const DestinationNetworkUnknown: IcmpCode = IcmpCode(6);
+        /// ICMP code for "destination host unknown" packet
+        pub const DestinationHostUnknown: IcmpCode = IcmpCode(7);
+        /// ICMP code for "source host isolated" packet
+        pub const SourceHostIsolated: IcmpCode = IcmpCode(8);
+        /// ICMP code for "network administrative prohibited" packet
+        pub const NetworkAdministrativelyProhibited: IcmpCode = IcmpCode(9);
+        /// ICMP code for "host administrative prohibited" packet
+        pub const HostAdministrativelyProhibited: IcmpCode = IcmpCode(10);
+        /// ICMP code for "network unreachable for this Type Of Service" packet
+        pub const NetworkUnreachableForTOS: IcmpCode = IcmpCode(11);
+        /// ICMP code for "host unreachable for this Type Of Service" packet
+        pub const HostUnreachableForTOS: IcmpCode = IcmpCode(12);
+        /// ICMP code for "communication administratively prohibited" packet
+        pub const CommunicationAdministrativelyProhibited: IcmpCode = IcmpCode(13);
+        /// ICMP code for "host precedence violation" packet
+        pub const HostPrecedenceViolation: IcmpCode = IcmpCode(14);
+        /// ICMP code for "precedence cut off in effect" packet
+        pub const PrecedenceCutoffInEffect: IcmpCode = IcmpCode(15);
+    }
+
+    /// Enumeration of the recognized ICMP codes for "destination unreachable" ICMP packets.
+    #[allow(non_snake_case)]
+    #[allow(non_upper_case_globals)]
+    pub mod IcmpCodes {
         use packet::icmp::IcmpCode;
         /// ICMP code for "destination network unreachable" packet
         pub const DestinationNetworkUnreachable: IcmpCode = IcmpCode(0);
@@ -353,7 +457,19 @@ pub mod time_exceeded {
     /// Enumeration of the recognized ICMP codes for "time exceeded" ICMP packets.
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
+    #[deprecated(since = "0.14.0", note = "Renamed to IcmpCodes")]
     pub mod icmp_codes {
+        use packet::icmp::IcmpCode;
+        /// ICMP code for "time to live exceeded in transit" packet.
+        pub const TimeToLiveExceededInTransit: IcmpCode = IcmpCode(0);
+        /// ICMP code for "fragment reassembly time exceeded" packet.
+        pub const FragmentReasemblyTimeExceeded: IcmpCode = IcmpCode(1);
+    }
+
+    /// Enumeration of the recognized ICMP codes for "time exceeded" ICMP packets.
+    #[allow(non_snake_case)]
+    #[allow(non_upper_case_globals)]
+    pub mod IcmpCodes {
         use packet::icmp::IcmpCode;
         /// ICMP code for "time to live exceeded in transit" packet.
         pub const TimeToLiveExceededInTransit: IcmpCode = IcmpCode(0);
