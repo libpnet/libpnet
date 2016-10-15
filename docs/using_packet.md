@@ -29,7 +29,7 @@ version = "0.1.0"
 authors = ["My Name <my.email@mydomain.com>"]
 build = "build.rs"
 [build-dependencies]
-syntex = "0.31.*"
+syntex = "X" # where X is the version of syntex used in pnet_macros/Cargo.toml
 pnet_macros = "*"
 [dependencies]
 pnet = "*"
