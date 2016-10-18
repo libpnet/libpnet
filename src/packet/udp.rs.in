@@ -27,6 +27,23 @@ pub struct Udp {
 
 /// Calculate the checksum for a packet built on IPv4
 pub fn ipv4_checksum(packet: &UdpPacket,
+                     source: Ipv4Addr,
+                     destination: Ipv4Addr)
+    -> u16be {
+    ipv4_checksum_adv(packet,
+                      &[],
+                      source,
+                      destination)
+}
+
+/// Calculate the checksum for a packet built on IPv4. Advanced version which
+/// accepts an extra slice of data that will be included in the checksum
+/// as being part of the data portion of the packet.
+///
+/// If `packet` contains an odd number of bytes the last byte will not be
+/// counted as the first byte of a word together with the first byte of
+/// `extra_data`.
+pub fn ipv4_checksum_adv(packet: &UdpPacket,
                      extra_data: &[u8],
                      source: Ipv4Addr,
                      destination: Ipv4Addr)
@@ -71,10 +88,7 @@ fn udp_header_ipv4_test() {
         udp_header.set_length(8 + 4);
         assert_eq!(udp_header.get_length(), 8 + 4);
 
-        let checksum = ipv4_checksum(&udp_header.to_immutable(),
-                                     &[],
-                                     ipv4_source,
-                                     ipv4_destination);
+        let checksum = ipv4_checksum(&udp_header.to_immutable(), ipv4_source, ipv4_destination);
         udp_header.set_checksum(checksum);
         assert_eq!(udp_header.get_checksum(), 0x9178);
     }
@@ -89,6 +103,20 @@ fn udp_header_ipv4_test() {
 
 /// Calculate the checksum for a packet built on IPv6
 pub fn ipv6_checksum(packet: &UdpPacket,
+                     source: Ipv6Addr,
+                     destination: Ipv6Addr)
+    -> u16be {
+    ipv6_checksum_adv(packet, &[], source, destination)
+}
+
+/// Calculate the checksum for a packet built on IPv6. Advanced version which
+/// accepts an extra slice of data that will be included in the checksum
+/// as being part of the data portion of the packet.
+///
+/// If `packet` contains an odd number of bytes the last byte will not be
+/// counted as the first byte of a word together with the first byte of
+/// `extra_data`.
+pub fn ipv6_checksum_adv(packet: &UdpPacket,
                      extra_data: &[u8],
                      source: Ipv6Addr,
                      destination: Ipv6Addr)
@@ -134,7 +162,6 @@ fn udp_header_ipv6_test() {
         assert_eq!(udp_header.get_length(), 8 + 4);
 
         let checksum = ipv6_checksum(&udp_header.to_immutable(),
-                                     &[],
                                      ipv6_source,
                                      ipv6_destination);
         udp_header.set_checksum(checksum);
