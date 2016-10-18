@@ -118,9 +118,7 @@ fn build_udp4_packet(packet: &mut [u8],
     };
 
     let slice = &mut packet[(start + IPV4_HEADER_LEN as usize)..];
-    let checksum = udp::ipv4_checksum(&UdpPacket::new(slice).unwrap(),
-                                      source,
-                                      dest);
+    let checksum = udp::ipv4_checksum(&UdpPacket::new(slice).unwrap(), source, dest);
     MutableUdpPacket::new(slice).unwrap().set_checksum(checksum);
 }
 

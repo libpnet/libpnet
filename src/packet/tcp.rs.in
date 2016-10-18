@@ -234,14 +234,8 @@ fn tcp_options_length(tcp: &TcpPacket) -> usize {
 }
 
 /// Calculate the checksum for a packet built on IPv4
-pub fn ipv4_checksum(packet: &TcpPacket,
-                     source: Ipv4Addr,
-                     destination: Ipv4Addr)
-    -> u16 {
-    ipv4_checksum_adv(packet,
-                      &[],
-                      source,
-                      destination)
+pub fn ipv4_checksum(packet: &TcpPacket, source: Ipv4Addr, destination: Ipv4Addr) -> u16 {
+    ipv4_checksum_adv(packet, &[], source, destination)
 }
 
 /// Calculate the checksum for a packet built on IPv4, Advanced version which

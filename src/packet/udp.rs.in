@@ -26,14 +26,8 @@ pub struct Udp {
 }
 
 /// Calculate the checksum for a packet built on IPv4
-pub fn ipv4_checksum(packet: &UdpPacket,
-                     source: Ipv4Addr,
-                     destination: Ipv4Addr)
-    -> u16be {
-    ipv4_checksum_adv(packet,
-                      &[],
-                      source,
-                      destination)
+pub fn ipv4_checksum(packet: &UdpPacket, source: Ipv4Addr, destination: Ipv4Addr) -> u16be {
+    ipv4_checksum_adv(packet, &[], source, destination)
 }
 
 /// Calculate the checksum for a packet built on IPv4. Advanced version which
@@ -44,9 +38,9 @@ pub fn ipv4_checksum(packet: &UdpPacket,
 /// counted as the first byte of a word together with the first byte of
 /// `extra_data`.
 pub fn ipv4_checksum_adv(packet: &UdpPacket,
-                     extra_data: &[u8],
-                     source: Ipv4Addr,
-                     destination: Ipv4Addr)
+                         extra_data: &[u8],
+                         source: Ipv4Addr,
+                         destination: Ipv4Addr)
     -> u16be {
     util::ipv4_checksum(packet.packet(),
                         3,
@@ -117,9 +111,9 @@ pub fn ipv6_checksum(packet: &UdpPacket,
 /// counted as the first byte of a word together with the first byte of
 /// `extra_data`.
 pub fn ipv6_checksum_adv(packet: &UdpPacket,
-                     extra_data: &[u8],
-                     source: Ipv6Addr,
-                     destination: Ipv6Addr)
+                         extra_data: &[u8],
+                         source: Ipv6Addr,
+                         destination: Ipv6Addr)
     -> u16be {
     util::ipv6_checksum(packet.packet(),
                         3,
