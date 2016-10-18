@@ -26,6 +26,7 @@ use std::mem;
 use std::ptr;
 use std::slice;
 use std::sync::Arc;
+use std::time::Duration;
 
 use datalink::{self, NetworkInterface};
 use datalink::Channel::Ethernet;
@@ -104,7 +105,7 @@ pub struct Config {
 }
 
 impl<'a> From<&'a datalink::Config> for Config {
-    fn from(_config: &datalink::Config) -> Config {
+    fn from(config: &datalink::Config) -> Config {
         Config {
             read_timeout: config.read_timeout,
             write_timeout: config.write_timeout,
@@ -242,7 +243,7 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
                 events: POLLIN,
                 revents: 0,
             };
-            let timespec = self.timeout.as_ref().map(|ts| ts as *const _).unwrap_or(ptr::null());
+            let timespec = self.pc.timeout.as_ref().map(|ts| ts as *const _).unwrap_or(ptr::null());
             if unsafe { ppoll(&mut fds, 1, timespec, ptr::null()) } < 0 {
                 return Err(io::Error::last_os_error());
             }
