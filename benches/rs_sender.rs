@@ -70,7 +70,7 @@ pub fn build_udp4_packet(packet: &mut [u8], msg: &str) {
     }
 
     let checksum = udp::ipv4_checksum(&udp_header.to_immutable(),
-                                      source, destination, IpNextHeaderProtocols::Udp);
+                                      source, destination);
     udp_header.set_checksum(checksum);
 }
 

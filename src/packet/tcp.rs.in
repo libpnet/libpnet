@@ -9,7 +9,7 @@
 use packet::Packet;
 use packet::PacketSize;
 use packet::PrimitiveValues;
-use packet::ip::IpNextHeaderProtocol;
+use packet::ip::IpNextHeaderProtocols;
 use util::{self, Octets};
 
 use pnet_macros_support::types::*;
@@ -234,11 +234,28 @@ fn tcp_options_length(tcp: &TcpPacket) -> usize {
 }
 
 /// Calculate the checksum for a packet built on IPv4
-pub fn ipv4_checksum(packet: &TcpPacket,
-                     source: Ipv4Addr,
-                     destination: Ipv4Addr,
-                     next_level_protocol: IpNextHeaderProtocol) -> u16 {
-    util::ipv4_checksum(packet.packet(), source, destination, next_level_protocol, 8)
+pub fn ipv4_checksum(packet: &TcpPacket, source: Ipv4Addr, destination: Ipv4Addr) -> u16 {
+    ipv4_checksum_adv(packet, &[], source, destination)
+}
+
+/// Calculate the checksum for a packet built on IPv4, Advanced version which
+/// accepts an extra slice of data that will be included in the checksum
+/// as being part of the data portion of the packet.
+///
+/// If `packet` contains an odd number of bytes the last byte will not be
+/// counted as the first byte of a word together with the first byte of
+/// `extra_data`.
+pub fn ipv4_checksum_adv(packet: &TcpPacket,
+                         extra_data: &[u8],
+                         source: Ipv4Addr,
+                         destination: Ipv4Addr)
+    -> u16 {
+    util::ipv4_checksum(packet.packet(),
+                        8,
+                        extra_data,
+                        source,
+                        destination,
+                        IpNextHeaderProtocols::Tcp)
 }
 
 #[test]
@@ -253,10 +270,9 @@ fn tcp_header_ipv4_test() {
     let mut packet = [0u8; IPV4_HEADER_LEN + TCP_HEADER_LEN + TEST_DATA_LEN];
     let ipv4_source = Ipv4Addr::new(192, 168, 2, 1);
     let ipv4_destination = Ipv4Addr::new(192, 168, 111, 51);
-    let next_level_protocol = IpNextHeaderProtocols::Tcp;
     {
         let mut ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
-        ip_header.set_next_level_protocol(next_level_protocol);
+        ip_header.set_next_level_protocol(IpNextHeaderProtocols::Tcp);
         ip_header.set_source(ipv4_source);
         ip_header.set_destination(ipv4_destination);
     }
@@ -293,10 +309,7 @@ fn tcp_header_ipv4_test() {
         let ts = TcpOption::timestamp(743951781, 44056978);
         tcp_header.set_options(&vec![TcpOption::nop(), TcpOption::nop(), ts]);
 
-        let checksum = ipv4_checksum(&tcp_header.to_immutable(),
-                                     ipv4_source,
-                                     ipv4_destination,
-                                     next_level_protocol);
+        let checksum = ipv4_checksum(&tcp_header.to_immutable(), ipv4_source, ipv4_destination);
         tcp_header.set_checksum(checksum);
         assert_eq!(tcp_header.get_checksum(), 0xc031);
     }
