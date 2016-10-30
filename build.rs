@@ -55,8 +55,7 @@ mod macros {
 
 #[cfg(not(feature = "with-syntex"))]
 mod macros {
-    pub fn expand() {
-    }
+    pub fn expand() {}
 }
 
 fn main() {
