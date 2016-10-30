@@ -18,7 +18,7 @@ use pnet_macros_support::types::*;
 pub struct ByteAligned {
     banana: u8,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 
@@ -27,7 +27,7 @@ pub struct ByteAlignedWithVariableLength {
     banana: u16be,
     #[length_fn = "length_fn1"]
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 fn length_fn1(_: &ByteAlignedWithVariableLengthPacket) -> usize {
@@ -41,7 +41,7 @@ pub struct ByteAlignedWithVariableLengthAndPayload {
     #[length_fn = "length_fn2"]
     var_length: Vec<u8>,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 fn length_fn2(_: &ByteAlignedWithVariableLengthAndPayloadPacket) -> usize {
@@ -54,7 +54,7 @@ pub struct NonByteAligned {
     banana: u3,
     tomato: u5,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 
@@ -64,7 +64,7 @@ pub struct NonByteAlignedWithVariableLength {
     tomato: u21be,
     #[length_fn = "length_fn3"]
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 fn length_fn3(_: &NonByteAlignedWithVariableLengthPacket) -> usize {
@@ -79,7 +79,7 @@ pub struct NonByteAlignedWithVariableLengthAndPayload {
     #[length_fn = "length_fn4"]
     var_length: Vec<u8>,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 fn length_fn4(_: &NonByteAlignedWithVariableLengthAndPayloadPacket) -> usize {
@@ -89,9 +89,13 @@ fn length_fn4(_: &NonByteAlignedWithVariableLengthAndPayloadPacket) -> usize {
 
 fn main() {
     assert_eq!(ByteAlignedPacket::minimum_packet_size(), 1);
-    assert_eq!(ByteAlignedWithVariableLengthPacket::minimum_packet_size(), 2);
-    assert_eq!(ByteAlignedWithVariableLengthAndPayloadPacket::minimum_packet_size(), 4);
+    assert_eq!(ByteAlignedWithVariableLengthPacket::minimum_packet_size(),
+               2);
+    assert_eq!(ByteAlignedWithVariableLengthAndPayloadPacket::minimum_packet_size(),
+               4);
     assert_eq!(NonByteAlignedPacket::minimum_packet_size(), 1);
-    assert_eq!(NonByteAlignedWithVariableLengthPacket::minimum_packet_size(), 4);
-    assert_eq!(NonByteAlignedWithVariableLengthAndPayloadPacket::minimum_packet_size(), 2);
+    assert_eq!(NonByteAlignedWithVariableLengthPacket::minimum_packet_size(),
+               4);
+    assert_eq!(NonByteAlignedWithVariableLengthAndPayloadPacket::minimum_packet_size(),
+               2);
 }

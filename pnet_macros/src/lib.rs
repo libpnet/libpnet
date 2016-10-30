@@ -163,13 +163,13 @@ extern crate rustc_plugin;
 
 use syntax::ast;
 use syntax::codemap::Span;
-use syntax::parse::token;
 use syntax::ext::base::{Annotatable, ExtCtxt};
-use syntax::ext::build::AstBuilder;
-use syntax::ptr::P;
 
 #[cfg(not(feature = "with-syntex"))]
 use syntax::ext::base::{MultiDecorator, MultiModifier};
+use syntax::ext::build::AstBuilder;
+use syntax::parse::token;
+use syntax::ptr::P;
 
 mod decorator;
 mod util;
@@ -186,7 +186,8 @@ fn mw(ecx: &mut ExtCtxt, span: Span, word: &'static str) -> P<ast::MetaItem> {
 fn packet_modifier(ecx: &mut ExtCtxt,
                    span: Span,
                    _meta_item: &ast::MetaItem,
-                   item: Annotatable) -> Annotatable {
+                   item: Annotatable)
+    -> Annotatable {
     let item = item.expect_item();
     let mut new_item = (*item).clone();
 
@@ -200,9 +201,10 @@ fn packet_modifier(ecx: &mut ExtCtxt,
                            ecx.meta_list(span,
                                          token::InternedString::new("derive"),
                                          vec![clone, debug]));
-    let a3 = ecx.attribute(span, ecx.meta_list(span,
-                                               token::InternedString::new("allow"),
-                                               vec![unused_attrs]));
+    let a3 = ecx.attribute(span,
+                           ecx.meta_list(span,
+                                         token::InternedString::new("allow"),
+                                         vec![unused_attrs]));
 
     new_item.attrs.push(a1);
     new_item.attrs.push(a2);
@@ -228,15 +230,9 @@ fn remove_attributes_struct(vd: &mut ast::VariantData) {
         let mut attrs = &mut field.attrs;
         attrs.retain(|attr| {
             match attr.node.value.node {
-                ast::MetaItemKind::Word(ref s) => {
-                    *s != "payload"
-                },
-                ast::MetaItemKind::List(ref s, _) => {
-                    *s != "construct_with"
-                },
-                ast::MetaItemKind::NameValue(ref s, _) => {
-                    !(*s == "length_fn" || *s == "length")
-                },
+                ast::MetaItemKind::Word(ref s) => *s != "payload",
+                ast::MetaItemKind::List(ref s, _) => *s != "construct_with",
+                ast::MetaItemKind::NameValue(ref s, _) => !(*s == "length_fn" || *s == "length"),
             }
         });
     }
@@ -246,7 +242,7 @@ fn remove_attributes_struct(vd: &mut ast::VariantData) {
 fn remove_attributes_mod(module: &mut ast::Mod) {
     let mut new_items = Vec::with_capacity(module.items.len());
     for item in &module.items {
-        let new_item = item.clone().map(|mut item|{
+        let new_item = item.clone().map(|mut item| {
             match item.node {
                 ast::ItemKind::Enum(ref mut ed, ref _gs) => {
                     let mut new_variants = Vec::with_capacity(ed.variants.len());
@@ -258,14 +254,14 @@ fn remove_attributes_mod(module: &mut ast::Mod) {
                         new_variants.push(new_variant);
                     }
                     ed.variants = new_variants;
-                },
+                }
                 ast::ItemKind::Struct(ref mut sd, ref _gs) => {
                     remove_attributes_struct(sd);
-                },
+                }
                 ast::ItemKind::Mod(ref mut m) => {
                     remove_attributes_mod(m);
-                },
-                _ => {},
+                }
+                _ => {}
             }
 
             item
@@ -305,4 +301,3 @@ pub fn register(registry: &mut rustc_plugin::Registry) {
     registry.register_syntax_extension(token::intern("packet_generator"),
                                        MultiDecorator(Box::new(decorator::generate_packet)));
 }
-

@@ -14,4 +14,3 @@ extern crate rustc_plugin;
 pub fn plugin_registrar(registry: &mut rustc_plugin::Registry) {
     pnet_macros::register(registry);
 }
-

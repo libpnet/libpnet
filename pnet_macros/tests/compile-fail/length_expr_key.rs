@@ -19,7 +19,7 @@ pub struct PacketWithPayload {
     #[length = "tomato"]
     var_length: Vec<u8>,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 fn main() {}

@@ -20,7 +20,7 @@ pub struct PacketWithPayload {
     #[length_fn = "length_fn"]
     var_length: Vec<u8>,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 #[packet]
@@ -29,7 +29,7 @@ pub struct PacketWithU16 {
     #[length = "length"]
     data: Vec<u16be>,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 fn length_fn(_: &PacketWithPayloadPacket) -> usize {

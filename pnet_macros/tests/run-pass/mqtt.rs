@@ -22,9 +22,11 @@ pub struct Mqtt {
     options: Vec<u8>,
     t: u8,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
-fn mqtt_options_length(_: &MqttPacket) -> usize { 0 }
+fn mqtt_options_length(_: &MqttPacket) -> usize {
+    0
+}
 
-fn main(){}
+fn main() {}

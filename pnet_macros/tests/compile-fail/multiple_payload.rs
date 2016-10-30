@@ -15,9 +15,7 @@ extern crate pnet;
 pub struct PacketWithPayload {
     #[length_fn = ""]
     #[payload]
-    payload1: Vec<u8>,  //~ NOTE first payload defined here
+    payload1: Vec<u8>, // ~ NOTE first payload defined here
     #[payload]
-    payload2: Vec<u8>   //~ ERROR packet may not have multiple payloads
+    payload2: Vec<u8>, // ~ ERROR packet may not have multiple payloads
 }
-
-

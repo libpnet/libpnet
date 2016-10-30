@@ -16,7 +16,7 @@ pub struct Key {
     banana: u8,
     #[length = "banana"]
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 #[packet]
@@ -24,7 +24,7 @@ pub struct AnotherKey {
     banana: u8,
     #[length = "banana + 7"]
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 fn main() {}

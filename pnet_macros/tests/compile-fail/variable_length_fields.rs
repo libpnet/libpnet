@@ -14,9 +14,9 @@ extern crate pnet;
 #[packet]
 pub struct PacketWithPayload {
     banana: u8,
-    var_length: Vec<u8>, //~ ERROR: variable length field must have #[length = ""] or #[length_fn = ""] attribute
+    var_length: Vec<u8>, /* ~ ERROR: variable length field must have #[length = ""] or #[length_fn = ""] attribute */
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 fn main() {}

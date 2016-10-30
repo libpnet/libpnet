@@ -15,7 +15,7 @@ extern crate pnet;
 pub struct PacketWithPayload {
     banana: u8,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 fn main() {}

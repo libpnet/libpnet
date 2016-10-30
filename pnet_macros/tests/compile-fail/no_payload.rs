@@ -13,7 +13,7 @@ extern crate pnet;
 
 #[packet] //~ ERROR: #[packet]'s must contain a payload
 pub struct Test {
-    banana: u8
+    banana: u8,
 }
 
 fn main() {}

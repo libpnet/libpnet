@@ -19,7 +19,7 @@ pub struct PacketWithPayload {
     #[length_fn = "length_fn"]
     packet_option: Vec<PacketOption>,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 #[packet]
@@ -28,7 +28,7 @@ pub struct PacketOption {
     length: u8,
     #[length_fn = "option_length_fn"]
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 fn length_fn(packet_with_payload: &PacketWithPayloadPacket) -> usize {
