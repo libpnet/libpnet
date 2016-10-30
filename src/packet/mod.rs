@@ -20,7 +20,7 @@ pub trait Packet {
 }
 
 /// Represents a generic, mutable, network packet
-pub trait MutablePacket : Packet {
+pub trait MutablePacket: Packet {
     /// Retreive the underlying, mutable, buffer for the packet
     fn packet_mut(&mut self) -> &mut [u8];
 
@@ -41,7 +41,7 @@ pub trait MutablePacket : Packet {
 }
 
 /// Used to convert on-the-wire packets to their #[packet] equivalent
-pub trait FromPacket : Packet {
+pub trait FromPacket: Packet {
     /// The type of the packet to convert from
     type T;
 
@@ -51,7 +51,7 @@ pub trait FromPacket : Packet {
 
 /// Used to find the calculated size of the packet. This is used for occasions where the underlying
 /// buffer is not the same length as the packet itself.
-pub trait PacketSize : Packet {
+pub trait PacketSize: Packet {
     /// Get the calculated size of the packet
     fn packet_size(&self) -> usize;
 }

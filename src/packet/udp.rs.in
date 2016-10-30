@@ -8,11 +8,11 @@
 
 use packet::Packet;
 use packet::ip::IpNextHeaderProtocols;
-use util;
 
 use pnet_macros_support::types::*;
 
 use std::net::{Ipv4Addr, Ipv6Addr};
+use util;
 
 /// Represents an UDP Packet
 #[packet]
@@ -96,10 +96,7 @@ fn udp_header_ipv4_test() {
 
 
 /// Calculate the checksum for a packet built on IPv6
-pub fn ipv6_checksum(packet: &UdpPacket,
-                     source: Ipv6Addr,
-                     destination: Ipv6Addr)
-    -> u16be {
+pub fn ipv6_checksum(packet: &UdpPacket, source: Ipv6Addr, destination: Ipv6Addr) -> u16be {
     ipv6_checksum_adv(packet, &[], source, destination)
 }
 
@@ -155,9 +152,7 @@ fn udp_header_ipv6_test() {
         udp_header.set_length(8 + 4);
         assert_eq!(udp_header.get_length(), 8 + 4);
 
-        let checksum = ipv6_checksum(&udp_header.to_immutable(),
-                                     ipv6_source,
-                                     ipv6_destination);
+        let checksum = ipv6_checksum(&udp_header.to_immutable(), ipv6_source, ipv6_destination);
         udp_header.set_checksum(checksum);
         assert_eq!(udp_header.get_checksum(), 0x1390);
     }
