@@ -12,11 +12,11 @@
 
 extern crate libc;
 
+
+use sockets;
 use std::io;
 use std::mem;
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
-
-use sockets;
 
 
 ///
@@ -32,16 +32,16 @@ fn ntohs(u: u16) -> u16 {
 
 fn make_in6_addr(segments: [u16; 8]) -> sockets::In6Addr {
     let mut val: sockets::In6Addr = unsafe { mem::uninitialized() };
-    val.s6_addr = unsafe { mem::transmute([
-        htons(segments[0]),
-        htons(segments[1]),
-        htons(segments[2]),
-        htons(segments[3]),
-        htons(segments[4]),
-        htons(segments[5]),
-        htons(segments[6]),
-        htons(segments[7]),
-    ]) };
+    val.s6_addr = unsafe {
+        mem::transmute([htons(segments[0]),
+                        htons(segments[1]),
+                        htons(segments[2]),
+                        htons(segments[3]),
+                        htons(segments[4]),
+                        htons(segments[5]),
+                        htons(segments[6]),
+                        htons(segments[7])])
+    };
     val
 }
 
@@ -49,13 +49,16 @@ fn read_u16be(buf: &[u8]) -> u16 {
     ((buf[0] as u16) << 8) | (buf[1] as u16)
 }
 
-pub fn addr_to_sockaddr(addr: SocketAddr, storage: &mut sockets::SockAddrStorage) -> sockets::SockLen {
+pub fn addr_to_sockaddr(addr: SocketAddr,
+                        storage: &mut sockets::SockAddrStorage)
+    -> sockets::SockLen {
     unsafe {
         let len = match addr {
             SocketAddr::V4(sa) => {
                 let ip_addr = sa.ip();
                 let octets = ip_addr.octets();
-                let inaddr = sockets::mk_inaddr(u32::from_be(((octets[0] as u32) << 24) | ((octets[1] as u32) << 16) |
+                let inaddr = sockets::mk_inaddr(u32::from_be(((octets[0] as u32) << 24) |
+                                                             ((octets[1] as u32) << 16) |
                                                              ((octets[2] as u32) << 8) |
                                                              (octets[3] as u32)));
                 let storage = storage as *mut _ as *mut sockets::SockAddrIn;
@@ -96,7 +99,7 @@ pub fn sockaddr_to_addr(storage: &sockets::SockAddrStorage, len: usize) -> io::R
         sockets::AF_INET6 => {
             assert!(len as usize >= mem::size_of::<sockets::SockAddrIn6>());
             let storage: &sockets::SockAddrIn6 = unsafe { mem::transmute(storage) };
-            let arr : [u16; 8] = unsafe { mem::transmute(storage.sin6_addr.s6_addr) };
+            let arr: [u16; 8] = unsafe { mem::transmute(storage.sin6_addr.s6_addr) };
             let a = ntohs(arr[0]);
             let b = ntohs(arr[1]);
             let c = ntohs(arr[2]);
@@ -111,8 +114,6 @@ pub fn sockaddr_to_addr(storage: &sockets::SockAddrStorage, len: usize) -> io::R
                                                 u32::from_be(storage.sin6_flowinfo),
                                                 u32::from_be(storage.sin6_scope_id))))
         }
-        _ => {
-            Err(io::Error::new(io::ErrorKind::InvalidData, "expected IPv4 or IPv6 socket"))
-        }
+        _ => Err(io::Error::new(io::ErrorKind::InvalidData, "expected IPv4 or IPv6 socket")),
     }
 }
