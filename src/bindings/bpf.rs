@@ -30,33 +30,25 @@ const SIZEOF_C_UINT: libc::c_ulong = 4;
 #[cfg(target_os = "freebsd")]
 const SIZEOF_C_LONG: libc::c_int = 8;
 
-pub const BIOCSETIF: libc::c_ulong = IOC_IN | ((SIZEOF_IFREQ & IOCPARM_MASK) << 16usize) |
-                                     (('B' as libc::c_ulong) << 8usize) |
-                                     108;
-pub const BIOCIMMEDIATE: libc::c_ulong = IOC_IN | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
-                                         (('B' as libc::c_ulong) << 8) |
-                                         112;
-pub const BIOCGBLEN: libc::c_ulong = IOC_OUT | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
-                                     (('B' as libc::c_ulong) << 8) |
-                                     102;
-pub const BIOCGDLT: libc::c_ulong = IOC_OUT | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
-                                    (('B' as libc::c_ulong) << 8) |
-                                    106;
+pub const BIOCSETIF: libc::c_ulong =
+    IOC_IN | ((SIZEOF_IFREQ & IOCPARM_MASK) << 16usize) | (('B' as libc::c_ulong) << 8usize) | 108;
+pub const BIOCIMMEDIATE: libc::c_ulong =
+    IOC_IN | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) | (('B' as libc::c_ulong) << 8) | 112;
+pub const BIOCGBLEN: libc::c_ulong =
+    IOC_OUT | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) | (('B' as libc::c_ulong) << 8) | 102;
+pub const BIOCGDLT: libc::c_ulong =
+    IOC_OUT | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) | (('B' as libc::c_ulong) << 8) | 106;
 
-pub const BIOCSBLEN: libc::c_ulong = IOC_INOUT | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
-                                     (('B' as libc::c_ulong) << 8) |
-                                     102;
-pub const BIOCSHDRCMPLT: libc::c_ulong = IOC_IN | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
-                                         (('B' as libc::c_ulong) << 8) |
-                                         117;
-pub const BIOCSRTIMEOUT: libc::c_ulong = IOC_IN | ((SIZEOF_TIMEVAL & IOCPARM_MASK) << 16) |
-                                         (('B' as libc::c_ulong) << 8) |
-                                         109;
+pub const BIOCSBLEN: libc::c_ulong =
+    IOC_INOUT | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) | (('B' as libc::c_ulong) << 8) | 102;
+pub const BIOCSHDRCMPLT: libc::c_ulong =
+    IOC_IN | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) | (('B' as libc::c_ulong) << 8) | 117;
+pub const BIOCSRTIMEOUT: libc::c_ulong =
+    IOC_IN | ((SIZEOF_TIMEVAL & IOCPARM_MASK) << 16) | (('B' as libc::c_ulong) << 8) | 109;
 
 #[cfg(target_os = "freebsd")]
-pub const BIOCFEEDBACK: libc::c_ulong = IOC_IN | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) |
-                                        (('B' as libc::c_ulong) << 8) |
-                                        124;
+pub const BIOCFEEDBACK: libc::c_ulong =
+    IOC_IN | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) | (('B' as libc::c_ulong) << 8) | 124;
 // NOTE Could use BIOCSSEESENT on OS X, though set to 1 by default anyway
 
 pub const DLT_NULL: libc::c_uint = 0;
@@ -118,6 +110,6 @@ pub struct bpf_hdr {
 }
 
 #[cfg(not(windows))]
-extern {
+extern "C" {
     pub fn ioctl(d: libc::c_int, request: libc::c_ulong, ...) -> libc::c_int;
 }
