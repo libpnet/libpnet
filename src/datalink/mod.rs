@@ -10,14 +10,14 @@
 
 extern crate libc;
 
-use std::io;
-use std::option::Option;
-use std::net::IpAddr;
-use std::time::Duration;
 
 use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
-use util::MacAddr;
 use sockets;
+use std::io;
+use std::net::IpAddr;
+use std::option::Option;
+use std::time::Duration;
+use util::MacAddr;
 
 #[cfg(windows)]
 #[path = "winpcap.rs"]
@@ -110,7 +110,7 @@ pub struct Config {
 
     /// BPF/OS X only: The number of /dev/bpf* file descriptors to attempt before failing. Defaults
     /// to: 1000
-    pub bpf_fd_attempts: usize
+    pub bpf_fd_attempts: usize,
 }
 
 impl Default for Config {
@@ -138,8 +138,7 @@ impl Default for Config {
 /// When matching on the returned channel, make sure to include a catch-all so that code doesn't
 /// break when new channel types are added.
 #[inline]
-pub fn channel(network_interface: &NetworkInterface, configuration: Config)
-    -> io::Result<Channel> {
+pub fn channel(network_interface: &NetworkInterface, configuration: Config) -> io::Result<Channel> {
     backend::channel(network_interface, (&configuration).into())
 }
 
@@ -174,7 +173,9 @@ macro_rules! dls {
     }
 }
 
-dls!(EthernetDataLinkSender, MutableEthernetPacket, EthernetPacket);
+dls!(EthernetDataLinkSender,
+     MutableEthernetPacket,
+     EthernetPacket);
 
 macro_rules! dlr {
     ($recv_name:ident, $iter_name:ident, $packet:ident) => {
@@ -197,7 +198,9 @@ macro_rules! dlr {
     }
 }
 
-dlr!(EthernetDataLinkReceiver, EthernetDataLinkChannelIterator, EthernetPacket);
+dlr!(EthernetDataLinkReceiver,
+     EthernetDataLinkChannelIterator,
+     EthernetPacket);
 
 /// Represents a network interface and its associated addresses
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]

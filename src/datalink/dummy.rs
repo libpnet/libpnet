@@ -9,15 +9,15 @@
 //! Support for sending and receiving data link layer packets on a fake network managed
 //! by in memory FIFO queues. Useful for writing tests.
 
+
+use datalink::{self, EthernetDataLinkChannelIterator, EthernetDataLinkReceiver,
+               EthernetDataLinkSender, NetworkInterface};
+use packet::Packet;
+use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use std::io;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 use std::time;
-
-use datalink::{self, EthernetDataLinkChannelIterator, EthernetDataLinkReceiver,
-               EthernetDataLinkSender, NetworkInterface};
-use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-use packet::Packet;
 use util::MacAddr;
 
 /// Configuration for the dummy datalink backend. Contains `std::sync::mpsc`
@@ -198,15 +198,15 @@ pub fn dummy_interface(i: u8) -> NetworkInterface {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
-    use std::io;
-    use std::thread::{sleep, spawn};
-    use std::time::Duration;
+    use datalink::{EthernetDataLinkReceiver, EthernetDataLinkSender};
+    use datalink::Channel::Ethernet;
 
     use packet::{MutablePacket, Packet};
     use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-    use datalink::{EthernetDataLinkReceiver, EthernetDataLinkSender};
-    use datalink::Channel::Ethernet;
+    use std::io;
+    use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
+    use std::thread::{sleep, spawn};
+    use std::time::Duration;
 
     #[test]
     fn send_too_small_packet_size() {

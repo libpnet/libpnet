@@ -10,23 +10,23 @@
 
 extern crate libc;
 
-use std::cmp;
-use std::collections::VecDeque;
-use std::ffi::{CString, CStr};
-use std::str::from_utf8_unchecked;
-use std::io;
-use std::mem;
-use std::slice;
-use std::sync::Arc;
-use std::net::IpAddr;
-use std::time::Duration;
 
 use bindings::{bpf, winpcap};
 use datalink::{self, NetworkInterface};
-use datalink::Channel::Ethernet;
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
+use datalink::Channel::Ethernet;
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
+use std::cmp;
+use std::collections::VecDeque;
+use std::ffi::{CStr, CString};
+use std::io;
+use std::mem;
+use std::net::IpAddr;
+use std::slice;
+use std::str::from_utf8_unchecked;
+use std::sync::Arc;
+use std::time::Duration;
 use util::MacAddr;
 
 struct WinPcapAdapter {
@@ -83,7 +83,8 @@ impl Default for Config {
 
 /// Create a datalink channel using the WinPcap library
 #[inline]
-pub fn channel(network_interface: &NetworkInterface, config: Config)
+pub fn channel(network_interface: &NetworkInterface,
+               config: Config)
     -> io::Result<datalink::Channel> {
     let mut read_buffer = Vec::new();
     read_buffer.resize(config.read_buffer_size, 0u8);
@@ -177,9 +178,8 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
             None
         } else {
             let min = unsafe { cmp::min((*self.packet.packet).Length as usize, len) };
-            let slice: &mut [u8] = unsafe {
-                slice::from_raw_parts_mut((*self.packet.packet).Buffer as *mut u8, min)
-            };
+            let slice: &mut [u8] =
+                unsafe { slice::from_raw_parts_mut((*self.packet.packet).Buffer as *mut u8, min) };
             for chunk in slice.chunks_mut(packet_size) {
                 {
                     let eh = MutableEthernetPacket::new(chunk).unwrap();
