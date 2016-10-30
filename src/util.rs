@@ -206,15 +206,6 @@ fn sockaddr_to_network_addr(sa: *const sockets::SockAddr) -> (Option<MacAddr>, O
     }
 }
 
-/// Get a list of available network interfaces for the current machine.
-/// Deprecated. Instead use the implementation available for your backend.
-/// The default one is at `pnet::datalink::interfaces`.
-#[deprecated(note="Moved to datalink::interfaces()")]
-#[inline]
-pub fn get_network_interfaces() -> Vec<NetworkInterface> {
-    ::datalink::interfaces()
-}
-
 /// Convert value to byte array
 pub trait Octets {
     /// Output type - bytes array
