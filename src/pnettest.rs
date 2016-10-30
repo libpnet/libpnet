@@ -8,22 +8,22 @@
 
 extern crate libc;
 
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-use std::sync::mpsc::channel;
-use std::thread;
-use std::iter::Iterator;
+use datalink;
 
 use packet::Packet;
 use packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
-use packet::ipv4::{Ipv4Packet, MutableIpv4Packet};
 use packet::ipv4;
+use packet::ipv4::{Ipv4Packet, MutableIpv4Packet};
 use packet::ipv6::MutableIpv6Packet;
-use packet::udp::{MutableUdpPacket, UdpPacket};
 use packet::udp;
+use packet::udp::{MutableUdpPacket, UdpPacket};
+use std::iter::Iterator;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::sync::mpsc::channel;
+use std::thread;
 use transport::{TransportChannelType, TransportProtocol, ipv4_packet_iter, transport_channel,
                 udp_packet_iter};
 use transport::TransportProtocol::{Ipv4, Ipv6};
-use datalink;
 
 const IPV4_HEADER_LEN: usize = 20;
 const IPV6_HEADER_LEN: usize = 40;
@@ -85,11 +85,7 @@ fn build_udp_header(packet: &mut [u8], offset: usize) {
 }
 
 fn is_ipv4(ip: &IpAddr) -> bool {
-    if let IpAddr::V4(_) = *ip {
-        true
-    } else {
-        false
-    }
+    if let IpAddr::V4(_) = *ip { true } else { false }
 }
 
 fn build_udp4_packet(packet: &mut [u8],
@@ -166,12 +162,8 @@ fn layer4(ip: IpAddr, header_len: usize) {
     let packet_len = header_len + UDP_HEADER_LEN + TEST_DATA_LEN;
 
     match ip {
-        IpAddr::V4(..) => {
-            build_udp4_packet(&mut packet[..], 0, "l4i4", None)
-        }
-        IpAddr::V6(..) => {
-            build_udp6_packet(&mut packet[..], 0, "l4i6")
-        }
+        IpAddr::V4(..) => build_udp4_packet(&mut packet[..], 0, "l4i4", None),
+        IpAddr::V6(..) => build_udp6_packet(&mut packet[..], 0, "l4i6"),
     };
 
     let udp = UdpPacket::new(&packet[header_len..packet_len]).unwrap();
@@ -295,15 +287,15 @@ fn get_test_interface() -> datalink::NetworkInterface {
     let interfaces = datalink::interfaces();
 
     interfaces.iter()
-                .filter(|x| {
-                    match env::var("PNET_TEST_IFACE") {
-                        Ok(name) => x.name == name,
-                        Err(_) => true,
-                    }
-                })
-                .next()
-                .unwrap()
-                .clone()
+        .filter(|x| {
+            match env::var("PNET_TEST_IFACE") {
+                Ok(name) => x.name == name,
+                Err(_) => true,
+            }
+        })
+        .next()
+        .unwrap()
+        .clone()
 }
 
 #[cfg(not(windows))]
@@ -313,15 +305,15 @@ fn get_test_interface() -> datalink::NetworkInterface {
     let interfaces = datalink::interfaces();
 
     interfaces.iter()
-                .filter(|x| {
-                    match env::var("PNET_TEST_IFACE") {
-                        Ok(name) => x.name == name,
-                        Err(_) => x.is_loopback(),
-                    }
-                })
-                .next()
-                .unwrap()
-                .clone()
+        .filter(|x| {
+            match env::var("PNET_TEST_IFACE") {
+                Ok(name) => x.name == name,
+                Err(_) => x.is_loopback(),
+            }
+        })
+        .next()
+        .unwrap()
+        .clone()
 }
 
 // FIXME Find a way to test this with netmap
@@ -455,8 +447,9 @@ fn layer2_timeouts() {
             match iter.next() {
                 Ok(eh) => {
                     panic!("layer2_timeouts: should have exceeded timeout ({}/{})",
-                           eh.packet().len(), packet_len);
-                },
+                           eh.packet().len(),
+                           packet_len);
+                }
                 Err(e) => {
                     assert!(e.kind() == ErrorKind::TimedOut);
                     return;
@@ -494,6 +487,5 @@ fn check_test_environment() {
     }
 
     #[cfg(any(windows, target_os = "linux"))]
-    fn test_iface() {
-    }
+    fn test_iface() {}
 }

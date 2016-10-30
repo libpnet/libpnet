@@ -25,17 +25,15 @@ mod macros {
     use std::env;
     use std::path::Path;
 
-    const FILES: &'static [&'static str] = &[
-        "ethernet.rs",
-        "gre.rs",
-        "ipv4.rs",
-        "ipv6.rs",
-        "icmp.rs",
-        "udp.rs",
-        "tcp.rs",
-        "arp.rs",
-        "vlan.rs"
-    ];
+    const FILES: &'static [&'static str] = &["ethernet.rs",
+                                             "gre.rs",
+                                             "ipv4.rs",
+                                             "ipv6.rs",
+                                             "icmp.rs",
+                                             "udp.rs",
+                                             "tcp.rs",
+                                             "arp.rs",
+                                             "vlan.rs"];
 
     pub fn expand() {
         let out_dir = env::var_os("OUT_DIR").unwrap();
