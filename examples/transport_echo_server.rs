@@ -14,10 +14,10 @@ use std::iter::repeat;
 
 use pnet::packet::{MutablePacket, Packet};
 use pnet::packet::ip::IpNextHeaderProtocols;
-use pnet::packet::udp::{MutableUdpPacket};
+use pnet::packet::udp::MutableUdpPacket;
 use pnet::transport::{transport_channel, udp_packet_iter};
-use pnet::transport::TransportProtocol::{Ipv4};
-use pnet::transport::TransportChannelType::{Layer4};
+use pnet::transport::TransportProtocol::Ipv4;
+use pnet::transport::TransportChannelType::Layer4;
 
 fn main() {
     let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Test1));
@@ -26,7 +26,10 @@ fn main() {
     // It has a receive buffer of 4096 bytes.
     let (mut tx, mut rx) = match transport_channel(4096, protocol) {
         Ok((tx, rx)) => (tx, rx),
-        Err(e) => panic!("An error occurred when creating the transport channel: {}", e)
+        Err(e) => {
+            panic!("An error occurred when creating the transport channel: {}",
+                   e)
+        }
     };
 
     // We treat received packets as if they were UDP packets
@@ -48,9 +51,9 @@ fn main() {
                 // Send the packet
                 match tx.send_to(new_packet, addr) {
                     Ok(n) => assert_eq!(n, packet.packet().len()),
-                    Err(e) => panic!("failed to send packet: {}", e)
+                    Err(e) => panic!("failed to send packet: {}", e),
                 }
-            },
+            }
             Err(e) => {
                 // If an error occurs, we can handle it here
                 panic!("An error occurred while reading: {}", e);
@@ -58,4 +61,3 @@ fn main() {
         }
     }
 }
-
