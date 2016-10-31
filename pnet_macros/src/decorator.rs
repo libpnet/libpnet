@@ -520,8 +520,9 @@ fn handle_misc_field(cx: &mut GenContext,
                 &get_args[..get_args.len() - 2])
     } else {
         format!("let current_offset = {};
-
-                                {}::new(&_self.packet[current_offset..])", co, ty_str)
+                 {}::new(&_self.packet[current_offset..])",
+                co,
+                ty_str)
     };
     *accessors = format!("{accessors}
                         /// Get the value of the {name} field
@@ -687,8 +688,7 @@ fn handle_vector_field(cx: &mut GenContext,
 
                                     &mut _self.packet[current_offset..end]
                                 }}
-                                \
-                     ",
+                                ",
                             mutators = mutators,
                             name = field.name,
                             co = co,
