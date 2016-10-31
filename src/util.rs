@@ -10,20 +10,20 @@
 
 extern crate libc;
 
-use packet::PrimitiveValues;
-use packet::ip::IpNextHeaderProtocol;
 use datalink::NetworkInterface;
-use pnet_macros_support::types::u16be;
-
-use std::fmt;
-use std::str::FromStr;
-use std::u8;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-use std::mem;
-use std::slice;
 
 use internal;
+use packet::PrimitiveValues;
+use packet::ip::IpNextHeaderProtocol;
+use pnet_macros_support::types::u16be;
 use sockets;
+
+use std::fmt;
+use std::mem;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::slice;
+use std::str::FromStr;
+use std::u8;
 
 /// A MAC address
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
@@ -130,18 +130,12 @@ fn mac_addr_from_str() {
 
 #[test]
 fn str_from_mac_addr() {
-    assert_eq!(
-        format!("{}", MacAddr(0, 0, 0, 0, 0, 0)),
-        "00:00:00:00:00:00"
-        );
-    assert_eq!(
-        format!("{}",MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)),
-        "ff:ff:ff:ff:ff:ff"
-        );
-    assert_eq!(
-        format!("{}",MacAddr(0x12, 0x34, 0x56, 0x78, 0x09, 0xAB)),
-        "12:34:56:78:09:ab"
-        );
+    assert_eq!(format!("{}", MacAddr(0, 0, 0, 0, 0, 0)),
+               "00:00:00:00:00:00");
+    assert_eq!(format!("{}", MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)),
+               "ff:ff:ff:ff:ff:ff");
+    assert_eq!(format!("{}", MacAddr(0x12, 0x34, 0x56, 0x78, 0x09, 0xAB)),
+               "12:34:56:78:09:ab");
 }
 
 #[cfg(target_os = "linux")]
@@ -219,8 +213,14 @@ impl Octets for u64 {
     type Output = [u8; 8];
 
     fn octets(&self) -> Self::Output {
-        [(*self >> 56) as u8, (*self >> 48) as u8, (*self >> 40) as u8, (*self >> 32) as u8,
-         (*self >> 24) as u8, (*self >> 16) as u8, (*self >> 8) as u8, *self as u8]
+        [(*self >> 56) as u8,
+         (*self >> 48) as u8,
+         (*self >> 40) as u8,
+         (*self >> 32) as u8,
+         (*self >> 24) as u8,
+         (*self >> 16) as u8,
+         (*self >> 8) as u8,
+         *self as u8]
     }
 }
 
@@ -228,7 +228,7 @@ impl Octets for u32 {
     type Output = [u8; 4];
 
     fn octets(&self) -> Self::Output {
-        [(*self >> 24) as u8, (*self >> 16) as u8 , (*self >> 8) as u8, *self as u8]
+        [(*self >> 24) as u8, (*self >> 16) as u8, (*self >> 8) as u8, *self as u8]
     }
 }
 
@@ -284,7 +284,7 @@ pub fn ipv4_checksum(data: &[u8],
 
     // Checksum packet header and data
     sum += sum_be_words(data, skipword);
-    sum += sum_be_words(extra_data, extra_data.len()/2);
+    sum += sum_be_words(extra_data, extra_data.len() / 2);
 
     finalize_checksum(sum)
 }
@@ -316,7 +316,7 @@ pub fn ipv6_checksum(data: &[u8],
 
     // Checksum packet header and data
     sum += sum_be_words(data, skipword);
-    sum += sum_be_words(extra_data, extra_data.len()/2);
+    sum += sum_be_words(extra_data, extra_data.len() / 2);
 
     finalize_checksum(sum)
 }

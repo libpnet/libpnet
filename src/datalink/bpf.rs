@@ -10,23 +10,23 @@
 
 extern crate libc;
 
+
+use bindings::bpf;
+use datalink::{self, NetworkInterface};
+use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
+use datalink::Channel::Ethernet;
+use internal;
+use packet::Packet;
+use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
+use sockets;
 use std::collections::VecDeque;
 use std::ffi::CString;
 use std::io;
 use std::iter::repeat;
 use std::mem;
-use std::sync::Arc;
 use std::ptr;
+use std::sync::Arc;
 use std::time::Duration;
-
-use bindings::bpf;
-use packet::Packet;
-use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
-use datalink::{self, NetworkInterface};
-use datalink::Channel::Ethernet;
-use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
-use internal;
-use sockets;
 
 /// BPF-specific configuration
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -79,7 +79,8 @@ impl Default for Config {
 /// Create a datalink channel using the /dev/bpf device
 // NOTE buffer must be word aligned.
 #[inline]
-pub fn channel(network_interface: &NetworkInterface, config: Config)
+pub fn channel(network_interface: &NetworkInterface,
+               config: Config)
     -> io::Result<datalink::Channel> {
     #[cfg(target_os = "freebsd")]
     fn get_fd(_attempts: usize) -> libc::c_int {
@@ -201,11 +202,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
     }
 
     // Enable nonblocking
-    if unsafe {
-        libc::fcntl(fd,
-                    libc::F_SETFL,
-                    libc::O_NONBLOCK)
-    } == -1 {
+    if unsafe { libc::fcntl(fd, libc::F_SETFL, libc::O_NONBLOCK) } == -1 {
         let err = io::Error::last_os_error();
         unsafe {
             sockets::close(fd);
@@ -219,7 +216,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
         fd_set: unsafe { mem::zeroed() },
         write_buffer: repeat(0u8).take(config.write_buffer_size).collect(),
         loopback: loopback,
-        timeout: config.write_timeout.map(|to| internal::duration_to_timespec(to))
+        timeout: config.write_timeout.map(|to| internal::duration_to_timespec(to)),
     });
     unsafe {
         libc::FD_ZERO(&mut sender.fd_set as *mut libc::fd_set);
@@ -230,7 +227,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
         fd_set: unsafe { mem::zeroed() },
         read_buffer: repeat(0u8).take(allocated_read_buffer_size).collect(),
         loopback: loopback,
-        timeout: config.read_timeout.map(|to| internal::duration_to_timespec(to))
+        timeout: config.read_timeout.map(|to| internal::duration_to_timespec(to)),
     });
     unsafe {
         libc::FD_ZERO(&mut receiver.fd_set as *mut libc::fd_set);
@@ -254,7 +251,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                       num_packets: usize,
                       packet_size: usize,
                       func: &mut FnMut(MutableEthernetPacket))
-                      -> Option<io::Result<()>> {
+        -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len >= self.write_buffer.len() {
             None
@@ -276,8 +273,10 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                                   ptr::null_mut(),
                                   &mut self.fd_set as *mut libc::fd_set,
                                   ptr::null_mut(),
-                                  self.timeout.as_ref().map(|to| to as *const libc::timespec)
-                                  .unwrap_or(ptr::null()),
+                                  self.timeout
+                                      .as_ref()
+                                      .map(|to| to as *const libc::timespec)
+                                      .unwrap_or(ptr::null()),
                                   ptr::null())
                 };
                 if ret == -1 {
@@ -304,7 +303,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
     fn send_to(&mut self,
                packet: &EthernetPacket,
                _dst: Option<NetworkInterface>)
-               -> Option<io::Result<()>> {
+        -> Option<io::Result<()>> {
         // If we're sending on the loopback device, discard the ethernet header.
         // The OS will prepend the packet with 4 bytes set to AF_INET.
         let offset = if self.loopback {
@@ -317,8 +316,10 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                           ptr::null_mut(),
                           &mut self.fd_set as *mut libc::fd_set,
                           ptr::null_mut(),
-                          self.timeout.as_ref().map(|to| to as *const libc::timespec)
-                          .unwrap_or(ptr::null()),
+                          self.timeout
+                              .as_ref()
+                              .map(|to| to as *const libc::timespec)
+                              .unwrap_or(ptr::null()),
                           ptr::null())
         };
         if ret == -1 {
@@ -379,19 +380,22 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
                               &mut self.pc.fd_set as *mut libc::fd_set,
                               ptr::null_mut(),
                               ptr::null_mut(),
-                              self.pc.timeout.as_ref().map(|to| to as *const libc::timespec)
-                              .unwrap_or(ptr::null()),
+                              self.pc
+                                  .timeout
+                                  .as_ref()
+                                  .map(|to| to as *const libc::timespec)
+                                  .unwrap_or(ptr::null()),
                               ptr::null())
             };
             if ret == -1 {
-                return Err(io::Error::last_os_error())
+                return Err(io::Error::last_os_error());
             } else if ret == 0 {
-                return Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out"))
+                return Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out"));
             } else {
                 let buflen = match unsafe {
                     libc::read(self.pc.fd.fd,
-                            buffer.as_ptr() as *mut libc::c_void,
-                            buffer.len() as libc::size_t)
+                               buffer.as_ptr() as *mut libc::c_void,
+                               buffer.len() as libc::size_t)
                 } {
                     len if len > 0 => len,
                     _ => return Err(io::Error::last_os_error()),

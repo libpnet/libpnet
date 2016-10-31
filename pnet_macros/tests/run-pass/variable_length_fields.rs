@@ -20,7 +20,7 @@ pub struct PacketWithPayload {
     #[length_fn = "length_fn"]
     var_length: Vec<u8>,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 #[packet]
@@ -29,7 +29,7 @@ pub struct PacketWithU16 {
     #[length = "length"]
     data: Vec<u16be>,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 fn length_fn(_: &PacketWithPayloadPacket) -> usize {
@@ -46,10 +46,7 @@ fn main() {
         p.set_data(&vec![0x0001, 0x1223, 0x3ff4]);
     }
 
-    let ref_packet = [0x06, /* length */
-                      0x00, 0x01,
-                      0x12, 0x23,
-                      0x3f, 0xf4];
+    let ref_packet = [0x06 /* length */, 0x00, 0x01, 0x12, 0x23, 0x3f, 0xf4];
 
     assert_eq!(&ref_packet[..], &packet[..]);
 

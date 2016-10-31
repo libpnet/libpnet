@@ -20,23 +20,23 @@
 
 extern crate libc;
 
-use self::TransportProtocol::{Ipv4, Ipv6};
-use self::TransportChannelType::{Layer3, Layer4};
 
-use std::io;
-use std::io::Error;
-use std::iter::repeat;
-use std::net::{self, IpAddr};
-use std::mem;
-use std::sync::Arc;
+use internal;
 
 use packet::Packet;
 use packet::ip::IpNextHeaderProtocol;
 use packet::ipv4::Ipv4Packet;
 use packet::udp::UdpPacket;
-
-use internal;
+use self::TransportChannelType::{Layer3, Layer4};
+use self::TransportProtocol::{Ipv4, Ipv6};
 use sockets;
+
+use std::io;
+use std::io::Error;
+use std::iter::repeat;
+use std::mem;
+use std::net::{self, IpAddr};
+use std::sync::Arc;
 
 /// Represents a transport layer protocol
 #[derive(Clone, Copy)]
@@ -94,10 +94,13 @@ pub fn transport_channel(buffer_size: usize,
 
     let socket = unsafe {
         match channel_type {
-            Layer4(Ipv4(IpNextHeaderProtocol(proto))) | Layer3(IpNextHeaderProtocol(proto)) =>
-                sockets::socket(sockets::AF_INET, sockets::SOCK_RAW, proto as libc::c_int),
-            Layer4(Ipv6(IpNextHeaderProtocol(proto))) =>
-                sockets::socket(sockets::AF_INET6, sockets::SOCK_RAW, proto as libc::c_int),
+            Layer4(Ipv4(IpNextHeaderProtocol(proto))) |
+            Layer3(IpNextHeaderProtocol(proto)) => {
+                sockets::socket(sockets::AF_INET, sockets::SOCK_RAW, proto as libc::c_int)
+            }
+            Layer4(Ipv6(IpNextHeaderProtocol(proto))) => {
+                sockets::socket(sockets::AF_INET6, sockets::SOCK_RAW, proto as libc::c_int)
+            }
         }
     };
     if socket == sockets::INVALID_SOCKET {
@@ -283,10 +286,6 @@ macro_rules! transport_channel_iterator {
     )
 }
 
-transport_channel_iterator!(Ipv4Packet,
-                            Ipv4TransportChannelIterator,
-                            ipv4_packet_iter);
+transport_channel_iterator!(Ipv4Packet, Ipv4TransportChannelIterator, ipv4_packet_iter);
 
-transport_channel_iterator!(UdpPacket,
-                            UdpTransportChannelIterator,
-                            udp_packet_iter);
+transport_channel_iterator!(UdpPacket, UdpTransportChannelIterator, udp_packet_iter);

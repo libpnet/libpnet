@@ -13,8 +13,8 @@
 extern crate libc;
 extern crate winapi;
 
-use winapi as win;
 use sockets;
+use winapi as win;
 
 #[repr(C)]
 struct _ADAPTER;
@@ -354,7 +354,7 @@ extern "system" {
 
 #[link(name = "Packet")]
 #[allow(improper_ctypes)]
-extern {
+extern "C" {
     // from Packet32.h
     pub fn PacketSendPacket(AdapterObject: LPADAPTER,
                             pPacket: LPPACKET,

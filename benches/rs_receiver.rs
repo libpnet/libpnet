@@ -22,16 +22,13 @@ fn main() {
 
     // Find the network interface with the provided name
     let interfaces = datalink::interfaces();
-    let interface = interfaces.into_iter()
-                              .filter(interface_names_match)
-                              .next()
-                              .unwrap();
+    let interface = interfaces.into_iter().filter(interface_names_match).next().unwrap();
 
     // Create a channel to receive on
     let mut rx = match datalink::channel(&interface, Default::default()) {
         Ok(Ethernet(_, rx)) => rx,
         Ok(_) => panic!("rs_sender: unhandled channel type"),
-        Err(e) => panic!("rs_benchmark: unable to create channel: {}", e)
+        Err(e) => panic!("rs_benchmark: unable to create channel: {}", e),
     };
 
     let mut i = 0usize;
@@ -50,7 +47,7 @@ fn main() {
                     }
                     i = 0;
                 }
-            },
+            }
             Err(e) => {
                 println!("rs_benchmark: unable to receive packet: {}", e);
             }

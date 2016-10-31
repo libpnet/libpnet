@@ -14,4 +14,3 @@ include!(concat!(env!("OUT_DIR"), "/gre.rs"));
 
 #[cfg(not(feature = "with-syntex"))]
 include!("gre.rs.in");
-

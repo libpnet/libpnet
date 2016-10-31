@@ -13,26 +13,26 @@
 extern crate netmap_sys;
 extern crate libc;
 
+
+use datalink::{self, NetworkInterface};
+use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
+use datalink::Channel::Ethernet;
+use packet::Packet;
+use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
+use self::netmap_sys::netmap::{netmap_slot, nm_ring_empty};
 use self::netmap_sys::netmap_user::{NETMAP_BUF, NETMAP_FD, NETMAP_TXRING, nm_close, nm_desc,
                                     nm_nextpkt, nm_open, nm_pkthdr, nm_ring_next};
-use self::netmap_sys::netmap::{netmap_slot, nm_ring_empty};
 
 use std::ffi::CString;
-use std::path::Path;
 use std::fs::File;
 use std::io;
 use std::io::Read;
 use std::mem;
+use std::path::Path;
 use std::ptr;
 use std::slice;
 use std::sync::Arc;
 use std::time::Duration;
-
-use datalink::{self, NetworkInterface};
-use datalink::Channel::Ethernet;
-use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
-use packet::Packet;
-use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 
 #[cfg(any(target_os = "linux", target_os = "freebsd"))]
 #[repr(C)]
@@ -52,9 +52,13 @@ type nfds_t = libc::c_uint;
 #[cfg(target_os = "linux")]
 type nfds_t = libc::c_ulong;
 
-extern {
+extern "C" {
     fn poll(fds: *mut pollfd, nfds: nfds_t, timeout: libc::c_int) -> libc::c_int;
-    fn ppoll(fds: *mut pollfd, nfds: nfds_t, timeout: *const libc::timespec, newsigmask: *const libc::sigset_t) -> libc::c_int;
+    fn ppoll(fds: *mut pollfd,
+             nfds: nfds_t,
+             timeout: *const libc::timespec,
+             newsigmask: *const libc::sigset_t)
+        -> libc::c_int;
 }
 
 struct NmDesc {
@@ -127,14 +131,15 @@ fn get_timeout(to: Option<Duration>) -> Option<libc::timespec> {
     to.map(|dur| {
         libc::timespec {
             tv_sec: dur.as_secs() as libc::time_t,
-            tv_nsec: dur.subsec_nanos() as libc::c_long
+            tv_nsec: dur.subsec_nanos() as libc::c_long,
         }
     })
 }
 
 /// Create a datalink channel using the netmap library
 #[inline]
-pub fn channel(network_interface: &NetworkInterface, config: Config)
+pub fn channel(network_interface: &NetworkInterface,
+               config: Config)
     -> io::Result<datalink::Channel> {
     // FIXME probably want one for each of send/recv
     let desc = NmDesc::new(network_interface);
@@ -142,15 +147,14 @@ pub fn channel(network_interface: &NetworkInterface, config: Config)
         Ok(desc) => {
             let arc = Arc::new(desc);
 
-            Ok(Ethernet(
-                Box::new(DataLinkSenderImpl {
-                    desc: arc.clone(),
-                    timeout: get_timeout(config.write_timeout)
-                }),
-                Box::new(DataLinkReceiverImpl {
-                    desc: arc,
-                    timeout: get_timeout(config.read_timeout)
-                })))
+            Ok(Ethernet(Box::new(DataLinkSenderImpl {
+                            desc: arc.clone(),
+                            timeout: get_timeout(config.write_timeout),
+                        }),
+                        Box::new(DataLinkReceiverImpl {
+                            desc: arc,
+                            timeout: get_timeout(config.read_timeout),
+                        })))
         }
         Err(e) => Err(e),
     }
@@ -178,7 +182,8 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
         let mut packet_idx = 0usize;
         while packet_idx < num_packets {
             unsafe {
-                let timespec = self.timeout.as_ref().map(|ts| ts as *const _).unwrap_or(ptr::null());
+                let timespec =
+                    self.timeout.as_ref().map(|ts| ts as *const _).unwrap_or(ptr::null());
                 if ppoll(&mut fds, 1, timespec, ptr::null()) < 0 {
                     return Some(Err(io::Error::last_os_error()));
                 }
@@ -249,9 +254,7 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
             }
             buf = unsafe { nm_nextpkt(desc, &mut h) };
         }
-        Ok(EthernetPacket::new(unsafe {
-            slice::from_raw_parts(buf, h.len as usize)
-        }).unwrap())
+        Ok(EthernetPacket::new(unsafe { slice::from_raw_parts(buf, h.len as usize) }).unwrap())
     }
 }
 

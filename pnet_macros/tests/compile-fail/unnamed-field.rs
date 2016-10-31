@@ -11,7 +11,9 @@
 
 extern crate pnet;
 
+// ~ ERROR all fields in a packet must be named
 #[packet]
-pub struct Foo(#[payload] pub u8); //~ ERROR all fields in a packet must be named
+pub struct Foo(#[payload]
+               pub u8);
 
 fn main() {}

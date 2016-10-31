@@ -10,11 +10,11 @@ use packet::Packet;
 use packet::PacketSize;
 use packet::PrimitiveValues;
 use packet::ip::IpNextHeaderProtocols;
-use util::{self, Octets};
 
 use pnet_macros_support::types::*;
 
 use std::net::{Ipv4Addr, Ipv6Addr};
+use util::{self, Octets};
 
 /// TCP flags
 #[allow(non_snake_case)]
@@ -22,7 +22,7 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 pub mod TcpFlags {
     use pnet_macros_support::types::*;
     /// NS – ECN-nonce concealment protection (experimental: see RFC 3540).
-    pub const NS: u9be  = 0b100000000;
+    pub const NS: u9be = 0b100000000;
     /// CWR – Congestion Window Reduced (CWR) flag is set by the sending
     /// host to indicate that it received a TCP segment with the ECE flag set
     /// and had responded in congestion control mechanism (added to header by RFC 3168).
@@ -77,28 +77,28 @@ pub struct TcpOptionNumber(pub u8);
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod TcpOptionNumbers {
-  use super::TcpOptionNumber;
+    use super::TcpOptionNumber;
 
-  /// End of Options list
-  pub const EOL: TcpOptionNumber = TcpOptionNumber(0);
+    /// End of Options list
+    pub const EOL: TcpOptionNumber = TcpOptionNumber(0);
 
-  /// No operation
-  pub const NOP: TcpOptionNumber = TcpOptionNumber(1);
+    /// No operation
+    pub const NOP: TcpOptionNumber = TcpOptionNumber(1);
 
-  /// Maximum segment size
-  pub const MSS: TcpOptionNumber = TcpOptionNumber(2);
+    /// Maximum segment size
+    pub const MSS: TcpOptionNumber = TcpOptionNumber(2);
 
-  /// Window scale
-  pub const WSCALE: TcpOptionNumber = TcpOptionNumber(3);
+    /// Window scale
+    pub const WSCALE: TcpOptionNumber = TcpOptionNumber(3);
 
-  /// Selective acknowledgements permitted
-  pub const SACK_PERMITTED: TcpOptionNumber = TcpOptionNumber(4);
+    /// Selective acknowledgements permitted
+    pub const SACK_PERMITTED: TcpOptionNumber = TcpOptionNumber(4);
 
-  /// Selective acknowledgment
-  pub const SACK: TcpOptionNumber = TcpOptionNumber(5);
+    /// Selective acknowledgment
+    pub const SACK: TcpOptionNumber = TcpOptionNumber(5);
 
-  /// Timestamps
-  pub const TIMESTAMPS: TcpOptionNumber = TcpOptionNumber(8);
+    /// Timestamps
+    pub const TIMESTAMPS: TcpOptionNumber = TcpOptionNumber(8);
 }
 
 /// TCP option
@@ -119,9 +119,9 @@ impl TcpOption {
     /// NOP: This may be used to align option fields on 32-bit boundaries for better performance.
     pub fn nop() -> Self {
         TcpOption {
-             number: TcpOptionNumbers::NOP,
-             length: vec![],
-             data: vec![],
+            number: TcpOptionNumbers::NOP,
+            length: vec![],
+            data: vec![],
         }
     }
 
@@ -136,7 +136,7 @@ impl TcpOption {
         TcpOption {
             number: TcpOptionNumbers::TIMESTAMPS,
             length: vec![10],
-            data: data
+            data: data,
         }
     }
 
@@ -149,7 +149,7 @@ impl TcpOption {
         TcpOption {
             number: TcpOptionNumbers::MSS,
             length: vec![4],
-            data: data
+            data: data,
         }
     }
 
@@ -159,7 +159,7 @@ impl TcpOption {
         TcpOption {
             number: TcpOptionNumbers::WSCALE,
             length: vec![3],
-            data: vec![val]
+            data: vec![val],
         }
     }
 
@@ -170,7 +170,7 @@ impl TcpOption {
         TcpOption {
             number: TcpOptionNumbers::SACK_PERMITTED,
             length: vec![2],
-            data: vec![]
+            data: vec![],
         }
     }
 
@@ -186,7 +186,7 @@ impl TcpOption {
         TcpOption {
             number: TcpOptionNumbers::SACK,
             length: vec![1 /* number */ + 1 /* length */ + data.len() as u8],
-            data: data
+            data: data,
         }
     }
 }
@@ -331,7 +331,7 @@ fn tcp_header_ipv4_test() {
 
 #[test]
 fn tcp_test_options_invalid_offset() {
-    let mut buf = [0;20]; // no space for options
+    let mut buf = [0; 20]; // no space for options
     {
         if let Some(mut tcp) = MutableTcpPacket::new(&mut buf[..]) {
             tcp.set_data_offset(10); // set invalid offset
@@ -345,7 +345,7 @@ fn tcp_test_options_invalid_offset() {
 
 #[test]
 fn tcp_test_options_vec_invalid_offset() {
-    let mut buf = [0;20]; // no space for options
+    let mut buf = [0; 20]; // no space for options
     {
         if let Some(mut tcp) = MutableTcpPacket::new(&mut buf[..]) {
             tcp.set_data_offset(10); // set invalid offset
@@ -359,7 +359,7 @@ fn tcp_test_options_vec_invalid_offset() {
 
 #[test]
 fn tcp_test_options_slice_invalid_offset() {
-    let mut buf = [0;20]; // no space for options
+    let mut buf = [0; 20]; // no space for options
     {
         if let Some(mut tcp) = MutableTcpPacket::new(&mut buf[..]) {
             tcp.set_data_offset(10); // set invalid offset
@@ -373,7 +373,7 @@ fn tcp_test_options_slice_invalid_offset() {
 
 #[test]
 fn tcp_test_option_invalid_len() {
-    let mut buf = [0;24];
+    let mut buf = [0; 24];
     {
         if let Some(mut tcp) = MutableTcpPacket::new(&mut buf[..]) {
             tcp.set_data_offset(6);

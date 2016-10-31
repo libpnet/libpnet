@@ -25,17 +25,15 @@ mod macros {
     use std::env;
     use std::path::Path;
 
-    const FILES: &'static [&'static str] = &[
-        "ethernet.rs",
-        "gre.rs",
-        "ipv4.rs",
-        "ipv6.rs",
-        "icmp.rs",
-        "udp.rs",
-        "tcp.rs",
-        "arp.rs",
-        "vlan.rs"
-    ];
+    const FILES: &'static [&'static str] = &["ethernet.rs",
+                                             "gre.rs",
+                                             "ipv4.rs",
+                                             "ipv6.rs",
+                                             "icmp.rs",
+                                             "udp.rs",
+                                             "tcp.rs",
+                                             "arp.rs",
+                                             "vlan.rs"];
 
     pub fn expand() {
         let out_dir = env::var_os("OUT_DIR").unwrap();
@@ -55,8 +53,7 @@ mod macros {
 
 #[cfg(not(feature = "with-syntex"))]
 mod macros {
-    pub fn expand() {
-    }
+    pub fn expand() {}
 }
 
 fn main() {

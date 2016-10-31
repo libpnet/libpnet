@@ -13,4 +13,3 @@ include!(concat!(env!("OUT_DIR"), "/udp.rs"));
 
 #[cfg(not(feature = "with-syntex"))]
 include!("udp.rs.in");
-

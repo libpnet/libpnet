@@ -11,11 +11,12 @@
 
 extern crate pnet;
 
+// ~ ERROR #[packet] structs must be public
 #[packet]
-struct MustBePub { //~ ERROR #[packet] structs must be public
+struct MustBePub {
     banana: u8,
     #[payload]
-    payload: Vec<u8>
+    payload: Vec<u8>,
 }
 
 fn main() {}

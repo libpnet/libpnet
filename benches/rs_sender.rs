@@ -10,12 +10,12 @@ extern crate pnet;
 
 use pnet::datalink;
 use pnet::packet::{MutablePacket, Packet};
-use pnet::packet::ethernet::{EtherTypes, MutableEthernetPacket, EthernetPacket};
+use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
 use pnet::packet::ip::IpNextHeaderProtocols;
-use pnet::packet::ipv4::MutableIpv4Packet;
 use pnet::packet::ipv4;
-use pnet::packet::udp::MutableUdpPacket;
+use pnet::packet::ipv4::MutableIpv4Packet;
 use pnet::packet::udp;
+use pnet::packet::udp::MutableUdpPacket;
 
 use std::env;
 use std::net::Ipv4Addr;
@@ -69,8 +69,7 @@ pub fn build_udp4_packet(packet: &mut [u8], msg: &str) {
         data[4] = msg[4];
     }
 
-    let checksum = udp::ipv4_checksum(&udp_header.to_immutable(),
-                                      source, destination);
+    let checksum = udp::ipv4_checksum(&udp_header.to_immutable(), source, destination);
     udp_header.set_checksum(checksum);
 }
 
@@ -81,16 +80,13 @@ fn main() {
     let destination = (&env::args().nth(2).unwrap()[..]).parse().unwrap();
     // Find the network interface with the provided name
     let interfaces = datalink::interfaces();
-    let interface = interfaces.iter()
-                              .filter(|iface| iface.name == interface_name)
-                              .next()
-                              .unwrap();
+    let interface = interfaces.iter().filter(|iface| iface.name == interface_name).next().unwrap();
 
     // Create a channel to send on
     let mut tx = match datalink::channel(interface, Default::default()) {
         Ok(Ethernet(tx, _)) => tx,
         Ok(_) => panic!("rs_sender: unhandled channel type"),
-        Err(e) => panic!("rs_sender: unable to create channel: {}", e)
+        Err(e) => panic!("rs_sender: unable to create channel: {}", e),
     };
 
     let mut buffer = [0u8; 64];
