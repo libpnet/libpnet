@@ -45,10 +45,6 @@ fn make_in6_addr(segments: [u16; 8]) -> sockets::In6Addr {
     val
 }
 
-fn read_u16be(buf: &[u8]) -> u16 {
-    ((buf[0] as u16) << 8) | (buf[1] as u16)
-}
-
 pub fn addr_to_sockaddr(addr: SocketAddr,
                         storage: &mut sockets::SockAddrStorage)
     -> sockets::SockLen {

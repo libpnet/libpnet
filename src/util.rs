@@ -10,15 +10,12 @@
 
 extern crate libc;
 
-use internal;
 use packet::PrimitiveValues;
 use packet::ip::IpNextHeaderProtocol;
 use pnet_macros_support::types::u16be;
-use sockets;
 
 use std::fmt;
-use std::mem;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{Ipv4Addr, Ipv6Addr};
 use std::slice;
 use std::str::FromStr;
 use std::u8;
@@ -134,68 +131,6 @@ fn str_from_mac_addr() {
                "ff:ff:ff:ff:ff:ff");
     assert_eq!(format!("{}", MacAddr(0x12, 0x34, 0x56, 0x78, 0x09, 0xAB)),
                "12:34:56:78:09:ab");
-}
-
-#[cfg(target_os = "linux")]
-fn sockaddr_to_network_addr(sa: *const sockets::SockAddr) -> (Option<MacAddr>, Option<IpAddr>) {
-    use std::net::SocketAddr;
-
-    unsafe {
-        if sa.is_null() {
-            (None, None)
-        } else if (*sa).sa_family as libc::c_int == libc::AF_PACKET {
-            let sll: *const libc::sockaddr_ll = mem::transmute(sa);
-            let mac = MacAddr((*sll).sll_addr[0],
-                              (*sll).sll_addr[1],
-                              (*sll).sll_addr[2],
-                              (*sll).sll_addr[3],
-                              (*sll).sll_addr[4],
-                              (*sll).sll_addr[5]);
-
-            (Some(mac), None)
-        } else {
-            let addr = internal::sockaddr_to_addr(mem::transmute(sa),
-                                                  mem::size_of::<sockets::SockAddrStorage>());
-
-            match addr {
-                Ok(SocketAddr::V4(sa)) => (None, Some(IpAddr::V4(*sa.ip()))),
-                Ok(SocketAddr::V6(sa)) => (None, Some(IpAddr::V6(*sa.ip()))),
-                Err(_) => (None, None),
-            }
-        }
-    }
-}
-
-#[cfg(any(target_os = "freebsd", target_os = "macos"))]
-fn sockaddr_to_network_addr(sa: *const sockets::SockAddr) -> (Option<MacAddr>, Option<IpAddr>) {
-    use bindings::bpf;
-    use std::net::SocketAddr;
-
-    unsafe {
-        if sa.is_null() {
-            (None, None)
-        } else if (*sa).sa_family as libc::c_int == bpf::AF_LINK {
-            let sdl: *const bpf::sockaddr_dl = mem::transmute(sa);
-            let nlen = (*sdl).sdl_nlen as usize;
-            let mac = MacAddr((*sdl).sdl_data[nlen] as u8,
-                              (*sdl).sdl_data[nlen + 1] as u8,
-                              (*sdl).sdl_data[nlen + 2] as u8,
-                              (*sdl).sdl_data[nlen + 3] as u8,
-                              (*sdl).sdl_data[nlen + 4] as u8,
-                              (*sdl).sdl_data[nlen + 5] as u8);
-
-            (Some(mac), None)
-        } else {
-            let addr = internal::sockaddr_to_addr(mem::transmute(sa),
-                                                  mem::size_of::<sockets::SockAddrStorage>());
-
-            match addr {
-                Ok(SocketAddr::V4(sa)) => (None, Some(IpAddr::V4(*sa.ip()))),
-                Ok(SocketAddr::V6(sa)) => (None, Some(IpAddr::V6(*sa.ip()))),
-                Err(_) => (None, None),
-            }
-        }
-    }
 }
 
 /// Convert value to byte array
