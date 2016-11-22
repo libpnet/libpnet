@@ -82,7 +82,7 @@ macro_rules! impl_index_mut {
 
 #[derive(PartialEq)]
 enum PacketData<'p> {
-    Owned(Box<[u8]>),
+    Owned(Vec<u8>),
     Borrowed(&'p [u8]),
 }
 
@@ -111,7 +111,7 @@ impl_index!(PacketData, RangeFull, [u8]);
 
 #[derive(PartialEq)]
 enum MutPacketData<'p> {
-    Owned(Box<[u8]>),
+    Owned(Vec<u8>),
     Borrowed(&'p mut [u8]),
 }
 
