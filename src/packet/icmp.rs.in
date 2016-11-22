@@ -96,8 +96,8 @@ mod checksum_tests {
     fn checksum_odd_bytes() {
         let mut data = vec![191u8; 7];
         let expected = 49535;
-        let mut pkg = MutableIcmpPacket::new(&mut data[..]).unwrap();
-        assert_eq!(checksum(&pkg.to_immutable()), expected);
+        let pkg = IcmpPacket::new(&mut data[..]).unwrap();
+        assert_eq!(checksum(&pkg), expected);
     }
 }
 
