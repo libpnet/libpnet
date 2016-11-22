@@ -1,5 +1,5 @@
-use packet::{Packet, PrimitiveValues};
-use packet::ethernet::{EtherType, EtherTypes};
+use packet::PrimitiveValues;
+use packet::ethernet::EtherType;
 use pnet_macros_support::types::*;
 
 /// Represents an IEEE 802.1p class of service
@@ -65,27 +65,33 @@ pub struct Vlan {
     payload: Vec<u8>,
 }
 
-#[test]
-fn vlan_packet_test() {
-    let mut packet = [0u8; 4];
-    {
-        let mut vlan_header = MutableVlanPacket::new(&mut packet[..]).unwrap();
-        vlan_header.set_priority_code_point(ClassesOfService::BE);
-        assert_eq!(vlan_header.get_priority_code_point(), ClassesOfService::BE);
+#[cfg(test)]
+mod tests {
+    use packet::ethernet::EtherTypes;
+    use super::*;
 
-        vlan_header.set_drop_eligible_indicator(0);
-        assert_eq!(vlan_header.get_drop_eligible_indicator(), 0);
+    #[test]
+    fn vlan_packet_test() {
+        let mut packet = [0u8; 4];
+        {
+            let mut vlan_header = MutableVlanPacket::new(&mut packet[..]).unwrap();
+            vlan_header.set_priority_code_point(ClassesOfService::BE);
+            assert_eq!(vlan_header.get_priority_code_point(), ClassesOfService::BE);
 
-        vlan_header.set_ethertype(EtherTypes::Ipv4);
-        assert_eq!(vlan_header.get_ethertype(), EtherTypes::Ipv4);
+            vlan_header.set_drop_eligible_indicator(0);
+            assert_eq!(vlan_header.get_drop_eligible_indicator(), 0);
 
-        vlan_header.set_vlan_identifier(0x100);
-        assert_eq!(vlan_header.get_vlan_identifier(), 0x100);
+            vlan_header.set_ethertype(EtherTypes::Ipv4);
+            assert_eq!(vlan_header.get_ethertype(), EtherTypes::Ipv4);
+
+            vlan_header.set_vlan_identifier(0x100);
+            assert_eq!(vlan_header.get_vlan_identifier(), 0x100);
+        }
+
+        let ref_packet = [0x01,  // PCP, DEI, and first nibble of VID
+                          0x00,  // Remainder of VID
+                          0x08,  // First byte of ethertype
+                          0x00]; // Second byte of ethertype
+        assert_eq!(&ref_packet[..], &packet[..]);
     }
-
-    let ref_packet = [0x01,  // PCP, DEI, and first nibble of VID
-                      0x00,  // Remainder of VID
-                      0x08,  // First byte of ethertype
-                      0x00]; // Second byte of ethertype
-    assert_eq!(&ref_packet[..], &packet[..]);
 }

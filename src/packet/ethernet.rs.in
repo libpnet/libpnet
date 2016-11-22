@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use packet::{Packet, PrimitiveValues};
+use packet::PrimitiveValues;
 
 use std::fmt;
 use util::MacAddr;

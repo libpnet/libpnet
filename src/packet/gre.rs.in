@@ -9,8 +9,6 @@
 #[cfg(test)]
 use packet::Packet;
 
-use packet::PrimitiveValues;
-
 use pnet_macros_support::types::*;
 
 /// GRE (Generic Routing Encapsulation) Packet.

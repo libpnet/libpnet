@@ -7,13 +7,12 @@
 // except according to those terms.
 
 use packet::Packet;
-use packet::PacketSize;
 use packet::PrimitiveValues;
 use packet::ip::IpNextHeaderProtocols;
 
 use pnet_macros_support::types::*;
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::Ipv4Addr;
 use util::{self, Octets};
 
 /// TCP flags

@@ -10,8 +10,6 @@
 
 extern crate libc;
 
-use datalink::NetworkInterface;
-
 use internal;
 use packet::PrimitiveValues;
 use packet::ip::IpNextHeaderProtocol;
