@@ -7,13 +7,12 @@
 // except according to those terms.
 
 use packet::Packet;
-use packet::PacketSize;
 use packet::PrimitiveValues;
 use packet::ip::IpNextHeaderProtocols;
 
 use pnet_macros_support::types::*;
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::Ipv4Addr;
 use util::{self, Octets};
 
 /// TCP flags
@@ -339,7 +338,7 @@ fn tcp_test_options_invalid_offset() {
     }
 
     if let Some(tcp) = TcpPacket::new(&buf[..]) {
-        let options = tcp.get_options_iter(); // shouldn't crash here
+        let _options = tcp.get_options_iter(); // shouldn't crash here
     }
 }
 
@@ -353,7 +352,7 @@ fn tcp_test_options_vec_invalid_offset() {
     }
 
     if let Some(tcp) = TcpPacket::new(&buf[..]) {
-        let options = tcp.get_options(); // shouldn't crash here
+        let _options = tcp.get_options(); // shouldn't crash here
     }
 }
 
@@ -367,7 +366,7 @@ fn tcp_test_options_slice_invalid_offset() {
     }
 
     if let Some(tcp) = TcpPacket::new(&buf[..]) {
-        let options = tcp.get_options_raw(); // shouldn't crash here
+        let _options = tcp.get_options_raw(); // shouldn't crash here
     }
 }
 

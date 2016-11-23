@@ -8,7 +8,6 @@
 
 use packet::Packet;
 use packet::ip::IpNextHeaderProtocols;
-use packet::{PacketData, MutPacketData};
 
 use pnet_macros_support::types::*;
 

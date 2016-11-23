@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use packet::{Packet, PrimitiveValues};
+use packet::PrimitiveValues;
 use pnet_macros_support::types::*;
 
 /// Represents the "ICMP type" header field.
@@ -96,8 +96,8 @@ mod checksum_tests {
     fn checksum_odd_bytes() {
         let mut data = vec![191u8; 7];
         let expected = 49535;
-        let mut pkg = MutableIcmpPacket::new(&mut data[..]).unwrap();
-        assert_eq!(checksum(&pkg.to_immutable()), expected);
+        let pkg = IcmpPacket::new(&mut data[..]).unwrap();
+        assert_eq!(checksum(&pkg), expected);
     }
 }
 
@@ -145,7 +145,7 @@ pub mod IcmpTypes {
 
 /// abstraction for ICMP echo reply packets
 pub mod echo_reply {
-    use packet::{Packet, PrimitiveValues};
+    use packet::PrimitiveValues;
     use packet::icmp::{IcmpCode, IcmpType};
     use pnet_macros_support::types::*;
 
@@ -212,7 +212,7 @@ pub mod echo_reply {
 
 /// abstraction for "echo request" ICMP packets.
 pub mod echo_request {
-    use packet::{Packet, PrimitiveValues};
+    use packet::PrimitiveValues;
     use packet::icmp::{IcmpCode, IcmpType};
     use pnet_macros_support::types::*;
 

@@ -640,7 +640,7 @@ impl fmt::Display for IpNextHeaderProtocol {
 }
 
 #[test]
-fn IpNextHeaderProtocol_to_str() {
+fn ip_next_header_protocol_to_str() {
     let hopopt = IpNextHeaderProtocol(0);
     assert_eq!(format!("{}", hopopt), "Hopopt");
     let rvd = IpNextHeaderProtocol(66);

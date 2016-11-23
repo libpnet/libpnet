@@ -9,8 +9,6 @@
 #[cfg(test)]
 use packet::Packet;
 
-use packet::PrimitiveValues;
-
 use pnet_macros_support::types::*;
 
 /// GRE (Generic Routing Encapsulation) Packet.
@@ -95,11 +93,6 @@ pub struct U16BE {
     unused: Vec<u8>,
 }
 
-fn u16be_payload_length(_: &U16BEPacket) -> usize {
-    0
-}
-
-
 /// u32be, but we can't use that directly in a Vec :(
 #[packet]
 pub struct U32BE {
@@ -107,10 +100,6 @@ pub struct U32BE {
     #[length = "0"]
     #[payload]
     unused: Vec<u8>,
-}
-
-fn u32be_payload_length(_: &U32BEPacket) -> usize {
-    0
 }
 
 #[test]

@@ -6,12 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use packet::Packet;
-use packet::PacketSize;
 use packet::PrimitiveValues;
 use packet::ethernet::EtherType;
-
-use pnet_macros_support::types::*;
 
 use std::net::Ipv4Addr;
 use util::MacAddr;

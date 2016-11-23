@@ -731,7 +731,6 @@ fn handle_vector_field(cx: &mut GenContext,
                                 #[allow(trivial_numeric_casts)]
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}_iter(&self) -> {inner_ty_str}Iterable {{
-                                    use pnet::packet::FromPacket;
                                     use std::cmp::min;
                                     let _self = self;
                                     let current_offset = {co};

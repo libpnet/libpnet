@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use packet::{Packet, PrimitiveValues};
+use packet::PrimitiveValues;
 
 use std::fmt;
 use util::MacAddr;
@@ -107,7 +107,7 @@ impl fmt::Display for EtherType {
 }
 
 #[test]
-fn EtherType_to_str() {
+fn ether_type_to_str() {
     let ipv4 = EtherType(0x0800);
     assert_eq!(format!("{}", ipv4), "Ipv4");
     let arp = EtherType(0x0806);
