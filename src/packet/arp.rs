@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! TCP packet abstraction
+//! ARP packet abstraction
 
 #[cfg(feature = "with-syntex")]
 include!(concat!(env!("OUT_DIR"), "/arp.rs"));
