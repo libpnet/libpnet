@@ -1145,8 +1145,9 @@ fn parse_ty(ty: &str) -> Option<(usize, Endianness, EndiannessSpecified)> {
     };
 
     if iter.len() == 3 || iter.len() == 2 {
-        let size = iter.at(1).unwrap();
-        let (endianness, has_end) = if let Some(e) = iter.at(2) {
+        let size = iter.get(1).unwrap().as_str();
+        let (endianness, has_end) = if let Some(e) = iter.get(2) {
+            let e = e.as_str();
             if e == "be" {
                 (Endianness::Big, EndiannessSpecified::Yes)
             } else {
