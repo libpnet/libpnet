@@ -7,7 +7,7 @@
 // except according to those terms.
 
 //! Provides interfaces for interacting with packets and headers
-
+#![allow(missing_docs)]
 #![macro_use]
 
 use std::ops::{Deref, DerefMut, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
@@ -81,20 +81,22 @@ macro_rules! impl_index_mut {
 }
 
 #[derive(PartialEq)]
-enum PacketData<'p> {
+pub enum PacketData<'p> {
+    /// Packet owns its contents
     Owned(Vec<u8>),
+    /// Packet borrows its contents
     Borrowed(&'p [u8]),
 }
 
 impl<'p> PacketData<'p> {
-    fn as_slice(&self) -> &[u8] {
+    pub fn as_slice(&self) -> &[u8] {
         match self {
             &PacketData::Owned(ref data) => data.deref(),
             &PacketData::Borrowed(ref data) => data,
         }
     }
 
-    fn to_immutable(self) -> PacketData<'p> {
+    pub fn to_immutable(self) -> PacketData<'p> {
         self
     }
 
@@ -110,27 +112,27 @@ impl_index!(PacketData, RangeFrom<usize>, [u8]);
 impl_index!(PacketData, RangeFull, [u8]);
 
 #[derive(PartialEq)]
-enum MutPacketData<'p> {
+pub enum MutPacketData<'p> {
     Owned(Vec<u8>),
     Borrowed(&'p mut [u8]),
 }
 
 impl<'p> MutPacketData<'p> {
-    fn as_slice(&self) -> &[u8] {
+    pub fn as_slice(&self) -> &[u8] {
         match self {
             &MutPacketData::Owned(ref data) => data.deref(),
             &MutPacketData::Borrowed(ref data) => data,
         }
     }
 
-    fn as_mut_slice(&mut self) -> &mut [u8] {
+    pub fn as_mut_slice(&mut self) -> &mut [u8] {
         match self {
             &mut MutPacketData::Owned(ref mut data) => data.deref_mut(),
             &mut MutPacketData::Borrowed(ref mut data) => data,
         }
     }
 
-    fn to_immutable(self) -> PacketData<'p> {
+    pub fn to_immutable(self) -> PacketData<'p> {
         match self {
             MutPacketData::Owned(data) => PacketData::Owned(data),
             MutPacketData::Borrowed(data) => PacketData::Borrowed(data),
