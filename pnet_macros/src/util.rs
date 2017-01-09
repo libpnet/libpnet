@@ -916,6 +916,8 @@ fn test_to_mutator() {
 /// little endian.
 pub fn to_little_endian(_ops: Vec<GetOperation>) -> Vec<GetOperation> {
     let mut ops = _ops.clone();
-    ops.reverse();
+    for (op, be_op) in ops.iter_mut().zip(_ops.iter().rev()) {
+	op.shiftl = be_op.shiftl;
+    }
     ops
 }
