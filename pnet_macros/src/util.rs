@@ -915,6 +915,9 @@ fn test_to_mutator() {
 /// Takes a set of operations to get a field in big endian, and converts them to get the field in
 /// little endian.
 pub fn to_little_endian(_ops: Vec<GetOperation>) -> Vec<GetOperation> {
-    // FIXME
-    unimplemented!()
+    let mut ops = _ops.clone();
+    for (op, be_op) in ops.iter_mut().zip(_ops.iter().rev()) {
+	op.shiftl = be_op.shiftl;
+    }
+    ops
 }
