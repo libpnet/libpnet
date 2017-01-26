@@ -28,6 +28,7 @@ use packet::ip::IpNextHeaderProtocol;
 use packet::ipv4::Ipv4Packet;
 use packet::udp::UdpPacket;
 use packet::icmp::IcmpPacket;
+use packet::tcp::TcpPacket;
 use self::TransportChannelType::{Layer3, Layer4};
 use self::TransportProtocol::{Ipv4, Ipv6};
 use sockets;
@@ -292,3 +293,6 @@ transport_channel_iterator!(Ipv4Packet, Ipv4TransportChannelIterator, ipv4_packe
 transport_channel_iterator!(UdpPacket, UdpTransportChannelIterator, udp_packet_iter);
 
 transport_channel_iterator!(IcmpPacket, IcmpTransportChannelIterator, icmp_packet_iter);
+
+transport_channel_iterator!(TcpPacket, TcpTransportChannelIterator, tcp_packet_iter);
+
