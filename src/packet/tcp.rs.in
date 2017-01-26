@@ -13,6 +13,7 @@ use packet::ip::IpNextHeaderProtocols;
 use pnet_macros_support::types::*;
 
 use std::net::Ipv4Addr;
+use std::net::Ipv6Addr;
 use util::{self, Octets};
 
 /// TCP flags
@@ -250,6 +251,31 @@ pub fn ipv4_checksum_adv(packet: &TcpPacket,
                          destination: Ipv4Addr)
     -> u16 {
     util::ipv4_checksum(packet.packet(),
+                        8,
+                        extra_data,
+                        source,
+                        destination,
+                        IpNextHeaderProtocols::Tcp)
+}
+
+/// Calculate the checksum for a packet built on IPv6
+pub fn ipv6_checksum(packet: &TcpPacket, source: Ipv6Addr, destination: Ipv6Addr) -> u16 {
+    ipv6_checksum_adv(packet, &[], source, destination)
+}
+
+/// Calculate the checksum for a packet built on IPv6, Advanced version which
+/// accepts an extra slice of data that will be included in the checksum
+/// as being part of the data portion of the packet.
+///
+/// If `packet` contains an odd number of bytes the last byte will not be
+/// counted as the first byte of a word together with the first byte of
+/// `extra_data`.
+pub fn ipv6_checksum_adv(packet: &TcpPacket,
+                         extra_data: &[u8],
+                         source: Ipv6Addr,
+                         destination: Ipv6Addr)
+    -> u16 {
+    util::ipv6_checksum(packet.packet(),
                         8,
                         extra_data,
                         source,
