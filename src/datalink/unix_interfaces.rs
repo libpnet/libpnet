@@ -8,7 +8,7 @@
 
 //! Interface listing implementation for all non-Windows platforms
 
-use datalink::NetworkInterface;
+use datalink::{NetworkInterface, IpNetmask};
 
 use internal;
 use libc;
@@ -49,11 +49,15 @@ pub fn interfaces() -> Vec<NetworkInterface> {
             let bytes = CStr::from_ptr(c_str).to_bytes();
             let name = from_utf8_unchecked(bytes).to_owned();
             let (mac, ip) = sockaddr_to_network_addr((*addr).ifa_addr as *const libc::sockaddr);
+            let (_, netmask) = sockaddr_to_network_addr((*addr).ifa_netmask as *const libc::sockaddr);
             let ni = NetworkInterface {
                 name: name.clone(),
                 index: 0,
                 mac: mac,
-                ips: ip.map(|ip| [ip].to_vec()),
+                ips: ip.map(|ip| vec![IpNetmask {
+                    ip: ip,
+                    netmask: netmask
+                }]),
                 flags: (*addr).ifa_flags,
             };
             let mut found: bool = false;

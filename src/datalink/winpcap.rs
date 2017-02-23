@@ -12,7 +12,7 @@ extern crate libc;
 
 
 use bindings::{bpf, winpcap};
-use datalink::{self, NetworkInterface};
+use datalink::{self, NetworkInterface, IpNetmask};
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use datalink::Channel::Ethernet;
 use packet::Packet;
@@ -318,12 +318,20 @@ pub fn interfaces() -> Vec<NetworkInterface> {
                     (*cursor).Address[5])
         };
         let mut ip_cursor = unsafe { &mut (*cursor).IpAddressList as winpcap::PIP_ADDR_STRING };
-        let mut ips: Vec<IpAddr> = Vec::new();
+        let mut ips: Vec<IpNetmask> = Vec::new();
         while !ip_cursor.is_null() {
             let ip_str_ptr = unsafe { &(*ip_cursor) }.IpAddress.String.as_ptr() as *const i8;
-            let bytes = unsafe { CStr::from_ptr(ip_str_ptr).to_bytes() };
-            let ip_str = unsafe { from_utf8_unchecked(bytes).to_owned() };
-            ips.push(ip_str.parse().unwrap());
+            let ip_bytes = unsafe { CStr::from_ptr(ip_str_ptr).to_bytes() };
+            let ip_str = unsafe { from_utf8_unchecked(ip_bytes).to_owned() };
+
+            let mask_str_ptr = unsafe { &(*ip_cursor) }.IpMask.String.as_ptr() as *const i8;
+            let mask_bytes = unsafe { CStr::from_ptr(mask_str_ptr).to_bytes() };
+            let mask_str = unsafe { from_utf8_unchecked(mask_bytes).to_owned() };
+
+            ips.push(IpNetmask {
+                ip: ip_str.parse().unwrap(),
+                netmask: Some(mask_str.parse().unwrap()),
+            });
             ip_cursor = unsafe { (*ip_cursor).Next };
         }
 
