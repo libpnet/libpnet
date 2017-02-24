@@ -345,7 +345,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
                 name: name_str,
                 index: (*cursor).Index,
                 mac: Some(mac),
-                ips: Some(ips),
+                ips: ips,
                 // flags: (*cursor).Type, // FIXME [windows]
                 flags: 0,
             });

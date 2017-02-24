@@ -27,13 +27,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
             None => old.mac,
             _ => new.mac,
         };
-        match (&mut old.ips, &new.ips) {
-            (&mut Some(ref mut old_ips), &Some(ref new_ips)) => {
-                old_ips.extend_from_slice(&new_ips[..])
-            }
-            (&mut ref mut old_ips @ None, &Some(ref new_ips)) => *old_ips = Some(new_ips.clone()),
-            _ => {}
-        };
+        old.ips.extend_from_slice(&new.ips[..]);
         old.flags = old.flags | new.flags;
     }
 
@@ -54,10 +48,13 @@ pub fn interfaces() -> Vec<NetworkInterface> {
                 name: name.clone(),
                 index: 0,
                 mac: mac,
-                ips: ip.map(|ip| vec![IpNetmask {
-                    ip: ip,
-                    netmask: netmask
-                }]),
+                ips: match ip {
+                    Some(ip) => vec![IpNetmask {
+                        ip: ip,
+                        netmask: netmask,
+                    }],
+                    None => Vec::new(),
+                },
                 flags: (*addr).ifa_flags,
             };
             let mut found: bool = false;

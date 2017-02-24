@@ -212,7 +212,7 @@ pub struct NetworkInterface {
     /// A MAC address for the interface
     pub mac: Option<MacAddr>,
     /// IP addresses and netmasks for the interface
-    pub ips: Option<Vec<IpNetmask>>,
+    pub ips: Vec<IpNetmask>,
     /// Operating system specific flags for the interface
     pub flags: u32,
 }
