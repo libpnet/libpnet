@@ -21,6 +21,7 @@ use std::str::FromStr;
 use std::u8;
 
 /// A MAC address
+#[cfg_attr(feature = "with-serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
 
