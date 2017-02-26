@@ -330,7 +330,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
 
             ips.push(IpNetmask {
                 ip: ip_str.parse().unwrap(),
-                netmask: Some(mask_str.parse().unwrap()),
+                netmask: mask_str.parse().unwrap(),
             });
             ip_cursor = unsafe { (*ip_cursor).Next };
         }

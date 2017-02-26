@@ -235,7 +235,7 @@ pub struct IpNetmask {
     /// IP address
     pub ip: IpAddr,
     /// Subnet mask
-    pub netmask: Option<IpAddr>,
+    pub netmask: IpAddr,
 }
 
 /// Get a list of available network interfaces for the current machine.

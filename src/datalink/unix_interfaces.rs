@@ -14,7 +14,7 @@ use internal;
 use libc;
 use std::ffi::{CStr, CString};
 use std::mem;
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::os::raw::c_char;
 use std::str::from_utf8_unchecked;
 
@@ -51,7 +51,16 @@ pub fn interfaces() -> Vec<NetworkInterface> {
                 ips: match ip {
                     Some(ip) => vec![IpNetmask {
                         ip: ip,
-                        netmask: netmask,
+                        netmask: match netmask {
+                            Some(n) => n,
+                            // Awaiting stabilisation: https://github.com/rust-lang/rust/pull/39307
+                            // None if ip.is_ipv4() => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+                            // None if ip.is_ipv6() => IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
+                            None => match ip {
+                                IpAddr::V4(_) => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+                                IpAddr::V6(_) => IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
+                            },
+                        },
                     }],
                     None => Vec::new(),
                 },
