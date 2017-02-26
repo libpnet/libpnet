@@ -115,6 +115,12 @@
 #[cfg(feature = "benchmark")]
 extern crate test;
 
+#[cfg(feature = "with-serde")]
+extern crate serde;
+#[cfg(feature = "with-serde")]
+#[macro_use]
+extern crate serde_derive;
+
 extern crate libc;
 extern crate winapi;
 extern crate pnet_macros_support;
