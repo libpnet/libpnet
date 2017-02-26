@@ -211,8 +211,8 @@ pub struct NetworkInterface {
     pub index: u32,
     /// A MAC address for the interface
     pub mac: Option<MacAddr>,
-    /// An IP addresses for the interface
-    pub ips: Option<Vec<IpAddr>>,
+    /// IP addresses and netmasks for the interface
+    pub ips: Vec<IpNetmask>,
     /// Operating system specific flags for the interface
     pub flags: u32,
 }
@@ -227,6 +227,15 @@ impl NetworkInterface {
     pub fn is_loopback(&self) -> bool {
         self.flags & (sockets::IFF_LOOPBACK as u32) != 0
     }
+}
+
+/// Represents an IP address and subnet mask
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
+pub struct IpNetmask {
+    /// IP address
+    pub ip: IpAddr,
+    /// Subnet mask
+    pub netmask: IpAddr,
 }
 
 /// Get a list of available network interfaces for the current machine.

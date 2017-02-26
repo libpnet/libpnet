@@ -191,7 +191,7 @@ pub fn dummy_interface(i: u8) -> NetworkInterface {
         name: format!("eth{}", i),
         index: i as u32,
         mac: Some(MacAddr::new(1, 2, 3, 4, 5, i)),
-        ips: None,
+        ips: Vec::new(),
         flags: 0,
     }
 }

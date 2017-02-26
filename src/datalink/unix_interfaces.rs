@@ -8,13 +8,13 @@
 
 //! Interface listing implementation for all non-Windows platforms
 
-use datalink::NetworkInterface;
+use datalink::{NetworkInterface, IpNetmask};
 
 use internal;
 use libc;
 use std::ffi::{CStr, CString};
 use std::mem;
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::os::raw::c_char;
 use std::str::from_utf8_unchecked;
 
@@ -27,13 +27,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
             None => old.mac,
             _ => new.mac,
         };
-        match (&mut old.ips, &new.ips) {
-            (&mut Some(ref mut old_ips), &Some(ref new_ips)) => {
-                old_ips.extend_from_slice(&new_ips[..])
-            }
-            (&mut ref mut old_ips @ None, &Some(ref new_ips)) => *old_ips = Some(new_ips.clone()),
-            _ => {}
-        };
+        old.ips.extend_from_slice(&new.ips[..]);
         old.flags = old.flags | new.flags;
     }
 
@@ -49,11 +43,27 @@ pub fn interfaces() -> Vec<NetworkInterface> {
             let bytes = CStr::from_ptr(c_str).to_bytes();
             let name = from_utf8_unchecked(bytes).to_owned();
             let (mac, ip) = sockaddr_to_network_addr((*addr).ifa_addr as *const libc::sockaddr);
+            let (_, netmask) = sockaddr_to_network_addr((*addr).ifa_netmask as *const libc::sockaddr);
             let ni = NetworkInterface {
                 name: name.clone(),
                 index: 0,
                 mac: mac,
-                ips: ip.map(|ip| [ip].to_vec()),
+                ips: match ip {
+                    Some(ip) => vec![IpNetmask {
+                        ip: ip,
+                        netmask: match netmask {
+                            Some(n) => n,
+                            // Awaiting stabilisation: https://github.com/rust-lang/rust/pull/39307
+                            // None if ip.is_ipv4() => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+                            // None if ip.is_ipv6() => IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
+                            None => match ip {
+                                IpAddr::V4(_) => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+                                IpAddr::V6(_) => IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
+                            },
+                        },
+                    }],
+                    None => Vec::new(),
+                },
                 flags: (*addr).ifa_flags,
             };
             let mut found: bool = false;
