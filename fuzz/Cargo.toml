@@ -5,13 +5,38 @@ version = "0.0.1"
 authors = ["Automatically generated"]
 publish = false
 
+[package.metadata]
+cargo-fuzz = true
+
 [dependencies.pnet]
 path = ".."
+[dependencies.libfuzzer-sys]
+git = "https://github.com/rust-fuzz/libfuzzer-sys.git"
 
 # Prevent this from interfering with workspaces
 [workspace]
 members = ["."]
 
 [[bin]]
-name = "fuzzer_script_1"
-path = "fuzzers/fuzzer_script_1.rs"
+name = "ether"
+path = "fuzzers/ether.rs"
+
+[[bin]]
+name = "ipv4"
+path = "fuzzers/ipv4.rs"
+
+[[bin]]
+name = "tcp"
+path = "fuzzers/tcp.rs"
+
+[[bin]]
+name = "udp"
+path = "fuzzers/udp.rs"
+
+[[bin]]
+name = "gre"
+path = "fuzzers/gre.rs"
+
+[[bin]]
+name = "vlan"
+path = "fuzzers/vlan.rs"
