@@ -54,6 +54,10 @@ optional = true
 version = "0.9"
 optional = true
 
+[dependencies.pcap]
+version = "0.5.*"
+optional = true
+
 [dependencies.pnet_macros]
 optional = true
 default-features = false

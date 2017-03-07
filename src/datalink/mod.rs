@@ -54,7 +54,11 @@ mod backend;
 #[cfg(feature = "netmap")]
 pub mod netmap;
 
+#[cfg(feature = "pcap")]
+pub mod pcap;
+
 pub mod dummy;
+
 
 /// Type of data link channel to present (Linux only)
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
