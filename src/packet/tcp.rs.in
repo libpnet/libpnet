@@ -414,3 +414,17 @@ fn tcp_test_option_invalid_len() {
         }
     }
 }
+
+#[test]
+fn tcp_test_payload_slice_invalid_offset() {
+    let mut buf = [0; 20];
+    {
+        if let Some(mut tcp) = MutableTcpPacket::new(&mut buf[..]) {
+            tcp.set_data_offset(10); // set invalid offset
+        }
+    }
+
+    if let Some(tcp) = TcpPacket::new(&buf[..]) {
+        assert_eq!(tcp.payload().len(), 0);
+    }
+}

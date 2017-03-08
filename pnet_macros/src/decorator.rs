@@ -1035,6 +1035,9 @@ fn generate_packet_trait_impls(cx: &mut GenContext,
             fn payload{u_mut}<'p>(&'p {mut_} self) -> &'p {mut_} [u8] {{
                 let _self = self;
                 {pre}
+                if _self.packet.len() <= {start} {{
+                    return &{mut_} [];
+                }}
                 &{mut_} _self.packet[{start}..{end}]
             }}
         }}", name = name,
