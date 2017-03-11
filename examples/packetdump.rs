@@ -23,6 +23,8 @@ use pnet::packet::ipv6::Ipv6Packet;
 use pnet::packet::tcp::TcpPacket;
 use pnet::packet::udp::UdpPacket;
 use std::env;
+use std::io::{self, Write};
+use std::process;
 use std::net::IpAddr;
 
 fn handle_udp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8]) {
@@ -182,7 +184,13 @@ fn handle_packet(interface_name: &str, ethernet: &EthernetPacket) {
 fn main() {
     use pnet::datalink::Channel::Ethernet;
 
-    let iface_name = env::args().nth(1).unwrap();
+    let iface_name = match env::args().nth(1) {
+        Some(n) => n,
+        None => {
+            writeln!(io::stderr(), "USAGE: packetdump <NETWORK INTERFACE>").unwrap();
+            process::exit(1);
+        },
+    };
     let interface_names_match = |iface: &NetworkInterface| iface.name == iface_name;
 
     // Find the network interface with the provided name
