@@ -261,10 +261,10 @@ fn ipv6_word_sum(ip: Ipv6Addr) -> u32 {
 
 /// Sum all words (16 bit chunks) in the given data. The word at word offset
 /// `skipword` will be skipped. Each word is treated as big endian.
-fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
+fn sum_be_words(data: &[u8], mut skipword: usize) -> u32 {
     let len = data.len();
     let wdata: &[u16] = unsafe { slice::from_raw_parts(data.as_ptr() as *const u16, len / 2) };
-    assert!(skipword <= wdata.len());
+    skipword = ::std::cmp::min(skipword, wdata.len());
 
     let mut sum = 0u32;
     let mut i = 0;
@@ -283,6 +283,22 @@ fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
     }
 
     sum
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sum_be_words;
+
+    #[test]
+    fn sum_be_words_different_skipwords() {
+        let data = (0..11).collect::<Vec<u8>>();
+        assert_eq!(7190, sum_be_words(&data, 1));
+        assert_eq!(6676, sum_be_words(&data, 2));
+        // Assert having the skipword outside the range gives correct and equal
+        // results
+        assert_eq!(7705, sum_be_words(&data, 99));
+        assert_eq!(7705, sum_be_words(&data, 101));
+    }
 }
 
 #[cfg(all(test, feature = "benchmark"))]
