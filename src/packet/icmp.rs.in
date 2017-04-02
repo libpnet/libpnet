@@ -49,15 +49,15 @@ impl PrimitiveValues for IcmpCode {
 #[packet]
 pub struct Icmp {
     #[construct_with(u8)]
-    icmp_type: IcmpType,
+    pub icmp_type: IcmpType,
     #[construct_with(u8)]
-    icmp_code: IcmpCode,
-    checksum: u16be,
+    pub icmp_code: IcmpCode,
+    pub checksum: u16be,
     // theoritically, the header is 64 bytes long, but since the "Rest Of Header" part depends on
     // the ICMP type and ICMP code, we consider it's part of the payload.
     // rest_of_header: u32be,
     #[payload]
-    payload: Vec<u8>,
+    pub payload: Vec<u8>,
 }
 
 /// Calculates the checksum of an ICMP packet

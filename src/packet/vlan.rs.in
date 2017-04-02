@@ -56,13 +56,13 @@ pub mod ClassesOfService {
 #[packet]
 pub struct Vlan {
     #[construct_with(u3)]
-    priority_code_point: ClassOfService,
-    drop_eligible_indicator: u1,
-    vlan_identifier: u12be,
+    pub priority_code_point: ClassOfService,
+    pub drop_eligible_indicator: u1,
+    pub vlan_identifier: u12be,
     #[construct_with(u16be)]
-    ethertype: EtherType,
+    pub ethertype: EtherType,
     #[payload]
-    payload: Vec<u8>,
+    pub payload: Vec<u8>,
 }
 
 #[cfg(test)]
