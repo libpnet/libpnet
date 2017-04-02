@@ -8,13 +8,14 @@
 
 //! Interface listing implementation for all non-Windows platforms
 
-use datalink::{NetworkInterface, IpNetmask};
+use datalink::{NetworkInterface};
 
+use ipnetwork::{ip_mask_to_prefix, IpNetwork};
 use internal;
 use libc;
 use std::ffi::{CStr, CString};
 use std::mem;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::IpAddr;
 use std::os::raw::c_char;
 use std::str::from_utf8_unchecked;
 
@@ -44,26 +45,13 @@ pub fn interfaces() -> Vec<NetworkInterface> {
             let name = from_utf8_unchecked(bytes).to_owned();
             let (mac, ip) = sockaddr_to_network_addr((*addr).ifa_addr as *const libc::sockaddr);
             let (_, netmask) = sockaddr_to_network_addr((*addr).ifa_netmask as *const libc::sockaddr);
+            let prefix = netmask.and_then(|netmask| ip_mask_to_prefix(netmask).ok()).unwrap_or(0);
+            let network = ip.and_then(|ip| IpNetwork::new(ip, prefix).ok());
             let ni = NetworkInterface {
                 name: name.clone(),
                 index: 0,
                 mac: mac,
-                ips: match ip {
-                    Some(ip) => vec![IpNetmask {
-                        ip: ip,
-                        netmask: match netmask {
-                            Some(n) => n,
-                            // Awaiting stabilisation: https://github.com/rust-lang/rust/pull/39307
-                            // None if ip.is_ipv4() => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-                            // None if ip.is_ipv6() => IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
-                            None => match ip {
-                                IpAddr::V4(_) => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-                                IpAddr::V6(_) => IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
-                            },
-                        },
-                    }],
-                    None => Vec::new(),
-                },
+                ips: network.into_iter().collect(),
                 flags: (*addr).ifa_flags,
             };
             let mut found: bool = false;

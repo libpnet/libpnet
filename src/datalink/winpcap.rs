@@ -12,21 +12,21 @@ extern crate libc;
 
 
 use bindings::{bpf, winpcap};
-use datalink::{self, NetworkInterface, IpNetmask};
+use datalink::{self, NetworkInterface};
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use datalink::Channel::Ethernet;
 use packet::Packet;
 use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
+
+use ipnetwork::{ip_mask_to_prefix, IpNetwork};
 use std::cmp;
 use std::collections::VecDeque;
 use std::ffi::{CStr, CString};
 use std::io;
 use std::mem;
-use std::net::IpAddr;
 use std::slice;
 use std::str::from_utf8_unchecked;
 use std::sync::Arc;
-use std::time::Duration;
 use util::MacAddr;
 
 struct WinPcapAdapter {
@@ -318,20 +318,11 @@ pub fn interfaces() -> Vec<NetworkInterface> {
                     (*cursor).Address[5])
         };
         let mut ip_cursor = unsafe { &mut (*cursor).IpAddressList as winpcap::PIP_ADDR_STRING };
-        let mut ips: Vec<IpNetmask> = Vec::new();
+        let mut ips = Vec::new();
         while !ip_cursor.is_null() {
-            let ip_str_ptr = unsafe { &(*ip_cursor) }.IpAddress.String.as_ptr() as *const i8;
-            let ip_bytes = unsafe { CStr::from_ptr(ip_str_ptr).to_bytes() };
-            let ip_str = unsafe { from_utf8_unchecked(ip_bytes).to_owned() };
-
-            let mask_str_ptr = unsafe { &(*ip_cursor) }.IpMask.String.as_ptr() as *const i8;
-            let mask_bytes = unsafe { CStr::from_ptr(mask_str_ptr).to_bytes() };
-            let mask_str = unsafe { from_utf8_unchecked(mask_bytes).to_owned() };
-
-            ips.push(IpNetmask {
-                ip: ip_str.parse().unwrap(),
-                netmask: mask_str.parse().unwrap(),
-            });
+            if let Ok(ip_network) = parse_ip_network(ip_cursor) {
+                ips.push(ip_network);
+            }
             ip_cursor = unsafe { (*ip_cursor).Next };
         }
 
@@ -386,4 +377,19 @@ pub fn interfaces() -> Vec<NetworkInterface> {
     };
 
     vec
+}
+
+fn parse_ip_network(ip_cursor: winpcap::PIP_ADDR_STRING) -> Result<IpNetwork, ()> {
+    let ip_str_ptr = unsafe { &(*ip_cursor) }.IpAddress.String.as_ptr() as *const i8;
+    let ip_bytes = unsafe { CStr::from_ptr(ip_str_ptr).to_bytes() };
+    let ip_str = unsafe { from_utf8_unchecked(ip_bytes).to_owned() };
+    let ip = ip_str.parse().map_err(|_| ())?;
+
+    let mask_str_ptr = unsafe { &(*ip_cursor) }.IpMask.String.as_ptr() as *const i8;
+    let mask_bytes = unsafe { CStr::from_ptr(mask_str_ptr).to_bytes() };
+    let mask_str = unsafe { from_utf8_unchecked(mask_bytes).to_owned() };
+    let mask = mask_str.parse().map_err(|_| ())?;
+
+    let prefix = ip_mask_to_prefix(mask).map_err(|_| ())?;
+    IpNetwork::new(ip, prefix).map_err(|_| ())
 }
