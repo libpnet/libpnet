@@ -208,7 +208,6 @@ dlr!(EthernetDataLinkReceiver,
      EthernetPacket);
 
 /// Represents a network interface and its associated addresses
-#[cfg_attr(feature = "with-serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub struct NetworkInterface {
     /// The name of the interface

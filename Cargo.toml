@@ -22,7 +22,6 @@ netmap = ["netmap_sys"]
 appveyor = []
 travis = []
 with-syntex = ["syntex", "pnet_macros/with-syntex"]
-with-serde = ["serde", "serde_derive"]
 
 [dependencies]
 ipnetwork = "0.12"
@@ -47,14 +46,6 @@ version = "0.2.*"
 
 [dependencies.syntex]
 version = "0.42.*"
-optional = true
-
-[dependencies.serde]
-version = "0.9"
-optional = true
-
-[dependencies.serde_derive]
-version = "0.9"
 optional = true
 
 [dependencies.pcap]
