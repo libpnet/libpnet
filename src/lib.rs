@@ -123,6 +123,7 @@ extern crate serde_derive;
 
 extern crate libc;
 extern crate winapi;
+extern crate ipnetwork;
 extern crate pnet_macros_support;
 
 pub mod datalink;
