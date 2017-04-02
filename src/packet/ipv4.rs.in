@@ -154,14 +154,20 @@ pub struct Ipv4 {
     payload: Vec<u8>,
 }
 
-/// Calculates the checksum of an IPv4 packet.
+/// Calculates the checksum of an IPv4 packet header.
 /// The checksum field of the packet is regarded as zeros during the calculation
 pub fn checksum(packet: &Ipv4Packet) -> u16be {
     use packet::Packet;
     use util;
 
-    let len = packet.get_header_length() as usize * 4;
-    let data = &packet.packet()[..len];
+    let min = Ipv4Packet::minimum_packet_size();
+    let max = packet.packet().len();
+    let header_length = match packet.get_header_length() as usize * 4 {
+        length if length < min => min,
+        length if length > max => max,
+        length => length,
+    };
+    let data = &packet.packet()[..header_length];
     util::checksum(data, 5)
 }
 
@@ -171,7 +177,7 @@ mod checksum_tests {
 
     #[test]
     fn checksum_zeros() {
-        let mut data = vec![0u8; 20];
+        let mut data = vec![0; 20];
         let expected = 64255;
         let mut pkg = MutableIpv4Packet::new(&mut data[..]).unwrap();
         pkg.set_header_length(5);
@@ -182,12 +188,30 @@ mod checksum_tests {
 
     #[test]
     fn checksum_nonzero() {
-        let mut data = vec![255u8; 20];
+        let mut data = vec![255; 20];
         let expected = 2560;
         let mut pkg = MutableIpv4Packet::new(&mut data[..]).unwrap();
         pkg.set_header_length(5);
         assert_eq!(checksum(&pkg.to_immutable()), expected);
         pkg.set_checksum(123);
+        assert_eq!(checksum(&pkg.to_immutable()), expected);
+    }
+
+    #[test]
+    fn checksum_too_small_header_length() {
+        let mut data = vec![148; 20];
+        let expected = 51910;
+        let mut pkg = MutableIpv4Packet::new(&mut data[..]).unwrap();
+        pkg.set_header_length(0);
+        assert_eq!(checksum(&pkg.to_immutable()), expected);
+    }
+
+    #[test]
+    fn checksum_too_large_header_length() {
+        let mut data = vec![148; 20];
+        let expected = 51142;
+        let mut pkg = MutableIpv4Packet::new(&mut data[..]).unwrap();
+        pkg.set_header_length(99);
         assert_eq!(checksum(&pkg.to_immutable()), expected);
     }
 }
