@@ -14,10 +14,11 @@ extern crate libc;
 use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
 use sockets;
 use std::io;
-use std::net::IpAddr;
 use std::option::Option;
 use std::time::Duration;
 use util::MacAddr;
+
+use ipnetwork::IpNetwork;
 
 #[cfg(windows)]
 #[path = "winpcap.rs"]
@@ -217,7 +218,7 @@ pub struct NetworkInterface {
     /// A MAC address for the interface
     pub mac: Option<MacAddr>,
     /// IP addresses and netmasks for the interface
-    pub ips: Vec<IpNetmask>,
+    pub ips: Vec<IpNetwork>,
     /// Operating system specific flags for the interface
     pub flags: u32,
 }
@@ -232,16 +233,6 @@ impl NetworkInterface {
     pub fn is_loopback(&self) -> bool {
         self.flags & (sockets::IFF_LOOPBACK as u32) != 0
     }
-}
-
-/// Represents an IP address and subnet mask
-#[cfg_attr(feature = "with-serde", derive(Serialize, Deserialize))]
-#[derive(Clone, PartialEq, Eq, Debug, Hash)]
-pub struct IpNetmask {
-    /// IP address
-    pub ip: IpAddr,
-    /// Subnet mask
-    pub netmask: IpAddr,
 }
 
 /// Get a list of available network interfaces for the current machine.

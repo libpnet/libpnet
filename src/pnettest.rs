@@ -104,8 +104,8 @@ fn build_udp4_packet(packet: &mut [u8],
     packet[data_start + 3] = msg[3];
 
     let (source, dest) = if let Some(ni) = ni {
-        let ipmask = ni.ips.iter().filter(|addr| is_ipv4(&addr.ip)).next().unwrap();
-        match (ipmask.ip).clone() {
+        let ipmask = ni.ips.iter().filter(|addr| is_ipv4(&addr.ip())).next().unwrap();
+        match (ipmask.ip()).clone() {
             IpAddr::V4(v4) => (v4, v4),
             IpAddr::V6(_) => panic!("found ipv6 addresses when expecting ipv4 addresses"),
         }
