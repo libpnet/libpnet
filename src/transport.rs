@@ -204,7 +204,7 @@ impl TransportSender {
 /// Create an iterator for some packet type.
 ///
 /// Usage:
-/// ```
+/// ```ignore
 /// transport_channel_iterator!(Ipv4Packet, // Type to iterate over
 ///                             Ipv4TransportChannelIterator, // Name for iterator struct
 ///                             ipv4_packet_iter) // Name of function to create iterator
@@ -295,4 +295,3 @@ transport_channel_iterator!(UdpPacket, UdpTransportChannelIterator, udp_packet_i
 transport_channel_iterator!(IcmpPacket, IcmpTransportChannelIterator, icmp_packet_iter);
 
 transport_channel_iterator!(TcpPacket, TcpTransportChannelIterator, tcp_packet_iter);
-
