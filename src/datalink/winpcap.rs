@@ -24,11 +24,9 @@ use std::collections::VecDeque;
 use std::ffi::{CStr, CString};
 use std::io;
 use std::mem;
-use std::net::IpAddr;
 use std::slice;
 use std::str::from_utf8_unchecked;
 use std::sync::Arc;
-use std::time::Duration;
 use util::MacAddr;
 
 struct WinPcapAdapter {
