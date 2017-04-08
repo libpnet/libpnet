@@ -148,7 +148,7 @@ pub fn channel(network_interface: &NetworkInterface,
     }
 
     let fd = Arc::new(internal::FileDesc { fd: socket });
-    let mut sender = Box::new(DataLinkSenderImpl {
+    let sender = Box::new(DataLinkSenderImpl {
         socket: fd.clone(),
         fd_set: unsafe { mem::zeroed() },
         write_buffer: repeat(0u8).take(config.write_buffer_size).collect(),
@@ -157,21 +157,13 @@ pub fn channel(network_interface: &NetworkInterface,
         send_addr_len: len,
         timeout: config.write_timeout.map(|to| internal::duration_to_timespec(to)),
     });
-    unsafe {
-        libc::FD_ZERO(&mut sender.fd_set as *mut libc::fd_set);
-        libc::FD_SET(fd.fd, &mut sender.fd_set as *mut libc::fd_set);
-    }
-    let mut receiver = Box::new(DataLinkReceiverImpl {
+    let receiver = Box::new(DataLinkReceiverImpl {
         socket: fd.clone(),
         fd_set: unsafe { mem::zeroed() },
         read_buffer: repeat(0u8).take(config.read_buffer_size).collect(),
         _channel_type: config.channel_type,
         timeout: config.read_timeout.map(|to| internal::duration_to_timespec(to)),
     });
-    unsafe {
-        libc::FD_ZERO(&mut receiver.fd_set as *mut libc::fd_set);
-        libc::FD_SET(fd.fd, &mut receiver.fd_set as *mut libc::fd_set);
-    }
 
     Ok(Ethernet(sender, receiver))
 }
@@ -206,6 +198,10 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                 let send_addr =
                     (&self.send_addr as *const libc::sockaddr_ll) as *const libc::sockaddr;
 
+                unsafe {
+                    libc::FD_ZERO(&mut self.fd_set as *mut libc::fd_set);
+                    libc::FD_SET(self.socket.fd, &mut self.fd_set as *mut libc::fd_set);
+                }
                 let ret = unsafe {
                     libc::pselect(self.socket.fd + 1,
                                   ptr::null_mut(),
@@ -242,6 +238,10 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                packet: &EthernetPacket,
                _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
+        unsafe {
+            libc::FD_ZERO(&mut self.fd_set as *mut libc::fd_set);
+            libc::FD_SET(self.socket.fd, &mut self.fd_set as *mut libc::fd_set);
+        }
         let ret = unsafe {
             libc::pselect(self.socket.fd + 1,
                           ptr::null_mut(),
@@ -291,6 +291,10 @@ struct DataLinkChannelIteratorImpl<'a> {
 impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
     fn next(&mut self) -> io::Result<EthernetPacket> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
+        unsafe {
+            libc::FD_ZERO(&mut self.pc.fd_set as *mut libc::fd_set);
+            libc::FD_SET(self.pc.socket.fd, &mut self.pc.fd_set as *mut libc::fd_set);
+        }
         let ret = unsafe {
             libc::pselect(self.pc.socket.fd + 1,
                           &mut self.pc.fd_set as *mut libc::fd_set,
