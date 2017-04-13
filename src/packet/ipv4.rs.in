@@ -132,26 +132,26 @@ impl PrimitiveValues for Ipv4OptionNumber {
 /// Represents an IPv4 Packet
 #[packet]
 pub struct Ipv4 {
-    version: u4,
-    header_length: u4,
-    dscp: u6,
-    ecn: u2,
-    total_length: u16be,
-    identification: u16be,
-    flags: u3,
-    fragment_offset: u13be,
-    ttl: u8,
+    pub version: u4,
+    pub header_length: u4,
+    pub dscp: u6,
+    pub ecn: u2,
+    pub total_length: u16be,
+    pub identification: u16be,
+    pub flags: u3,
+    pub fragment_offset: u13be,
+    pub ttl: u8,
     #[construct_with(u8)]
-    next_level_protocol: IpNextHeaderProtocol,
-    checksum: u16be,
+    pub next_level_protocol: IpNextHeaderProtocol,
+    pub checksum: u16be,
     #[construct_with(u8, u8, u8, u8)]
-    source: Ipv4Addr,
+    pub source: Ipv4Addr,
     #[construct_with(u8, u8, u8, u8)]
-    destination: Ipv4Addr,
+    pub destination: Ipv4Addr,
     #[length_fn = "ipv4_options_length"]
-    options: Vec<Ipv4Option>,
+    pub options: Vec<Ipv4Option>,
     #[payload]
-    payload: Vec<u8>,
+    pub payload: Vec<u8>,
 }
 
 /// Calculates the checksum of an IPv4 packet header.

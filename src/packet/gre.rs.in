@@ -36,27 +36,27 @@ use pnet_macros_support::types::*;
 /// with routing_present true will currently cause a panic.
 #[packet]
 pub struct Gre {
-    checksum_present: u1,
-    routing_present: u1,
-    key_present: u1,
-    sequence_present: u1,
-    strict_source_route: u1,
-    recursion_control: u3,
-    zero_flags: u5,
-    version: u3,
-    protocol_type: u16be, // 0x800 for ipv4 [basically an ethertype
+    pub checksum_present: u1,
+    pub routing_present: u1,
+    pub key_present: u1,
+    pub sequence_present: u1,
+    pub strict_source_route: u1,
+    pub recursion_control: u3,
+    pub zero_flags: u5,
+    pub version: u3,
+    pub protocol_type: u16be, // 0x800 for ipv4 [basically an ethertype
     #[length_fn = "gre_checksum_length"]
-    checksum: Vec<U16BE>,
+    pub checksum: Vec<U16BE>,
     #[length_fn = "gre_offset_length"]
-    offset: Vec<U16BE>,
+    pub offset: Vec<U16BE>,
     #[length_fn = "gre_key_length"]
-    key: Vec<U32BE>,
+    pub key: Vec<U32BE>,
     #[length_fn = "gre_sequence_length"]
-    sequence: Vec<U32BE>,
+    pub sequence: Vec<U32BE>,
     #[length_fn = "gre_routing_length"]
-    routing: Vec<u8>,
+    pub routing: Vec<u8>,
     #[payload]
-    payload: Vec<u8>,
+    pub payload: Vec<u8>,
 }
 
 fn gre_checksum_length(gre: &GrePacket) -> usize {

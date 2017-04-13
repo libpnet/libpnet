@@ -76,26 +76,26 @@ pub mod ArpHardwareTypes {
 #[allow(non_snake_case)]
 pub struct Arp {
     #[construct_with(u16)]
-    hardware_type: ArpHardwareType,
+    pub hardware_type: ArpHardwareType,
     #[construct_with(u16)]
-    protocol_type: EtherType,
+    pub protocol_type: EtherType,
     // We completely ignore hw_addr_len and
     // proto_addr_len and use values for
     // Ipv4 on top of Ethernet as it's the
     // most common use case
-    hw_addr_len: u8,
-    proto_addr_len: u8,
+    pub hw_addr_len: u8,
+    pub proto_addr_len: u8,
     #[construct_with(u16)]
-    operation: ArpOperation,
+    pub operation: ArpOperation,
     #[construct_with(u8, u8, u8, u8, u8, u8)]
-    sender_hw_addr: MacAddr,
+    pub sender_hw_addr: MacAddr,
     #[construct_with(u8, u8, u8, u8)]
-    sender_proto_addr: Ipv4Addr,
+    pub sender_proto_addr: Ipv4Addr,
     #[construct_with(u8, u8, u8, u8, u8, u8)]
-    target_hw_addr: MacAddr,
+    pub target_hw_addr: MacAddr,
     #[construct_with(u8, u8, u8, u8)]
-    target_proto_addr: Ipv4Addr,
+    pub target_proto_addr: Ipv4Addr,
     #[payload]
     #[length = "0"]
-    payload: Vec<u8>,
+    pub payload: Vec<u8>,
 }

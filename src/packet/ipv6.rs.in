@@ -15,19 +15,19 @@ use std::net::Ipv6Addr;
 /// Represents an IPv6 Packet
 #[packet]
 pub struct Ipv6 {
-    version: u4,
-    traffic_class: u8,
-    flow_label: u20be,
-    payload_length: u16be,
+    pub version: u4,
+    pub traffic_class: u8,
+    pub flow_label: u20be,
+    pub payload_length: u16be,
     #[construct_with(u8)]
-    next_header: IpNextHeaderProtocol,
-    hop_limit: u8,
+    pub next_header: IpNextHeaderProtocol,
+    pub hop_limit: u8,
     #[construct_with(u16, u16, u16, u16, u16, u16, u16, u16)]
-    source: Ipv6Addr,
+    pub source: Ipv6Addr,
     #[construct_with(u16, u16, u16, u16, u16, u16, u16, u16)]
-    destination: Ipv6Addr,
+    pub destination: Ipv6Addr,
     #[payload]
-    payload: Vec<u8>,
+    pub payload: Vec<u8>,
 }
 
 #[test]

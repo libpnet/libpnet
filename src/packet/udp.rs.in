@@ -17,12 +17,12 @@ use util;
 /// Represents an UDP Packet
 #[packet]
 pub struct Udp {
-    source: u16be,
-    destination: u16be,
-    length: u16be,
-    checksum: u16be,
+    pub source: u16be,
+    pub destination: u16be,
+    pub length: u16be,
+    pub checksum: u16be,
     #[payload]
-    payload: Vec<u8>,
+    pub payload: Vec<u8>,
 }
 
 /// Calculate the checksum for a packet built on IPv4
