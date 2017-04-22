@@ -1214,7 +1214,23 @@ fn generate_mutator_str(name: &str,
         {operations}
     }}", struct_name = struct_name, name = name, ty = ty, co = offset, operations = op_strings)
     } else {
-        format!("/// Set the {name} field
+        let desc = if let Some((_, endianness, end_specified)) = parse_ty(ty) {
+            if end_specified == EndiannessSpecified::Yes {
+                if endianness == Endianness::Big {
+                    format!("/// Set the {name} field. This field is always stored big-endian within
+                    /// the struct, but this mutator wants a host order argument.", name = name)
+                } else {
+                    format!("/// Set the {name} field. This field is always stored little-endian
+                    /// within the struct, but this mutator wants a host order argument.",
+                    name = name)
+                }
+            } else {
+                format!("/// Set the {name} field.", name = name)
+            }
+        } else {
+            format!("/// Set the {name} field.", name = name)
+        };
+        format!("{desc}
     #[inline]
     #[allow(trivial_numeric_casts)]
     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
@@ -1222,7 +1238,7 @@ fn generate_mutator_str(name: &str,
         let _self = self;
         let co = {co};
         {operations}
-    }}", name = name, ty = ty, co = offset, operations = op_strings)
+    }}", desc = desc, name = name, ty = ty, co = offset, operations = op_strings)
     };
 
     mutator
@@ -1314,7 +1330,23 @@ fn generate_accessor_str(name: &str,
             {operations}
         }}", struct_name = struct_name, name = name, ty = ty, co = offset, operations = op_strings)
     } else {
-        format!("/// Get the {name} field
+        let desc = if let Some((_, endianness, end_specified)) = parse_ty(ty) {
+            if end_specified == EndiannessSpecified::Yes {
+                if endianness == Endianness::Big {
+                    format!("/// Get the {name} field. This field is always stored big-endian within
+                    /// the struct, but this accessor returns it in host order.", name = name)
+                } else {
+                    format!("/// Get the {name} field. This field is always stored little-endian
+                    /// within the struct, but this accessor returns it in host order.",
+                    name = name)
+                }
+            } else {
+                format!("/// Get the {name} field.", name = name)
+            }
+        } else {
+            format!("/// Get the {name} field.", name = name)
+        };
+        format!("{desc}
         #[inline]
         #[allow(trivial_numeric_casts)]
         #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
@@ -1322,7 +1354,7 @@ fn generate_accessor_str(name: &str,
             let _self = self;
             let co = {co};
             {operations}
-        }}", name = name, ty = ty, co = offset, operations = op_strings)
+        }}", desc = desc, name = name, ty = ty, co = offset, operations = op_strings)
     };
 
     accessor
