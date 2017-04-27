@@ -1204,21 +1204,15 @@ fn generate_accessor_or_mutator_comment(name: &str, ty: &str, op_type: AccessorM
         if end_specified == EndiannessSpecified::Yes {
             let return_or_want = match op_type { AccessorMutator::Accessor => "accessor returns",
                                                  AccessorMutator::Mutator  => "mutator wants" };
-            if endianness == Endianness::Big {
-                format!("/// {get_or_set} the {name} field. This field is always stored big-endian
+            let endian_str = if endianness == Endianness::Big { "big-endian" }
+                             else                             { "little-endian" };
+            return format!("/// {get_or_set} the {name} field. This field is always stored {endian}
                 /// within the struct, but this {return_or_want} host order.",
-                get_or_set = get_or_set, name = name, return_or_want = return_or_want)
-            } else {
-                format!("/// {get_or_set} the {name} field. This field is always stored
-                /// little-endian within the struct, but this {return_or_want} host order.",
-                get_or_set = get_or_set, name = name, return_or_want = return_or_want)
-            }
-        } else {
-            format!("/// {get_or_set} the {name} field.", get_or_set = get_or_set, name = name)
+                get_or_set = get_or_set, name = name, endian = endian_str,
+                return_or_want = return_or_want);
         }
-    } else {
-        format!("/// {get_or_set} the {name} field.", get_or_set = get_or_set, name = name)
     }
+    format!("/// {get_or_set} the {name} field.", get_or_set = get_or_set, name = name)
 }
 
 /// Given the name of a field, and a set of operations required to set that field, return
