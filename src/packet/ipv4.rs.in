@@ -22,7 +22,7 @@ pub mod Ipv4Flags {
     /// Don't Fragment flag
     pub const DontFragment: u3 = 0b010;
     /// More Fragments flag
-    pub const MoreFragments: u3 = 0b100;
+    pub const MoreFragments: u3 = 0b001;
 }
 
 /// IPv4 header options numbers as defined in
