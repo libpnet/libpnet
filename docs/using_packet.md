@@ -29,7 +29,7 @@ version = "0.1.0"
 authors = ["My Name <my.email@mydomain.com>"]
 build = "build.rs"
 [build-dependencies]
-glob = "*"
+glob = "0.2.*"
 syntex = "X" # where X is the version of syntex used in pnet_macros/Cargo.toml
 pnet_macros = "*"
 [dependencies]
@@ -210,7 +210,7 @@ fn main() {
                 pnet_macros::register(&mut registry);
                 registry.expand("", &src, &dst).unwrap();
             },
-	    	Err(_) => {},
+	    Err(_) => {},
         }
     }
 }
