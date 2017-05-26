@@ -1023,7 +1023,7 @@ fn generate_packet_trait_impls(cx: &mut GenContext,
             start = "start".to_owned();
         }
         if !payload_bounds.upper.is_empty() {
-            pre = pre + &format!("let end = {};", payload_bounds.upper)[..];
+            pre = pre + &format!("let end = min({}, _self.packet.len());", payload_bounds.upper)[..];
             end = "end".to_owned();
         }
         cx.push_item_from_string(format!("impl<'a> ::pnet::packet::{mutable}Packet for {name}<'a> {{
@@ -1033,6 +1033,7 @@ fn generate_packet_trait_impls(cx: &mut GenContext,
             #[inline]
             #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
             fn payload{u_mut}<'p>(&'p {mut_} self) -> &'p {mut_} [u8] {{
+                use std::cmp::min;
                 let _self = self;
                 {pre}
                 if _self.packet.len() <= {start} {{
