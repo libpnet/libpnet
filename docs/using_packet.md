@@ -182,8 +182,7 @@ Invoking Syntex From Your Build Script
 --------------------------------------
 
 To pull everything together, we need to invoke `syntex` within the build script.
-This is a simple build script for recursively building files using the pnet_macros; see also the
-`build.rs` from `libpnet` as an example of how many packets are built:
+This is an example `build.rs` script which uses a glob "pattern" to specify that all `.rs.in` files under `./src/` should be pre-processed by `syntex`.
 
 ```rust
 fn main() {
@@ -195,22 +194,16 @@ fn main() {
     use std::path::Path;
     
     // globbing for files to pre-process:
-    let pattern = "./**/*.rs.in";
+    let pattern = "./src/packet/**/*.rs.in";
     for entry in glob::glob( pattern ).expect("Failed to read glob pattern") {
-	    match entry {
-	        Ok(path) => {
-                println!(" CMP-- {}", path.display() );
-                //src: Path::new() = /full/path/file.rs.in
-                let src     = Path::new( path.to_str().expect("Invalid src Specified.") );
-                //src -> dst: Path::new() = OUT_DIR/file.rs
-                let out_dir = env::var_os( "OUT_DIR" ).expect("Invalid OUT_DIR.");
-                let file    = Path::new( path.file_stem().expect("Invalid file_stem.") );
-                let dst     = Path::new( &out_dir ).join(file);
-                let mut registry = syntex::Registry::new();
-                pnet_macros::register(&mut registry);
-                registry.expand("", &src, &dst).unwrap();
-            },
-	    Err(_) => {},
+        if let Ok(path) = entry {
+            let src     = Path::new( path.to_str().expect("Invalid src Specified.") );
+            let out_dir = env::var_os( "OUT_DIR" ).expect("Invalid OUT_DIR.");
+            let file    = Path::new( path.file_stem().expect("Invalid file_stem.") );
+            let dst     = Path::new( &out_dir ).join(file);
+            let mut registry = syntex::Registry::new();
+            pnet_macros::register(&mut registry);
+            registry.expand("", &src, &dst).unwrap();
         }
     }
 }
