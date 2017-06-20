@@ -19,34 +19,26 @@ fn print_link_search_path() {}
 
 #[cfg(feature = "with-syntex")]
 mod macros {
-    extern crate syntex;
     extern crate pnet_macros;
-
+    extern crate syntex;
+    extern crate glob;
+    
     use std::env;
     use std::path::Path;
-
-    const FILES: &'static [&'static str] = &["ethernet.rs",
-                                             "gre.rs",
-                                             "ipv4.rs",
-                                             "ipv6.rs",
-                                             "icmp.rs",
-                                             "udp.rs",
-                                             "tcp.rs",
-                                             "arp.rs",
-                                             "vlan.rs"];
-
+    
     pub fn expand() {
-        let out_dir = env::var_os("OUT_DIR").unwrap();
-
-        for file in FILES {
-            let src_file = format!("src/packet/{}.in", file);
-            let src = Path::new(&src_file);
-            let dst = Path::new(&out_dir).join(file);
-
-            let mut registry = syntex::Registry::new();
-            pnet_macros::register(&mut registry);
-
-            registry.expand("", &src, &dst).unwrap();
+        // globbing for files to pre-process:
+        let pattern = "./src/packet/**/*.rs.in";
+        for entry in glob::glob( pattern ).expect("Failed to read glob pattern") {
+            if let Ok(path) = entry {
+                let src     = Path::new( path.to_str().expect("Invalid src Specified.") );
+                let out_dir = env::var_os( "OUT_DIR" ).expect("Invalid OUT_DIR.");
+                let file    = Path::new( path.file_stem().expect("Invalid file_stem.") );
+                let dst     = Path::new( &out_dir ).join(file);
+                let mut registry = syntex::Registry::new();
+                pnet_macros::register(&mut registry);
+                registry.expand("", &src, &dst).unwrap();
+            }
         }
     }
 }
