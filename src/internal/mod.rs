@@ -66,14 +66,15 @@ pub fn send_to(socket: sockets::CSocket,
 
 pub fn recv_from(socket: sockets::CSocket,
                  buffer: &mut [u8],
-                 caddr: *mut sockets::SockAddrStorage)
+                 caddr: *mut sockets::SockAddrStorage,
+                 flags: i32)
     -> io::Result<usize> {
     let mut caddrlen = mem::size_of::<sockets::SockAddrStorage>() as sockets::SockLen;
     let len = retry(&mut || unsafe {
         sockets::recvfrom(socket,
                           buffer.as_ptr() as sockets::MutBuf,
                           buffer.len() as sockets::BufLen,
-                          0,
+                          flags,
                           caddr as *mut sockets::SockAddr,
                           &mut caddrlen)
     });

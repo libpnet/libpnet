@@ -201,6 +201,28 @@ impl TransportSender {
     }
 }
 
+/// Create methods to set a particular flag if compiled for particular platforms
+#[macro_export]
+macro_rules! create_set_flag_method {
+    ($method:ident, $flag:expr, $platforms:meta) => (
+        /// Set command line flag if available for the current platform
+        #[cfg($platforms)]
+        pub fn $method(&mut self, enabled: bool) -> Result<(), ()> {
+            if enabled {
+                self.flags = self.flags | $flag;
+            } else {
+                self.flags = self.flags & !$flag;
+            }
+            Ok(())
+        }
+        /// Set command line flag if available for the current platform
+        #[cfg(not($platforms))]
+        pub fn $method(&mut self, _enabled: bool) -> Result<(), ()> {
+            Err(())
+        }
+    )
+}
+
 /// Create an iterator for some packet type.
 ///
 /// Usage:
@@ -214,21 +236,60 @@ macro_rules! transport_channel_iterator {
     ($ty:ident, $iter:ident, $func:ident) => (
         /// An iterator over packets of type $ty
         pub struct $iter<'a> {
-            tr: &'a mut TransportReceiver
+            tr: &'a mut TransportReceiver,
+            flags: i32
         }
         /// Return a packet iterator with packets of type $ty for some transport receiver
         pub fn $func(tr: &mut TransportReceiver) -> $iter {
             $iter {
-                tr: tr
+                tr: tr,
+                flags: 0
             }
         }
         impl<'a> $iter<'a> {
+            create_set_flag_method!(
+                set_process_out_of_band_data,
+                libc::MSG_OOB,
+                any(target_os = "windows", target_os = "macos", target_os = "freebsd", target_os = "linux")
+            );
+            create_set_flag_method!(
+                set_peek_incoming_data,
+                libc::MSG_PEEK,
+                any(target_os = "windows", target_os = "macos", target_os = "freebsd", target_os = "linux")
+            );
+            create_set_flag_method!(
+                set_wait_for_full_request,
+                libc::MSG_WAITALL,
+                any(target_os = "macos", target_os = "freebsd", target_os = "linux")
+            );
+            create_set_flag_method!(
+                set_nonblocking,
+                libc::MSG_DONTWAIT,
+                any(target_os = "freebsd", target_os = "linux")
+            );
+            create_set_flag_method!(
+                set_close_on_exec,
+                libc::MSG_CMSG_CLOEXEC,
+                // recvmsg() only for Linux (since Linux 2.6.23)
+                any(target_os = "freebsd")
+            );
+            create_set_flag_method!(
+                set_error_queue,
+                libc::MSG_ERRQUEUE,
+                any(target_os = "linux")
+            );
+            create_set_flag_method!(
+                set_truncate,
+                libc::MSG_TRUNC,
+                any(target_os = "linux")
+            );
             /// Get the next ($ty, IpAddr) pair for the given channel
             pub fn next(&mut self) -> io::Result<($ty, IpAddr)> {
                 let mut caddr: sockets::SockAddrStorage = unsafe { mem::zeroed() };
                 let res = internal::recv_from(self.tr.socket.fd,
                                               &mut self.tr.buffer[..],
-                                              &mut caddr);
+                                              &mut caddr,
+                                              self.flags);
 
                 let offset = match self.tr.channel_type {
                     Layer4(Ipv4(_)) => {
