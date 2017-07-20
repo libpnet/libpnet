@@ -1,4 +1,4 @@
-# libpnet [![Crates.io](https://img.shields.io/crates/v/pnet.svg)](https://crates.io/crates/pnet) ![License](https://img.shields.io/crates/l/pnet.svg)
+# libpnet [![Crates.io](https://img.shields.io/crates/v/pnet.svg)](https://crates.io/crates/pnet) ![License](https://img.shields.io/crates/l/pnet.svg) ![Documentation](https://docs.rs/pnet/badge.svg)
 
 Linux ∪ OS X Build Status: [![Linux ∪ OS X Build Status](https://travis-ci.org/libpnet/libpnet.svg?branch=master)](https://travis-ci.org/libpnet/libpnet)
 
@@ -61,8 +61,7 @@ There are lots of uses for this, including network diagnostics, packet capture a
 
 ## Documentation
 
-API documentation for the latest build can be found here:
-http://octarineparrot.com/assets/libpnet/doc/pnet/.
+API documentation for the latest build can be found here: https://docs.rs/pnet/
 
 ## Usage
 
