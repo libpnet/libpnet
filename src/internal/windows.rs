@@ -3,7 +3,6 @@ extern crate winapi;
 extern crate ws2_32;
 
 use std::io;
-use std::time::Duration;
 
 fn errno() -> i32 {
     io::Error::last_os_error().raw_os_error().unwrap()
