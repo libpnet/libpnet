@@ -144,7 +144,7 @@ benchmarks() {
 travis_script() {
     case "$SYSTEM" in
         Linux)
-            "$SUDO" sed -i 's/secure_path="/secure_path="\/home\/travis\/rust\/bin:/' /etc/sudoers
+            "$SUDO" sed -i 's/secure_path="/secure_path="\/home\/travis\/.cargo\/bin:/' /etc/sudoers
         ;;
         Darwin)
             echo Defaults secure_path = \"$PATH\" | $SUDO tee -a /etc/sudoers
