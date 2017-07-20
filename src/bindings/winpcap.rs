@@ -17,12 +17,12 @@ use sockets;
 use winapi as win;
 
 #[repr(C)]
-struct _ADAPTER;
-type ADAPTER = _ADAPTER;
+pub struct _ADAPTER;
+pub type ADAPTER = _ADAPTER;
 pub type LPADAPTER = *mut _ADAPTER;
 
 #[repr(C)]
-struct _PACKET {
+pub struct _PACKET {
     pub hEvent: win::HANDLE,
     pub OverLapped: win::OVERLAPPED,
     pub Buffer: PVOID,
@@ -30,10 +30,10 @@ struct _PACKET {
     pub ulBytesReceived: win::DWORD,
     pub bIoComplete: win::BOOLEAN,
 }
-type PACKET = _PACKET;
+pub type PACKET = _PACKET;
 pub type LPPACKET = *mut _PACKET;
 
-type TCHAR = libc::c_char;
+pub type TCHAR = libc::c_char;
 pub type PTSTR = *mut TCHAR;
 
 pub type PVOID = *mut libc::c_void;
@@ -56,7 +56,7 @@ pub const NDIS_PACKET_TYPE_PROMISCUOUS: ULONG = 0x00000020;
 
 // from IPTypes.h
 #[repr(C)]
-struct _IP_ADDRESS_STRING {
+pub struct _IP_ADDRESS_STRING {
     pub String: [libc::c_char; 4 * 4],
 }
 
@@ -67,7 +67,7 @@ pub type PIP_MASK_STRING = *mut _IP_ADDRESS_STRING;
 
 
 #[repr(C)]
-struct _IP_ADDR_STRING {
+pub struct _IP_ADDR_STRING {
     pub Next: *mut _IP_ADDR_STRING,
     pub IpAddress: IP_ADDRESS_STRING,
     pub IpMask: IP_MASK_STRING,
@@ -78,7 +78,7 @@ pub type IP_ADDR_STRING = _IP_ADDR_STRING;
 pub type PIP_ADDR_STRING = *mut _IP_ADDR_STRING;
 
 #[repr(C)]
-struct _IP_ADAPTER_INFO {
+pub struct _IP_ADAPTER_INFO {
     pub Next: *mut _IP_ADAPTER_INFO,
     pub ComboIndex: win::DWORD,
     pub AdapterName: [libc::c_char; MAX_ADAPTER_NAME_LENGTH + 4],
@@ -108,7 +108,7 @@ const MAX_DNS_SUFFIX_STRING_LENGTH: usize = 256;
 pub type LPSOCKADDR = *mut sockets::SockAddr;
 
 #[repr(C)]
-struct _SOCKET_ADDRESS {
+pub struct _SOCKET_ADDRESS {
     pub lpSockaddr: LPSOCKADDR,
     pub iSockaddrLength: INT,
 }
@@ -158,7 +158,7 @@ pub enum IF_OPER_STATUS {
 }
 
 #[repr(C)]
-struct _IP_ADAPTER_UNICAST_ADDRESS {
+pub struct _IP_ADAPTER_UNICAST_ADDRESS {
     pub Length: ULONG,
     pub Flags: win::DWORD,
     pub Next: *mut _IP_ADAPTER_UNICAST_ADDRESS,
@@ -176,7 +176,7 @@ pub type IP_ADAPTER_UNICAST_ADDRESS = _IP_ADAPTER_UNICAST_ADDRESS;
 pub type PIP_ADAPTER_UNICAST_ADDRESS = *mut _IP_ADAPTER_UNICAST_ADDRESS;
 
 #[repr(C)]
-struct _IP_ADAPTER_ANYCAST_ADDRESS {
+pub struct _IP_ADAPTER_ANYCAST_ADDRESS {
     pub Length: ULONG,
     pub Flags: win::DWORD,
     pub Next: *mut _IP_ADAPTER_ANYCAST_ADDRESS,
@@ -187,7 +187,7 @@ pub type IP_ADAPTER_ANYCAST_ADDRESS = _IP_ADAPTER_ANYCAST_ADDRESS;
 pub type PIP_ADAPTER_ANYCAST_ADDRESS = *mut _IP_ADAPTER_ANYCAST_ADDRESS;
 
 #[repr(C)]
-struct _IP_ADAPTER_MULTICAST_ADDRESS {
+pub struct _IP_ADAPTER_MULTICAST_ADDRESS {
     pub Length: ULONG,
     pub Flags: win::DWORD,
     pub Next: *mut _IP_ADAPTER_MULTICAST_ADDRESS,
@@ -198,7 +198,7 @@ pub type IP_ADAPTER_MULTICAST_ADDRESS = _IP_ADAPTER_MULTICAST_ADDRESS;
 pub type PIP_ADAPTER_MULTICAST_ADDRESS = *mut _IP_ADAPTER_MULTICAST_ADDRESS;
 
 #[repr(C)]
-struct _IP_ADAPTER_DNS_SERVER_ADDRESS {
+pub struct _IP_ADAPTER_DNS_SERVER_ADDRESS {
     pub Length: ULONG,
     pub Flags: win::DWORD,
     pub Next: *mut _IP_ADAPTER_DNS_SERVER_ADDRESS,
@@ -209,7 +209,7 @@ pub type IP_ADAPTER_DNS_SERVER_ADDRESS = _IP_ADAPTER_DNS_SERVER_ADDRESS;
 pub type PIP_ADAPTER_DNS_SERVER_ADDRESS = *mut _IP_ADAPTER_DNS_SERVER_ADDRESS;
 
 #[repr(C)]
-struct _IP_ADAPTER_PREFIX {
+pub struct _IP_ADAPTER_PREFIX {
     pub Length: ULONG,
     pub Flags: win::DWORD,
     pub Next: *mut _IP_ADAPTER_PREFIX,
@@ -221,7 +221,7 @@ pub type IP_ADAPTER_PREFIX = _IP_ADAPTER_PREFIX;
 pub type PIP_ADAPTER_PREFIX = *mut _IP_ADAPTER_PREFIX;
 
 #[repr(C)]
-struct _IP_ADAPTER_WINS_SERVER_ADDRESS_LH {
+pub struct _IP_ADAPTER_WINS_SERVER_ADDRESS_LH {
     pub Length: ULONG,
     pub Reserved: win::DWORD,
     pub Next: *mut _IP_ADAPTER_WINS_SERVER_ADDRESS_LH,
@@ -234,7 +234,7 @@ pub type IP_ADAPTER_WINS_SERVER_ADDRESS = _IP_ADAPTER_WINS_SERVER_ADDRESS_LH;
 pub type PIP_ADAPTER_WINS_SERVER_ADDRESS = *mut _IP_ADAPTER_WINS_SERVER_ADDRESS_LH;
 
 #[repr(C)]
-struct _IP_ADAPTER_GATEWAY_ADDRESS_LH {
+pub struct _IP_ADAPTER_GATEWAY_ADDRESS_LH {
     pub Length: ULONG,
     pub Reserved: win::DWORD,
     pub Next: *mut _IP_ADAPTER_GATEWAY_ADDRESS_LH,
@@ -252,7 +252,7 @@ pub type NET_IF_NETWORK_GUID = win::GUID;
 pub type PNET_IF_NETWORK_GUID = *mut win::GUID;
 
 #[repr(C)]
-enum _NET_IF_CONNECTION_TYPE {
+pub enum _NET_IF_CONNECTION_TYPE {
     NET_IF_CONNECTION_DEDICATED = 1,
     NET_IF_CONNECTION_PASSIVE = 2,
     NET_IF_CONNECTION_DEMAND = 3,
@@ -263,7 +263,7 @@ pub type NET_IF_CONNECTION_TYPE = _NET_IF_CONNECTION_TYPE;
 pub type PNET_IF_CONNECTION_TYPE = *mut _NET_IF_CONNECTION_TYPE;
 
 #[repr(C)]
-struct _NET_LUID_LH {
+pub struct _NET_LUID_LH {
     pub Value: ULONG64,
 }
 pub type NET_LUID_LH = _NET_LUID_LH;
@@ -287,7 +287,7 @@ pub enum TUNNEL_TYPE {
 pub type PTUNNEL_TYPE = *mut TUNNEL_TYPE;
 
 #[repr(C)]
-struct _IP_ADAPTER_DNS_SUFFIX {
+pub struct _IP_ADAPTER_DNS_SUFFIX {
     pub Next: *mut _IP_ADAPTER_DNS_SUFFIX,
     pub String: [win::WCHAR; MAX_DNS_SUFFIX_STRING_LENGTH],
 }
@@ -296,7 +296,7 @@ pub type IP_ADAPTER_DNS_SUFFIX = _IP_ADAPTER_DNS_SUFFIX;
 pub type PIP_ADAPTER_DNS_SUFFIX = *mut _IP_ADAPTER_DNS_SUFFIX;
 
 #[repr(C)]
-struct _IP_ADAPTER_ADDRESSES {
+pub struct _IP_ADAPTER_ADDRESSES {
     pub Length: ULONG,
     pub IfIndex: win::DWORD,
     pub Next: *mut _IP_ADAPTER_ADDRESSES,
