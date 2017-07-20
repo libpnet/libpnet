@@ -1,6 +1,6 @@
 [package]
 name = "pnet_macros"
-version = "0.13.1"
+version = "0.14.0"
 authors = ["Robert Clipsham <robert@octarineparrot.com>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
@@ -25,7 +25,7 @@ compiletest_rs = ">=0.0"
 default-features = false
 features = ["nightly"]
 path = ".."
-version = ">=0.9"
+version = ">=0.13"
 
 [dev-dependencies.pnet_macros_plugin]
 path = "../pnet_macros_plugin"
