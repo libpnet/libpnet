@@ -38,10 +38,10 @@ version = ">=0.0"
 [dependencies.libc]
 version = "0.2.*"
 
-[dependencies.winapi]
+[target.'cfg(windows)'.dependencies.winapi]
 version = "0.2.*"
 
-[dependencies.ws2_32-sys]
+[target.'cfg(windows)'.dependencies.ws2_32-sys]
 version = "0.2.*"
 
 [dependencies.syntex]

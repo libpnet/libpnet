@@ -115,8 +115,10 @@
 #[cfg(feature = "benchmark")]
 extern crate test;
 
-extern crate libc;
+#[cfg(windows)]
 extern crate winapi;
+
+extern crate libc;
 extern crate ipnetwork;
 extern crate pnet_macros_support;
 
