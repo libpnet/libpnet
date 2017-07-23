@@ -111,6 +111,7 @@
 #![cfg_attr(feature="clippy", plugin(clippy))]
 // We can't implement Iterator since we use streaming iterators
 #![cfg_attr(feature="clippy", allow(should_implement_trait))]
+#![cfg_attr(any(feature = "appveyor", feature = "travis"), deny(warnings))]
 
 #[cfg(feature = "benchmark")]
 extern crate test;
