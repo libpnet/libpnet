@@ -1,3 +1,5 @@
+fuzz/artifacts/
+fuzz/corpus/
 target/
 Cargo.lock
 *.lib
