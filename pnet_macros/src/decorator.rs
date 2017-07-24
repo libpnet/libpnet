@@ -1023,7 +1023,8 @@ fn generate_packet_trait_impls(cx: &mut GenContext,
             start = "start".to_owned();
         }
         if !payload_bounds.upper.is_empty() {
-            pre = pre + &format!("let end = {};", payload_bounds.upper)[..];
+            pre = pre + &format!("let end = ::std::cmp::min({}, _self.packet.len());",
+                                    payload_bounds.upper)[..];
             end = "end".to_owned();
         }
         cx.push_item_from_string(format!("impl<'a> ::pnet::packet::{mutable}Packet for {name}<'a> {{
@@ -1327,7 +1328,7 @@ fn generate_accessor_str(name: &str,
     let op_strings = generate_accessor_op_str("_self.packet", ty, operations);
 
     let accessor = if let Some(struct_name) = inner {
-        format!("#[inline]
+        format!("#[inline(always)]
         #[allow(trivial_numeric_casts)]
         #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
         fn get_{name}(_self: &{struct_name}) -> {ty} {{
