@@ -194,6 +194,7 @@ impl TcpOption {
 /// This function gets the 'length' of the length field of the IPv4Option packet
 /// Few options (EOL, NOP) are 1 bytes long, and then have a length field equal
 /// to 0
+#[inline]
 fn tcp_option_length(option: &TcpOptionPacket) -> usize {
     match option.get_number() {
         TcpOptionNumbers::EOL => 0,
@@ -223,6 +224,7 @@ impl PrimitiveValues for TcpOptionNumber {
     }
 }
 
+#[inline]
 fn tcp_options_length(tcp: &TcpPacket) -> usize {
     let data_offset = tcp.get_data_offset();
 
