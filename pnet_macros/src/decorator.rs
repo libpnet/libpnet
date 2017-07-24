@@ -1023,7 +1023,7 @@ fn generate_packet_trait_impls(cx: &mut GenContext,
             start = "start".to_owned();
         }
         if !payload_bounds.upper.is_empty() {
-            pre = pre + &format!("let end = {};", payload_bounds.upper)[..];
+            pre = pre + &format!("let end = ::std::cmp::min({}, _self.packet.len());", payload_bounds.upper)[..];
             end = "end".to_owned();
         }
         cx.push_item_from_string(format!("impl<'a> ::pnet::packet::{mutable}Packet for {name}<'a> {{
