@@ -1,6 +1,6 @@
 [package]
 name = "pnet"
-version = "0.18.0"
+version = "0.19.0"
 authors = [ "Robert Clipsham <robert@octarineparrot.com>" ]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
@@ -9,6 +9,7 @@ documentation = "http://octarineparrot.com/assets/libpnet/doc/pnet/"
 description = "Cross-platform, low level networking using the Rust programming language."
 readme = "README.md"
 keywords = ["networking", "transport", "datalink", "packet", "protocol"]
+categories = ["network-programming", "parser-implementations"]
 build = "build.rs"
 
 [lib]
