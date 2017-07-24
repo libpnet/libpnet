@@ -203,9 +203,9 @@ fn tcp_option_length(option: &TcpOptionPacket) -> usize {
 }
 
 fn tcp_option_payload_length(ipv4_option: &TcpOptionPacket) -> usize {
-    match ipv4_option.get_length().first() {
-        Some(len) => *len as usize - 2,
-        None => 0,
+    match ipv4_option.get_length_raw().first() {
+        Some(len) if *len >= 2 => *len as usize - 2,
+        _ => 0,
     }
 }
 
