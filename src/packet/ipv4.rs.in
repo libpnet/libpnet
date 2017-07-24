@@ -220,7 +220,7 @@ fn ipv4_options_length(ipv4: &Ipv4Packet) -> usize {
     // the header_length unit is the "word"
     // - and a word is made of 4 bytes,
     // - and the header length (without the options) is 5 words long
-    ipv4.get_header_length() as usize * 4 - 20
+    (ipv4.get_header_length() as usize * 4).saturating_sub(20)
 }
 
 #[test]
