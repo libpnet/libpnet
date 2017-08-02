@@ -143,8 +143,19 @@ pub mod IcmpTypes {
 }
 
 
-/// abstraction for ICMP echo reply packets
 pub mod echo_reply {
+    //! abstraction for ICMP "echo reply" packets.
+    //!
+    //! ```text
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |     Type      |     Code      |          Checksum             |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |           Identifier          |        Sequence Number        |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |     Data ...
+    //! +-+-+-+-+-
+    //! ```
+
     use packet::PrimitiveValues;
     use packet::icmp::{IcmpCode, IcmpType};
     use pnet_macros_support::types::*;
@@ -210,8 +221,19 @@ pub mod echo_reply {
     }
 }
 
-/// abstraction for "echo request" ICMP packets.
 pub mod echo_request {
+    //! abstraction for "echo request" ICMP packets.
+    //!
+    //! ```text
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |     Type      |     Code      |          Checksum             |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |           Identifier          |        Sequence Number        |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |     Data ...
+    //! +-+-+-+-+-
+    //! ```
+
     use packet::PrimitiveValues;
     use packet::icmp::{IcmpCode, IcmpType};
     use pnet_macros_support::types::*;
@@ -277,8 +299,19 @@ pub mod echo_request {
     }
 }
 
-/// abstraction for "destination unreachable" ICMP packets.
 pub mod destination_unreachable {
+    //! abstraction for "destination unreachable" ICMP packets.
+    //!
+    //! ```text
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |     Type      |     Code      |          Checksum             |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |                             unused                            |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |      Internet Header + 64 bits of Original Data Datagram      |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! ```
+
     use packet::icmp::{IcmpCode, IcmpType};
     use pnet_macros_support::types::*;
 
@@ -337,15 +370,17 @@ pub mod destination_unreachable {
 
 
 pub mod time_exceeded {
-    //! abstraction for "destination unreachable" ICMP packets.
+    //! abstraction for "time exceeded" ICMP packets.
     //!
-    //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    //!  |     Type      |     Code      |          Checksum             |
-    //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    //!  |                             unused                            |
-    //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    //!  |      Internet Header + 64 bits of Original Data Datagram      |
-    //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! ```text
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |     Type      |     Code      |          Checksum             |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |                             unused                            |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |      Internet Header + 64 bits of Original Data Datagram      |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! ```
 
     use packet::icmp::{IcmpCode, IcmpType};
     use pnet_macros_support::types::*;
