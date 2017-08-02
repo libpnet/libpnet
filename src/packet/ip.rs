@@ -198,8 +198,11 @@ pub mod IpNextHeaderProtocols {
     /// SKIP
     pub const Skip: IpNextHeaderProtocol = IpNextHeaderProtocol(57);
 
-    /// ICMP for IPv6 [RFC2460]
+    #[deprecated(note="Please use `IpNextHeaderProtocols::Icmpv6` instead")]
     pub const Ipv6Icmp: IpNextHeaderProtocol = IpNextHeaderProtocol(58);
+
+    /// ICMPv6 [RFC4443]
+    pub const Icmpv6: IpNextHeaderProtocol = IpNextHeaderProtocol(58);
 
     /// No Next Header for IPv6 [RFC2460]
     pub const Ipv6NoNxt: IpNextHeaderProtocol = IpNextHeaderProtocol(59);
@@ -546,7 +549,7 @@ impl fmt::Display for IpNextHeaderProtocol {
                    &IpNextHeaderProtocols::Mobile => "Mobile", // 55
                    &IpNextHeaderProtocols::Tlsp => "Tlsp", // 56
                    &IpNextHeaderProtocols::Skip => "Skip", // 57
-                   &IpNextHeaderProtocols::Ipv6Icmp => "Ipv6Icmp", // 58
+                   &IpNextHeaderProtocols::Icmpv6 => "Icmpv6", // 58
                    &IpNextHeaderProtocols::Ipv6NoNxt => "Ipv6NoNxt", // 59
                    &IpNextHeaderProtocols::Ipv6Opts => "Ipv6Opts", // 60
                    &IpNextHeaderProtocols::HostInternal => "HostInternal", // 61

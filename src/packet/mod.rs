@@ -200,4 +200,5 @@ pub mod udp;
 pub mod tcp;
 pub mod arp;
 pub mod icmp;
+pub mod icmpv6;
 pub mod vlan;

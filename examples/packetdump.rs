@@ -16,7 +16,8 @@ use pnet::datalink::{self, NetworkInterface};
 use pnet::packet::Packet;
 use pnet::packet::arp::ArpPacket;
 use pnet::packet::ethernet::{EtherTypes, EthernetPacket};
-use pnet::packet::icmp::{IcmpPacket, IcmpTypes, echo_reply, echo_request};
+use pnet::packet::icmpv6::Icmpv6Packet;
+use pnet::packet::icmp::{echo_reply, echo_request, IcmpPacket, IcmpTypes};
 use pnet::packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
 use pnet::packet::ipv4::Ipv4Packet;
 use pnet::packet::ipv6::Ipv6Packet;
@@ -78,6 +79,21 @@ fn handle_icmp_packet(interface_name: &str, source: IpAddr, destination: IpAddr,
     }
 }
 
+fn handle_icmpv6_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8]) {
+    let icmpv6_packet = Icmpv6Packet::new(packet);
+    if let Some(icmpv6_packet) = icmpv6_packet {
+        println!(
+            "[{}]: ICMPv6 packet {} -> {} (type={:?})",
+            interface_name,
+            source,
+            destination,
+            icmpv6_packet.get_icmpv6_type()
+        )
+    } else {
+        println!("[{}]: Malformed ICMPv6 Packet", interface_name);
+    }
+}
+
 fn handle_tcp_packet(interface_name: &str, source: IpAddr, destination: IpAddr, packet: &[u8]) {
     let tcp = TcpPacket::new(packet);
     if let Some(tcp) = tcp {
@@ -107,6 +123,9 @@ fn handle_transport_protocol(interface_name: &str,
         }
         IpNextHeaderProtocols::Icmp => {
             handle_icmp_packet(interface_name, source, destination, packet)
+        }
+        IpNextHeaderProtocols::Icmpv6 => {
+            handle_icmpv6_packet(interface_name, source, destination, packet)
         }
         _ => {
             println!("[{}]: Unknown {} packet: {} > {}; protocol: {:?} length: {}",

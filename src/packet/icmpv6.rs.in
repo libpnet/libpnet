@@ -1,0 +1,130 @@
+// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+
+use packet::ip::IpNextHeaderProtocols;
+use packet::PrimitiveValues;
+use pnet_macros_support::types::*;
+use std::net::Ipv6Addr;
+
+/// Represents the "ICMPv6 type" header field.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Icmpv6Type(pub u8);
+
+impl Icmpv6Type {
+    /// Create an ICMPv6 type
+    pub fn new(val: u8) -> Icmpv6Type {
+        Icmpv6Type(val)
+    }
+}
+
+impl PrimitiveValues for Icmpv6Type {
+    type T = (u8,);
+    fn to_primitive_values(&self) -> (u8,) {
+        (self.0,)
+    }
+}
+
+/// Represents the "ICMPv6 code" header field.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Icmpv6Code(pub u8);
+
+impl Icmpv6Code {
+    /// Create an ICMPv6 code
+    pub fn new(val: u8) -> Icmpv6Code {
+        Icmpv6Code(val)
+    }
+}
+
+impl PrimitiveValues for Icmpv6Code {
+    type T = (u8,);
+    fn to_primitive_values(&self) -> (u8,) {
+        (self.0,)
+    }
+}
+
+/// Represents a generic ICMPv6 packet
+///
+/// ```text
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |     Type      |     Code      |          Checksum             |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |                                                               |
+/// +                         Message Body                          +
+/// |                                                               |
+/// ```
+#[packet]
+pub struct Icmpv6 {
+    #[construct_with(u8)]
+    pub icmpv6_type: Icmpv6Type,
+    #[construct_with(u8)]
+    pub icmpv6_code: Icmpv6Code,
+    pub checksum: u16be,
+    #[payload]
+    pub payload: Vec<u8>,
+}
+
+/// Calculates the checksum of an ICMPv6 packet
+pub fn checksum(packet: &Icmpv6Packet, source: Ipv6Addr, destination: Ipv6Addr) -> u16be {
+    use packet::Packet;
+    use util;
+
+    util::ipv6_checksum(packet.packet(), 1, &[], source, destination, IpNextHeaderProtocols::Icmpv6)
+}
+
+#[cfg(test)]
+mod checksum_tests {
+    use super::*;
+
+    #[test]
+    fn checksum_echo_request() {
+        // The equivalent of your typical ping -6 ::1%lo
+        let lo = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
+        let mut data = vec![
+            0x80, // Icmpv6 Type
+            0x00, // Code
+            0xff, 0xff, // Checksum
+            0x00, 0x00, // Id
+            0x00, 0x01, // Sequence
+            // 56 bytes of "random" data
+            0x20, 0x20, 0x75, 0x73, 0x74, 0x20, 0x61, 0x20,
+            0x66, 0x6c, 0x65, 0x73, 0x68, 0x20, 0x77, 0x6f,
+            0x75, 0x6e, 0x64, 0x20, 0x20, 0x74, 0x69, 0x73,
+            0x20, 0x62, 0x75, 0x74, 0x20, 0x61, 0x20, 0x73,
+            0x63, 0x72, 0x61, 0x74, 0x63, 0x68, 0x20, 0x20,
+            0x6b, 0x6e, 0x69, 0x67, 0x68, 0x74, 0x73, 0x20,
+            0x6f, 0x66, 0x20, 0x6e, 0x69, 0x20, 0x20, 0x20
+        ];
+        let mut pkg = MutableIcmpv6Packet::new(&mut data[..]).unwrap();
+        assert_eq!(checksum(&pkg.to_immutable(), lo, lo), 0x1d2e);
+
+        // Check
+        pkg.set_icmpv6_type(Icmpv6Type(0x81));
+        assert_eq!(checksum(&pkg.to_immutable(), lo, lo), 0x1c2e);
+    }
+}
+
+
+/// Enumeration of the recognized ICMPv6 types
+#[allow(non_snake_case)]
+#[allow(non_upper_case_globals)]
+pub mod Icmpv6Types {
+
+    use packet::icmpv6::Icmpv6Type;
+    /// ICMPv6 type for "destination unreachable"
+    pub const DestinationUnreachable: Icmpv6Type = Icmpv6Type(1);
+    /// ICMPv6 type for "packet too big"
+    pub const PacketTooBig: Icmpv6Type = Icmpv6Type(2);
+    /// ICMPv6 type for "time exceeded"
+    pub const TimeExceeded: Icmpv6Type = Icmpv6Type(3);
+    /// ICMPv6 type for "parameter problem"
+    pub const ParameterProblem: Icmpv6Type = Icmpv6Type(4);
+    /// ICMPv6 type for "echo request"
+    pub const EchoRequest: Icmpv6Type = Icmpv6Type(128);
+    /// ICMPv6 type for "echo reply"
+    pub const EchoReply: Icmpv6Type = Icmpv6Type(129);
+}
