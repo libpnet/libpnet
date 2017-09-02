@@ -189,7 +189,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
         let len = num_packets * packet_size;
         if len < self.write_buffer.len() {
             let min = cmp::min(self.write_buffer[..].len(), len);
-            let mut mut_slice = &mut self.write_buffer;
+            let mut_slice = &mut self.write_buffer;
             for chunk in mut_slice[..min].chunks_mut(packet_size) {
                 {
                     let eh = MutableEthernetPacket::new(chunk).unwrap();

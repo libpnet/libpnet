@@ -11,7 +11,6 @@
 #![allow(dead_code)]
 
 extern crate libc;
-extern crate winapi;
 
 use sockets;
 use winapi as win;

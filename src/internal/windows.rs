@@ -1,6 +1,5 @@
 extern crate libc;
 extern crate winapi;
-extern crate ws2_32;
 
 use std::io;
 
