@@ -277,12 +277,12 @@ pub mod ndp {
     #[packet]
     pub struct NdpOption {
         #[construct_with(u8)]
-        option_type: NdpOptionType,
+        pub option_type: NdpOptionType,
         #[construct_with(u8)]
-        length: u8,
+        pub length: u8,
         #[length_fn = "ndp_option_payload_length"]
         #[payload]
-        data: Vec<u8>,
+        pub data: Vec<u8>,
     }
 
     /// Calculate the length of the NdpOption's payload
