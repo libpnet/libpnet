@@ -119,6 +119,7 @@ extern crate test;
 #[cfg(windows)]
 extern crate winapi;
 
+#[cfg(not(windows))]
 extern crate libc;
 extern crate ipnetwork;
 extern crate pnet_macros_support;

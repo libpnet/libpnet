@@ -8,8 +8,6 @@
 
 //! Miscellaneous utilities for low level networking
 
-extern crate libc;
-
 use packet::PrimitiveValues;
 use packet::ip::IpNextHeaderProtocol;
 use pnet_macros_support::types::u16be;

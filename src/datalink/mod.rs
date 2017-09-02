@@ -8,9 +8,6 @@
 
 //! Support for sending and receiving data link layer packets
 
-extern crate libc;
-
-
 use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
 use sockets;
 use std::io;
