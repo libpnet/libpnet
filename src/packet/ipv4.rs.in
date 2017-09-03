@@ -273,8 +273,9 @@ fn ipv4_option_payload_length(ipv4_option: &Ipv4OptionPacket) -> usize {
 #[test]
 fn ipv4_packet_test() {
     use packet::ip::IpNextHeaderProtocols;
+    use packet::Packet;
 
-    let mut packet = [0u8; 20];
+    let mut packet = [0u8; 200];
     {
         let mut ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
         ip_header.set_version(4);
@@ -291,6 +292,7 @@ fn ipv4_packet_test() {
 
         ip_header.set_total_length(115);
         assert_eq!(ip_header.get_total_length(), 115);
+        assert_eq!(110, ip_header.payload().len());
 
         ip_header.set_identification(257);
         assert_eq!(ip_header.get_identification(), 257);
@@ -330,7 +332,7 @@ fn ipv4_packet_test() {
                       0xc0, 0xa8, 0x00, 0x01, /* source ip */
                       0xc0, 0xa8, 0x00, 0xc7  /* dest ip */];
 
-    assert_eq!(&ref_packet[..], &packet[..]);
+    assert_eq!(&ref_packet[..], &packet[..ref_packet.len()]);
 }
 
 #[test]
