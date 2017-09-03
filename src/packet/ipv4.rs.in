@@ -150,6 +150,7 @@ pub struct Ipv4 {
     pub destination: Ipv4Addr,
     #[length_fn = "ipv4_options_length"]
     pub options: Vec<Ipv4Option>,
+    #[length_fn = "ipv4_payload_length"]
     #[payload]
     pub payload: Vec<u8>,
 }
@@ -229,6 +230,10 @@ fn ipv4_options_length_test() {
     let mut ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
     ip_header.set_header_length(5);
     assert_eq!(ipv4_options_length(&ip_header.to_immutable()), 0);
+}
+
+fn ipv4_payload_length(ipv4: &Ipv4Packet) -> usize {
+    (ipv4.get_total_length() as usize).saturating_sub(ipv4.get_header_length() as usize)
 }
 
 /// Represents the IPv4 Option field

@@ -26,6 +26,7 @@ pub struct Ipv6 {
     pub source: Ipv6Addr,
     #[construct_with(u16, u16, u16, u16, u16, u16, u16, u16)]
     pub destination: Ipv6Addr,
+    #[length = "payload_length"]
     #[payload]
     pub payload: Vec<u8>,
 }
