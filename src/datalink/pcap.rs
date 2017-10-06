@@ -184,7 +184,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
                 name: dev.name.clone(),
                 index: i as u32,
                 mac: None,
-                ips: None,
+                ips: Vec::new(),
                 flags: 0,
             }
         }).collect()
