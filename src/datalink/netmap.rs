@@ -15,10 +15,8 @@ extern crate libc;
 
 
 use datalink::{self, NetworkInterface};
-use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
+use datalink::{DataLinkReceiver, DataLinkSender};
 use datalink::Channel::Ethernet;
-use packet::Packet;
-use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use self::netmap_sys::netmap::{netmap_slot, nm_ring_empty};
 use self::netmap_sys::netmap_user::{NETMAP_BUF, NETMAP_FD, NETMAP_TXRING, nm_close, nm_desc,
                                     nm_nextpkt, nm_open, nm_pkthdr, nm_ring_next};
@@ -165,12 +163,12 @@ struct DataLinkSenderImpl {
     timeout: Option<libc::timespec>,
 }
 
-impl EthernetDataLinkSender for DataLinkSenderImpl {
+impl DataLinkSender for DataLinkSenderImpl {
     #[inline]
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(MutableEthernetPacket))
+                      func: &mut FnMut(&mut [u8]))
         -> Option<io::Result<()>> {
         assert!(packet_size <= self.desc.buf_size as usize);
         let desc = self.desc.desc;
@@ -193,9 +191,8 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                     let slot_ptr: *mut netmap_slot = mem::transmute(&mut (*ring).slot);
                     let buf = NETMAP_BUF(ring, (*slot_ptr.offset(i as isize)).buf_idx as isize);
                     let slice = slice::from_raw_parts_mut(buf as *mut u8, packet_size);
-                    let meh = MutableEthernetPacket::new(slice).unwrap();
                     (*slot_ptr.offset(i as isize)).len = packet_size as u16;
-                    func(meh);
+                    func(slice);
                     let next = nm_ring_next(ring, i);
                     (*ring).head = next;
                     (*ring).cur = next;
@@ -209,13 +206,12 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
 
     #[inline]
     fn send_to(&mut self,
-               packet: &EthernetPacket,
+               packet: &[u8],
                _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
-        use packet::MutablePacket;
         self.build_and_send(1,
-                            packet.packet().len(),
-                            &mut |mut eh: MutableEthernetPacket| {
+                            packet.len(),
+                            &mut |mut eh: &mut [u8]| {
                                 eh.clone_from(packet);
                             })
     }
@@ -226,20 +222,9 @@ struct DataLinkReceiverImpl {
     timeout: Option<libc::timespec>,
 }
 
-impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
-    // FIXME Layer 3
-    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a> {
-        Box::new(DataLinkChannelIteratorImpl { pc: self })
-    }
-}
-
-struct DataLinkChannelIteratorImpl<'a> {
-    pc: &'a mut DataLinkReceiverImpl,
-}
-
-impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
-    fn next(&mut self) -> io::Result<EthernetPacket> {
-        let desc = self.pc.desc.desc;
+impl DataLinkReceiver for DataLinkReceiverImpl {
+    fn next(&mut self) -> io::Result<&[u8]> {
+        let desc = self.desc.desc;
         let mut h: nm_pkthdr = unsafe { mem::uninitialized() };
         let mut buf = unsafe { nm_nextpkt(desc, &mut h) };
         if buf.is_null() {
@@ -248,13 +233,13 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
                 events: POLLIN,
                 revents: 0,
             };
-            let timespec = self.pc.timeout.as_ref().map(|ts| ts as *const _).unwrap_or(ptr::null());
+            let timespec = self.timeout.as_ref().map(|ts| ts as *const _).unwrap_or(ptr::null());
             if unsafe { ppoll(&mut fds, 1, timespec, ptr::null()) } < 0 {
                 return Err(io::Error::last_os_error());
             }
             buf = unsafe { nm_nextpkt(desc, &mut h) };
         }
-        Ok(EthernetPacket::new(unsafe { slice::from_raw_parts(buf, h.len as usize) }).unwrap())
+        Ok(unsafe { slice::from_raw_parts(buf, h.len as usize) })
     }
 }
 

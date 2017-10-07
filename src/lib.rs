@@ -46,6 +46,7 @@
 //! use pnet::datalink::{self, NetworkInterface};
 //! use pnet::datalink::Channel::Ethernet;
 //! use pnet::packet::{Packet, MutablePacket};
+//! use pnet::packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 //!
 //! use std::env;
 //!
@@ -69,10 +70,11 @@
 //!         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
 //!     };
 //!
-//!     let mut iter = rx.iter();
 //!     loop {
-//!         match iter.next() {
+//!         match rx.next() {
 //!             Ok(packet) => {
+//!                 let packet = EthernetPacket::new(packet).unwrap();
+//!
 //!                 // Constructs a single packet, the same length as the the one received,
 //!                 // using the provided closure. This allows the packet to be constructed
 //!                 // directly in the write buffer, without copying. If copying is not a
@@ -81,6 +83,8 @@
 //!                 // The packet is sent once the closure has finished executing.
 //!                 tx.build_and_send(1, packet.packet().len(),
 //!                     &mut |mut new_packet| {
+//!                         let mut new_packet = MutableEthernetPacket::new(new_packet).unwrap();
+//!
 //!                         // Create a clone of the original packet
 //!                         new_packet.clone_from(&packet);
 //!

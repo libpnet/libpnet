@@ -10,10 +10,7 @@
 //! by in memory FIFO queues. Useful for writing tests.
 
 
-use datalink::{self, EthernetDataLinkChannelIterator, EthernetDataLinkReceiver,
-               EthernetDataLinkSender, NetworkInterface};
-use packet::Packet;
-use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
+use datalink::{self, DataLinkReceiver, DataLinkSender, NetworkInterface};
 use std::io;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
@@ -36,12 +33,12 @@ impl Config {
     /// When using this constructor `inject_handle` and `read_handle` will return `None`.
     /// Those handles must be kept track of elsewhere.
     ///
-    /// The `EthernetDataLinkChannelIterator` created by the dummy backend will read packets from
+    /// The `DataLinkReceiver` created by the dummy backend will read packets from
     /// `receiver`. Both network errors and data can be sent on this channel.
     /// When the `receiver` channel is closed (`Sender` is dropped)
-    /// `EthernetDataLinkChannelIterator::next()` will sleep forever, simlating an idle network.
+    /// `DataLinkReceiver::next()` will sleep forever, simlating an idle network.
     ///
-    /// The `EthernetDataLinkSender` created by the dummy backend will send all packets sent
+    /// The `DataLinkSender` created by the dummy backend will send all packets sent
     /// through `build_and_send()` and `send_to()` to the `sender` channel.
     pub fn new(receiver: Receiver<io::Result<Box<[u8]>>>, sender: Sender<Box<[u8]>>) -> Config {
         Config {
@@ -90,32 +87,29 @@ impl Default for Config {
 /// Create a data link channel backed by FIFO queues. Useful for debugging and testing.
 /// See `Config` for how to inject and read packets on this fake network.
 pub fn channel(_: &NetworkInterface, config: Config) -> io::Result<datalink::Channel> {
-    let sender = Box::new(MockEthernetDataLinkSender { sender: config.sender });
-    let receiver = Box::new(MockEthernetDataLinkReceiver { receiver: Some(config.receiver) });
+    let sender = Box::new(MockDataLinkSender { sender: config.sender });
+    let receiver = Box::new(MockDataLinkReceiver {
+        receiver: config.receiver,
+        used_packets: Vec::new()
+    });
 
     Ok(datalink::Channel::Ethernet(sender, receiver))
 }
 
 
-struct MockEthernetDataLinkSender {
+struct MockDataLinkSender {
     sender: Sender<Box<[u8]>>,
 }
 
-impl EthernetDataLinkSender for MockEthernetDataLinkSender {
+impl DataLinkSender for MockDataLinkSender {
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(MutableEthernetPacket))
+                      func: &mut FnMut(&mut [u8]))
         -> Option<io::Result<()>> {
         for _ in 0..num_packets {
             let mut buffer = vec![0; packet_size];
-            {
-                let pkg = match MutableEthernetPacket::new(&mut buffer[..]) {
-                    Some(pkg) => pkg,
-                    None => return None,
-                };
-                func(pkg);
-            }
+            func(&mut buffer);
             // Send the data to the queue. Don't care if it's closed
             self.sender.send(buffer.into_boxed_slice()).unwrap_or(());
         }
@@ -123,35 +117,22 @@ impl EthernetDataLinkSender for MockEthernetDataLinkSender {
     }
 
     fn send_to(&mut self,
-               packet: &EthernetPacket,
+               packet: &[u8],
                _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
-        let buffer = packet.packet().to_vec();
+        let buffer = packet.to_vec();
         self.sender.send(buffer.into_boxed_slice()).unwrap_or(());
         Some(Ok(()))
     }
 }
 
-struct MockEthernetDataLinkReceiver {
-    receiver: Option<Receiver<io::Result<Box<[u8]>>>>,
-}
-
-impl EthernetDataLinkReceiver for MockEthernetDataLinkReceiver {
-    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a> {
-        Box::new(MockEthernetDataLinkChannelIterator {
-            receiver: self.receiver.take().expect("Only one receiver allowed"),
-            used_packets: vec![],
-        })
-    }
-}
-
-struct MockEthernetDataLinkChannelIterator {
+struct MockDataLinkReceiver {
     receiver: Receiver<io::Result<Box<[u8]>>>,
     used_packets: Vec<Box<[u8]>>,
 }
 
-impl<'a> EthernetDataLinkChannelIterator<'a> for MockEthernetDataLinkChannelIterator {
-    fn next(&mut self) -> io::Result<EthernetPacket> {
+impl DataLinkReceiver for MockDataLinkReceiver {
+    fn next(&mut self) -> io::Result<&[u8]> {
         match self.receiver.recv() {
             Ok(result) => {
                 // A network event happened. Might be a packet or a simulated error
@@ -159,8 +140,7 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for MockEthernetDataLinkChannelIter
                     Ok(buffer) => {
                         self.used_packets.push(buffer);
                         let buffer_ref = &*self.used_packets[self.used_packets.len() - 1];
-                        let packet = EthernetPacket::new(buffer_ref).unwrap();
-                        Ok(packet)
+                        Ok(buffer_ref)
                     }
                     Err(e) => Err(e),
                 }
@@ -198,28 +178,19 @@ pub fn dummy_interface(i: u8) -> NetworkInterface {
 
 #[cfg(test)]
 mod tests {
-    use datalink::{EthernetDataLinkReceiver, EthernetDataLinkSender};
+    use datalink::{DataLinkReceiver, DataLinkSender};
     use datalink::Channel::Ethernet;
 
-    use packet::{MutablePacket, Packet};
-    use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
     use std::io;
     use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
     use std::thread::{sleep, spawn};
     use std::time::Duration;
 
     #[test]
-    fn send_too_small_packet_size() {
-        let (_, _, mut tx, _) = create_net();
-        // Check that it fails to send with too small packet sizes
-        assert!(tx.build_and_send(1, 0, &mut |_| {}).is_none());
-    }
-
-    #[test]
     fn send_nothing() {
         let (_, read_handle, mut tx, _) = create_net();
         // Check that sending zero packets yields zero packets
-        let mut builder = |_: MutableEthernetPacket| {
+        let mut builder = |_: &mut [u8]| {
             panic!("Should not be called");
         };
         tx.build_and_send(0, 20, &mut builder).unwrap().unwrap();
@@ -230,10 +201,10 @@ mod tests {
     fn send_one_packet() {
         let (_, read_handle, mut tx, _) = create_net();
         // Check that sending one packet yields one packet
-        let mut builder = |mut pkg: MutableEthernetPacket| {
-            assert_eq!(pkg.packet().len(), 20);
-            pkg.packet_mut()[0] = 9;
-            pkg.packet_mut()[19] = 201;
+        let mut builder = |pkg: &mut [u8]| {
+            assert_eq!(pkg.len(), 20);
+            pkg[0] = 9;
+            pkg[19] = 201;
         };
         tx.build_and_send(1, 20, &mut builder).unwrap().unwrap();
         let pkg = read_handle.try_recv().expect("Expected one packet to be sent");
@@ -248,8 +219,8 @@ mod tests {
         let (_, read_handle, mut tx, _) = create_net();
         // Check that sending multiple packets does the correct thing
         let mut closure_counter = 0;
-        let mut builder = |mut pkg: MutableEthernetPacket| {
-            pkg.packet_mut()[0] = closure_counter;
+        let mut builder = |pkg: &mut [u8]| {
+            pkg[0] = closure_counter;
             closure_counter += 1;
         };
         tx.build_and_send(3, 20, &mut builder).unwrap().unwrap();
@@ -266,9 +237,8 @@ mod tests {
         let mut buffer = vec![0; 20];
         buffer[1] = 34;
         buffer[18] = 76;
-        let pkg = EthernetPacket::new(&buffer[..]).unwrap();
 
-        tx.send_to(&pkg, None).unwrap().unwrap();
+        tx.send_to(&buffer, None).unwrap().unwrap();
         let pkg = read_handle.try_recv().expect("Expected one packet to be sent");
         assert!(read_handle.try_recv().is_err());
         assert_eq!(pkg.len(), 20);
@@ -281,8 +251,7 @@ mod tests {
         let (_, _, _, mut rx) = create_net();
         let (control_tx, control_rx) = mpsc::channel();
         spawn(move || {
-            let mut rx_iter = rx.iter();
-            rx_iter.next().expect("Should not happen 1");
+            rx.next().expect("Should not happen 1");
             control_tx.send(()).expect("Should not happen 2");
         });
         sleep(Duration::new(0, 1_000_000));
@@ -300,9 +269,8 @@ mod tests {
         let buffer = vec![0; 20];
         inject_handle.send(Ok(buffer.into_boxed_slice())).unwrap();
 
-        let mut rx_iter = rx.iter();
-        let pkg = rx_iter.next().expect("Expected a packet");
-        assert_eq!(pkg.packet().len(), 20);
+        let pkg = rx.next().expect("Expected a packet");
+        assert_eq!(pkg.len(), 20);
     }
 
     #[test]
@@ -314,26 +282,25 @@ mod tests {
             inject_handle.send(Ok(buffer.into_boxed_slice())).unwrap();
         }
 
-        let mut rx_iter = rx.iter();
         {
-            let pkg1 = rx_iter.next().expect("Expected a packet");
-            assert_eq!(pkg1.packet()[0], 0);
+            let pkg1 = rx.next().expect("Expected a packet");
+            assert_eq!(pkg1[0], 0);
         }
         {
-            let pkg2 = rx_iter.next().expect("Expected a packet");
-            assert_eq!(pkg2.packet()[0], 1);
+            let pkg2 = rx.next().expect("Expected a packet");
+            assert_eq!(pkg2[0], 1);
         }
         {
-            let pkg3 = rx_iter.next().expect("Expected a packet");
-            assert_eq!(pkg3.packet()[0], 2);
+            let pkg3 = rx.next().expect("Expected a packet");
+            assert_eq!(pkg3[0], 2);
         }
     }
 
     fn create_net()
         -> (Sender<io::Result<Box<[u8]>>>,
             Receiver<Box<[u8]>>,
-            Box<EthernetDataLinkSender>,
-            Box<EthernetDataLinkReceiver>) {
+            Box<DataLinkSender>,
+            Box<DataLinkReceiver>) {
         let interface = super::dummy_interface(56);
         let mut config = super::Config::default();
         let inject_handle = config.inject_handle().unwrap();

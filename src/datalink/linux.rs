@@ -13,12 +13,10 @@ extern crate libc;
 
 use bindings::linux;
 use datalink::{self, NetworkInterface};
-use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
+use datalink::{DataLinkReceiver, DataLinkSender};
 use datalink::Channel::Ethernet;
 use datalink::ChannelType::{Layer2, Layer3};
 use internal;
-use packet::Packet;
-use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
 use sockets;
 use std::cmp;
 use std::io;
@@ -99,7 +97,7 @@ pub fn channel(network_interface: &NetworkInterface,
     let eth_p_all = 0x0003;
     let (typ, proto) = match config.channel_type {
         Layer2 => (libc::SOCK_RAW, eth_p_all),
-        Layer3(EtherType(proto)) => (libc::SOCK_DGRAM, proto),
+        Layer3(proto) => (libc::SOCK_DGRAM, proto),
     };
     let socket = unsafe { libc::socket(libc::AF_PACKET, typ, proto.to_be() as i32) };
     if socket == -1 {
@@ -178,23 +176,20 @@ struct DataLinkSenderImpl {
     timeout: Option<libc::timespec>,
 }
 
-impl EthernetDataLinkSender for DataLinkSenderImpl {
+impl DataLinkSender for DataLinkSenderImpl {
     // FIXME Layer 3
     #[inline]
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(MutableEthernetPacket))
+                      func: &mut FnMut(&mut [u8]))
         -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len < self.write_buffer.len() {
             let min = cmp::min(self.write_buffer[..].len(), len);
             let mut_slice = &mut self.write_buffer;
             for chunk in mut_slice[..min].chunks_mut(packet_size) {
-                {
-                    let eh = MutableEthernetPacket::new(chunk).unwrap();
-                    func(eh);
-                }
+                func(chunk);
                 let send_addr =
                     (&self.send_addr as *const libc::sockaddr_ll) as *const libc::sockaddr;
 
@@ -235,7 +230,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
 
     #[inline]
     fn send_to(&mut self,
-               packet: &EthernetPacket,
+               packet: &[u8],
                _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
         unsafe {
@@ -259,7 +254,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
             Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")))
         } else {
             match internal::send_to(self.socket.fd,
-                                    packet.packet(),
+                                    packet,
                                     (&self.send_addr as *const libc::sockaddr_ll) as *const _,
                                     self.send_addr_len as libc::socklen_t) {
                 Err(e) => Some(Err(e)),
@@ -277,30 +272,19 @@ struct DataLinkReceiverImpl {
     timeout: Option<libc::timespec>,
 }
 
-impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
-    // FIXME Layer 3
-    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a> {
-        Box::new(DataLinkChannelIteratorImpl { pc: self })
-    }
-}
-
-struct DataLinkChannelIteratorImpl<'a> {
-    pc: &'a mut DataLinkReceiverImpl,
-}
-
-impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
-    fn next(&mut self) -> io::Result<EthernetPacket> {
+impl DataLinkReceiver for DataLinkReceiverImpl {
+    fn next(&mut self) -> io::Result<&[u8]> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
         unsafe {
-            libc::FD_ZERO(&mut self.pc.fd_set as *mut libc::fd_set);
-            libc::FD_SET(self.pc.socket.fd, &mut self.pc.fd_set as *mut libc::fd_set);
+            libc::FD_ZERO(&mut self.fd_set as *mut libc::fd_set);
+            libc::FD_SET(self.socket.fd, &mut self.fd_set as *mut libc::fd_set);
         }
         let ret = unsafe {
-            libc::pselect(self.pc.socket.fd + 1,
-                          &mut self.pc.fd_set as *mut libc::fd_set,
+            libc::pselect(self.socket.fd + 1,
+                          &mut self.fd_set as *mut libc::fd_set,
                           ptr::null_mut(),
                           ptr::null_mut(),
-                          self.pc
+                          self
                               .timeout
                               .as_ref()
                               .map(|to| to as *const libc::timespec)
@@ -312,9 +296,9 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
         } else if ret == 0 {
             Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out"))
         } else {
-            let res = internal::recv_from(self.pc.socket.fd, &mut self.pc.read_buffer, &mut caddr);
+            let res = internal::recv_from(self.socket.fd, &mut self.read_buffer, &mut caddr);
             match res {
-                Ok(len) => Ok(EthernetPacket::new(&self.pc.read_buffer[0..len]).unwrap()),
+                Ok(len) => Ok(&self.read_buffer[0..len]),
                 Err(e) => Err(e),
             }
         }

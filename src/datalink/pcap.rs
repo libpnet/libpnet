@@ -7,10 +7,8 @@ use std::io;
 use std::iter::repeat;
 use self::pcap::{Active, Activated};
 use datalink::{self, NetworkInterface};
-use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
+use datalink::{DataLinkReceiver, DataLinkSender};
 use datalink::Channel::Ethernet;
-use packet::Packet;
-use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::path::Path;
@@ -94,19 +92,16 @@ struct DataLinkSenderImpl {
     capture: Arc<Mutex<pcap::Capture<Active>>>,
 }
 
-impl EthernetDataLinkSender for DataLinkSenderImpl {
+impl DataLinkSender for DataLinkSenderImpl {
     #[inline]
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(MutableEthernetPacket))
+                      func: &mut FnMut(&mut [u8]))
                       -> Option<io::Result<()>> {
         for _ in 0..num_packets {
             let mut data = vec![0; packet_size];
-            {
-                let eh = MutableEthernetPacket::new(&mut data).unwrap();
-                func(eh);
-            }
+            func(&mut data);
             let mut cap = self.capture.lock().unwrap();
             if let Err(e) = cap.sendpacket(data) {
                 return Some(Err(io::Error::new(io::ErrorKind::Other, e)))
@@ -117,10 +112,10 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
 
     #[inline]
     fn send_to(&mut self,
-               packet: &EthernetPacket,
+               packet: &[u8],
                _dst: Option<NetworkInterface>) -> Option<io::Result<()>> {
         let mut cap = self.capture.lock().unwrap();
-        Some(match cap.sendpacket(packet.packet()) {
+        Some(match cap.sendpacket(packet) {
             Ok(()) => Ok(()),
             Err(e) => Err(io::Error::new(io::ErrorKind::Other, e)),
         })
@@ -129,19 +124,19 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
 
 struct InvalidDataLinkSenderImpl {}
 
-impl EthernetDataLinkSender for InvalidDataLinkSenderImpl {
+impl DataLinkSender for InvalidDataLinkSenderImpl {
     #[inline]
     fn build_and_send(&mut self,
                       _num_packets: usize,
                       _packet_size: usize,
-                      _func: &mut FnMut(MutableEthernetPacket))
+                      _func: &mut FnMut(&mut [u8]))
                       -> Option<io::Result<()>> {
         None
     }
 
     #[inline]
     fn send_to(&mut self,
-               _packet: &EthernetPacket,
+               _packet: &[u8],
                _dst: Option<NetworkInterface>) -> Option<io::Result<()>> {
         None
     }
@@ -152,27 +147,18 @@ struct DataLinkReceiverImpl<T: Activated + Send + Sync> {
     read_buffer: Vec<u8>,
 }
 
-impl <T: Activated + Send + Sync> EthernetDataLinkReceiver for DataLinkReceiverImpl<T> {
-    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a> {
-        Box::new(DataLinkChannelIteratorImpl { pc: self })
-    }
-}
 
-struct DataLinkChannelIteratorImpl<'a, T: Activated + Send + Sync + 'a> {
-    pc: &'a mut DataLinkReceiverImpl<T>,
-}
-
-impl<'a, T: Activated + Send + Sync> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a, T> {
-    fn next(&mut self) -> io::Result<EthernetPacket> {
-        let mut cap = self.pc.capture.lock().unwrap();
+impl <T: Activated + Send + Sync> DataLinkReceiver for DataLinkReceiverImpl<T> {
+    fn next(&mut self) -> io::Result<&[u8]> {
+        let mut cap = self.capture.lock().unwrap();
         match cap.next() {
             Ok(pkt) => {
-                self.pc.read_buffer.truncate(0);
-                self.pc.read_buffer.extend(pkt.data);
+                self.read_buffer.truncate(0);
+                self.read_buffer.extend(pkt.data);
             },
             Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
         };
-        Ok(EthernetPacket::new(&self.pc.read_buffer).unwrap())
+        Ok(&self.read_buffer)
     }
 }
 
