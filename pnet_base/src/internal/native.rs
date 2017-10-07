@@ -12,8 +12,8 @@
 
 extern crate libc;
 
-
 use sockets;
+
 use std::io;
 use std::mem;
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
