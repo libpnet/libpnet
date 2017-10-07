@@ -13,7 +13,7 @@ extern crate libc;
 
 use bindings::bpf;
 use datalink::{self, NetworkInterface};
-use datalink::{DataLinkChannelIterator, DataLinkReceiver, DataLinkSender};
+use datalink::{DataLinkReceiver, DataLinkSender};
 use datalink::Channel::Ethernet;
 use internal;
 use sockets;
@@ -229,6 +229,8 @@ pub fn channel(network_interface: &NetworkInterface,
         read_buffer: repeat(0u8).take(allocated_read_buffer_size).collect(),
         loopback: loopback,
         timeout: config.read_timeout.map(|to| internal::duration_to_timespec(to)),
+        // Enough room for minimally sized packets without reallocating
+        packets: VecDeque::with_capacity(allocated_read_buffer_size / 64),
     });
     unsafe {
         libc::FD_ZERO(&mut receiver.fd_set as *mut libc::fd_set);
@@ -336,41 +338,26 @@ struct DataLinkReceiverImpl {
     read_buffer: Vec<u8>,
     loopback: bool,
     timeout: Option<libc::timespec>,
-}
-
-impl DataLinkReceiver for DataLinkReceiverImpl {
-    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
-        let buflen = self.read_buffer.len();
-        Box::new(DataLinkChannelIteratorImpl {
-            pc: self,
-            // Enough room for minimally sized packets without reallocating
-            packets: VecDeque::with_capacity(buflen / 64),
-        })
-    }
-}
-
-struct DataLinkChannelIteratorImpl<'a> {
-    pc: &'a mut DataLinkReceiverImpl,
     packets: VecDeque<(usize, usize)>,
 }
 
-impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+impl DataLinkReceiver for DataLinkReceiverImpl {
     fn next(&mut self) -> io::Result<&[u8]> {
         // Loopback packets arrive with a 4 byte header instead of normal ethernet header.
         // Discard that header and replace with zeroed out ethernet header.
-        let (header_size, buffer_offset) = if self.pc.loopback {
+        let (header_size, buffer_offset) = if self.loopback {
             (4, ETHERNET_HEADER_SIZE)
         } else {
             (0, 0)
         };
         if self.packets.is_empty() {
-            let buffer = &mut self.pc.read_buffer[buffer_offset..];
+            let buffer = &mut self.read_buffer[buffer_offset..];
             let ret = unsafe {
-                libc::pselect(self.pc.fd.fd + 1,
-                              &mut self.pc.fd_set as *mut libc::fd_set,
+                libc::pselect(self.fd.fd + 1,
+                              &mut self.fd_set as *mut libc::fd_set,
                               ptr::null_mut(),
                               ptr::null_mut(),
-                              self.pc
+                              self
                                   .timeout
                                   .as_ref()
                                   .map(|to| to as *const libc::timespec)
@@ -383,7 +370,7 @@ impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
                 return Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out"));
             } else {
                 let buflen = match unsafe {
-                    libc::read(self.pc.fd.fd,
+                    libc::read(self.fd.fd,
                                buffer.as_ptr() as *mut libc::c_void,
                                buffer.len() as libc::size_t)
                 } {
@@ -408,10 +395,10 @@ impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
         let (start, mut len) = self.packets.pop_front().unwrap();
         len += buffer_offset;
         // Zero out part that will become fake ethernet header if on loopback.
-        for i in (&mut self.pc.read_buffer[start..start + buffer_offset]).iter_mut() {
+        for i in (&mut self.read_buffer[start..start + buffer_offset]).iter_mut() {
             *i = 0;
         }
-        Ok(&self.pc.read_buffer[start..start + len])
+        Ok(&self.read_buffer[start..start + len])
     }
 }
 
