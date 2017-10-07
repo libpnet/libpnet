@@ -16,9 +16,8 @@ use datalink::{self, NetworkInterface};
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use datalink::Channel::Ethernet;
 use internal;
-use packet::Packet;
-use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use sockets;
+
 use std::collections::VecDeque;
 use std::ffi::CString;
 use std::io;
@@ -27,6 +26,8 @@ use std::mem;
 use std::ptr;
 use std::sync::Arc;
 use std::time::Duration;
+
+static ETHERNET_HEADER_SIZE: usize = 14;
 
 /// BPF-specific configuration
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -184,7 +185,7 @@ pub fn channel(network_interface: &NetworkInterface,
         loopback = true;
         // So we can guaranatee that we can have a header before the packet.
         // Loopback packets arrive without the header.
-        allocated_read_buffer_size += EthernetPacket::minimum_packet_size();
+        allocated_read_buffer_size += ETHERNET_HEADER_SIZE;
 
         // Allow packets to be read back after they are written
         if let Err(e) = set_feedback(fd) {
@@ -250,7 +251,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(MutableEthernetPacket))
+                      func: &mut FnMut(&mut [u8]))
         -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len >= self.write_buffer.len() {
@@ -258,16 +259,9 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
         } else {
             // If we're sending on the loopback device, discard the ethernet header.
             // The OS will prepend the packet with 4 bytes set to AF_INET.
-            let offset = if self.loopback {
-                MutableEthernetPacket::minimum_packet_size()
-            } else {
-                0
-            };
+            let offset = if self.loopback { ETHERNET_HEADER_SIZE } else { 0 };
             for chunk in self.write_buffer[..len].chunks_mut(packet_size) {
-                {
-                    let eh = MutableEthernetPacket::new(chunk).unwrap();
-                    func(eh);
-                }
+                func(chunk);
                 let ret = unsafe {
                     libc::pselect(self.fd.fd + 1,
                                   ptr::null_mut(),
@@ -301,16 +295,12 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
 
     #[inline]
     fn send_to(&mut self,
-               packet: &EthernetPacket,
+               packet: &[u8],
                _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
         // If we're sending on the loopback device, discard the ethernet header.
         // The OS will prepend the packet with 4 bytes set to AF_INET.
-        let offset = if self.loopback {
-            MutableEthernetPacket::minimum_packet_size()
-        } else {
-            0
-        };
+        let offset = if self.loopback { ETHERNET_HEADER_SIZE } else { 0 };
         let ret = unsafe {
             libc::pselect(self.fd.fd + 1,
                           ptr::null_mut(),
@@ -330,8 +320,8 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
         } else {
             match unsafe {
                 libc::write(self.fd.fd,
-                            packet.packet().as_ptr().offset(offset as isize) as *const libc::c_void,
-                            (packet.packet().len() - offset) as libc::size_t)
+                            packet.as_ptr().offset(offset as isize) as *const libc::c_void,
+                            (packet.len() - offset) as libc::size_t)
             } {
                 len if len == -1 => Some(Err(io::Error::last_os_error())),
                 _ => Some(Ok(())),
@@ -365,11 +355,11 @@ struct DataLinkChannelIteratorImpl<'a> {
 }
 
 impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
-    fn next(&mut self) -> io::Result<EthernetPacket> {
+    fn next(&mut self) -> io::Result<&[u8]> {
         // Loopback packets arrive with a 4 byte header instead of normal ethernet header.
         // Discard that header and replace with zeroed out ethernet header.
         let (header_size, buffer_offset) = if self.pc.loopback {
-            (4, EthernetPacket::minimum_packet_size())
+            (4, ETHERNET_HEADER_SIZE)
         } else {
             (0, 0)
         };
@@ -421,7 +411,7 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
         for i in (&mut self.pc.read_buffer[start..start + buffer_offset]).iter_mut() {
             *i = 0;
         }
-        Ok(EthernetPacket::new(&self.pc.read_buffer[start..start + len]).unwrap())
+        Ok(&self.pc.read_buffer[start..start + len])
     }
 }
 
