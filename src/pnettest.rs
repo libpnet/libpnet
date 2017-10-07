@@ -371,7 +371,7 @@ fn layer2() {
                     if i == 10_000 {
                         panic!("layer2: did not find matching packet after 10_000 iterations");
                     }
-                    if EthernetPacket::new(&packet[..]).unwrap().payload() == eh.payload() {
+                    if EthernetPacket::new(&packet[..]).unwrap().payload() == EthernetPacket::new(eh).unwrap().payload() {
                         return;
                     }
                     i += 1;
@@ -384,7 +384,7 @@ fn layer2() {
     });
 
     rx.recv().unwrap();
-    match dltx.send_to(&EthernetPacket::new(&packet[..]).unwrap(), None) {
+    match dltx.send_to(&packet[..], None) {
         Some(Ok(())) => (),
         Some(Err(e)) => panic!("layer2_test failed: {}", e),
         None => panic!("Provided buffer too small"),
@@ -449,7 +449,7 @@ fn layer2_timeouts() {
             match iter.next() {
                 Ok(eh) => {
                     panic!("layer2_timeouts: should have exceeded timeout ({}/{})",
-                           eh.packet().len(),
+                           eh.len(),
                            packet_len);
                 }
                 Err(e) => {
@@ -462,7 +462,7 @@ fn layer2_timeouts() {
     rx.recv().unwrap();
     // Wait a while
     thread::sleep(Duration::from_millis(1000));
-    match dltx.send_to(&EthernetPacket::new(&packet[..]).unwrap(), None) {
+    match dltx.send_to(&packet[..], None) {
         Some(Ok(())) => (),
         Some(Err(e)) => panic!("layer2_test failed: {}", e),
         None => panic!("Provided buffer too small"),

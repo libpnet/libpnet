@@ -11,7 +11,7 @@ use pnet::datalink::Channel;
 use pnet::packet::ethernet::MutableEthernetPacket;
 use pnet::packet::arp::MutableArpPacket;
 use pnet::packet::ethernet::EtherTypes;
-use pnet::packet::MutablePacket;
+use pnet::packet::{Packet, MutablePacket};
 use pnet::packet::arp::{ArpHardwareTypes, ArpOperations, ArpOperation};
 
 
@@ -44,7 +44,7 @@ fn send_arp_packet(interface: NetworkInterface, source_ip: Ipv4Addr, source_mac:
 
     ethernet_packet.set_payload(arp_packet.packet_mut());
 
-    tx.send_to(&ethernet_packet.to_immutable(), Some(interface));
+    tx.send_to(ethernet_packet.packet(), Some(interface));
 }
 
 fn main() {

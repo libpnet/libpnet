@@ -12,10 +12,8 @@ use pnet::datalink;
 use pnet::packet::{MutablePacket, Packet};
 use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
 use pnet::packet::ip::IpNextHeaderProtocols;
-use pnet::packet::ipv4;
-use pnet::packet::ipv4::MutableIpv4Packet;
-use pnet::packet::udp;
-use pnet::packet::udp::MutableUdpPacket;
+use pnet::packet::ipv4::{self, MutableIpv4Packet};
+use pnet::packet::udp::{self, MutableUdpPacket};
 
 use std::env;
 use std::net::Ipv4Addr;
@@ -90,17 +88,15 @@ fn main() {
     };
 
     let mut buffer = [0u8; 64];
-    let mut mut_ethernet_header = MutableEthernetPacket::new(&mut buffer[..]).unwrap();
     {
+        let mut mut_ethernet_header = MutableEthernetPacket::new(&mut buffer[..]).unwrap();
         mut_ethernet_header.set_destination(destination);
         mut_ethernet_header.set_source(interface.mac_address());
         mut_ethernet_header.set_ethertype(EtherTypes::Ipv4);
         build_udp4_packet(mut_ethernet_header.payload_mut(), "rmesg");
     }
 
-    let ethernet_header = EthernetPacket::new(mut_ethernet_header.packet()).unwrap();
-
     loop {
-        tx.send_to(&ethernet_header, None);
+        tx.send_to(&buffer, None);
     }
 }
