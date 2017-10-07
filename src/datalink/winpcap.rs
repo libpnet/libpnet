@@ -13,7 +13,7 @@ extern crate libc;
 
 use bindings::{bpf, winpcap};
 use datalink::{self, NetworkInterface};
-use datalink::{DataLinkChannelIterator, DataLinkReceiver, DataLinkSender};
+use datalink::{DataLinkReceiver, DataLinkSender};
 use datalink::Channel::Ethernet;
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
@@ -154,6 +154,8 @@ pub fn channel(network_interface: &NetworkInterface,
         adapter: adapter,
         _read_buffer: read_buffer,
         packet: WinPcapPacket { packet: read_packet },
+        // Enough room for minimally sized packets without reallocating
+        packets: VecDeque::with_capacity(unsafe { (*read_packet).Length } as usize / 64),
     });
     Ok(Ethernet(sender, receiver))
 }
@@ -223,45 +225,30 @@ struct DataLinkReceiverImpl {
     adapter: Arc<WinPcapAdapter>,
     _read_buffer: Vec<u8>,
     packet: WinPcapPacket,
-}
-
-impl DataLinkReceiver for DataLinkReceiverImpl {
-    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
-        let buflen = unsafe { (*self.packet.packet).Length } as usize;
-        Box::new(DataLinkChannelIteratorImpl {
-            pc: self,
-            // Enough room for minimally sized packets without reallocating
-            packets: VecDeque::with_capacity(buflen / 64),
-        })
-    }
+    packets: VecDeque<(usize, usize)>,
 }
 
 unsafe impl Send for DataLinkReceiverImpl {}
 unsafe impl Sync for DataLinkReceiverImpl {}
 
-struct DataLinkChannelIteratorImpl<'a> {
-    pc: &'a mut DataLinkReceiverImpl,
-    packets: VecDeque<(usize, usize)>,
-}
-
-impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+impl DataLinkReceiver for DataLinkReceiverImpl {
     fn next(&mut self) -> io::Result<&[u8]> {
         // NOTE Most of the logic here is identical to FreeBSD/OS X
         if self.packets.is_empty() {
             let ret = unsafe {
-                winpcap::PacketReceivePacket(self.pc.adapter.adapter, self.pc.packet.packet, 0)
+                winpcap::PacketReceivePacket(self.adapter.adapter, self.packet.packet, 0)
             };
             let buflen = match ret {
                 0 => return Err(io::Error::last_os_error()),
-                _ => unsafe { (*self.pc.packet.packet).ulBytesReceived },
+                _ => unsafe { (*self.packet.packet).ulBytesReceived },
             };
-            let mut ptr = unsafe { (*self.pc.packet.packet).Buffer };
-            let end = unsafe { (*self.pc.packet.packet).Buffer.offset(buflen as isize) };
+            let mut ptr = unsafe { (*self.packet.packet).Buffer };
+            let end = unsafe { (*self.packet.packet).Buffer.offset(buflen as isize) };
             while ptr < end {
                 unsafe {
                     let packet: *const bpf::bpf_hdr = mem::transmute(ptr);
                     let start = ptr as isize + (*packet).bh_hdrlen as isize -
-                                (*self.pc.packet.packet).Buffer as isize;
+                                (*self.packet.packet).Buffer as isize;
                     self.packets.push_back((start as usize, (*packet).bh_caplen as usize));
                     let offset = (*packet).bh_hdrlen as isize + (*packet).bh_caplen as isize;
                     ptr = ptr.offset(bpf::BPF_WORDALIGN(offset));
@@ -270,7 +257,7 @@ impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
         }
         let (start, len) = self.packets.pop_front().unwrap();
         let slice = unsafe {
-            let data = (*self.pc.packet.packet).Buffer as usize + start;
+            let data = (*self.packet.packet).Buffer as usize + start;
             slice::from_raw_parts(data as *const u8, len)
         };
         Ok(slice)
