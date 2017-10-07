@@ -12,7 +12,7 @@
 
 extern crate libc;
 
-use sockets;
+use pnet_base::sockets;
 use winapi as win;
 
 #[repr(C)]

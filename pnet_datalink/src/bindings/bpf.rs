@@ -12,7 +12,7 @@
 
 extern crate libc;
 
-use sockets;
+use pnet_base::sockets;
 
 pub const AF_LINK: libc::c_int = 18;
 
