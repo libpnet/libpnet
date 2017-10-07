@@ -15,8 +15,6 @@ use bindings::{bpf, winpcap};
 use datalink::{self, NetworkInterface};
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use datalink::Channel::Ethernet;
-use packet::Packet;
-use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
 use std::cmp;
@@ -171,7 +169,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(MutableEthernetPacket))
+                      func: &mut FnMut(&mut [u8]))
         -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len >= unsafe { (*self.packet.packet).Length } as usize {
@@ -181,10 +179,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
             let slice: &mut [u8] =
                 unsafe { slice::from_raw_parts_mut((*self.packet.packet).Buffer as *mut u8, min) };
             for chunk in slice.chunks_mut(packet_size) {
-                {
-                    let eh = MutableEthernetPacket::new(chunk).unwrap();
-                    func(eh);
-                }
+                func(chunk);
 
                 // Make sure the right length of packet is sent
                 let old_len = unsafe { (*self.packet.packet).Length };
@@ -210,14 +205,13 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
 
     #[inline]
     fn send_to(&mut self,
-               packet: &EthernetPacket,
+               packet: &[u8],
                _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
-        use packet::MutablePacket;
         self.build_and_send(1,
-                            packet.packet().len(),
-                            &mut |mut eh| {
-                                eh.clone_from(packet);
+                            packet.len(),
+                            &mut |eh: &mut [u8]| {
+                                eh.copy_from_slice(packet);
                             })
     }
 }
@@ -251,7 +245,7 @@ struct DataLinkChannelIteratorImpl<'a> {
 }
 
 impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
-    fn next(&mut self) -> io::Result<EthernetPacket> {
+    fn next(&mut self) -> io::Result<&[u8]> {
         // NOTE Most of the logic here is identical to FreeBSD/OS X
         if self.packets.is_empty() {
             let ret = unsafe {
@@ -279,7 +273,7 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
             let data = (*self.pc.packet.packet).Buffer as usize + start;
             slice::from_raw_parts(data as *const u8, len)
         };
-        Ok(EthernetPacket::new(slice).unwrap())
+        Ok(slice)
     }
 }
 
