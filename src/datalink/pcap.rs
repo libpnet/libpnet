@@ -7,7 +7,7 @@ use std::io;
 use std::iter::repeat;
 use self::pcap::{Active, Activated};
 use datalink::{self, NetworkInterface};
-use datalink::{DataLinkChannelIterator, DataLinkReceiver, DataLinkSender};
+use datalink::{DataLinkReceiver, DataLinkSender};
 use datalink::Channel::Ethernet;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -147,27 +147,18 @@ struct DataLinkReceiverImpl<T: Activated + Send + Sync> {
     read_buffer: Vec<u8>,
 }
 
+
 impl <T: Activated + Send + Sync> DataLinkReceiver for DataLinkReceiverImpl<T> {
-    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
-        Box::new(DataLinkChannelIteratorImpl { pc: self })
-    }
-}
-
-struct DataLinkChannelIteratorImpl<'a, T: Activated + Send + Sync + 'a> {
-    pc: &'a mut DataLinkReceiverImpl<T>,
-}
-
-impl<'a, T: Activated + Send + Sync> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a, T> {
     fn next(&mut self) -> io::Result<&[u8]> {
-        let mut cap = self.pc.capture.lock().unwrap();
+        let mut cap = self.capture.lock().unwrap();
         match cap.next() {
             Ok(pkt) => {
-                self.pc.read_buffer.truncate(0);
-                self.pc.read_buffer.extend(pkt.data);
+                self.read_buffer.truncate(0);
+                self.read_buffer.extend(pkt.data);
             },
             Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
         };
-        Ok(&self.pc.read_buffer)
+        Ok(&self.read_buffer)
     }
 }
 
