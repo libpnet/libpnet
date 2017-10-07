@@ -13,7 +13,7 @@ extern crate libc;
 
 use bindings::linux;
 use datalink::{self, NetworkInterface};
-use datalink::{DataLinkChannelIterator, DataLinkReceiver, DataLinkSender};
+use datalink::{DataLinkReceiver, DataLinkSender};
 use datalink::Channel::Ethernet;
 use datalink::ChannelType::{Layer2, Layer3};
 use internal;
@@ -273,29 +273,18 @@ struct DataLinkReceiverImpl {
 }
 
 impl DataLinkReceiver for DataLinkReceiverImpl {
-    // FIXME Layer 3
-    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
-        Box::new(DataLinkChannelIteratorImpl { pc: self })
-    }
-}
-
-struct DataLinkChannelIteratorImpl<'a> {
-    pc: &'a mut DataLinkReceiverImpl,
-}
-
-impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
     fn next(&mut self) -> io::Result<&[u8]> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
         unsafe {
-            libc::FD_ZERO(&mut self.pc.fd_set as *mut libc::fd_set);
-            libc::FD_SET(self.pc.socket.fd, &mut self.pc.fd_set as *mut libc::fd_set);
+            libc::FD_ZERO(&mut self.fd_set as *mut libc::fd_set);
+            libc::FD_SET(self.socket.fd, &mut self.fd_set as *mut libc::fd_set);
         }
         let ret = unsafe {
-            libc::pselect(self.pc.socket.fd + 1,
-                          &mut self.pc.fd_set as *mut libc::fd_set,
+            libc::pselect(self.socket.fd + 1,
+                          &mut self.fd_set as *mut libc::fd_set,
                           ptr::null_mut(),
                           ptr::null_mut(),
-                          self.pc
+                          self
                               .timeout
                               .as_ref()
                               .map(|to| to as *const libc::timespec)
@@ -307,9 +296,9 @@ impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
         } else if ret == 0 {
             Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out"))
         } else {
-            let res = internal::recv_from(self.pc.socket.fd, &mut self.pc.read_buffer, &mut caddr);
+            let res = internal::recv_from(self.socket.fd, &mut self.read_buffer, &mut caddr);
             match res {
-                Ok(len) => Ok(&self.pc.read_buffer[0..len]),
+                Ok(len) => Ok(&self.read_buffer[0..len]),
                 Err(e) => Err(e),
             }
         }
