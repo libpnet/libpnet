@@ -11,9 +11,9 @@
 #![allow(dead_code)]
 
 extern crate libc;
+extern crate winapi as win;
 
 use pnet_base::sockets;
-use winapi as win;
 
 #[repr(C)]
 pub struct _ADAPTER;

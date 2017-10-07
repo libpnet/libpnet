@@ -9,13 +9,13 @@
 //! Support for sending and receiving data link layer packets using the WinPcap library
 
 extern crate libc;
-
+extern crate winapi;
 
 use bindings::{bpf, winpcap};
-use {DataLinkReceiver, DataLinkSender, NetworkInterface};
-use datalink::Channel::Ethernet;
+use {DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
+
 use std::cmp;
 use std::collections::VecDeque;
 use std::ffi::{CStr, CString};
@@ -24,7 +24,6 @@ use std::mem;
 use std::slice;
 use std::str::from_utf8_unchecked;
 use std::sync::Arc;
-use util::MacAddr;
 
 struct WinPcapAdapter {
     adapter: winpcap::LPADAPTER,
@@ -60,8 +59,8 @@ pub struct Config {
     pub read_buffer_size: usize,
 }
 
-impl<'a> From<&'a datalink::Config> for Config {
-    fn from(config: &datalink::Config) -> Config {
+impl<'a> From<&'a super::Config> for Config {
+    fn from(config: &super::Config) -> Config {
         Config {
             write_buffer_size: config.write_buffer_size,
             read_buffer_size: config.read_buffer_size,
@@ -82,7 +81,7 @@ impl Default for Config {
 #[inline]
 pub fn channel(network_interface: &NetworkInterface,
                config: Config)
-    -> io::Result<datalink::Channel> {
+    -> io::Result<super::Channel> {
     let mut read_buffer = Vec::new();
     read_buffer.resize(config.read_buffer_size, 0u8);
 
@@ -156,7 +155,7 @@ pub fn channel(network_interface: &NetworkInterface,
         // Enough room for minimally sized packets without reallocating
         packets: VecDeque::with_capacity(unsafe { (*read_packet).Length } as usize / 64),
     });
-    Ok(Ethernet(sender, receiver))
+    Ok(super::Channel::Ethernet(sender, receiver))
 }
 
 struct DataLinkSenderImpl {
@@ -239,10 +238,10 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
             };
             let buflen = match ret {
                 0 => return Err(io::Error::last_os_error()),
-                _ => unsafe { (*self.packet.packet).ulBytesReceived },
+                _ => unsafe { (*self.packet.packet).ulBytesReceived as isize },
             };
             let mut ptr = unsafe { (*self.packet.packet).Buffer };
-            let end = unsafe { (*self.packet.packet).Buffer.offset(buflen as isize) };
+            let end = unsafe { (*self.packet.packet).Buffer.offset(buflen) };
             while ptr < end {
                 unsafe {
                     let packet: *const bpf::bpf_hdr = mem::transmute(ptr);

@@ -13,10 +13,8 @@ extern crate libc;
 
 use bindings::bpf;
 use {DataLinkReceiver, DataLinkSender, NetworkInterface};
-use datalink::Channel::Ethernet;
-use internal;
 
-use pnet_base::sockets;
+use pnet_base::{sockets, internal};
 
 use std::collections::VecDeque;
 use std::ffi::CString;
@@ -53,8 +51,8 @@ pub struct Config {
     pub bpf_fd_attempts: usize,
 }
 
-impl<'a> From<&'a datalink::Config> for Config {
-    fn from(config: &datalink::Config) -> Config {
+impl<'a> From<&'a super::Config> for Config {
+    fn from(config: &super::Config) -> Config {
         Config {
             write_buffer_size: config.write_buffer_size,
             read_buffer_size: config.read_buffer_size,
@@ -82,7 +80,7 @@ impl Default for Config {
 #[inline]
 pub fn channel(network_interface: &NetworkInterface,
                config: Config)
-    -> io::Result<datalink::Channel> {
+    -> io::Result<super::Channel> {
     #[cfg(target_os = "freebsd")]
     fn get_fd(_attempts: usize) -> libc::c_int {
         unsafe {
@@ -237,7 +235,7 @@ pub fn channel(network_interface: &NetworkInterface,
         libc::FD_SET(fd.fd, &mut receiver.fd_set as *mut libc::fd_set);
     }
 
-    Ok(Ethernet(sender, receiver))
+    Ok(super::Channel::Ethernet(sender, receiver))
 }
 
 struct DataLinkSenderImpl {

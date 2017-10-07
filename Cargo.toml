@@ -41,12 +41,6 @@ version = ">=0.0"
 [dependencies.libc]
 version = "0.2.*"
 
-[target.'cfg(windows)'.dependencies.winapi]
-version = "0.2.*"
-
-[target.'cfg(windows)'.dependencies.ws2_32-sys]
-version = "0.2.*"
-
 [dependencies.syntex]
 version = "0.42.*"
 optional = true
