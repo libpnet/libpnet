@@ -363,9 +363,8 @@ fn layer2() {
     let res = thread::spawn(move || {
         tx.send(()).unwrap();
         let mut i = 0usize;
-        let mut iter = dlrx.iter();
         loop {
-            let next = iter.next();
+            let next = dlrx.next();
             match next {
                 Ok(eh) => {
                     if i == 10_000 {
@@ -444,9 +443,8 @@ fn layer2_timeouts() {
     let packet_len = packet.len();
     let res = thread::spawn(move || {
         tx.send(()).unwrap();
-        let mut iter = dlrx.iter();
         loop {
-            match iter.next() {
+            match dlrx.next() {
                 Ok(eh) => {
                     panic!("layer2_timeouts: should have exceeded timeout ({}/{})",
                            eh.len(),

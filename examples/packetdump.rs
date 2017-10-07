@@ -223,9 +223,8 @@ fn main() {
         Err(e) => panic!("packetdump: unable to create channel: {}", e),
     };
 
-    let mut iter = rx.iter();
     loop {
-        match iter.next() {
+        match rx.next() {
             Ok(packet) => handle_packet(&interface.name[..], &EthernetPacket::new(packet).unwrap()),
             Err(e) => panic!("packetdump: unable to receive packet: {}", e),
         }

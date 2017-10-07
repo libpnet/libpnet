@@ -35,9 +35,8 @@ fn main() {
     let mut timestamps = Vec::with_capacity(201);
     timestamps.push(time::precise_time_ns() / 1_000);
 
-    let mut iter = rx.iter();
     loop {
-        match iter.next() {
+        match rx.next() {
             Ok(_) => {
                 i += 1;
                 if i == 1_000_000 {

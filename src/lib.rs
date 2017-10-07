@@ -70,9 +70,8 @@
 //!         Err(e) => panic!("An error occurred when creating the datalink channel: {}", e)
 //!     };
 //!
-//!     let mut iter = rx.iter();
 //!     loop {
-//!         match iter.next() {
+//!         match rx.next() {
 //!             Ok(packet) => {
 //!                 let packet = EthernetPacket::new(packet).unwrap();
 //!
