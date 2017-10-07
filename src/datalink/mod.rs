@@ -177,17 +177,8 @@ pub trait DataLinkSender: Send {
 /// Structure for receiving packets at the data link layer. Should be constructed using
 /// datalink_channel().
 pub trait DataLinkReceiver: Send {
-    /// Returns an iterator over Ethernet frames.
-    ///
-    /// This will likely be removed once other layer two types are supported.
     #[inline]
-    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a>;
-}
-
-/// An iterator over data link layer packets
-pub trait DataLinkChannelIterator<'a> {
     /// Get the next Ethernet frame in the channel
-    #[inline]
     fn next(&mut self) -> io::Result<&[u8]>;
 }
 
