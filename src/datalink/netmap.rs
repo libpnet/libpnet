@@ -15,7 +15,7 @@ extern crate libc;
 
 
 use datalink::{self, NetworkInterface};
-use datalink::{DataLinkChannelIterator, DataLinkReceiver, DataLinkSender};
+use datalink::{DataLinkReceiver, DataLinkSender};
 use datalink::Channel::Ethernet;
 use self::netmap_sys::netmap::{netmap_slot, nm_ring_empty};
 use self::netmap_sys::netmap_user::{NETMAP_BUF, NETMAP_FD, NETMAP_TXRING, nm_close, nm_desc,
@@ -223,19 +223,8 @@ struct DataLinkReceiverImpl {
 }
 
 impl DataLinkReceiver for DataLinkReceiverImpl {
-    // FIXME Layer 3
-    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
-        Box::new(DataLinkChannelIteratorImpl { pc: self })
-    }
-}
-
-struct DataLinkChannelIteratorImpl<'a> {
-    pc: &'a mut DataLinkReceiverImpl,
-}
-
-impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
     fn next(&mut self) -> io::Result<&[u8]> {
-        let desc = self.pc.desc.desc;
+        let desc = self.desc.desc;
         let mut h: nm_pkthdr = unsafe { mem::uninitialized() };
         let mut buf = unsafe { nm_nextpkt(desc, &mut h) };
         if buf.is_null() {
@@ -244,7 +233,7 @@ impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
                 events: POLLIN,
                 revents: 0,
             };
-            let timespec = self.pc.timeout.as_ref().map(|ts| ts as *const _).unwrap_or(ptr::null());
+            let timespec = self.timeout.as_ref().map(|ts| ts as *const _).unwrap_or(ptr::null());
             if unsafe { ppoll(&mut fds, 1, timespec, ptr::null()) } < 0 {
                 return Err(io::Error::last_os_error());
             }
