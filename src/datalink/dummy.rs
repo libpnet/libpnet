@@ -10,8 +10,8 @@
 //! by in memory FIFO queues. Useful for writing tests.
 
 
-use datalink::{self, EthernetDataLinkChannelIterator, EthernetDataLinkReceiver,
-               EthernetDataLinkSender, NetworkInterface};
+use datalink::{self, DataLinkChannelIterator, DataLinkReceiver,
+               DataLinkSender, NetworkInterface};
 use std::io;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
@@ -34,12 +34,12 @@ impl Config {
     /// When using this constructor `inject_handle` and `read_handle` will return `None`.
     /// Those handles must be kept track of elsewhere.
     ///
-    /// The `EthernetDataLinkChannelIterator` created by the dummy backend will read packets from
+    /// The `DataLinkChannelIterator` created by the dummy backend will read packets from
     /// `receiver`. Both network errors and data can be sent on this channel.
     /// When the `receiver` channel is closed (`Sender` is dropped)
-    /// `EthernetDataLinkChannelIterator::next()` will sleep forever, simlating an idle network.
+    /// `DataLinkChannelIterator::next()` will sleep forever, simlating an idle network.
     ///
-    /// The `EthernetDataLinkSender` created by the dummy backend will send all packets sent
+    /// The `DataLinkSender` created by the dummy backend will send all packets sent
     /// through `build_and_send()` and `send_to()` to the `sender` channel.
     pub fn new(receiver: Receiver<io::Result<Box<[u8]>>>, sender: Sender<Box<[u8]>>) -> Config {
         Config {
@@ -88,18 +88,18 @@ impl Default for Config {
 /// Create a data link channel backed by FIFO queues. Useful for debugging and testing.
 /// See `Config` for how to inject and read packets on this fake network.
 pub fn channel(_: &NetworkInterface, config: Config) -> io::Result<datalink::Channel> {
-    let sender = Box::new(MockEthernetDataLinkSender { sender: config.sender });
-    let receiver = Box::new(MockEthernetDataLinkReceiver { receiver: Some(config.receiver) });
+    let sender = Box::new(MockDataLinkSender { sender: config.sender });
+    let receiver = Box::new(MockDataLinkReceiver { receiver: Some(config.receiver) });
 
     Ok(datalink::Channel::Ethernet(sender, receiver))
 }
 
 
-struct MockEthernetDataLinkSender {
+struct MockDataLinkSender {
     sender: Sender<Box<[u8]>>,
 }
 
-impl EthernetDataLinkSender for MockEthernetDataLinkSender {
+impl DataLinkSender for MockDataLinkSender {
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
@@ -124,25 +124,25 @@ impl EthernetDataLinkSender for MockEthernetDataLinkSender {
     }
 }
 
-struct MockEthernetDataLinkReceiver {
+struct MockDataLinkReceiver {
     receiver: Option<Receiver<io::Result<Box<[u8]>>>>,
 }
 
-impl EthernetDataLinkReceiver for MockEthernetDataLinkReceiver {
-    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a> {
-        Box::new(MockEthernetDataLinkChannelIterator {
+impl DataLinkReceiver for MockDataLinkReceiver {
+    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
+        Box::new(MockDataLinkChannelIterator {
             receiver: self.receiver.take().expect("Only one receiver allowed"),
             used_packets: vec![],
         })
     }
 }
 
-struct MockEthernetDataLinkChannelIterator {
+struct MockDataLinkChannelIterator {
     receiver: Receiver<io::Result<Box<[u8]>>>,
     used_packets: Vec<Box<[u8]>>,
 }
 
-impl<'a> EthernetDataLinkChannelIterator<'a> for MockEthernetDataLinkChannelIterator {
+impl<'a> DataLinkChannelIterator<'a> for MockDataLinkChannelIterator {
     fn next(&mut self) -> io::Result<&[u8]> {
         match self.receiver.recv() {
             Ok(result) => {
@@ -189,7 +189,7 @@ pub fn dummy_interface(i: u8) -> NetworkInterface {
 
 #[cfg(test)]
 mod tests {
-    use datalink::{EthernetDataLinkReceiver, EthernetDataLinkSender};
+    use datalink::{DataLinkReceiver, DataLinkSender};
     use datalink::Channel::Ethernet;
 
     use std::io;
@@ -313,8 +313,8 @@ mod tests {
     fn create_net()
         -> (Sender<io::Result<Box<[u8]>>>,
             Receiver<Box<[u8]>>,
-            Box<EthernetDataLinkSender>,
-            Box<EthernetDataLinkReceiver>) {
+            Box<DataLinkSender>,
+            Box<DataLinkReceiver>) {
         let interface = super::dummy_interface(56);
         let mut config = super::Config::default();
         let inject_handle = config.inject_handle().unwrap();

@@ -13,7 +13,7 @@ extern crate libc;
 
 use bindings::bpf;
 use datalink::{self, NetworkInterface};
-use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
+use datalink::{DataLinkChannelIterator, DataLinkReceiver, DataLinkSender};
 use datalink::Channel::Ethernet;
 use internal;
 use sockets;
@@ -246,7 +246,7 @@ struct DataLinkSenderImpl {
     timeout: Option<libc::timespec>,
 }
 
-impl EthernetDataLinkSender for DataLinkSenderImpl {
+impl DataLinkSender for DataLinkSenderImpl {
     #[inline]
     fn build_and_send(&mut self,
                       num_packets: usize,
@@ -338,8 +338,8 @@ struct DataLinkReceiverImpl {
     timeout: Option<libc::timespec>,
 }
 
-impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
-    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a> {
+impl DataLinkReceiver for DataLinkReceiverImpl {
+    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
         let buflen = self.read_buffer.len();
         Box::new(DataLinkChannelIteratorImpl {
             pc: self,
@@ -354,7 +354,7 @@ struct DataLinkChannelIteratorImpl<'a> {
     packets: VecDeque<(usize, usize)>,
 }
 
-impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
     fn next(&mut self) -> io::Result<&[u8]> {
         // Loopback packets arrive with a 4 byte header instead of normal ethernet header.
         // Discard that header and replace with zeroed out ethernet header.

@@ -81,7 +81,7 @@ pub enum ChannelType {
 /// ```
 pub enum Channel {
     /// A datalink channel which sends and receives Ethernet packets
-    Ethernet(Box<EthernetDataLinkSender>, Box<EthernetDataLinkReceiver>),
+    Ethernet(Box<DataLinkSender>, Box<DataLinkReceiver>),
 
     /// This variant should never be used
     ///
@@ -147,7 +147,7 @@ pub fn channel(network_interface: &NetworkInterface, configuration: Config) -> i
 
 
 /// Trait to enable sending $packet packets
-pub trait EthernetDataLinkSender: Send {
+pub trait DataLinkSender: Send {
     /// Create and send a number of packets
     ///
     /// This will call `func` `num_packets` times. The function will be provided with a
@@ -176,16 +176,16 @@ pub trait EthernetDataLinkSender: Send {
 
 /// Structure for receiving packets at the data link layer. Should be constructed using
 /// datalink_channel().
-pub trait EthernetDataLinkReceiver: Send {
+pub trait DataLinkReceiver: Send {
     /// Returns an iterator over Ethernet frames.
     ///
     /// This will likely be removed once other layer two types are supported.
     #[inline]
-    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a>;
+    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a>;
 }
 
 /// An iterator over data link layer packets
-pub trait EthernetDataLinkChannelIterator<'a> {
+pub trait DataLinkChannelIterator<'a> {
     /// Get the next Ethernet frame in the channel
     #[inline]
     fn next(&mut self) -> io::Result<&[u8]>;

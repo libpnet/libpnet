@@ -13,7 +13,7 @@ extern crate libc;
 
 use bindings::linux;
 use datalink::{self, NetworkInterface};
-use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
+use datalink::{DataLinkChannelIterator, DataLinkReceiver, DataLinkSender};
 use datalink::Channel::Ethernet;
 use datalink::ChannelType::{Layer2, Layer3};
 use internal;
@@ -176,7 +176,7 @@ struct DataLinkSenderImpl {
     timeout: Option<libc::timespec>,
 }
 
-impl EthernetDataLinkSender for DataLinkSenderImpl {
+impl DataLinkSender for DataLinkSenderImpl {
     // FIXME Layer 3
     #[inline]
     fn build_and_send(&mut self,
@@ -272,9 +272,9 @@ struct DataLinkReceiverImpl {
     timeout: Option<libc::timespec>,
 }
 
-impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
+impl DataLinkReceiver for DataLinkReceiverImpl {
     // FIXME Layer 3
-    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a> {
+    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
         Box::new(DataLinkChannelIteratorImpl { pc: self })
     }
 }
@@ -283,7 +283,7 @@ struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
 }
 
-impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
     fn next(&mut self) -> io::Result<&[u8]> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
         unsafe {

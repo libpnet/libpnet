@@ -13,7 +13,7 @@ extern crate libc;
 
 use bindings::{bpf, winpcap};
 use datalink::{self, NetworkInterface};
-use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
+use datalink::{DataLinkChannelIterator, DataLinkReceiver, DataLinkSender};
 use datalink::Channel::Ethernet;
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
@@ -164,7 +164,7 @@ struct DataLinkSenderImpl {
     packet: WinPcapPacket,
 }
 
-impl EthernetDataLinkSender for DataLinkSenderImpl {
+impl DataLinkSender for DataLinkSenderImpl {
     #[inline]
     fn build_and_send(&mut self,
                       num_packets: usize,
@@ -225,8 +225,8 @@ struct DataLinkReceiverImpl {
     packet: WinPcapPacket,
 }
 
-impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
-    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a> {
+impl DataLinkReceiver for DataLinkReceiverImpl {
+    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
         let buflen = unsafe { (*self.packet.packet).Length } as usize;
         Box::new(DataLinkChannelIteratorImpl {
             pc: self,
@@ -244,7 +244,7 @@ struct DataLinkChannelIteratorImpl<'a> {
     packets: VecDeque<(usize, usize)>,
 }
 
-impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
     fn next(&mut self) -> io::Result<&[u8]> {
         // NOTE Most of the logic here is identical to FreeBSD/OS X
         if self.packets.is_empty() {

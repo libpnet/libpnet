@@ -15,7 +15,7 @@ extern crate libc;
 
 
 use datalink::{self, NetworkInterface};
-use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
+use datalink::{DataLinkChannelIterator, DataLinkReceiver, DataLinkSender};
 use datalink::Channel::Ethernet;
 use self::netmap_sys::netmap::{netmap_slot, nm_ring_empty};
 use self::netmap_sys::netmap_user::{NETMAP_BUF, NETMAP_FD, NETMAP_TXRING, nm_close, nm_desc,
@@ -163,7 +163,7 @@ struct DataLinkSenderImpl {
     timeout: Option<libc::timespec>,
 }
 
-impl EthernetDataLinkSender for DataLinkSenderImpl {
+impl DataLinkSender for DataLinkSenderImpl {
     #[inline]
     fn build_and_send(&mut self,
                       num_packets: usize,
@@ -222,9 +222,9 @@ struct DataLinkReceiverImpl {
     timeout: Option<libc::timespec>,
 }
 
-impl EthernetDataLinkReceiver for DataLinkReceiverImpl {
+impl DataLinkReceiver for DataLinkReceiverImpl {
     // FIXME Layer 3
-    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a> {
+    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
         Box::new(DataLinkChannelIteratorImpl { pc: self })
     }
 }
@@ -233,7 +233,7 @@ struct DataLinkChannelIteratorImpl<'a> {
     pc: &'a mut DataLinkReceiverImpl,
 }
 
-impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
+impl<'a> DataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
     fn next(&mut self) -> io::Result<&[u8]> {
         let desc = self.pc.desc.desc;
         let mut h: nm_pkthdr = unsafe { mem::uninitialized() };
