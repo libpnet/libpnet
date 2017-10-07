@@ -12,8 +12,7 @@ extern crate libc;
 
 
 use bindings::{bpf, winpcap};
-use datalink::{self, NetworkInterface};
-use datalink::{DataLinkReceiver, DataLinkSender};
+use {DataLinkReceiver, DataLinkSender, NetworkInterface};
 use datalink::Channel::Ethernet;
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};

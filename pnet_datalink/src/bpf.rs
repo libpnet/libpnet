@@ -12,11 +12,11 @@ extern crate libc;
 
 
 use bindings::bpf;
-use datalink::{self, NetworkInterface};
-use datalink::{DataLinkReceiver, DataLinkSender};
+use {DataLinkReceiver, DataLinkSender, NetworkInterface};
 use datalink::Channel::Ethernet;
 use internal;
-use sockets;
+
+use pnet_base::sockets;
 
 use std::collections::VecDeque;
 use std::ffi::CString;

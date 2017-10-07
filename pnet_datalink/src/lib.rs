@@ -8,15 +8,20 @@
 
 //! Support for sending and receiving data link layer packets
 
+extern crate libc;
 extern crate ipnetwork;
+extern crate pnet_base;
 
-use sockets;
 use std::io;
 use std::option::Option;
 use std::time::Duration;
-use util::MacAddr;
 
 use ipnetwork::IpNetwork;
+pub use pnet_base::MacAddr;
+use pnet_base::sockets;
+
+mod bindings;
+
 
 #[cfg(windows)]
 #[path = "winpcap.rs"]

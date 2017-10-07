@@ -8,18 +8,18 @@
 
 //! Interface listing implementation for all non-Windows platforms
 
-use datalink::{NetworkInterface};
+use {NetworkInterface, MacAddr};
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
-use internal;
+use pnet_base::internal;
+
 use libc;
+
 use std::ffi::{CStr, CString};
 use std::mem;
 use std::net::IpAddr;
 use std::os::raw::c_char;
 use std::str::from_utf8_unchecked;
-
-use util::MacAddr;
 
 /// Get a list of available network interfaces for the current machine.
 pub fn interfaces() -> Vec<NetworkInterface> {

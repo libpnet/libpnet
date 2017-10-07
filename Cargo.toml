@@ -26,6 +26,8 @@ with-syntex = ["syntex", "pnet_macros/with-syntex"]
 
 [dependencies]
 ipnetwork = "0.12"
+pnet_base = { path = "pnet_base" }
+pnet_datalink = { path = "pnet_datalink" }
 
 [dependencies.clippy]
 optional = true

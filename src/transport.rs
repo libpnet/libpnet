@@ -20,9 +20,6 @@
 
 extern crate libc;
 
-
-use internal;
-
 use packet::Packet;
 use packet::ip::IpNextHeaderProtocol;
 use packet::ipv4::Ipv4Packet;
@@ -32,7 +29,8 @@ use packet::icmpv6::Icmpv6Packet;
 use packet::tcp::TcpPacket;
 use self::TransportChannelType::{Layer3, Layer4};
 use self::TransportProtocol::{Ipv4, Ipv6};
-use sockets;
+
+use pnet_base::{sockets, internal};
 
 use std::io;
 use std::io::Error;

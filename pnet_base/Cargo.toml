@@ -10,3 +10,4 @@ keywords = ["networking", "ethernet"]
 categories = ["network-programming"]
 
 [dependencies]
+libc = "0.2"

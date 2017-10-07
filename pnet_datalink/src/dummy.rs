@@ -10,12 +10,12 @@
 //! by in memory FIFO queues. Useful for writing tests.
 
 
-use datalink::{self, DataLinkReceiver, DataLinkSender, NetworkInterface};
+use {DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
+
 use std::io;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 use std::time;
-use util::MacAddr;
 
 /// Configuration for the dummy datalink backend. Contains `std::sync::mpsc`
 /// channels that are used to communicate with the fake network.
@@ -62,9 +62,9 @@ impl Config {
     }
 }
 
-impl<'a> From<&'a datalink::Config> for Config {
-    /// Will not use the `datalink::Config`. This will simply call `dummy::Config::default()`.
-    fn from(_config: &datalink::Config) -> Config {
+impl<'a> From<&'a super::Config> for Config {
+    /// Will not use the `super::Config`. This will simply call `dummy::Config::default()`.
+    fn from(_config: &super::Config) -> Config {
         Config::default()
     }
 }
@@ -86,14 +86,14 @@ impl Default for Config {
 
 /// Create a data link channel backed by FIFO queues. Useful for debugging and testing.
 /// See `Config` for how to inject and read packets on this fake network.
-pub fn channel(_: &NetworkInterface, config: Config) -> io::Result<datalink::Channel> {
+pub fn channel(_: &NetworkInterface, config: Config) -> io::Result<super::Channel> {
     let sender = Box::new(MockDataLinkSender { sender: config.sender });
     let receiver = Box::new(MockDataLinkReceiver {
         receiver: config.receiver,
         used_packets: Vec::new()
     });
 
-    Ok(datalink::Channel::Ethernet(sender, receiver))
+    Ok(super::Channel::Ethernet(sender, receiver))
 }
 
 
@@ -178,8 +178,7 @@ pub fn dummy_interface(i: u8) -> NetworkInterface {
 
 #[cfg(test)]
 mod tests {
-    use datalink::{DataLinkReceiver, DataLinkSender};
-    use datalink::Channel::Ethernet;
+    use {DataLinkReceiver, DataLinkSender};
 
     use std::io;
     use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
@@ -308,7 +307,7 @@ mod tests {
 
         let channel = super::channel(&interface, config);
         let (tx, rx) = match channel {
-            Ok(Ethernet(tx, rx)) => (tx, rx),
+            Ok(super::super::Channel::Ethernet(tx, rx)) => (tx, rx),
             _ => panic!("Not a valid channel returned"),
         };
         (inject_handle, read_handle, tx, rx)

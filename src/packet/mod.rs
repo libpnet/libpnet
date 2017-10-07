@@ -10,6 +10,8 @@
 #![allow(missing_docs)]
 #![macro_use]
 
+use pnet_base;
+
 use std::ops::{Deref, DerefMut, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
 
 /// Represents a generic network packet
@@ -164,6 +166,14 @@ pub trait PrimitiveValues {
 
     /// Convert a value to primitive types representing it
     fn to_primitive_values(&self) -> Self::T;
+}
+
+
+impl PrimitiveValues for pnet_base::MacAddr {
+    type T = (u8, u8, u8, u8, u8, u8);
+    fn to_primitive_values(&self) -> (u8, u8, u8, u8, u8, u8) {
+        (self.0, self.1, self.2, self.3, self.4, self.5)
+    }
 }
 
 impl PrimitiveValues for ::std::net::Ipv4Addr {
