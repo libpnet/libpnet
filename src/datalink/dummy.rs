@@ -12,8 +12,6 @@
 
 use datalink::{self, EthernetDataLinkChannelIterator, EthernetDataLinkReceiver,
                EthernetDataLinkSender, NetworkInterface};
-use packet::Packet;
-use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use std::io;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
@@ -105,17 +103,11 @@ impl EthernetDataLinkSender for MockEthernetDataLinkSender {
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(MutableEthernetPacket))
+                      func: &mut FnMut(&mut [u8]))
         -> Option<io::Result<()>> {
         for _ in 0..num_packets {
             let mut buffer = vec![0; packet_size];
-            {
-                let pkg = match MutableEthernetPacket::new(&mut buffer[..]) {
-                    Some(pkg) => pkg,
-                    None => return None,
-                };
-                func(pkg);
-            }
+            func(&mut buffer);
             // Send the data to the queue. Don't care if it's closed
             self.sender.send(buffer.into_boxed_slice()).unwrap_or(());
         }
@@ -123,10 +115,10 @@ impl EthernetDataLinkSender for MockEthernetDataLinkSender {
     }
 
     fn send_to(&mut self,
-               packet: &EthernetPacket,
+               packet: &[u8],
                _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
-        let buffer = packet.packet().to_vec();
+        let buffer = packet.to_vec();
         self.sender.send(buffer.into_boxed_slice()).unwrap_or(());
         Some(Ok(()))
     }
@@ -151,7 +143,7 @@ struct MockEthernetDataLinkChannelIterator {
 }
 
 impl<'a> EthernetDataLinkChannelIterator<'a> for MockEthernetDataLinkChannelIterator {
-    fn next(&mut self) -> io::Result<EthernetPacket> {
+    fn next(&mut self) -> io::Result<&[u8]> {
         match self.receiver.recv() {
             Ok(result) => {
                 // A network event happened. Might be a packet or a simulated error
@@ -159,8 +151,7 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for MockEthernetDataLinkChannelIter
                     Ok(buffer) => {
                         self.used_packets.push(buffer);
                         let buffer_ref = &*self.used_packets[self.used_packets.len() - 1];
-                        let packet = EthernetPacket::new(buffer_ref).unwrap();
-                        Ok(packet)
+                        Ok(buffer_ref)
                     }
                     Err(e) => Err(e),
                 }
@@ -201,25 +192,16 @@ mod tests {
     use datalink::{EthernetDataLinkReceiver, EthernetDataLinkSender};
     use datalink::Channel::Ethernet;
 
-    use packet::{MutablePacket, Packet};
-    use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
     use std::io;
     use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
     use std::thread::{sleep, spawn};
     use std::time::Duration;
 
     #[test]
-    fn send_too_small_packet_size() {
-        let (_, _, mut tx, _) = create_net();
-        // Check that it fails to send with too small packet sizes
-        assert!(tx.build_and_send(1, 0, &mut |_| {}).is_none());
-    }
-
-    #[test]
     fn send_nothing() {
         let (_, read_handle, mut tx, _) = create_net();
         // Check that sending zero packets yields zero packets
-        let mut builder = |_: MutableEthernetPacket| {
+        let mut builder = |_: &mut [u8]| {
             panic!("Should not be called");
         };
         tx.build_and_send(0, 20, &mut builder).unwrap().unwrap();
@@ -230,10 +212,10 @@ mod tests {
     fn send_one_packet() {
         let (_, read_handle, mut tx, _) = create_net();
         // Check that sending one packet yields one packet
-        let mut builder = |mut pkg: MutableEthernetPacket| {
-            assert_eq!(pkg.packet().len(), 20);
-            pkg.packet_mut()[0] = 9;
-            pkg.packet_mut()[19] = 201;
+        let mut builder = |pkg: &mut [u8]| {
+            assert_eq!(pkg.len(), 20);
+            pkg[0] = 9;
+            pkg[19] = 201;
         };
         tx.build_and_send(1, 20, &mut builder).unwrap().unwrap();
         let pkg = read_handle.try_recv().expect("Expected one packet to be sent");
@@ -248,8 +230,8 @@ mod tests {
         let (_, read_handle, mut tx, _) = create_net();
         // Check that sending multiple packets does the correct thing
         let mut closure_counter = 0;
-        let mut builder = |mut pkg: MutableEthernetPacket| {
-            pkg.packet_mut()[0] = closure_counter;
+        let mut builder = |pkg: &mut [u8]| {
+            pkg[0] = closure_counter;
             closure_counter += 1;
         };
         tx.build_and_send(3, 20, &mut builder).unwrap().unwrap();
@@ -266,9 +248,8 @@ mod tests {
         let mut buffer = vec![0; 20];
         buffer[1] = 34;
         buffer[18] = 76;
-        let pkg = EthernetPacket::new(&buffer[..]).unwrap();
 
-        tx.send_to(&pkg, None).unwrap().unwrap();
+        tx.send_to(&buffer, None).unwrap().unwrap();
         let pkg = read_handle.try_recv().expect("Expected one packet to be sent");
         assert!(read_handle.try_recv().is_err());
         assert_eq!(pkg.len(), 20);
@@ -302,7 +283,7 @@ mod tests {
 
         let mut rx_iter = rx.iter();
         let pkg = rx_iter.next().expect("Expected a packet");
-        assert_eq!(pkg.packet().len(), 20);
+        assert_eq!(pkg.len(), 20);
     }
 
     #[test]
@@ -317,15 +298,15 @@ mod tests {
         let mut rx_iter = rx.iter();
         {
             let pkg1 = rx_iter.next().expect("Expected a packet");
-            assert_eq!(pkg1.packet()[0], 0);
+            assert_eq!(pkg1[0], 0);
         }
         {
             let pkg2 = rx_iter.next().expect("Expected a packet");
-            assert_eq!(pkg2.packet()[0], 1);
+            assert_eq!(pkg2[0], 1);
         }
         {
             let pkg3 = rx_iter.next().expect("Expected a packet");
-            assert_eq!(pkg3.packet()[0], 2);
+            assert_eq!(pkg3[0], 2);
         }
     }
 
