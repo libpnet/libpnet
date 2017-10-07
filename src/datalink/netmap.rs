@@ -17,8 +17,6 @@ extern crate libc;
 use datalink::{self, NetworkInterface};
 use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, EthernetDataLinkSender};
 use datalink::Channel::Ethernet;
-use packet::Packet;
-use packet::ethernet::{EthernetPacket, MutableEthernetPacket};
 use self::netmap_sys::netmap::{netmap_slot, nm_ring_empty};
 use self::netmap_sys::netmap_user::{NETMAP_BUF, NETMAP_FD, NETMAP_TXRING, nm_close, nm_desc,
                                     nm_nextpkt, nm_open, nm_pkthdr, nm_ring_next};
@@ -170,7 +168,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(MutableEthernetPacket))
+                      func: &mut FnMut(&mut [u8]))
         -> Option<io::Result<()>> {
         assert!(packet_size <= self.desc.buf_size as usize);
         let desc = self.desc.desc;
@@ -193,9 +191,8 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                     let slot_ptr: *mut netmap_slot = mem::transmute(&mut (*ring).slot);
                     let buf = NETMAP_BUF(ring, (*slot_ptr.offset(i as isize)).buf_idx as isize);
                     let slice = slice::from_raw_parts_mut(buf as *mut u8, packet_size);
-                    let meh = MutableEthernetPacket::new(slice).unwrap();
                     (*slot_ptr.offset(i as isize)).len = packet_size as u16;
-                    func(meh);
+                    func(slice);
                     let next = nm_ring_next(ring, i);
                     (*ring).head = next;
                     (*ring).cur = next;
@@ -209,13 +206,12 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
 
     #[inline]
     fn send_to(&mut self,
-               packet: &EthernetPacket,
+               packet: &[u8],
                _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
-        use packet::MutablePacket;
         self.build_and_send(1,
-                            packet.packet().len(),
-                            &mut |mut eh: MutableEthernetPacket| {
+                            packet.len(),
+                            &mut |mut eh: &mut [u8]| {
                                 eh.clone_from(packet);
                             })
     }
@@ -238,7 +234,7 @@ struct DataLinkChannelIteratorImpl<'a> {
 }
 
 impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
-    fn next(&mut self) -> io::Result<EthernetPacket> {
+    fn next(&mut self) -> io::Result<&[u8]> {
         let desc = self.pc.desc.desc;
         let mut h: nm_pkthdr = unsafe { mem::uninitialized() };
         let mut buf = unsafe { nm_nextpkt(desc, &mut h) };
@@ -254,7 +250,7 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
             }
             buf = unsafe { nm_nextpkt(desc, &mut h) };
         }
-        Ok(EthernetPacket::new(unsafe { slice::from_raw_parts(buf, h.len as usize) }).unwrap())
+        Ok(unsafe { slice::from_raw_parts(buf, h.len as usize) })
     }
 }
 
