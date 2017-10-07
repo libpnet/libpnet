@@ -17,8 +17,7 @@ use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, Ethern
 use datalink::Channel::Ethernet;
 use datalink::ChannelType::{Layer2, Layer3};
 use internal;
-use packet::Packet;
-use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
+use packet::ethernet::EtherType;
 use sockets;
 use std::cmp;
 use std::io;
@@ -184,17 +183,14 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(MutableEthernetPacket))
+                      func: &mut FnMut(&mut [u8]))
         -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len < self.write_buffer.len() {
             let min = cmp::min(self.write_buffer[..].len(), len);
             let mut_slice = &mut self.write_buffer;
             for chunk in mut_slice[..min].chunks_mut(packet_size) {
-                {
-                    let eh = MutableEthernetPacket::new(chunk).unwrap();
-                    func(eh);
-                }
+                func(chunk);
                 let send_addr =
                     (&self.send_addr as *const libc::sockaddr_ll) as *const libc::sockaddr;
 
@@ -235,7 +231,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
 
     #[inline]
     fn send_to(&mut self,
-               packet: &EthernetPacket,
+               packet: &[u8],
                _dst: Option<NetworkInterface>)
         -> Option<io::Result<()>> {
         unsafe {
@@ -259,7 +255,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
             Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")))
         } else {
             match internal::send_to(self.socket.fd,
-                                    packet.packet(),
+                                    packet,
                                     (&self.send_addr as *const libc::sockaddr_ll) as *const _,
                                     self.send_addr_len as libc::socklen_t) {
                 Err(e) => Some(Err(e)),
@@ -289,7 +285,7 @@ struct DataLinkChannelIteratorImpl<'a> {
 }
 
 impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a> {
-    fn next(&mut self) -> io::Result<EthernetPacket> {
+    fn next(&mut self) -> io::Result<&[u8]> {
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
         unsafe {
             libc::FD_ZERO(&mut self.pc.fd_set as *mut libc::fd_set);
@@ -314,7 +310,7 @@ impl<'a> EthernetDataLinkChannelIterator<'a> for DataLinkChannelIteratorImpl<'a>
         } else {
             let res = internal::recv_from(self.pc.socket.fd, &mut self.pc.read_buffer, &mut caddr);
             match res {
-                Ok(len) => Ok(EthernetPacket::new(&self.pc.read_buffer[0..len]).unwrap()),
+                Ok(len) => Ok(&self.pc.read_buffer[0..len]),
                 Err(e) => Err(e),
             }
         }
