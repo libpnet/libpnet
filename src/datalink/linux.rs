@@ -17,7 +17,6 @@ use datalink::{EthernetDataLinkChannelIterator, EthernetDataLinkReceiver, Ethern
 use datalink::Channel::Ethernet;
 use datalink::ChannelType::{Layer2, Layer3};
 use internal;
-use packet::ethernet::EtherType;
 use sockets;
 use std::cmp;
 use std::io;
@@ -98,7 +97,7 @@ pub fn channel(network_interface: &NetworkInterface,
     let eth_p_all = 0x0003;
     let (typ, proto) = match config.channel_type {
         Layer2 => (libc::SOCK_RAW, eth_p_all),
-        Layer3(EtherType(proto)) => (libc::SOCK_DGRAM, proto),
+        Layer3(proto) => (libc::SOCK_DGRAM, proto),
     };
     let socket = unsafe { libc::socket(libc::AF_PACKET, typ, proto.to_be() as i32) };
     if socket == -1 {

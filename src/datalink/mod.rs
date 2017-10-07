@@ -8,7 +8,6 @@
 
 //! Support for sending and receiving data link layer packets
 
-use packet::ethernet::EtherType;
 use sockets;
 use std::io;
 use std::option::Option;
@@ -57,6 +56,8 @@ pub mod pcap;
 
 pub mod dummy;
 
+/// Type alias for an EtherType.
+pub type EtherType = u16;
 
 /// Type of data link channel to present (Linux only)
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
