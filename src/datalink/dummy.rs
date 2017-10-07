@@ -10,8 +10,7 @@
 //! by in memory FIFO queues. Useful for writing tests.
 
 
-use datalink::{self, DataLinkChannelIterator, DataLinkReceiver,
-               DataLinkSender, NetworkInterface};
+use datalink::{self, DataLinkReceiver, DataLinkSender, NetworkInterface};
 use std::io;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
@@ -34,10 +33,10 @@ impl Config {
     /// When using this constructor `inject_handle` and `read_handle` will return `None`.
     /// Those handles must be kept track of elsewhere.
     ///
-    /// The `DataLinkChannelIterator` created by the dummy backend will read packets from
+    /// The `DataLinkReceiver` created by the dummy backend will read packets from
     /// `receiver`. Both network errors and data can be sent on this channel.
     /// When the `receiver` channel is closed (`Sender` is dropped)
-    /// `DataLinkChannelIterator::next()` will sleep forever, simlating an idle network.
+    /// `DataLinkReceiver::next()` will sleep forever, simlating an idle network.
     ///
     /// The `DataLinkSender` created by the dummy backend will send all packets sent
     /// through `build_and_send()` and `send_to()` to the `sender` channel.
@@ -89,7 +88,10 @@ impl Default for Config {
 /// See `Config` for how to inject and read packets on this fake network.
 pub fn channel(_: &NetworkInterface, config: Config) -> io::Result<datalink::Channel> {
     let sender = Box::new(MockDataLinkSender { sender: config.sender });
-    let receiver = Box::new(MockDataLinkReceiver { receiver: Some(config.receiver) });
+    let receiver = Box::new(MockDataLinkReceiver {
+        receiver: config.receiver,
+        used_packets: Vec::new()
+    });
 
     Ok(datalink::Channel::Ethernet(sender, receiver))
 }
@@ -125,24 +127,11 @@ impl DataLinkSender for MockDataLinkSender {
 }
 
 struct MockDataLinkReceiver {
-    receiver: Option<Receiver<io::Result<Box<[u8]>>>>,
-}
-
-impl DataLinkReceiver for MockDataLinkReceiver {
-    fn iter<'a>(&'a mut self) -> Box<DataLinkChannelIterator + 'a> {
-        Box::new(MockDataLinkChannelIterator {
-            receiver: self.receiver.take().expect("Only one receiver allowed"),
-            used_packets: vec![],
-        })
-    }
-}
-
-struct MockDataLinkChannelIterator {
     receiver: Receiver<io::Result<Box<[u8]>>>,
     used_packets: Vec<Box<[u8]>>,
 }
 
-impl<'a> DataLinkChannelIterator<'a> for MockDataLinkChannelIterator {
+impl DataLinkReceiver for MockDataLinkReceiver {
     fn next(&mut self) -> io::Result<&[u8]> {
         match self.receiver.recv() {
             Ok(result) => {
@@ -262,8 +251,7 @@ mod tests {
         let (_, _, _, mut rx) = create_net();
         let (control_tx, control_rx) = mpsc::channel();
         spawn(move || {
-            let mut rx_iter = rx.iter();
-            rx_iter.next().expect("Should not happen 1");
+            rx.next().expect("Should not happen 1");
             control_tx.send(()).expect("Should not happen 2");
         });
         sleep(Duration::new(0, 1_000_000));
@@ -281,8 +269,7 @@ mod tests {
         let buffer = vec![0; 20];
         inject_handle.send(Ok(buffer.into_boxed_slice())).unwrap();
 
-        let mut rx_iter = rx.iter();
-        let pkg = rx_iter.next().expect("Expected a packet");
+        let pkg = rx.next().expect("Expected a packet");
         assert_eq!(pkg.len(), 20);
     }
 
@@ -295,17 +282,16 @@ mod tests {
             inject_handle.send(Ok(buffer.into_boxed_slice())).unwrap();
         }
 
-        let mut rx_iter = rx.iter();
         {
-            let pkg1 = rx_iter.next().expect("Expected a packet");
+            let pkg1 = rx.next().expect("Expected a packet");
             assert_eq!(pkg1[0], 0);
         }
         {
-            let pkg2 = rx_iter.next().expect("Expected a packet");
+            let pkg2 = rx.next().expect("Expected a packet");
             assert_eq!(pkg2[0], 1);
         }
         {
-            let pkg3 = rx_iter.next().expect("Expected a packet");
+            let pkg3 = rx.next().expect("Expected a packet");
             assert_eq!(pkg3[0], 2);
         }
     }
