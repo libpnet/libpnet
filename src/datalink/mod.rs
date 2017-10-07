@@ -8,7 +8,7 @@
 
 //! Support for sending and receiving data link layer packets
 
-use packet::ethernet::{EtherType, EthernetPacket, MutableEthernetPacket};
+use packet::ethernet::EtherType;
 use sockets;
 use std::io;
 use std::option::Option;
@@ -144,65 +144,52 @@ pub fn channel(network_interface: &NetworkInterface, configuration: Config) -> i
     backend::channel(network_interface, (&configuration).into())
 }
 
-macro_rules! dls {
-    ($name:ident, $mut_packet:ident, $packet:ident) => {
-        /// Trait to enable sending $packet packets
-        pub trait $name : Send {
-            /// Create and send a number of packets
-            ///
-            /// This will call `func` `num_packets` times. The function will be provided with a
-            /// mutable packet to manipulate, which will then be sent. This allows packets to be
-            /// built in-place, avoiding the copy required for `send`. If there is not sufficient
-            /// capacity in the buffer, None will be returned.
-            #[inline]
-            fn build_and_send(&mut self,
-                              num_packets: usize,
-                              packet_size: usize,
-                              func: &mut FnMut($mut_packet))
-            -> Option<io::Result<()>>;
 
-            /// Send a packet
-            ///
-            /// This may require an additional copy compared to `build_and_send`, depending on the
-            /// operating system being used. The second parameter is currently ignored, however
-            /// `None` should be passed.
-            #[inline]
-            fn send_to(&mut self,
-                       packet: &$packet,
-                       dst: Option<NetworkInterface>)
-                -> Option<io::Result<()>>;
-        }
-    }
+/// Trait to enable sending $packet packets
+pub trait EthernetDataLinkSender: Send {
+    /// Create and send a number of packets
+    ///
+    /// This will call `func` `num_packets` times. The function will be provided with a
+    /// mutable packet to manipulate, which will then be sent. This allows packets to be
+    /// built in-place, avoiding the copy required for `send`. If there is not sufficient
+    /// capacity in the buffer, None will be returned.
+    #[inline]
+    fn build_and_send(&mut self,
+                      num_packets: usize,
+                      packet_size: usize,
+                      func: &mut FnMut(&mut [u8]))
+    -> Option<io::Result<()>>;
+
+    /// Send a packet
+    ///
+    /// This may require an additional copy compared to `build_and_send`, depending on the
+    /// operating system being used. The second parameter is currently ignored, however
+    /// `None` should be passed.
+    #[inline]
+    fn send_to(&mut self,
+                packet: &[u8],
+                dst: Option<NetworkInterface>)
+        -> Option<io::Result<()>>;
 }
 
-dls!(EthernetDataLinkSender,
-     MutableEthernetPacket,
-     EthernetPacket);
 
-macro_rules! dlr {
-    ($recv_name:ident, $iter_name:ident, $packet:ident) => {
-        /// Structure for receiving packets at the data link layer. Should be constructed using
-        /// datalink_channel().
-        pub trait $recv_name : Send {
-            /// Returns an iterator over `EthernetPacket`s.
-            ///
-            /// This will likely be removed once other layer two types are supported.
-            #[inline]
-            fn iter<'a>(&'a mut self) -> Box<$iter_name + 'a>;
-        }
-
-        /// An iterator over data link layer packets
-        pub trait $iter_name<'a> {
-            /// Get the next EthernetPacket in the channel
-            #[inline]
-            fn next(&mut self) -> io::Result<$packet>;
-        }
-    }
+/// Structure for receiving packets at the data link layer. Should be constructed using
+/// datalink_channel().
+pub trait EthernetDataLinkReceiver: Send {
+    /// Returns an iterator over Ethernet frames.
+    ///
+    /// This will likely be removed once other layer two types are supported.
+    #[inline]
+    fn iter<'a>(&'a mut self) -> Box<EthernetDataLinkChannelIterator + 'a>;
 }
 
-dlr!(EthernetDataLinkReceiver,
-     EthernetDataLinkChannelIterator,
-     EthernetPacket);
+/// An iterator over data link layer packets
+pub trait EthernetDataLinkChannelIterator<'a> {
+    /// Get the next Ethernet frame in the channel
+    #[inline]
+    fn next(&mut self) -> io::Result<&[u8]>;
+}
+
 
 /// Represents a network interface and its associated addresses
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
