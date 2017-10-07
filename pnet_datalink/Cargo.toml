@@ -1,0 +1,14 @@
+[package]
+name = "pnet_datalink"
+version = "0.19.0"
+authors = ["Robert Clipsham <robert@octarineparrot.com>", "Linus Färnstrand <faern@faern.net>"]
+license = "MIT/Apache-2.0"
+homepage = "https://github.com/libpnet/libpnet"
+repository = "https://github.com/libpnet/libpnet"
+documentation = "http://octarineparrot.com/assets/libpnet/doc/pnet/"
+description = "Cross-platform, datalink layer networking."
+keywords = ["networking", "datalink", "ethernet", "raw"]
+categories = ["network-programming"]
+
+[dependencies]
+ipnetwork = "0.12"

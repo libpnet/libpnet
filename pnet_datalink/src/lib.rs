@@ -8,6 +8,8 @@
 
 //! Support for sending and receiving data link layer packets
 
+extern crate ipnetwork;
+
 use sockets;
 use std::io;
 use std::option::Option;
