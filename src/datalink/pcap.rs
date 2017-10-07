@@ -108,7 +108,7 @@ impl EthernetDataLinkSender for DataLinkSenderImpl {
                 func(eh);
             }
             let mut cap = self.capture.lock().unwrap();
-            if let Err(e) = cap.sendpacket(&data) {
+            if let Err(e) = cap.sendpacket(data) {
                 return Some(Err(io::Error::new(io::ErrorKind::Other, e)))
             }
         }
@@ -184,7 +184,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
                 name: dev.name.clone(),
                 index: i as u32,
                 mac: None,
-                ips: None,
+                ips: Vec::new(),
                 flags: 0,
             }
         }).collect()
