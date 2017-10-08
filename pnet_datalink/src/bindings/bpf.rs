@@ -12,6 +12,8 @@
 
 extern crate libc;
 
+use pnet_sys;
+
 pub const AF_LINK: libc::c_int = 18;
 
 const IF_NAMESIZE: usize = 16;

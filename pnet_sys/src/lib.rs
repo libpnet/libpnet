@@ -14,14 +14,14 @@ use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 
 
 #[cfg(unix)]
-mod unix;
-#[cfg(unix)]
-pub use self::unix::*;
+#[path = "unix.rs"]
+mod imp;
 
 #[cfg(windows)]
-mod windows;
-#[cfg(windows)]
-pub use self::windows::*;
+#[path = "windows.rs"]
+mod imp;
+
+pub use self::imp::public::*;
 
 
 
@@ -44,8 +44,8 @@ pub fn send_to(socket: CSocket,
                slen: SockLen)
     -> io::Result<usize> {
 
-    let send_len = retry(&mut || unsafe {
-        sendto(
+    let send_len = imp::retry(&mut || unsafe {
+        imp::sendto(
             socket,
             buffer.as_ptr() as Buf,
             buffer.len() as BufLen,
@@ -67,8 +67,8 @@ pub fn recv_from(socket: CSocket,
                  caddr: *mut SockAddrStorage)
     -> io::Result<usize> {
     let mut caddrlen = mem::size_of::<SockAddrStorage>() as SockLen;
-    let len = retry(&mut || unsafe {
-        recvfrom(
+    let len = imp::retry(&mut || unsafe {
+        imp::recvfrom(
             socket,
             buffer.as_ptr() as MutBuf,
             buffer.len() as BufLen,
@@ -120,7 +120,7 @@ pub fn addr_to_sockaddr(addr: SocketAddr,
             SocketAddr::V4(sa) => {
                 let ip_addr = sa.ip();
                 let octets = ip_addr.octets();
-                let inaddr = mk_inaddr(u32::from_be(((octets[0] as u32) << 24) |
+                let inaddr = imp::mk_inaddr(u32::from_be(((octets[0] as u32) << 24) |
                                                              ((octets[1] as u32) << 16) |
                                                              ((octets[2] as u32) << 8) |
                                                              (octets[3] as u32)));
@@ -151,7 +151,7 @@ pub fn sockaddr_to_addr(storage: &SockAddrStorage, len: usize) -> io::Result<Soc
         AF_INET => {
             assert!(len as usize >= mem::size_of::<SockAddrIn>());
             let storage: &SockAddrIn = unsafe { mem::transmute(storage) };
-            let ip = ipv4_addr(storage.sin_addr);
+            let ip = imp::ipv4_addr(storage.sin_addr);
             let a = (ip >> 24) as u8;
             let b = (ip >> 16) as u8;
             let c = (ip >> 8) as u8;

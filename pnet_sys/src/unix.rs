@@ -1,33 +1,64 @@
-extern crate libc;
-
+use libc;
 use std::io;
-use std::time::Duration;
 
-pub type CSocket = libc::c_int;
-pub type Buf = *const libc::c_void;
-pub type MutBuf = *mut libc::c_void;
-pub type BufLen = libc::size_t;
-pub type CouldFail = libc::ssize_t;
-pub type SockLen = libc::socklen_t;
-pub type SockAddr = libc::sockaddr;
-pub type SockAddrIn = libc::sockaddr_in;
-pub type SockAddrIn6 = libc::sockaddr_in6;
-pub type SockAddrStorage = libc::sockaddr_storage;
-pub type SockAddrFamily = libc::sa_family_t;
-pub type SockAddrFamily6 = libc::sa_family_t;
-pub type InAddr = libc::in_addr;
-pub type In6Addr = libc::in6_addr;
+pub mod public {
+    use libc;
+    use std::time::Duration;
 
-pub const AF_INET: libc::c_int = libc::AF_INET;
-pub const AF_INET6: libc::c_int = libc::AF_INET6;
-pub const SOCK_RAW: libc::c_int = libc::SOCK_RAW;
+    pub type CSocket = libc::c_int;
+    pub type Buf = *const libc::c_void;
+    pub type MutBuf = *mut libc::c_void;
+    pub type BufLen = libc::size_t;
+    pub type CouldFail = libc::ssize_t;
+    pub type SockLen = libc::socklen_t;
+    pub type SockAddr = libc::sockaddr;
+    pub type SockAddrIn = libc::sockaddr_in;
+    pub type SockAddrIn6 = libc::sockaddr_in6;
+    pub type SockAddrStorage = libc::sockaddr_storage;
+    pub type SockAddrFamily = libc::sa_family_t;
+    pub type SockAddrFamily6 = libc::sa_family_t;
+    pub type InAddr = libc::in_addr;
+    pub type In6Addr = libc::in6_addr;
 
-pub const IPPROTO_IP: libc::c_int = libc::IPPROTO_IP;
-pub const IP_HDRINCL: libc::c_int = libc::IP_HDRINCL;
+    pub const AF_INET: libc::c_int = libc::AF_INET;
+    pub const AF_INET6: libc::c_int = libc::AF_INET6;
+    pub const SOCK_RAW: libc::c_int = libc::SOCK_RAW;
 
-pub const IFF_LOOPBACK: libc::c_int = libc::IFF_LOOPBACK;
+    pub const IPPROTO_IP: libc::c_int = libc::IPPROTO_IP;
+    pub const IP_HDRINCL: libc::c_int = libc::IP_HDRINCL;
 
-pub const INVALID_SOCKET: CSocket = -1;
+    pub const IFF_LOOPBACK: libc::c_int = libc::IFF_LOOPBACK;
+
+    pub const INVALID_SOCKET: CSocket = -1;
+
+
+    pub unsafe fn close(sock: CSocket) {
+        let _ = libc::close(sock);
+    }
+
+    pub unsafe fn socket(af: libc::c_int, sock: libc::c_int, proto: libc::c_int) -> CSocket {
+        libc::socket(af, sock, proto)
+    }
+
+    pub unsafe fn setsockopt(socket: CSocket,
+                            level: libc::c_int,
+                            name: libc::c_int,
+                            value: Buf,
+                            option_len: SockLen)
+        -> libc::c_int {
+        libc::setsockopt(socket, level, name, value, option_len)
+    }
+
+    pub fn duration_to_timespec(dur: Duration) -> libc::timespec {
+        libc::timespec {
+            tv_sec: dur.as_secs() as libc::time_t,
+            tv_nsec: dur.subsec_nanos() as libc::c_long,
+        }
+    }
+
+}
+
+use self::public::*;
 
 #[inline(always)]
 pub fn ipv4_addr(addr: InAddr) -> u32 {
@@ -39,22 +70,6 @@ pub fn mk_inaddr(addr: u32) -> InAddr {
     InAddr { s_addr: addr }
 }
 
-pub unsafe fn close(sock: CSocket) {
-    let _ = libc::close(sock);
-}
-
-pub unsafe fn socket(af: libc::c_int, sock: libc::c_int, proto: libc::c_int) -> CSocket {
-    libc::socket(af, sock, proto)
-}
-
-pub unsafe fn setsockopt(socket: CSocket,
-                         level: libc::c_int,
-                         name: libc::c_int,
-                         value: Buf,
-                         option_len: SockLen)
-    -> libc::c_int {
-    libc::setsockopt(socket, level, name, value, option_len)
-}
 
 pub unsafe fn sendto(socket: CSocket,
                      buf: Buf,
@@ -92,11 +107,4 @@ pub fn retry<F>(f: &mut F) -> libc::ssize_t
 
 fn errno() -> i32 {
     io::Error::last_os_error().raw_os_error().unwrap()
-}
-
-pub fn duration_to_timespec(dur: Duration) -> libc::timespec {
-    libc::timespec {
-        tv_sec: dur.as_secs() as libc::time_t,
-        tv_nsec: dur.subsec_nanos() as libc::c_long,
-    }
 }
