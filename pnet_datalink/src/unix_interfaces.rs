@@ -11,7 +11,7 @@
 use {NetworkInterface, MacAddr};
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
-use pnet_sys::internal;
+use pnet_sys;
 
 use libc;
 
@@ -96,7 +96,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
 
             (Some(mac), None)
         } else {
-            let addr = internal::sockaddr_to_addr(mem::transmute(sa),
+            let addr = pnet_sys::sockaddr_to_addr(mem::transmute(sa),
                                                   mem::size_of::<libc::sockaddr_storage>());
 
             match addr {
@@ -128,7 +128,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
 
             (Some(mac), None)
         } else {
-            let addr = internal::sockaddr_to_addr(mem::transmute(sa),
+            let addr = pnet_sys::sockaddr_to_addr(mem::transmute(sa),
                                                   mem::size_of::<libc::sockaddr_storage>());
 
             match addr {

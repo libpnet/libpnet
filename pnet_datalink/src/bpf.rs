@@ -14,7 +14,7 @@ extern crate libc;
 use bindings::bpf;
 use {DataLinkReceiver, DataLinkSender, NetworkInterface};
 
-use pnet_sys::{sockets, internal};
+use pnet_sys::{self, sockets};
 
 use std::collections::VecDeque;
 use std::ffi::CString;
@@ -209,13 +209,13 @@ pub fn channel(network_interface: &NetworkInterface,
         return Err(err);
     }
 
-    let fd = Arc::new(internal::FileDesc { fd: fd });
+    let fd = Arc::new(pnet_sys::FileDesc { fd: fd });
     let mut sender = Box::new(DataLinkSenderImpl {
         fd: fd.clone(),
         fd_set: unsafe { mem::zeroed() },
         write_buffer: repeat(0u8).take(config.write_buffer_size).collect(),
         loopback: loopback,
-        timeout: config.write_timeout.map(|to| internal::duration_to_timespec(to)),
+        timeout: config.write_timeout.map(|to| pnet_sys::duration_to_timespec(to)),
     });
     unsafe {
         libc::FD_ZERO(&mut sender.fd_set as *mut libc::fd_set);
@@ -226,7 +226,7 @@ pub fn channel(network_interface: &NetworkInterface,
         fd_set: unsafe { mem::zeroed() },
         read_buffer: repeat(0u8).take(allocated_read_buffer_size).collect(),
         loopback: loopback,
-        timeout: config.read_timeout.map(|to| internal::duration_to_timespec(to)),
+        timeout: config.read_timeout.map(|to| pnet_sys::duration_to_timespec(to)),
         // Enough room for minimally sized packets without reallocating
         packets: VecDeque::with_capacity(allocated_read_buffer_size / 64),
     });
@@ -239,7 +239,7 @@ pub fn channel(network_interface: &NetworkInterface,
 }
 
 struct DataLinkSenderImpl {
-    fd: Arc<internal::FileDesc>,
+    fd: Arc<pnet_sys::FileDesc>,
     fd_set: libc::fd_set,
     write_buffer: Vec<u8>,
     loopback: bool,
@@ -331,7 +331,7 @@ impl DataLinkSender for DataLinkSenderImpl {
 }
 
 struct DataLinkReceiverImpl {
-    fd: Arc<internal::FileDesc>,
+    fd: Arc<pnet_sys::FileDesc>,
     fd_set: libc::fd_set,
     read_buffer: Vec<u8>,
     loopback: bool,
