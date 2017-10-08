@@ -13,7 +13,7 @@ extern crate libc;
 use bindings::linux;
 use {DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
 
-use pnet_base::{sockets, internal};
+use pnet_sys::{sockets, internal};
 
 use std::cmp;
 use std::io;

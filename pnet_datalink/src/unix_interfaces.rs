@@ -11,7 +11,7 @@
 use {NetworkInterface, MacAddr};
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
-use pnet_base::internal;
+use pnet_sys::internal;
 
 use libc;
 

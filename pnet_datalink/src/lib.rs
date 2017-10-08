@@ -11,14 +11,16 @@
 extern crate libc;
 extern crate ipnetwork;
 extern crate pnet_base;
+extern crate pnet_sys;
 
 use std::io;
 use std::option::Option;
 use std::time::Duration;
 
 use ipnetwork::IpNetwork;
+
 pub use pnet_base::MacAddr;
-use pnet_base::sockets;
+use pnet_sys::sockets;
 
 mod bindings;
 

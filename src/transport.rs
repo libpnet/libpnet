@@ -30,7 +30,7 @@ use packet::tcp::TcpPacket;
 use self::TransportChannelType::{Layer3, Layer4};
 use self::TransportProtocol::{Ipv4, Ipv6};
 
-use pnet_base::{sockets, internal};
+use pnet_sys::{sockets, internal};
 
 use std::io;
 use std::io::Error;

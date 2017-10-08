@@ -13,7 +13,7 @@
 extern crate libc;
 extern crate winapi as win;
 
-use pnet_base::sockets;
+use pnet_sys::sockets;
 
 #[repr(C)]
 pub struct _ADAPTER;

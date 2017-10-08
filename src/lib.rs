@@ -126,6 +126,7 @@ extern crate ipnetwork;
 extern crate pnet_macros_support;
 
 extern crate pnet_base;
+extern crate pnet_sys;
 extern crate pnet_datalink;
 
 /// Support for sending and receiving data link layer packets
