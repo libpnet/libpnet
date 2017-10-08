@@ -30,7 +30,7 @@ use packet::tcp::TcpPacket;
 use self::TransportChannelType::{Layer3, Layer4};
 use self::TransportProtocol::{Ipv4, Ipv6};
 
-use pnet_sys::{self, sockets};
+use pnet_sys;
 
 use std::io;
 use std::io::Error;
@@ -97,14 +97,14 @@ pub fn transport_channel(buffer_size: usize,
         match channel_type {
             Layer4(Ipv4(IpNextHeaderProtocol(proto))) |
             Layer3(IpNextHeaderProtocol(proto)) => {
-                sockets::socket(sockets::AF_INET, sockets::SOCK_RAW, proto as libc::c_int)
+                pnet_sys::socket(pnet_sys::AF_INET, pnet_sys::SOCK_RAW, proto as libc::c_int)
             }
             Layer4(Ipv6(IpNextHeaderProtocol(proto))) => {
-                sockets::socket(sockets::AF_INET6, sockets::SOCK_RAW, proto as libc::c_int)
+                pnet_sys::socket(pnet_sys::AF_INET6, pnet_sys::SOCK_RAW, proto as libc::c_int)
             }
         }
     };
-    if socket == sockets::INVALID_SOCKET {
+    if socket == pnet_sys::INVALID_SOCKET {
         return Err(Error::last_os_error());
     }
 
@@ -117,16 +117,18 @@ pub fn transport_channel(buffer_size: usize,
             _ => 1,
         };
         let res = unsafe {
-            sockets::setsockopt(socket,
-                                sockets::IPPROTO_IP,
-                                sockets::IP_HDRINCL,
-                                (&hincl as *const libc::c_int) as sockets::Buf,
-                                mem::size_of::<libc::c_int>() as sockets::SockLen)
+            pnet_sys::setsockopt(
+                socket,
+                pnet_sys::IPPROTO_IP,
+                pnet_sys::IP_HDRINCL,
+                (&hincl as *const libc::c_int) as pnet_sys::Buf,
+                mem::size_of::<libc::c_int>() as pnet_sys::SockLen
+            )
         };
         if res == -1 {
             let err = Error::last_os_error();
             unsafe {
-                sockets::close(socket);
+                pnet_sys::close(socket);
             }
             return Err(err);
         }
@@ -153,8 +155,8 @@ impl TransportSender {
             IpAddr::V4(ip_addr) => net::SocketAddr::V4(net::SocketAddrV4::new(ip_addr, 0)),
             IpAddr::V6(ip_addr) => net::SocketAddr::V6(net::SocketAddrV6::new(ip_addr, 0, 0, 0)),
         };
-        let slen = pnet_sys::sockets::addr_to_sockaddr(sockaddr, &mut caddr);
-        let caddr_ptr = (&caddr as *const sockets::SockAddrStorage) as *const sockets::SockAddr;
+        let slen = pnet_sys::addr_to_sockaddr(sockaddr, &mut caddr);
+        let caddr_ptr = (&caddr as *const pnet_sys::SockAddrStorage) as *const pnet_sys::SockAddr;
 
         pnet_sys::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen)
     }
@@ -224,7 +226,7 @@ macro_rules! transport_channel_iterator {
         impl<'a> $iter<'a> {
             /// Get the next ($ty, IpAddr) pair for the given channel
             pub fn next(&mut self) -> io::Result<($ty, IpAddr)> {
-                let mut caddr: sockets::SockAddrStorage = unsafe { mem::zeroed() };
+                let mut caddr: pnet_sys::SockAddrStorage = unsafe { mem::zeroed() };
                 let res = pnet_sys::recv_from(self.tr.socket.fd,
                                               &mut self.tr.buffer[..],
                                               &mut caddr);
@@ -245,9 +247,9 @@ macro_rules! transport_channel_iterator {
                 return match res {
                     Ok(len) => {
                         let packet = $ty::new(&self.tr.buffer[offset..len]).unwrap();
-                        let addr = pnet_sys::sockets::sockaddr_to_addr(
+                        let addr = pnet_sys::sockaddr_to_addr(
                             &caddr,
-                            mem::size_of::<sockets::SockAddrStorage>()
+                            mem::size_of::<pnet_sys::SockAddrStorage>()
                         );
                         let ip = match addr.unwrap() {
                             net::SocketAddr::V4(sa) => IpAddr::V4(*sa.ip()),

@@ -20,7 +20,6 @@ use std::time::Duration;
 use ipnetwork::IpNetwork;
 
 pub use pnet_base::MacAddr;
-use pnet_sys::sockets;
 
 mod bindings;
 
@@ -215,7 +214,7 @@ impl NetworkInterface {
 
     /// Is the interface a loopback interface?
     pub fn is_loopback(&self) -> bool {
-        self.flags & (sockets::IFF_LOOPBACK as u32) != 0
+        self.flags & (pnet_sys::IFF_LOOPBACK as u32) != 0
     }
 }
 

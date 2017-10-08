@@ -13,7 +13,7 @@ extern crate libc;
 use bindings::linux;
 use {DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
 
-use pnet_sys::{self, sockets};
+use pnet_sys;
 
 use std::cmp;
 use std::io;
@@ -109,7 +109,7 @@ pub fn channel(network_interface: &NetworkInterface,
     if unsafe { libc::bind(socket, send_addr, len as libc::socklen_t) } == -1 {
         let err = io::Error::last_os_error();
         unsafe {
-            sockets::close(socket);
+            pnet_sys::close(socket);
         }
         return Err(err);
     }
@@ -128,7 +128,7 @@ pub fn channel(network_interface: &NetworkInterface,
     } == -1 {
         let err = io::Error::last_os_error();
         unsafe {
-            sockets::close(socket);
+            pnet_sys::close(socket);
         }
         return Err(err);
     }
@@ -136,9 +136,7 @@ pub fn channel(network_interface: &NetworkInterface,
     // Enable nonblocking
     if unsafe { libc::fcntl(socket, libc::F_SETFL, libc::O_NONBLOCK) } == -1 {
         let err = io::Error::last_os_error();
-        unsafe {
-            sockets::close(socket);
-        }
+        unsafe { pnet_sys::close(socket); }
         return Err(err);
     }
 

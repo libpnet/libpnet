@@ -14,7 +14,7 @@ extern crate libc;
 use bindings::bpf;
 use {DataLinkReceiver, DataLinkSender, NetworkInterface};
 
-use pnet_sys::{self, sockets};
+use pnet_sys;
 
 use std::collections::VecDeque;
 use std::ffi::CString;
@@ -204,7 +204,7 @@ pub fn channel(network_interface: &NetworkInterface,
     if unsafe { libc::fcntl(fd, libc::F_SETFL, libc::O_NONBLOCK) } == -1 {
         let err = io::Error::last_os_error();
         unsafe {
-            sockets::close(fd);
+            pnet_sys::close(fd);
         }
         return Err(err);
     }

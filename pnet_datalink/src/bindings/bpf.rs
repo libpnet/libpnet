@@ -12,8 +12,6 @@
 
 extern crate libc;
 
-use pnet_sys::sockets;
-
 pub const AF_LINK: libc::c_int = 18;
 
 const IF_NAMESIZE: usize = 16;
@@ -68,7 +66,7 @@ pub fn BPF_WORDALIGN(x: isize) -> isize {
 // See /usr/include/net/if.h
 pub struct ifreq {
     pub ifr_name: [libc::c_char; IFNAMSIZ],
-    pub ifru_addr: sockets::SockAddr, // NOTE Should be a union
+    pub ifru_addr: pnet_sys::SockAddr, // NOTE Should be a union
 }
 
 // See /usr/include/net/if_dl.h
