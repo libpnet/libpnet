@@ -9,9 +9,3 @@ repository = "https://github.com/libpnet/libpnet"
 description = "Support library for libpnet_macros"
 readme = "../README.md"
 keywords = ["networking", "bitfields", "packet", "protocol"]
-
-[lib]
-name = "pnet_macros_support"
-
-[features]
-travis = []

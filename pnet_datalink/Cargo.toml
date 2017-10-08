@@ -16,4 +16,4 @@ pnet_base = { path = "../pnet_base" }
 pnet_sys = { path = "../pnet_sys" }
 
 [target.'cfg(windows)'.dependencies]
-winapi = "0.2.*"
+winapi = "0.2"
