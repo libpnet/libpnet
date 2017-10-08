@@ -109,8 +109,7 @@ pub fn channel(network_interface: &NetworkInterface,
 
     #[cfg(target_os = "freebsd")]
     fn set_feedback(fd: libc::c_int) -> io::Result<()> {
-        let one: libc::c_uint = 1;
-        if unsafe { bpf::ioctl(fd, bpf::BIOCFEEDBACK, &one) } == -1 {
+        if unsafe { bpf::ioctl(fd, bpf::BIOCFEEDBACK, &1) } == -1 {
             let err = io::Error::last_os_error();
             unsafe {
                 libc::close(fd);
@@ -156,8 +155,7 @@ pub fn channel(network_interface: &NetworkInterface,
 
     // Return from read as soon as packets are available - don't wait to fill the
     // buffer
-    let one: libc::c_uint = 1;
-    if unsafe { bpf::ioctl(fd, bpf::BIOCIMMEDIATE, &one) } == -1 {
+    if unsafe { bpf::ioctl(fd, bpf::BIOCIMMEDIATE, &1) } == -1 {
         let err = io::Error::last_os_error();
         unsafe {
             libc::close(fd);
@@ -191,7 +189,7 @@ pub fn channel(network_interface: &NetworkInterface,
         }
     } else {
         // Don't fill in source MAC
-        if unsafe { bpf::ioctl(fd, bpf::BIOCSHDRCMPLT, &one) } == -1 {
+        if unsafe { bpf::ioctl(fd, bpf::BIOCSHDRCMPLT, &1) } == -1 {
             let err = io::Error::last_os_error();
             unsafe {
                 libc::close(fd);

@@ -97,9 +97,8 @@ pub fn retry<F>(f: &mut F) -> libc::ssize_t
     where F: FnMut() -> libc::ssize_t
 {
     loop {
-        let minus1 = -1;
         let ret = f();
-        if ret != minus1 || errno() as isize != libc::EINTR as isize {
+        if ret != -1 || errno() as isize != libc::EINTR as isize {
             return ret;
         }
     }

@@ -93,9 +93,8 @@ pub fn retry<F>(f: &mut F) -> libc::c_int
     where F: FnMut() -> libc::c_int
 {
     loop {
-        let minus1 = -1;
         let ret = f();
-        if ret != minus1 || errno() as isize != winapi::WSAEINTR as isize {
+        if ret != -1 || errno() as isize != winapi::WSAEINTR as isize {
             return ret;
         }
     }

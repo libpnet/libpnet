@@ -60,9 +60,7 @@ const BPF_ALIGNMENT: libc::c_int = 4;
 
 pub fn BPF_WORDALIGN(x: isize) -> isize {
     let bpf_alignment = BPF_ALIGNMENT as isize;
-    let one = 1;
-
-    (x + (bpf_alignment - one)) & !(bpf_alignment - one)
+    (x + (bpf_alignment - 1)) & !(bpf_alignment - 1)
 }
 
 // See /usr/include/net/if.h
