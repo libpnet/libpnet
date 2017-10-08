@@ -10,7 +10,7 @@ use packet::PrimitiveValues;
 use packet::ethernet::EtherType;
 
 use std::net::Ipv4Addr;
-use util::MacAddr;
+use pnet_base::MacAddr;
 
 /// Represents ARP operation
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

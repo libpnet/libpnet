@@ -12,11 +12,9 @@ extern crate libc;
 
 
 use bindings::bpf;
-use datalink::{self, NetworkInterface};
-use datalink::{DataLinkReceiver, DataLinkSender};
-use datalink::Channel::Ethernet;
-use internal;
-use sockets;
+use {DataLinkReceiver, DataLinkSender, NetworkInterface};
+
+use pnet_sys;
 
 use std::collections::VecDeque;
 use std::ffi::CString;
@@ -53,8 +51,8 @@ pub struct Config {
     pub bpf_fd_attempts: usize,
 }
 
-impl<'a> From<&'a datalink::Config> for Config {
-    fn from(config: &datalink::Config) -> Config {
+impl<'a> From<&'a super::Config> for Config {
+    fn from(config: &super::Config) -> Config {
         Config {
             write_buffer_size: config.write_buffer_size,
             read_buffer_size: config.read_buffer_size,
@@ -82,7 +80,7 @@ impl Default for Config {
 #[inline]
 pub fn channel(network_interface: &NetworkInterface,
                config: Config)
-    -> io::Result<datalink::Channel> {
+    -> io::Result<super::Channel> {
     #[cfg(target_os = "freebsd")]
     fn get_fd(_attempts: usize) -> libc::c_int {
         unsafe {
@@ -111,8 +109,7 @@ pub fn channel(network_interface: &NetworkInterface,
 
     #[cfg(target_os = "freebsd")]
     fn set_feedback(fd: libc::c_int) -> io::Result<()> {
-        let one: libc::c_uint = 1;
-        if unsafe { bpf::ioctl(fd, bpf::BIOCFEEDBACK, &one) } == -1 {
+        if unsafe { bpf::ioctl(fd, bpf::BIOCFEEDBACK, &1) } == -1 {
             let err = io::Error::last_os_error();
             unsafe {
                 libc::close(fd);
@@ -158,8 +155,7 @@ pub fn channel(network_interface: &NetworkInterface,
 
     // Return from read as soon as packets are available - don't wait to fill the
     // buffer
-    let one: libc::c_uint = 1;
-    if unsafe { bpf::ioctl(fd, bpf::BIOCIMMEDIATE, &one) } == -1 {
+    if unsafe { bpf::ioctl(fd, bpf::BIOCIMMEDIATE, &1) } == -1 {
         let err = io::Error::last_os_error();
         unsafe {
             libc::close(fd);
@@ -193,7 +189,7 @@ pub fn channel(network_interface: &NetworkInterface,
         }
     } else {
         // Don't fill in source MAC
-        if unsafe { bpf::ioctl(fd, bpf::BIOCSHDRCMPLT, &one) } == -1 {
+        if unsafe { bpf::ioctl(fd, bpf::BIOCSHDRCMPLT, &1) } == -1 {
             let err = io::Error::last_os_error();
             unsafe {
                 libc::close(fd);
@@ -206,18 +202,18 @@ pub fn channel(network_interface: &NetworkInterface,
     if unsafe { libc::fcntl(fd, libc::F_SETFL, libc::O_NONBLOCK) } == -1 {
         let err = io::Error::last_os_error();
         unsafe {
-            sockets::close(fd);
+            pnet_sys::close(fd);
         }
         return Err(err);
     }
 
-    let fd = Arc::new(internal::FileDesc { fd: fd });
+    let fd = Arc::new(pnet_sys::FileDesc { fd: fd });
     let mut sender = Box::new(DataLinkSenderImpl {
         fd: fd.clone(),
         fd_set: unsafe { mem::zeroed() },
         write_buffer: repeat(0u8).take(config.write_buffer_size).collect(),
         loopback: loopback,
-        timeout: config.write_timeout.map(|to| internal::duration_to_timespec(to)),
+        timeout: config.write_timeout.map(|to| pnet_sys::duration_to_timespec(to)),
     });
     unsafe {
         libc::FD_ZERO(&mut sender.fd_set as *mut libc::fd_set);
@@ -228,7 +224,7 @@ pub fn channel(network_interface: &NetworkInterface,
         fd_set: unsafe { mem::zeroed() },
         read_buffer: repeat(0u8).take(allocated_read_buffer_size).collect(),
         loopback: loopback,
-        timeout: config.read_timeout.map(|to| internal::duration_to_timespec(to)),
+        timeout: config.read_timeout.map(|to| pnet_sys::duration_to_timespec(to)),
         // Enough room for minimally sized packets without reallocating
         packets: VecDeque::with_capacity(allocated_read_buffer_size / 64),
     });
@@ -237,11 +233,11 @@ pub fn channel(network_interface: &NetworkInterface,
         libc::FD_SET(fd.fd, &mut receiver.fd_set as *mut libc::fd_set);
     }
 
-    Ok(Ethernet(sender, receiver))
+    Ok(super::Channel::Ethernet(sender, receiver))
 }
 
 struct DataLinkSenderImpl {
-    fd: Arc<internal::FileDesc>,
+    fd: Arc<pnet_sys::FileDesc>,
     fd_set: libc::fd_set,
     write_buffer: Vec<u8>,
     loopback: bool,
@@ -333,7 +329,7 @@ impl DataLinkSender for DataLinkSenderImpl {
 }
 
 struct DataLinkReceiverImpl {
-    fd: Arc<internal::FileDesc>,
+    fd: Arc<pnet_sys::FileDesc>,
     fd_set: libc::fd_set,
     read_buffer: Vec<u8>,
     loopback: bool,

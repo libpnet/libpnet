@@ -1,0 +1,19 @@
+[package]
+name = "pnet_datalink"
+version = "0.19.0"
+authors = ["Robert Clipsham <robert@octarineparrot.com>", "Linus Färnstrand <faern@faern.net>"]
+license = "MIT/Apache-2.0"
+homepage = "https://github.com/libpnet/libpnet"
+repository = "https://github.com/libpnet/libpnet"
+description = "Cross-platform, datalink layer networking."
+keywords = ["networking", "datalink", "ethernet", "raw"]
+categories = ["network-programming"]
+
+[dependencies]
+libc = "0.2"
+ipnetwork = "0.12"
+pnet_base = { path = "../pnet_base" }
+pnet_sys = { path = "../pnet_sys" }
+
+[target.'cfg(windows)'.dependencies]
+winapi = "0.2.*"

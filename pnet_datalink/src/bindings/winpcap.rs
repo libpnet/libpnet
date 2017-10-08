@@ -11,9 +11,9 @@
 #![allow(dead_code)]
 
 extern crate libc;
+extern crate winapi as win;
 
-use sockets;
-use winapi as win;
+use pnet_sys;
 
 #[repr(C)]
 pub struct _ADAPTER;
@@ -104,7 +104,7 @@ pub type PIP_ADAPTER_INFO = *mut _IP_ADAPTER_INFO;
 const MAX_DHCPV6_DUID_LENGTH: usize = 130;
 const MAX_DNS_SUFFIX_STRING_LENGTH: usize = 256;
 
-pub type LPSOCKADDR = *mut sockets::SockAddr;
+pub type LPSOCKADDR = *mut pnet_sys::SockAddr;
 
 #[repr(C)]
 pub struct _SOCKET_ADDRESS {

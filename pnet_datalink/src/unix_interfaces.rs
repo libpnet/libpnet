@@ -8,18 +8,18 @@
 
 //! Interface listing implementation for all non-Windows platforms
 
-use datalink::{NetworkInterface};
+use {NetworkInterface, MacAddr};
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
-use internal;
+use pnet_sys;
+
 use libc;
+
 use std::ffi::{CStr, CString};
 use std::mem;
 use std::net::IpAddr;
 use std::os::raw::c_char;
 use std::str::from_utf8_unchecked;
-
-use util::MacAddr;
 
 /// Get a list of available network interfaces for the current machine.
 pub fn interfaces() -> Vec<NetworkInterface> {
@@ -96,8 +96,10 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
 
             (Some(mac), None)
         } else {
-            let addr = internal::sockaddr_to_addr(mem::transmute(sa),
-                                                  mem::size_of::<libc::sockaddr_storage>());
+            let addr = pnet_sys::sockaddr_to_addr(
+                mem::transmute(sa),
+                mem::size_of::<libc::sockaddr_storage>()
+            );
 
             match addr {
                 Ok(SocketAddr::V4(sa)) => (None, Some(IpAddr::V4(*sa.ip()))),
@@ -128,8 +130,10 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
 
             (Some(mac), None)
         } else {
-            let addr = internal::sockaddr_to_addr(mem::transmute(sa),
-                                                  mem::size_of::<libc::sockaddr_storage>());
+            let addr = pnet_sys::sockaddr_to_addr(
+                mem::transmute(sa),
+                mem::size_of::<libc::sockaddr_storage>()
+            );
 
             match addr {
                 Ok(SocketAddr::V4(sa)) => (None, Some(IpAddr::V4(*sa.ip()))),

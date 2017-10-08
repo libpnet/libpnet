@@ -8,13 +8,21 @@
 
 //! Support for sending and receiving data link layer packets
 
-use sockets;
+extern crate libc;
+extern crate ipnetwork;
+extern crate pnet_base;
+extern crate pnet_sys;
+
 use std::io;
 use std::option::Option;
 use std::time::Duration;
-use util::MacAddr;
 
 use ipnetwork::IpNetwork;
+
+pub use pnet_base::MacAddr;
+
+mod bindings;
+
 
 #[cfg(windows)]
 #[path = "winpcap.rs"]
@@ -206,7 +214,7 @@ impl NetworkInterface {
 
     /// Is the interface a loopback interface?
     pub fn is_loopback(&self) -> bool {
-        self.flags & (sockets::IFF_LOOPBACK as u32) != 0
+        self.flags & (pnet_sys::IFF_LOOPBACK as u32) != 0
     }
 }
 

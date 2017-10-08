@@ -5,13 +5,14 @@ extern crate pcap;
 use std::marker::{Send, Sync};
 use std::io;
 use std::iter::repeat;
-use self::pcap::{Active, Activated};
-use datalink::{self, NetworkInterface};
-use datalink::{DataLinkReceiver, DataLinkSender};
-use datalink::Channel::Ethernet;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::path::Path;
+
+use self::pcap::{Active, Activated};
+
+use datalink::{DataLinkReceiver, DataLinkSender, NetworkInterface};
+use datalink::Channel::Ethernet;
 
 /// Configuration for the pcap datalink backend
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

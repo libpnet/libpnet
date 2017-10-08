@@ -20,9 +20,6 @@
 
 extern crate libc;
 
-
-use internal;
-
 use packet::Packet;
 use packet::ip::IpNextHeaderProtocol;
 use packet::ipv4::Ipv4Packet;
@@ -32,7 +29,8 @@ use packet::icmpv6::Icmpv6Packet;
 use packet::tcp::TcpPacket;
 use self::TransportChannelType::{Layer3, Layer4};
 use self::TransportProtocol::{Ipv4, Ipv6};
-use sockets;
+
+use pnet_sys;
 
 use std::io;
 use std::io::Error;
@@ -61,13 +59,13 @@ pub enum TransportChannelType {
 
 /// Structure used for sending at the transport layer. Should be created with transport_channel()
 pub struct TransportSender {
-    socket: Arc<internal::FileDesc>,
+    socket: Arc<pnet_sys::FileDesc>,
     _channel_type: TransportChannelType,
 }
 
 /// Structure used for receiving at the transport layer. Should be created with transport_channel()
 pub struct TransportReceiver {
-    socket: Arc<internal::FileDesc>,
+    socket: Arc<pnet_sys::FileDesc>,
     buffer: Vec<u8>,
     channel_type: TransportChannelType,
 }
@@ -99,14 +97,14 @@ pub fn transport_channel(buffer_size: usize,
         match channel_type {
             Layer4(Ipv4(IpNextHeaderProtocol(proto))) |
             Layer3(IpNextHeaderProtocol(proto)) => {
-                sockets::socket(sockets::AF_INET, sockets::SOCK_RAW, proto as libc::c_int)
+                pnet_sys::socket(pnet_sys::AF_INET, pnet_sys::SOCK_RAW, proto as libc::c_int)
             }
             Layer4(Ipv6(IpNextHeaderProtocol(proto))) => {
-                sockets::socket(sockets::AF_INET6, sockets::SOCK_RAW, proto as libc::c_int)
+                pnet_sys::socket(pnet_sys::AF_INET6, pnet_sys::SOCK_RAW, proto as libc::c_int)
             }
         }
     };
-    if socket == sockets::INVALID_SOCKET {
+    if socket == pnet_sys::INVALID_SOCKET {
         return Err(Error::last_os_error());
     }
 
@@ -119,22 +117,24 @@ pub fn transport_channel(buffer_size: usize,
             _ => 1,
         };
         let res = unsafe {
-            sockets::setsockopt(socket,
-                                sockets::IPPROTO_IP,
-                                sockets::IP_HDRINCL,
-                                (&hincl as *const libc::c_int) as sockets::Buf,
-                                mem::size_of::<libc::c_int>() as sockets::SockLen)
+            pnet_sys::setsockopt(
+                socket,
+                pnet_sys::IPPROTO_IP,
+                pnet_sys::IP_HDRINCL,
+                (&hincl as *const libc::c_int) as pnet_sys::Buf,
+                mem::size_of::<libc::c_int>() as pnet_sys::SockLen
+            )
         };
         if res == -1 {
             let err = Error::last_os_error();
             unsafe {
-                sockets::close(socket);
+                pnet_sys::close(socket);
             }
             return Err(err);
         }
     }
 
-    let sock = Arc::new(internal::FileDesc { fd: socket });
+    let sock = Arc::new(pnet_sys::FileDesc { fd: socket });
     let sender = TransportSender {
         socket: sock.clone(),
         _channel_type: channel_type,
@@ -155,10 +155,10 @@ impl TransportSender {
             IpAddr::V4(ip_addr) => net::SocketAddr::V4(net::SocketAddrV4::new(ip_addr, 0)),
             IpAddr::V6(ip_addr) => net::SocketAddr::V6(net::SocketAddrV6::new(ip_addr, 0, 0, 0)),
         };
-        let slen = internal::addr_to_sockaddr(sockaddr, &mut caddr);
-        let caddr_ptr = (&caddr as *const sockets::SockAddrStorage) as *const sockets::SockAddr;
+        let slen = pnet_sys::addr_to_sockaddr(sockaddr, &mut caddr);
+        let caddr_ptr = (&caddr as *const pnet_sys::SockAddrStorage) as *const pnet_sys::SockAddr;
 
-        internal::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen)
+        pnet_sys::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen)
     }
 
     /// Send a packet to the provided destination
@@ -226,8 +226,8 @@ macro_rules! transport_channel_iterator {
         impl<'a> $iter<'a> {
             /// Get the next ($ty, IpAddr) pair for the given channel
             pub fn next(&mut self) -> io::Result<($ty, IpAddr)> {
-                let mut caddr: sockets::SockAddrStorage = unsafe { mem::zeroed() };
-                let res = internal::recv_from(self.tr.socket.fd,
+                let mut caddr: pnet_sys::SockAddrStorage = unsafe { mem::zeroed() };
+                let res = pnet_sys::recv_from(self.tr.socket.fd,
                                               &mut self.tr.buffer[..],
                                               &mut caddr);
 
@@ -247,10 +247,10 @@ macro_rules! transport_channel_iterator {
                 return match res {
                     Ok(len) => {
                         let packet = $ty::new(&self.tr.buffer[offset..len]).unwrap();
-                        let addr = internal::sockaddr_to_addr(
-                                        &caddr,
-                                        mem::size_of::<sockets::SockAddrStorage>()
-                                   );
+                        let addr = pnet_sys::sockaddr_to_addr(
+                            &caddr,
+                            mem::size_of::<pnet_sys::SockAddrStorage>()
+                        );
                         let ip = match addr.unwrap() {
                             net::SocketAddr::V4(sa) => IpAddr::V4(*sa.ip()),
                             net::SocketAddr::V6(sa) => IpAddr::V6(*sa.ip()),

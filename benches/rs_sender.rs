@@ -9,8 +9,8 @@
 extern crate pnet;
 
 use pnet::datalink;
-use pnet::packet::{MutablePacket, Packet};
-use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
+use pnet::packet::MutablePacket;
+use pnet::packet::ethernet::{EtherTypes, MutableEthernetPacket};
 use pnet::packet::ip::IpNextHeaderProtocols;
 use pnet::packet::ipv4::{self, MutableIpv4Packet};
 use pnet::packet::udp::{self, MutableUdpPacket};

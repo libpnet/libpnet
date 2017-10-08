@@ -10,14 +10,11 @@
 
 extern crate libc;
 
-
 use bindings::linux;
-use datalink::{self, NetworkInterface};
-use datalink::{DataLinkReceiver, DataLinkSender};
-use datalink::Channel::Ethernet;
-use datalink::ChannelType::{Layer2, Layer3};
-use internal;
-use sockets;
+use {DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
+
+use pnet_sys;
+
 use std::cmp;
 use std::io;
 use std::iter::repeat;
@@ -25,7 +22,7 @@ use std::mem;
 use std::ptr;
 use std::sync::Arc;
 use std::time::Duration;
-use util::MacAddr;
+
 
 fn network_addr_to_sockaddr(ni: &NetworkInterface,
                             storage: *mut libc::sockaddr_storage,
@@ -62,11 +59,11 @@ pub struct Config {
     /// Specifies whether to read packets at the datalink layer or network layer.
     /// NOTE FIXME Currently ignored
     /// Defaults to Layer2
-    pub channel_type: datalink::ChannelType,
+    pub channel_type: super::ChannelType,
 }
 
-impl<'a> From<&'a datalink::Config> for Config {
-    fn from(config: &datalink::Config) -> Config {
+impl<'a> From<&'a super::Config> for Config {
+    fn from(config: &super::Config) -> Config {
         Config {
             write_buffer_size: config.write_buffer_size,
             read_buffer_size: config.read_buffer_size,
@@ -84,7 +81,7 @@ impl Default for Config {
             read_buffer_size: 4096,
             read_timeout: None,
             write_timeout: None,
-            channel_type: Layer2,
+            channel_type: super::ChannelType::Layer2,
         }
     }
 }
@@ -93,11 +90,11 @@ impl Default for Config {
 #[inline]
 pub fn channel(network_interface: &NetworkInterface,
                config: Config)
-    -> io::Result<datalink::Channel> {
+    -> io::Result<super::Channel> {
     let eth_p_all = 0x0003;
     let (typ, proto) = match config.channel_type {
-        Layer2 => (libc::SOCK_RAW, eth_p_all),
-        Layer3(proto) => (libc::SOCK_DGRAM, proto),
+        super::ChannelType::Layer2 => (libc::SOCK_RAW, eth_p_all),
+        super::ChannelType::Layer3(proto) => (libc::SOCK_DGRAM, proto),
     };
     let socket = unsafe { libc::socket(libc::AF_PACKET, typ, proto.to_be() as i32) };
     if socket == -1 {
@@ -112,7 +109,7 @@ pub fn channel(network_interface: &NetworkInterface,
     if unsafe { libc::bind(socket, send_addr, len as libc::socklen_t) } == -1 {
         let err = io::Error::last_os_error();
         unsafe {
-            sockets::close(socket);
+            pnet_sys::close(socket);
         }
         return Err(err);
     }
@@ -131,7 +128,7 @@ pub fn channel(network_interface: &NetworkInterface,
     } == -1 {
         let err = io::Error::last_os_error();
         unsafe {
-            sockets::close(socket);
+            pnet_sys::close(socket);
         }
         return Err(err);
     }
@@ -139,13 +136,11 @@ pub fn channel(network_interface: &NetworkInterface,
     // Enable nonblocking
     if unsafe { libc::fcntl(socket, libc::F_SETFL, libc::O_NONBLOCK) } == -1 {
         let err = io::Error::last_os_error();
-        unsafe {
-            sockets::close(socket);
-        }
+        unsafe { pnet_sys::close(socket); }
         return Err(err);
     }
 
-    let fd = Arc::new(internal::FileDesc { fd: socket });
+    let fd = Arc::new(pnet_sys::FileDesc { fd: socket });
     let sender = Box::new(DataLinkSenderImpl {
         socket: fd.clone(),
         fd_set: unsafe { mem::zeroed() },
@@ -153,24 +148,24 @@ pub fn channel(network_interface: &NetworkInterface,
         _channel_type: config.channel_type,
         send_addr: unsafe { *(send_addr as *const libc::sockaddr_ll) },
         send_addr_len: len,
-        timeout: config.write_timeout.map(|to| internal::duration_to_timespec(to)),
+        timeout: config.write_timeout.map(|to| pnet_sys::duration_to_timespec(to)),
     });
     let receiver = Box::new(DataLinkReceiverImpl {
         socket: fd.clone(),
         fd_set: unsafe { mem::zeroed() },
         read_buffer: repeat(0u8).take(config.read_buffer_size).collect(),
         _channel_type: config.channel_type,
-        timeout: config.read_timeout.map(|to| internal::duration_to_timespec(to)),
+        timeout: config.read_timeout.map(|to| pnet_sys::duration_to_timespec(to)),
     });
 
-    Ok(Ethernet(sender, receiver))
+    Ok(super::Channel::Ethernet(sender, receiver))
 }
 
 struct DataLinkSenderImpl {
-    socket: Arc<internal::FileDesc>,
+    socket: Arc<pnet_sys::FileDesc>,
     fd_set: libc::fd_set,
     write_buffer: Vec<u8>,
-    _channel_type: datalink::ChannelType,
+    _channel_type: super::ChannelType,
     send_addr: libc::sockaddr_ll,
     send_addr_len: usize,
     timeout: Option<libc::timespec>,
@@ -213,7 +208,7 @@ impl DataLinkSender for DataLinkSenderImpl {
                 } else if ret == 0 {
                     return Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")));
                 } else {
-                    if let Err(e) = internal::send_to(self.socket.fd,
+                    if let Err(e) = pnet_sys::send_to(self.socket.fd,
                                                       chunk,
                                                       send_addr,
                                                       self.send_addr_len as libc::socklen_t) {
@@ -253,7 +248,7 @@ impl DataLinkSender for DataLinkSenderImpl {
         } else if ret == 0 {
             Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")))
         } else {
-            match internal::send_to(self.socket.fd,
+            match pnet_sys::send_to(self.socket.fd,
                                     packet,
                                     (&self.send_addr as *const libc::sockaddr_ll) as *const _,
                                     self.send_addr_len as libc::socklen_t) {
@@ -265,10 +260,10 @@ impl DataLinkSender for DataLinkSenderImpl {
 }
 
 struct DataLinkReceiverImpl {
-    socket: Arc<internal::FileDesc>,
+    socket: Arc<pnet_sys::FileDesc>,
     fd_set: libc::fd_set,
     read_buffer: Vec<u8>,
-    _channel_type: datalink::ChannelType,
+    _channel_type: super::ChannelType,
     timeout: Option<libc::timespec>,
 }
 
@@ -296,7 +291,7 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
         } else if ret == 0 {
             Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out"))
         } else {
-            let res = internal::recv_from(self.socket.fd, &mut self.read_buffer, &mut caddr);
+            let res = pnet_sys::recv_from(self.socket.fd, &mut self.read_buffer, &mut caddr);
             match res {
                 Ok(len) => Ok(&self.read_buffer[0..len]),
                 Err(e) => Err(e),

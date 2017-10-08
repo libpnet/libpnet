@@ -14,9 +14,8 @@ extern crate netmap_sys;
 extern crate libc;
 
 
-use datalink::{self, NetworkInterface};
-use datalink::{DataLinkReceiver, DataLinkSender};
-use datalink::Channel::Ethernet;
+use {DataLinkReceiver, DataLinkSender, NetworkInterface};
+use Channel::Ethernet;
 use self::netmap_sys::netmap::{netmap_slot, nm_ring_empty};
 use self::netmap_sys::netmap_user::{NETMAP_BUF, NETMAP_FD, NETMAP_TXRING, nm_close, nm_desc,
                                     nm_nextpkt, nm_open, nm_pkthdr, nm_ring_next};

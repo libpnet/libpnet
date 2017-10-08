@@ -120,23 +120,22 @@
 #[cfg(feature = "benchmark")]
 extern crate test;
 
-#[cfg(windows)]
-extern crate winapi;
-
 #[cfg(not(windows))]
 extern crate libc;
 extern crate ipnetwork;
 extern crate pnet_macros_support;
 
-pub mod datalink;
+extern crate pnet_base;
+extern crate pnet_sys;
+extern crate pnet_datalink;
+
+/// Support for sending and receiving data link layer packets
+pub mod datalink {
+    pub use pnet_datalink::*;
+}
 pub mod packet;
 pub mod transport;
 pub mod util;
-
-
-mod bindings;
-mod internal;
-mod sockets;
 
 // NOTE should probably have a cfg(pnet_test_network) here, but cargo doesn't
 //      allow custom --cfg flags

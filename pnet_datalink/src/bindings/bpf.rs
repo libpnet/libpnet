@@ -12,7 +12,7 @@
 
 extern crate libc;
 
-use sockets;
+use pnet_sys;
 
 pub const AF_LINK: libc::c_int = 18;
 
@@ -60,15 +60,13 @@ const BPF_ALIGNMENT: libc::c_int = 4;
 
 pub fn BPF_WORDALIGN(x: isize) -> isize {
     let bpf_alignment = BPF_ALIGNMENT as isize;
-    let one = 1;
-
-    (x + (bpf_alignment - one)) & !(bpf_alignment - one)
+    (x + (bpf_alignment - 1)) & !(bpf_alignment - 1)
 }
 
 // See /usr/include/net/if.h
 pub struct ifreq {
     pub ifr_name: [libc::c_char; IFNAMSIZ],
-    pub ifru_addr: sockets::SockAddr, // NOTE Should be a union
+    pub ifru_addr: pnet_sys::SockAddr, // NOTE Should be a union
 }
 
 // See /usr/include/net/if_dl.h
