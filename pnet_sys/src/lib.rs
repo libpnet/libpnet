@@ -11,8 +11,6 @@ use std::mem;
 
 pub mod sockets;
 
-pub use self::native::{addr_to_sockaddr, sockaddr_to_addr};
-
 
 #[cfg(unix)]
 mod unix;
@@ -23,8 +21,6 @@ pub use self::unix::*;
 mod windows;
 #[cfg(windows)]
 pub use self::windows::*;
-
-mod native;
 
 
 // Any file descriptor on unix, only sockets on Windows.

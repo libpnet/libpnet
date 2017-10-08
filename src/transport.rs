@@ -153,7 +153,7 @@ impl TransportSender {
             IpAddr::V4(ip_addr) => net::SocketAddr::V4(net::SocketAddrV4::new(ip_addr, 0)),
             IpAddr::V6(ip_addr) => net::SocketAddr::V6(net::SocketAddrV6::new(ip_addr, 0, 0, 0)),
         };
-        let slen = pnet_sys::addr_to_sockaddr(sockaddr, &mut caddr);
+        let slen = pnet_sys::sockets::addr_to_sockaddr(sockaddr, &mut caddr);
         let caddr_ptr = (&caddr as *const sockets::SockAddrStorage) as *const sockets::SockAddr;
 
         pnet_sys::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen)
@@ -245,10 +245,10 @@ macro_rules! transport_channel_iterator {
                 return match res {
                     Ok(len) => {
                         let packet = $ty::new(&self.tr.buffer[offset..len]).unwrap();
-                        let addr = pnet_sys::sockaddr_to_addr(
-                                        &caddr,
-                                        mem::size_of::<sockets::SockAddrStorage>()
-                                   );
+                        let addr = pnet_sys::sockets::sockaddr_to_addr(
+                            &caddr,
+                            mem::size_of::<sockets::SockAddrStorage>()
+                        );
                         let ip = match addr.unwrap() {
                             net::SocketAddr::V4(sa) => IpAddr::V4(*sa.ip()),
                             net::SocketAddr::V6(sa) => IpAddr::V6(*sa.ip()),

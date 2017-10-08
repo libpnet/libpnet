@@ -96,8 +96,10 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
 
             (Some(mac), None)
         } else {
-            let addr = pnet_sys::sockaddr_to_addr(mem::transmute(sa),
-                                                  mem::size_of::<libc::sockaddr_storage>());
+            let addr = pnet_sys::sockets::sockaddr_to_addr(
+                mem::transmute(sa),
+                mem::size_of::<libc::sockaddr_storage>()
+            );
 
             match addr {
                 Ok(SocketAddr::V4(sa)) => (None, Some(IpAddr::V4(*sa.ip()))),
@@ -128,8 +130,10 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
 
             (Some(mac), None)
         } else {
-            let addr = pnet_sys::sockaddr_to_addr(mem::transmute(sa),
-                                                  mem::size_of::<libc::sockaddr_storage>());
+            let addr = pnet_sys::sockets::sockaddr_to_addr(
+                mem::transmute(sa),
+                mem::size_of::<libc::sockaddr_storage>()
+            );
 
             match addr {
                 Ok(SocketAddr::V4(sa)) => (None, Some(IpAddr::V4(*sa.ip()))),
