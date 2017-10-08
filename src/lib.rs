@@ -102,10 +102,6 @@
 //! }
 //! ```
 
-#![crate_name = "pnet"]
-#![crate_type = "rlib"]
-#![crate_type = "dylib"]
-
 #![deny(missing_docs)]
 
 #![cfg_attr(feature = "nightly", feature(custom_attribute, plugin))]
