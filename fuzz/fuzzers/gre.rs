@@ -2,7 +2,6 @@
 extern crate libfuzzer_sys;
 extern crate pnet;
 
-use pnet::packet::Packet;
 use pnet::packet::gre::GrePacket;
 
 #[export_name="rust_fuzzer_test_input"]
