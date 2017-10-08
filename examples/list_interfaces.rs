@@ -8,12 +8,10 @@
 
 /// This examples simply print all interfaces to stdout
 
-extern crate pnet;
-
-use pnet::datalink;
+extern crate pnet_datalink;
 
 fn main() {
-    for interface in datalink::interfaces() {
+    for interface in pnet_datalink::interfaces() {
         let mac = interface.mac.map(|mac| mac.to_string()).unwrap_or("N/A".to_owned());
         println!("{}:", interface.name);
         println!("  index: {}", interface.index);

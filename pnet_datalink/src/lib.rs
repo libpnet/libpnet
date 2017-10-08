@@ -19,7 +19,7 @@ use std::time::Duration;
 
 use ipnetwork::IpNetwork;
 
-pub use pnet_base::MacAddr;
+pub use pnet_base::{MacAddr, ParseMacAddrErr};
 
 mod bindings;
 
