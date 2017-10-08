@@ -13,6 +13,8 @@
 extern crate libc;
 extern crate winapi as win;
 
+use pnet_sys;
+
 #[repr(C)]
 pub struct _ADAPTER;
 pub type ADAPTER = _ADAPTER;
