@@ -7,28 +7,28 @@
 // except according to those terms.
 
 
-extern crate pnet;
+extern crate pnet_datalink;
 extern crate time;
-
-use pnet::datalink::{self, NetworkInterface};
 
 use std::env;
 
 fn main() {
-    use pnet::datalink::Channel::Ethernet;
+    use pnet_datalink::Channel::Ethernet;
 
     let iface_name = env::args().nth(1).unwrap();
-    let interface_names_match = |iface: &NetworkInterface| iface.name == iface_name;
 
     // Find the network interface with the provided name
-    let interfaces = datalink::interfaces();
-    let interface = interfaces.into_iter().filter(interface_names_match).next().unwrap();
+    let interfaces = pnet_datalink::interfaces();
+    let interface = interfaces.into_iter()
+        .filter(|iface| iface.name == iface_name)
+        .next()
+        .unwrap();
 
     // Create a channel to receive on
-    let mut rx = match datalink::channel(&interface, Default::default()) {
+    let mut rx = match pnet_datalink::channel(&interface, Default::default()) {
         Ok(Ethernet(_, rx)) => rx,
         Ok(_) => panic!("rs_sender: unhandled channel type"),
-        Err(e) => panic!("rs_benchmark: unable to create channel: {}", e),
+        Err(e) => panic!("rs_sender: unable to create channel: {}", e),
     };
 
     let mut i = 0usize;
@@ -48,7 +48,7 @@ fn main() {
                 }
             }
             Err(e) => {
-                println!("rs_benchmark: unable to receive packet: {}", e);
+                println!("rs_sender: unable to receive packet: {}", e);
             }
         }
     }

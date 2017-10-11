@@ -1,13 +1,13 @@
 extern crate pnet;
+extern crate pnet_datalink;
 
 use std::env;
 use std::process;
 use std::io::{self, Write};
 use std::net::{Ipv4Addr, AddrParseError};
 
-use pnet::util::{MacAddr, ParseMacAddrErr};
-use pnet::datalink::{self, NetworkInterface};
-use pnet::datalink::Channel;
+use pnet_datalink::{Channel, NetworkInterface, MacAddr, ParseMacAddrErr};
+
 use pnet::packet::ethernet::MutableEthernetPacket;
 use pnet::packet::arp::MutableArpPacket;
 use pnet::packet::ethernet::EtherTypes;
@@ -16,7 +16,7 @@ use pnet::packet::arp::{ArpHardwareTypes, ArpOperations, ArpOperation};
 
 
 fn send_arp_packet(interface: NetworkInterface, source_ip: Ipv4Addr, source_mac: MacAddr, target_ip: Ipv4Addr, target_mac: MacAddr, arp_operation: ArpOperation) {
-    let(mut tx, _) = match datalink::channel(&interface, Default::default()) {
+    let(mut tx, _) = match pnet_datalink::channel(&interface, Default::default()) {
         Ok(Channel::Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => panic!("Unknown channel type"),
         Err(e) => panic!("Error happened {}", e),
@@ -80,7 +80,7 @@ fn main() {
         }
     };
 
-    let interfaces = datalink::interfaces();
+    let interfaces = pnet_datalink::interfaces();
     let interfaces_name_match = |iface: &NetworkInterface| iface.name == iface_name;
     let interface = interfaces.into_iter().filter(interfaces_name_match).next().unwrap();
     let source_mac = interface.mac_address();

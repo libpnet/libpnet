@@ -6,13 +6,6 @@ authors = ["Robert Clipsham <robert@octarineparrot.com>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
 repository = "https://github.com/libpnet/libpnet"
-documentation = "http://octarineparrot.com/assets/libpnet/doc/pnet/"
 description = "Support library for libpnet_macros"
 readme = "../README.md"
 keywords = ["networking", "bitfields", "packet", "protocol"]
-
-[lib]
-name = "pnet_macros_support"
-
-[features]
-travis = []

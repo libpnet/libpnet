@@ -5,15 +5,11 @@ authors = [ "Robert Clipsham <robert@octarineparrot.com>" ]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
 repository = "https://github.com/libpnet/libpnet"
-documentation = "http://octarineparrot.com/assets/libpnet/doc/pnet/"
 description = "Cross-platform, low level networking using the Rust programming language."
 readme = "README.md"
 keywords = ["networking", "transport", "datalink", "packet", "protocol"]
 categories = ["network-programming", "parser-implementations"]
 build = "build.rs"
-
-[lib]
-name = "pnet"
 
 [features]
 default = ["with-syntex"]
@@ -25,51 +21,26 @@ travis = []
 with-syntex = ["syntex", "pnet_macros/with-syntex"]
 
 [dependencies]
+libc = "0.2"
 ipnetwork = "0.12"
+
 pnet_base = { path = "pnet_base" }
 pnet_sys = { path = "pnet_sys" }
 pnet_datalink = { path = "pnet_datalink" }
+pnet_macros = { path = "pnet_macros", optional = true, version = ">=0.9" }
+pnet_macros_support = { path = "pnet_macros_support", version = ">=0.1" }
+pnet_macros_plugin = { path = "pnet_macros_plugin", optional = true, version = ">=0.1" }
 
-[dependencies.clippy]
-optional = true
-version = ">=0.0"
+clippy = { version = ">=0.0", optional = true }
+syntex = { version = "0.42", optional = true }
+pcap = { version = "0.6", optional = true }
+netmap_sys = { version = ">=0.0", optional = true, features = ["netmap_with_libs"] }
 
-[dependencies.netmap_sys]
-features = ["netmap_with_libs"]
-optional = true
-version = ">=0.0"
-
-[dependencies.libc]
-version = "0.2.*"
-
-[dependencies.syntex]
-version = "0.42.*"
-optional = true
-
-[dependencies.pcap]
-version = "0.6.*"
-optional = true
-
-[dependencies.pnet_macros]
-optional = true
-default-features = false
-features = []
-path = "pnet_macros"
-version = ">=0.9"
-
-[dependencies.pnet_macros_plugin]
-optional = true
-path = "pnet_macros_plugin"
-version = ">=0.1"
-
-[dependencies.pnet_macros_support]
-path = "pnet_macros_support"
-version = ">=0.1"
 
 [dev-dependencies]
 time = ">=0.1"
 
 [build-dependencies]
-glob = "0.2.*"
-syntex = { version = "0.42.*", optional = true }
+glob = "0.2"
+syntex = { version = "0.42", optional = true }
 pnet_macros = { path = "pnet_macros", version = ">=0.13" }
