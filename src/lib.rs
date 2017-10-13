@@ -123,9 +123,11 @@ extern crate pnet_macros_support;
 
 extern crate pnet_base;
 extern crate pnet_sys;
+#[cfg(feature = "pnet_datalink")]
 extern crate pnet_datalink;
 
 /// Support for sending and receiving data link layer packets
+#[cfg(feature = "pnet_datalink")]
 pub mod datalink {
     pub use pnet_datalink::*;
 }
