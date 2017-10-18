@@ -14,6 +14,7 @@ use std::fmt;
 pub enum Endianness {
     Big,
     Little,
+    Host,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
