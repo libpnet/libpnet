@@ -11,32 +11,41 @@ use std::path::Path;
 
 use self::pcap::{Active, Activated};
 
-use datalink::{DataLinkReceiver, DataLinkSender, NetworkInterface};
-use datalink::Channel::Ethernet;
+use {DataLinkReceiver, DataLinkSender, NetworkInterface};
+use Channel::Ethernet;
 
 /// Configuration for the pcap datalink backend
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Config {
-    /// The size of buffer to use when reading packets. Defaults to 4096
+    /// The size of buffer to use when reading packets. Must be at least
+    /// 65516 with pcap.
     pub read_buffer_size: usize,
 
     /// The read timeout. Defaults to None.
     pub read_timeout: Option<Duration>,
 }
 
-impl<'a> From<&'a datalink::Config> for Config {
-    fn from(config: &datalink::Config) -> Config {
-        Config{
+impl<'a> From<&'a super::Config> for Config {
+    fn from(config: &super::Config) -> Config {
+        let mut c = Config{
             read_buffer_size: config.read_buffer_size,
             read_timeout: config.read_timeout,
+        };
+        // pcap is unique in that the buffer size must be greater or equal to
+        // MAXIMUM_SNAPLEN, which is currently hard-coded to 65536
+        // So, just reset it to the default.
+        if c.read_buffer_size < 65536 {
+            c.read_buffer_size = Config::default().read_buffer_size;
         }
+        c
     }
 }
 
 impl Default for Config {
     fn default() -> Config {
         Config{
-            read_buffer_size: 4096,
+            // Just let pcap pick the default size
+            read_buffer_size: 0,
             read_timeout: None,
         }
     }
@@ -45,7 +54,7 @@ impl Default for Config {
 /// Create a datalink channel from the provided pcap device
 #[inline]
 pub fn channel(network_interface: &NetworkInterface,
-               config: Config) -> io::Result<datalink::Channel> {
+               config: Config) -> io::Result<super::Channel> {
     let cap = match pcap::Capture::from_device(&*network_interface.name) {
         Ok(cap) => cap,
         Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
@@ -74,7 +83,7 @@ pub fn channel(network_interface: &NetworkInterface,
 
 /// Create a datalink channel from a pcap file
 #[inline]
-pub fn from_file<P: AsRef<Path>>(path: P, config: Config) -> io::Result<datalink::Channel> {
+pub fn from_file<P: AsRef<Path>>(path: P, config: Config) -> io::Result<super::Channel> {
     let cap = match pcap::Capture::from_file(path) {
         Ok(cap) => cap,
         Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
