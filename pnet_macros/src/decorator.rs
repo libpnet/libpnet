@@ -462,9 +462,11 @@ fn handle_misc_field(cx: &mut GenContext,
         if let Type::Primitive(ref ty_str, size, endianness) = *arg {
             let mut ops = operations(*bit_offset % 8, size).unwrap();
 
-            if endianness == Endianness::Little {
+            if endianness == Endianness::Little
+                || (cfg!(target_endian = "little") && endianness == Endianness::Host) {
                 ops = to_little_endian(ops);
-            }
+            } 
+
             let arg_name = format!("arg{}", i);
             inner_accessors =
                 inner_accessors +
@@ -810,9 +812,11 @@ fn generate_packet_impl(cx: &mut GenContext,
             Type::Primitive(ref ty_str, size, endianness) => {
                 let mut ops = operations(bit_offset % 8, size).unwrap();
 
-                if endianness == Endianness::Little {
-                    ops = to_little_endian(ops);
-                }
+                if endianness == Endianness::Little
+                    || (cfg!(target_endian = "little") && endianness == Endianness::Host) {
+                        ops = to_little_endian(ops);
+                } 
+
                 mutators = mutators +
                            &generate_mutator_str(&field.name[..],
                                                  &ty_str[..],
@@ -1142,7 +1146,7 @@ enum EndiannessSpecified {
 ///
 /// If 1 <= size <= 8, Endianness will be Big.
 fn parse_ty(ty: &str) -> Option<(usize, Endianness, EndiannessSpecified)> {
-    let re = Regex::new(r"^u([0-9]+)(be|le)?$").unwrap();
+    let re = Regex::new(r"^u([0-9]+)(be|le|he)?$").unwrap();
     let iter = match re.captures_iter(ty).next() {
         Some(c) => c,
         None => return None,
@@ -1154,6 +1158,8 @@ fn parse_ty(ty: &str) -> Option<(usize, Endianness, EndiannessSpecified)> {
             let e = e.as_str();
             if e == "be" {
                 (Endianness::Big, EndiannessSpecified::Yes)
+            } else if e == "he" {
+                (Endianness::Host, EndiannessSpecified::Yes)
             } else {
                 (Endianness::Little, EndiannessSpecified::Yes)
             }
@@ -1176,6 +1182,7 @@ fn test_parse_ty() {
     assert_eq!(parse_ty("u8"), Some((8, Endianness::Big, EndiannessSpecified::No)));
     assert_eq!(parse_ty("u21be"), Some((21, Endianness::Big, EndiannessSpecified::Yes)));
     assert_eq!(parse_ty("u21le"), Some((21, Endianness::Little, EndiannessSpecified::Yes)));
+    assert_eq!(parse_ty("u21he"), Some((21, Endianness::Host, EndiannessSpecified::Yes)));
     assert_eq!(parse_ty("u9"), Some((9, Endianness::Big, EndiannessSpecified::No)));
     assert_eq!(parse_ty("u16"), Some((16, Endianness::Big, EndiannessSpecified::No)));
     assert_eq!(parse_ty("uable"), None);
@@ -1205,8 +1212,12 @@ fn generate_accessor_or_mutator_comment(name: &str, ty: &str, op_type: AccessorM
         if end_specified == EndiannessSpecified::Yes {
             let return_or_want = match op_type { AccessorMutator::Accessor => "accessor returns",
                                                  AccessorMutator::Mutator  => "mutator wants" };
-            let endian_str = if endianness == Endianness::Big { "big-endian" }
-                             else                             { "little-endian" };
+            let endian_str = match endianness {
+                Endianness::Big => { "big-endian" },
+                Endianness::Little => { "little-endian" },
+                Endianness::Host => { "host-endian" },
+            };
+
             return format!("/// {get_or_set} the {name} field. This field is always stored {endian}
                 /// within the struct, but this {return_or_want} host order.",
                 get_or_set = get_or_set, name = name, endian = endian_str,

@@ -492,3 +492,171 @@ pub type u63le = u64;
 /// Represents an unsigned 64-bit integer. libpnet #[packet]-derived structs using this type will
 /// hold it in memory as little-endian, but accessors/mutators will return/take host-order values.
 pub type u64le = u64;
+
+/// Represents an unsigned 9-bit integer in host endianness.
+pub type u9he = u16;
+
+/// Represents an unsigned 10-bit integer in host endianness.
+pub type u10he = u16;
+
+/// Represents an unsigned 11-bit integer in host endianness.
+pub type u11he = u16;
+
+/// Represents an unsigned 12-bit integer in host endianness.
+pub type u12he = u16;
+
+/// Represents an unsigned 13-bit integer in host endianness.
+pub type u13he = u16;
+
+/// Represents an unsigned 14-bit integer in host endianness.
+pub type u14he = u16;
+
+/// Represents an unsigned 15-bit integer in host endianness.
+pub type u15he = u16;
+
+/// Represents an unsigned 16-bit integer in host endianness.
+pub type u16he = u16;
+
+/// Represents an unsigned 17-bit integer in host endianness.
+pub type u17he = u32;
+
+/// Represents an unsigned 18-bit integer in host endianness.
+pub type u18he = u32;
+
+/// Represents an unsigned 19-bit integer in host endianness.
+pub type u19he = u32;
+
+/// Represents an unsigned 20-bit integer in host endianness.
+pub type u20he = u32;
+
+/// Represents an unsigned 21-bit integer in host endianness.
+pub type u21he = u32;
+
+/// Represents an unsigned 22-bit integer in host endianness.
+pub type u22he = u32;
+
+/// Represents an unsigned 23-bit integer in host endianness.
+pub type u23he = u32;
+
+/// Represents an unsigned 24-bit integer in host endianness.
+pub type u24he = u32;
+
+/// Represents an unsigned 25-bit integer in host endianness.
+pub type u25he = u32;
+
+/// Represents an unsigned 26-bit integer in host endianness.
+pub type u26he = u32;
+
+/// Represents an unsigned 27-bit integer in host endianness.
+pub type u27he = u32;
+
+/// Represents an unsigned 28-bit integer in host endianness.
+pub type u28he = u32;
+
+/// Represents an unsigned 29-bit integer in host endianness.
+pub type u29he = u32;
+
+/// Represents an unsigned 30-bit integer in host endianness.
+pub type u30he = u32;
+
+/// Represents an unsigned 31-bit integer in host endianness.
+pub type u31he = u32;
+
+/// Represents an unsigned 32-bit integer in host endianness.
+pub type u32he = u32;
+
+/// Represents an unsigned 33-bit integer in host endianness.
+pub type u33he = u64;
+
+/// Represents an unsigned 34-bit integer in host endianness.
+pub type u34he = u64;
+
+/// Represents an unsigned 35-bit integer in host endianness.
+pub type u35he = u64;
+
+/// Represents an unsigned 36-bit integer in host endianness.
+pub type u36he = u64;
+
+/// Represents an unsigned 37-bit integer in host endianness.
+pub type u37he = u64;
+
+/// Represents an unsigned 38-bit integer in host endianness.
+pub type u38he = u64;
+
+/// Represents an unsigned 39-bit integer in host endianness.
+pub type u39he = u64;
+
+/// Represents an unsigned 40-bit integer in host endianness.
+pub type u40he = u64;
+
+/// Represents an unsigned 41-bit integer in host endianness.
+pub type u41he = u64;
+
+/// Represents an unsigned 42-bit integer in host endianness.
+pub type u42he = u64;
+
+/// Represents an unsigned 43-bit integer in host endianness.
+pub type u43he = u64;
+
+/// Represents an unsigned 44-bit integer in host endianness.
+pub type u44he = u64;
+
+/// Represents an unsigned 45-bit integer in host endianness.
+pub type u45he = u64;
+
+/// Represents an unsigned 46-bit integer in host endianness.
+pub type u46he = u64;
+
+/// Represents an unsigned 47-bit integer in host endianness.
+pub type u47he = u64;
+
+/// Represents an unsigned 48-bit integer in host endianness.
+pub type u48he = u64;
+
+/// Represents an unsigned 49-bit integer in host endianness.
+pub type u49he = u64;
+
+/// Represents an unsigned 50-bit integer in host endianness.
+pub type u50he = u64;
+
+/// Represents an unsigned 51-bit integer in host endianness.
+pub type u51he = u64;
+
+/// Represents an unsigned 52-bit integer in host endianness.
+pub type u52he = u64;
+
+/// Represents an unsigned 53-bit integer in host endianness.
+pub type u53he = u64;
+
+/// Represents an unsigned 54-bit integer in host endianness.
+pub type u54he = u64;
+
+/// Represents an unsigned 55-bit integer in host endianness.
+pub type u55he = u64;
+
+/// Represents an unsigned 56-bit integer in host endianness.
+pub type u56he = u64;
+
+/// Represents an unsigned 57-bit integer in host endianness.
+pub type u57he = u64;
+
+/// Represents an unsigned 58-bit integer in host endianness.
+pub type u58he = u64;
+
+/// Represents an unsigned 59-bit integer in host endianness.
+pub type u59he = u64;
+
+/// Represents an unsigned 60-bit integer in host endianness.
+pub type u60he = u64;
+
+/// Represents an unsigned 61-bit integer in host endianness.
+pub type u61he = u64;
+
+/// Represents an unsigned 62-bit integer in host endianness.
+pub type u62he = u64;
+
+/// Represents an unsigned 63-bit integer in host endianness.
+pub type u63he = u64;
+
+/// Represents an unsigned 64-bit integer in host endianness.
+pub type u64he = u64;
