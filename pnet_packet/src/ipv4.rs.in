@@ -6,8 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use packet::PrimitiveValues;
-use packet::ip::IpNextHeaderProtocol;
+use PrimitiveValues;
+use ip::IpNextHeaderProtocol;
 
 use pnet_macros_support::types::*;
 
@@ -158,7 +158,7 @@ pub struct Ipv4 {
 /// Calculates the checksum of an IPv4 packet header.
 /// The checksum field of the packet is regarded as zeros during the calculation
 pub fn checksum(packet: &Ipv4Packet) -> u16be {
-    use packet::Packet;
+    use Packet;
     use util;
 
     let min = Ipv4Packet::minimum_packet_size();
@@ -272,8 +272,8 @@ fn ipv4_option_payload_length(ipv4_option: &Ipv4OptionPacket) -> usize {
 
 #[test]
 fn ipv4_packet_test() {
-    use packet::ip::IpNextHeaderProtocols;
-    use packet::Packet;
+    use ip::IpNextHeaderProtocols;
+    use Packet;
 
     let mut packet = [0u8; 200];
     {

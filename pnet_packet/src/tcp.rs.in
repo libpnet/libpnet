@@ -6,9 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use packet::Packet;
-use packet::PrimitiveValues;
-use packet::ip::IpNextHeaderProtocols;
+use Packet;
+use PrimitiveValues;
+use ip::IpNextHeaderProtocols;
 
 use pnet_macros_support::types::*;
 
@@ -287,8 +287,8 @@ pub fn ipv6_checksum_adv(packet: &TcpPacket,
 
 #[test]
 fn tcp_header_ipv4_test() {
-    use pnet::packet::ip::IpNextHeaderProtocols;
-    use pnet::packet::ipv4::MutableIpv4Packet;
+    use ip::IpNextHeaderProtocols;
+    use ipv4::MutableIpv4Packet;
 
     const IPV4_HEADER_LEN: usize = 20;
     const TCP_HEADER_LEN: usize = 32;

@@ -17,38 +17,6 @@ fn print_link_search_path() {
 #[cfg(not(windows))]
 fn print_link_search_path() {}
 
-#[cfg(feature = "with-syntex")]
-mod macros {
-    extern crate pnet_macros;
-    extern crate syntex;
-    extern crate glob;
-    
-    use std::env;
-    use std::path::Path;
-    
-    pub fn expand() {
-        // globbing for files to pre-process:
-        let pattern = "./src/packet/**/*.rs.in";
-        for entry in glob::glob( pattern ).expect("Failed to read glob pattern") {
-            if let Ok(path) = entry {
-                let src     = Path::new( path.to_str().expect("Invalid src Specified.") );
-                let out_dir = env::var_os( "OUT_DIR" ).expect("Invalid OUT_DIR.");
-                let file    = Path::new( path.file_stem().expect("Invalid file_stem.") );
-                let dst     = Path::new( &out_dir ).join(file);
-                let mut registry = syntex::Registry::new();
-                pnet_macros::register(&mut registry);
-                registry.expand("", &src, &dst).unwrap();
-            }
-        }
-    }
-}
-
-#[cfg(not(feature = "with-syntex"))]
-mod macros {
-    pub fn expand() {}
-}
-
 fn main() {
-    macros::expand();
     print_link_search_path();
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015, 2017 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -10,7 +10,8 @@
 #![allow(missing_docs)]
 #![macro_use]
 
-use pnet_base;
+extern crate pnet_base;
+extern crate pnet_macros_support;
 
 use std::ops::{Deref, DerefMut, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
 
@@ -212,3 +213,10 @@ pub mod arp;
 pub mod icmp;
 pub mod icmpv6;
 pub mod vlan;
+
+pub mod util;
+
+// Required to make sure that imports from pnet_macros work
+mod pnet_packet {
+    pub use super::*;
+}

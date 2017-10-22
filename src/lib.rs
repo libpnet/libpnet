@@ -119,17 +119,22 @@ extern crate test;
 #[cfg(not(windows))]
 extern crate libc;
 extern crate ipnetwork;
-extern crate pnet_macros_support;
 
 extern crate pnet_base;
 extern crate pnet_sys;
 extern crate pnet_datalink;
+extern crate pnet_packet;
 
 /// Support for sending and receiving data link layer packets
 pub mod datalink {
     pub use pnet_datalink::*;
 }
-pub mod packet;
+
+/// Support for packet parsing and manipulation
+pub mod packet {
+    pub use pnet_packet::*;
+}
+
 pub mod transport;
 pub mod util;
 
@@ -138,7 +143,3 @@ pub mod util;
 #[cfg(test)]
 mod pnettest;
 
-// Required to make sure that imports from pnet_macros work
-mod pnet {
-    pub use packet;
-}
