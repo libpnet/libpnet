@@ -123,6 +123,7 @@ extern crate ipnetwork;
 extern crate pnet_base;
 extern crate pnet_sys;
 extern crate pnet_datalink;
+extern crate pnet_transport;
 extern crate pnet_packet;
 
 /// Support for sending and receiving data link layer packets
@@ -135,7 +136,11 @@ pub mod packet {
     pub use pnet_packet::*;
 }
 
-pub mod transport;
+/// Support for sending and receiving transport layer packets
+pub mod transport {
+    pub use pnet_transport::*;
+}
+
 pub mod util;
 
 // NOTE should probably have a cfg(pnet_test_network) here, but cargo doesn't

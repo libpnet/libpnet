@@ -19,18 +19,18 @@
 #![macro_use]
 
 extern crate libc;
+extern crate pnet_sys;
+extern crate pnet_packet;
 
-use packet::Packet;
-use packet::ip::IpNextHeaderProtocol;
-use packet::ipv4::Ipv4Packet;
-use packet::udp::UdpPacket;
-use packet::icmp::IcmpPacket;
-use packet::icmpv6::Icmpv6Packet;
-use packet::tcp::TcpPacket;
+use pnet_packet::Packet;
+use pnet_packet::ip::IpNextHeaderProtocol;
+use pnet_packet::ipv4::Ipv4Packet;
+use pnet_packet::udp::UdpPacket;
+use pnet_packet::icmp::IcmpPacket;
+use pnet_packet::icmpv6::Icmpv6Packet;
+use pnet_packet::tcp::TcpPacket;
 use self::TransportChannelType::{Layer3, Layer4};
 use self::TransportProtocol::{Ipv4, Ipv6};
-
-use pnet_sys;
 
 use std::io;
 use std::io::Error;

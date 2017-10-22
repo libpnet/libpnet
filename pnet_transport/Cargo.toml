@@ -1,0 +1,20 @@
+[package]
+name = "pnet_transport"
+version = "0.19.0"
+authors = ["Robert Clipsham <robert@octarineparrot.com>"]
+license = "MIT/Apache-2.0"
+homepage = "https://github.com/libpnet/libpnet"
+repository = "https://github.com/libpnet/libpnet"
+description = "Cross-platform, transport layer networking."
+keywords = ["networking", "transport", "raw", "socket"]
+categories = ["network-programming"]
+
+[dependencies]
+libc = "0.2"
+#ipnetwork = "0.12"
+pnet_base = { path = "../pnet_base" }
+pnet_sys = { path = "../pnet_sys" }
+pnet_packet = { path = "../pnet_packet" }
+#
+#[target.'cfg(windows)'.dependencies]
+#winapi = "0.2"
