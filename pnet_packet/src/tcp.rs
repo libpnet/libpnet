@@ -8,8 +8,4 @@
 
 //! TCP packet abstraction
 
-#[cfg(feature = "with-syntex")]
 include!(concat!(env!("OUT_DIR"), "/tcp.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("tcp.rs.in");

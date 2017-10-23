@@ -11,10 +11,6 @@ categories = ["network-programming"]
 
 [dependencies]
 libc = "0.2"
-#ipnetwork = "0.12"
 pnet_base = { path = "../pnet_base" }
 pnet_sys = { path = "../pnet_sys" }
 pnet_packet = { path = "../pnet_packet" }
-#
-#[target.'cfg(windows)'.dependencies]
-#winapi = "0.2"

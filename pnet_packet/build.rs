@@ -6,7 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#[cfg(feature = "with-syntex")]
 mod macros {
     extern crate pnet_macros;
     extern crate syntex;
@@ -30,11 +29,6 @@ mod macros {
             }
         }
     }
-}
-
-#[cfg(not(feature = "with-syntex"))]
-mod macros {
-    pub fn expand() {}
 }
 
 fn main() {

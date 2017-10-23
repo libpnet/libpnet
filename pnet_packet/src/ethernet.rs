@@ -8,8 +8,4 @@
 
 //! Ethernet packet abstraction
 
-#[cfg(feature = "with-syntex")]
 include!(concat!(env!("OUT_DIR"), "/ethernet.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("ethernet.rs.in");

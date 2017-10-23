@@ -8,8 +8,4 @@
 
 //! IPv4 packet abstraction
 
-#[cfg(feature = "with-syntex")]
 include!(concat!(env!("OUT_DIR"), "/ipv4.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("ipv4.rs.in");

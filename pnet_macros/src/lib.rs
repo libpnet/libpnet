@@ -142,31 +142,19 @@
 
 #![deny(missing_docs)]
 
-#![cfg_attr(not(feature = "with-syntex"), feature(plugin_registrar, quote, rustc_private))]
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
 #![cfg_attr(feature="clippy", allow(let_and_return))]
 
-#[cfg(feature = "with-syntex")]
 extern crate syntex;
-
-#[cfg(feature = "with-syntex")]
 extern crate syntex_syntax as syntax;
 
-#[cfg(not(feature = "with-syntex"))]
-extern crate syntax;
-
 extern crate regex;
-
-#[cfg(not(feature = "with-syntex"))]
-extern crate rustc_plugin;
 
 use syntax::ast;
 use syntax::codemap::Span;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 
-#[cfg(not(feature = "with-syntex"))]
-use syntax::ext::base::{MultiDecorator, MultiModifier};
 use syntax::ext::build::AstBuilder;
 use syntax::parse::token;
 use syntax::ptr::P;
@@ -214,7 +202,6 @@ fn packet_modifier(ecx: &mut ExtCtxt,
 }
 
 /// Helper function to get mutable access to the fields in a struct/enum
-#[cfg(feature = "with-syntex")]
 fn variant_data_fields(vd: &mut ast::VariantData) -> &mut [ast::StructField] {
     match *vd {
         ast::VariantData::Struct(ref mut fields, _) => fields,
@@ -224,7 +211,6 @@ fn variant_data_fields(vd: &mut ast::VariantData) -> &mut [ast::StructField] {
 }
 
 /// Removes the attributes we've introduced from a particular struct/enum
-#[cfg(feature = "with-syntex")]
 fn remove_attributes_struct(vd: &mut ast::VariantData) {
     for field in variant_data_fields(vd) {
         let attrs = &mut field.attrs;
@@ -238,7 +224,6 @@ fn remove_attributes_struct(vd: &mut ast::VariantData) {
     }
 }
 
-#[cfg(feature = "with-syntex")]
 fn remove_attributes_mod(module: &mut ast::Mod) {
     let mut new_items = Vec::with_capacity(module.items.len());
     for item in &module.items {
@@ -274,7 +259,6 @@ fn remove_attributes_mod(module: &mut ast::Mod) {
 
 /// This iterates through a crate and removes any references to attributes
 /// which we introduce but aren't already consumed
-#[cfg(feature = "with-syntex")]
 fn remove_attributes(mut krate: ast::Crate) -> ast::Crate {
     remove_attributes_mod(&mut krate.module);
 
@@ -282,22 +266,9 @@ fn remove_attributes(mut krate: ast::Crate) -> ast::Crate {
 }
 
 /// The entry point for the plugin when using syntex
-#[cfg(feature = "with-syntex")]
 pub fn register(registry: &mut syntex::Registry) {
     registry.add_modifier("packet", packet_modifier);
     registry.add_decorator("packet_generator", decorator::generate_packet);
     registry.add_post_expansion_pass(remove_attributes);
 }
 
-/// The entry point for the syntax extension
-///
-/// This registers each part of the plugin with the compiler. There are two parts: a modifier, to
-/// add additional attributes to the original structure; and a decorator, to generate the various
-/// required structures and method.
-#[cfg(not(feature = "with-syntex"))]
-pub fn register(registry: &mut rustc_plugin::Registry) {
-    registry.register_syntax_extension(token::intern("packet"),
-                                       MultiModifier(Box::new(packet_modifier)));
-    registry.register_syntax_extension(token::intern("packet_generator"),
-                                       MultiDecorator(Box::new(decorator::generate_packet)));
-}

@@ -8,8 +8,4 @@
 
 //! ICMPv6 packet abstraction
 
-#[cfg(feature = "with-syntex")]
 include!(concat!(env!("OUT_DIR"), "/icmpv6.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("icmpv6.rs.in");

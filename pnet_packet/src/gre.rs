@@ -9,8 +9,4 @@
 //! Minimal GRE Packet implementation: suitable for inspection not generation (e.g. checksum not
 //! implemented).
 
-#[cfg(feature = "with-syntex")]
 include!(concat!(env!("OUT_DIR"), "/gre.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("gre.rs.in");

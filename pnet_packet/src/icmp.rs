@@ -8,8 +8,4 @@
 
 //! ICMP packet abstraction
 
-#[cfg(feature = "with-syntex")]
 include!(concat!(env!("OUT_DIR"), "/icmp.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("icmp.rs.in");
