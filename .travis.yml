@@ -4,7 +4,6 @@ rust:
     - 1.15.0
     - stable
     - beta
-    - nightly
 os:
     - linux
     - osx
@@ -13,8 +12,6 @@ env:
     - secure: kd+Q+IWrHUZK+BwwEh37IiR7B76yyvfjAB3Gx6roshKyAk2KmduoyLGv6v902gbLAtt/8JtPMBHZdKbMv7A1eKBsCOF/rMz1rHziuTbnFwfnx6UN+jalZZRIYmn20M7I1UfvhcvWXqvcrpo84NbhOYlXMmvI+X6HZ2rSIsYta6E=
     - VERBOSE: 1
   matrix:
-    - PNET_FEATURES="travis pcap" PNET_MACROS_FEATURES="travis"
-    - PNET_FEATURES="travis pcap clippy" PNET_MACROS_FEATURES="travis clippy"
     - PNET_FEATURES="travis pcap" PNET_MACROS_FEATURES="travis"
 matrix:
   allow_failures:
