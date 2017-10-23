@@ -174,8 +174,8 @@ impl TransportSender {
 
     #[cfg(any(target_os = "freebsd", target_os = "macos"))]
     fn send_to_impl<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
-        use packet::MutablePacket;
-        use packet::ipv4::MutableIpv4Packet;
+        use pnet_packet::MutablePacket;
+        use pnet_packet::ipv4::MutableIpv4Packet;
 
         // FreeBSD and OS X expect total length and fragment offset fields of IPv4
         // packets to be in host byte order rather than network byte order. Fragment offset is the
@@ -262,7 +262,7 @@ macro_rules! transport_channel_iterator {
 
                 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
                 fn fixup_packet(buffer: &mut [u8]) {
-                    use packet::ipv4::MutableIpv4Packet;
+                    use pnet_packet::ipv4::MutableIpv4Packet;
 
                     let buflen = buffer.len();
                     let mut new_packet = MutableIpv4Packet::new(buffer).unwrap();
