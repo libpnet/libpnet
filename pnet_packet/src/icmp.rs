@@ -6,10 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! TCP packet abstraction
+//! ICMP packet abstraction
 
-#[cfg(feature = "with-syntex")]
-include!(concat!(env!("OUT_DIR"), "/tcp.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("tcp.rs.in");
+include!(concat!(env!("OUT_DIR"), "/icmp.rs"));

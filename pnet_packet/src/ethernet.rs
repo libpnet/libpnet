@@ -6,10 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! IPv4 packet abstraction
+//! Ethernet packet abstraction
 
-#[cfg(feature = "with-syntex")]
-include!(concat!(env!("OUT_DIR"), "/ipv4.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("ipv4.rs.in");
+include!(concat!(env!("OUT_DIR"), "/ethernet.rs"));

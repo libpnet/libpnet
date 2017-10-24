@@ -9,7 +9,7 @@
 //! Defines the type and constants for IP next header/next level protocol
 //! fields.
 
-use packet::PrimitiveValues;
+use PrimitiveValues;
 use std::fmt;
 
 /// Protocol numbers as defined at:

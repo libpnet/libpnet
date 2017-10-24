@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use packet::ip::IpNextHeaderProtocol;
+use ip::IpNextHeaderProtocol;
 
 use pnet_macros_support::types::*;
 
@@ -33,8 +33,8 @@ pub struct Ipv6 {
 
 #[test]
 fn ipv6_header_test() {
-    use packet::ip::IpNextHeaderProtocols;
-    use packet::Packet;
+    use ip::IpNextHeaderProtocols;
+    use Packet;
 
     let mut packet = [0u8; 0x200];
     {

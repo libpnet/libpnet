@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use packet::PrimitiveValues;
+use PrimitiveValues;
 
 use std::fmt;
 use pnet_base::MacAddr;
@@ -57,7 +57,7 @@ fn ethernet_header_test() {
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod EtherTypes {
-    use packet::ethernet::EtherType;
+    use ethernet::EtherType;
 
     /// Internet Protocol version 4 (IPv4) [RFC7042]
     pub const Ipv4: EtherType = EtherType(0x0800);

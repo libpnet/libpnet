@@ -12,13 +12,11 @@ categories = ["network-programming", "parser-implementations"]
 build = "build.rs"
 
 [features]
-default = ["with-syntex"]
-nightly = ["pnet_macros_plugin"]
 benchmark = []
-netmap = ["netmap_sys"]
+netmap = ["pnet_datalink/netmap_sys"]
+pcap = ["pnet_datalink/pcap"]
 appveyor = []
 travis = []
-with-syntex = ["syntex", "pnet_macros/with-syntex"]
 
 [dependencies]
 libc = "0.2"
@@ -27,20 +25,8 @@ ipnetwork = "0.12"
 pnet_base = { path = "pnet_base" }
 pnet_sys = { path = "pnet_sys" }
 pnet_datalink = { path = "pnet_datalink" }
-pnet_macros = { path = "pnet_macros", optional = true, version = ">=0.9" }
-pnet_macros_support = { path = "pnet_macros_support", version = ">=0.1" }
-pnet_macros_plugin = { path = "pnet_macros_plugin", optional = true, version = ">=0.1" }
-
-clippy = { version = ">=0.0", optional = true }
-syntex = { version = "0.42", optional = true }
-pcap = { version = "0.6", optional = true }
-netmap_sys = { version = ">=0.0", optional = true, features = ["netmap_with_libs"] }
-
+pnet_transport = { path = "pnet_transport" }
+pnet_packet = { path = "pnet_packet" }
 
 [dev-dependencies]
 time = ">=0.1"
-
-[build-dependencies]
-glob = "0.2"
-syntex = { version = "0.42", optional = true }
-pnet_macros = { path = "pnet_macros", version = ">=0.13" }

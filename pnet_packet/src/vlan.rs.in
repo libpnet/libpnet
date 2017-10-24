@@ -1,5 +1,5 @@
-use packet::PrimitiveValues;
-use packet::ethernet::EtherType;
+use PrimitiveValues;
+use ethernet::EtherType;
 use pnet_macros_support::types::*;
 
 /// Represents an IEEE 802.1p class of service
@@ -67,7 +67,7 @@ pub struct Vlan {
 
 #[cfg(test)]
 mod tests {
-    use packet::ethernet::EtherTypes;
+    use ethernet::EtherTypes;
     use super::*;
 
     #[test]

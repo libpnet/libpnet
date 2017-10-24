@@ -6,11 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Minimal GRE Packet implementation: suitable for inspection not generation (e.g. checksum not
-//! implemented).
+//! IPv4 packet abstraction
 
-#[cfg(feature = "with-syntex")]
-include!(concat!(env!("OUT_DIR"), "/gre.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("gre.rs.in");
+include!(concat!(env!("OUT_DIR"), "/ipv4.rs"));

@@ -6,8 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use packet::PrimitiveValues;
-use packet::ethernet::EtherType;
+use PrimitiveValues;
+use ethernet::EtherType;
 
 use std::net::Ipv4Addr;
 use pnet_base::MacAddr;

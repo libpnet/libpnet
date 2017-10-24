@@ -439,7 +439,7 @@ fn generate_packet_structs(cx: &mut GenContext, packet: &Packet) {
             #[derive(PartialEq)]
             /// A structure enabling manipulation of on the wire packets
             pub struct {}<'p> {{
-                packet: ::pnet::packet::{}PacketData<'p>,
+                packet: ::pnet_macros_support::packet::{}PacketData<'p>,
             }}", name, mutable));
     }
 }
@@ -499,7 +499,7 @@ fn handle_misc_field(cx: &mut GenContext,
                     #[allow(trivial_numeric_casts)]
                     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                     pub fn set_{name}(&mut self, val: {ty_str}) {{
-                        use pnet::packet::PrimitiveValues;
+                        use pnet_macros_support::packet::PrimitiveValues;
                         let _self = self;
                         {inner_mutators}
 
@@ -716,7 +716,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 #[allow(trivial_numeric_casts)]
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
-                                    use pnet::packet::FromPacket;
+                                    use pnet_macros_support::packet::FromPacket;
                                     use std::cmp::min;
                                     let _self = self;
                                     let current_offset = {co};
@@ -754,7 +754,7 @@ fn handle_vector_field(cx: &mut GenContext,
                                 #[allow(trivial_numeric_casts)]
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn set_{name}(&mut self, vals: &[{inner_ty_str}]) {{
-                                    use pnet::packet::PacketSize;
+                                    use pnet_macros_support::packet::PacketSize;
                                     let _self = self;
                                     let mut current_offset = {co};
                                     let end = current_offset + {packet_length};
@@ -926,7 +926,7 @@ fn generate_packet_impl(cx: &mut GenContext,
         #[inline]
         pub fn new<'p>(packet: &'p {mut} [u8]) -> Option<{name}<'p>> {{
             if packet.len() >= {name}::minimum_packet_size() {{
-                use ::pnet::packet::{cap_mut}PacketData;
+                use ::pnet_macros_support::packet::{cap_mut}PacketData;
                 Some({name} {{ packet: {cap_mut}PacketData::Borrowed(packet) }})
             }} else {{
                 None
@@ -938,7 +938,7 @@ fn generate_packet_impl(cx: &mut GenContext,
         /// own its own data and the underlying buffer will be dropped when the {name} is.
         pub fn owned(packet: Vec<u8>) -> Option<{name}<'static>> {{
             if packet.len() >= {name}::minimum_packet_size() {{
-                use ::pnet::packet::{cap_mut}PacketData;
+                use ::pnet_macros_support::packet::{cap_mut}PacketData;
                 Some({name} {{ packet: {cap_mut}PacketData::Owned(packet) }})
             }} else {{
                 None
@@ -948,7 +948,7 @@ fn generate_packet_impl(cx: &mut GenContext,
         /// Maps from a {name} to a {imm_name}
         #[inline]
         pub fn to_immutable<'p>(&'p self) -> {imm_name}<'p> {{
-            use ::pnet::packet::PacketData;
+            use ::pnet_macros_support::packet::PacketData;
             {imm_name} {{ packet: PacketData::Borrowed(self.packet.as_slice()) }}
         }}
 
@@ -1000,7 +1000,7 @@ fn generate_packet_impls(cx: &mut GenContext, packet: &Packet) -> Option<(Payloa
 fn generate_packet_size_impls(cx: &mut GenContext, packet: &Packet, size: &str) {
     for name in &[packet.packet_name(), packet.packet_name_mut()] {
         cx.push_item_from_string(format!("
-            impl<'a> ::pnet::packet::PacketSize for {name}<'a> {{
+            impl<'a> ::pnet_macros_support::packet::PacketSize for {name}<'a> {{
                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                 fn packet_size(&self) -> usize {{
                     let _self = self;
@@ -1031,7 +1031,7 @@ fn generate_packet_trait_impls(cx: &mut GenContext,
                                     payload_bounds.upper)[..];
             end = "end".to_owned();
         }
-        cx.push_item_from_string(format!("impl<'a> ::pnet::packet::{mutable}Packet for {name}<'a> {{
+        cx.push_item_from_string(format!("impl<'a> ::pnet_macros_support::packet::{mutable}Packet for {name}<'a> {{
             #[inline]
             fn packet{u_mut}<'p>(&'p {mut_} self) -> &'p {mut_} [u8] {{ &{mut_} self.packet[..] }}
 
@@ -1070,7 +1070,7 @@ fn generate_iterables(cx: &mut GenContext, packet: &Packet) {
         type Item = {name}Packet<'a>;
 
         fn next(&mut self) -> Option<{name}Packet<'a>> {{
-            use pnet::packet::PacketSize;
+            use pnet_macros_support::packet::PacketSize;
             use std::cmp::min;
             if self.buf.len() > 0 {{
                 if let Some(ret) = {name}Packet::new(self.buf) {{
@@ -1095,11 +1095,11 @@ fn generate_converters(cx: &mut GenContext, packet: &Packet) {
 
     for name in &[packet.packet_name(), packet.packet_name_mut()] {
         cx.push_item_from_string(format!("
-        impl<'p> ::pnet::packet::FromPacket for {packet}<'p> {{
+        impl<'p> ::pnet_macros_support::packet::FromPacket for {packet}<'p> {{
             type T = {name};
             #[inline]
             fn from_packet(&self) -> {name} {{
-                use pnet::packet::Packet;
+                use pnet_macros_support::packet::Packet;
                 let _self = self;
                 {name} {{
                     {get_fields}

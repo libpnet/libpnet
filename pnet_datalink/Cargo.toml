@@ -15,5 +15,8 @@ ipnetwork = "0.12"
 pnet_base = { path = "../pnet_base" }
 pnet_sys = { path = "../pnet_sys" }
 
+pcap = { version = "0.6", optional = true }
+netmap_sys = { version = ">=0.0", optional = true, features = ["netmap_with_libs"] }
+
 [target.'cfg(windows)'.dependencies]
 winapi = "0.2"

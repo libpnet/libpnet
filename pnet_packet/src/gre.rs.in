@@ -7,7 +7,7 @@
 // except according to those terms.
 
 #[cfg(test)]
-use packet::Packet;
+use Packet;
 
 use pnet_macros_support::types::*;
 

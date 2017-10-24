@@ -19,18 +19,18 @@
 #![macro_use]
 
 extern crate libc;
+extern crate pnet_sys;
+extern crate pnet_packet;
 
-use packet::Packet;
-use packet::ip::IpNextHeaderProtocol;
-use packet::ipv4::Ipv4Packet;
-use packet::udp::UdpPacket;
-use packet::icmp::IcmpPacket;
-use packet::icmpv6::Icmpv6Packet;
-use packet::tcp::TcpPacket;
+use pnet_packet::Packet;
+use pnet_packet::ip::IpNextHeaderProtocol;
+use pnet_packet::ipv4::Ipv4Packet;
+use pnet_packet::udp::UdpPacket;
+use pnet_packet::icmp::IcmpPacket;
+use pnet_packet::icmpv6::Icmpv6Packet;
+use pnet_packet::tcp::TcpPacket;
 use self::TransportChannelType::{Layer3, Layer4};
 use self::TransportProtocol::{Ipv4, Ipv6};
-
-use pnet_sys;
 
 use std::io;
 use std::io::Error;
@@ -174,8 +174,8 @@ impl TransportSender {
 
     #[cfg(any(target_os = "freebsd", target_os = "macos"))]
     fn send_to_impl<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
-        use packet::MutablePacket;
-        use packet::ipv4::MutableIpv4Packet;
+        use pnet_packet::MutablePacket;
+        use pnet_packet::ipv4::MutableIpv4Packet;
 
         // FreeBSD and OS X expect total length and fragment offset fields of IPv4
         // packets to be in host byte order rather than network byte order. Fragment offset is the
@@ -262,7 +262,7 @@ macro_rules! transport_channel_iterator {
 
                 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
                 fn fixup_packet(buffer: &mut [u8]) {
-                    use packet::ipv4::MutableIpv4Packet;
+                    use pnet_packet::ipv4::MutableIpv4Packet;
 
                     let buflen = buffer.len();
                     let mut new_packet = MutableIpv4Packet::new(buffer).unwrap();

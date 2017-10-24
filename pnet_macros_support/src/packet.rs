@@ -1,4 +1,4 @@
-// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015, 2017 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -6,12 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Provides interfaces for interacting with packets and headers
-#![allow(missing_docs)]
-#![macro_use]
+//! Packet helpers for `pnet_macros`
 
 use pnet_base;
-
 use std::ops::{Deref, DerefMut, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
 
 /// Represents a generic network packet
@@ -82,6 +79,7 @@ macro_rules! impl_index_mut {
     };
 }
 
+/// Packet data
 #[derive(PartialEq)]
 pub enum PacketData<'p> {
     /// Packet owns its contents
@@ -91,6 +89,7 @@ pub enum PacketData<'p> {
 }
 
 impl<'p> PacketData<'p> {
+    /// Get a slice of the packet data
     pub fn as_slice(&self) -> &[u8] {
         match self {
             &PacketData::Owned(ref data) => data.deref(),
@@ -98,10 +97,12 @@ impl<'p> PacketData<'p> {
         }
     }
 
+    /// No-op - returns `self`
     pub fn to_immutable(self) -> PacketData<'p> {
         self
     }
 
+    /// Length of the packet data
     pub fn len(&self) -> usize {
         self.as_slice().len()
     }
@@ -113,13 +114,17 @@ impl_index!(PacketData, RangeTo<usize>, [u8]);
 impl_index!(PacketData, RangeFrom<usize>, [u8]);
 impl_index!(PacketData, RangeFull, [u8]);
 
+/// Mutable packet data
 #[derive(PartialEq)]
 pub enum MutPacketData<'p> {
+    /// Owned mutable packet data
     Owned(Vec<u8>),
+    /// Borrowed mutable packet data
     Borrowed(&'p mut [u8]),
 }
 
 impl<'p> MutPacketData<'p> {
+    /// Get packet data as a slice
     pub fn as_slice(&self) -> &[u8] {
         match self {
             &MutPacketData::Owned(ref data) => data.deref(),
@@ -127,6 +132,7 @@ impl<'p> MutPacketData<'p> {
         }
     }
 
+    /// Get packet data as a mutable slice
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         match self {
             &mut MutPacketData::Owned(ref mut data) => data.deref_mut(),
@@ -134,6 +140,7 @@ impl<'p> MutPacketData<'p> {
         }
     }
 
+    /// Get an immutable version of the packet data
     pub fn to_immutable(self) -> PacketData<'p> {
         match self {
             MutPacketData::Owned(data) => PacketData::Owned(data),
@@ -141,6 +148,7 @@ impl<'p> MutPacketData<'p> {
         }
     }
 
+    /// Get the length of data in the packet
     pub fn len(&self) -> usize {
         self.as_slice().len()
     }
@@ -201,14 +209,3 @@ impl PrimitiveValues for ::std::net::Ipv6Addr {
     }
 }
 
-pub mod ethernet;
-pub mod gre;
-pub mod ip;
-pub mod ipv4;
-pub mod ipv6;
-pub mod udp;
-pub mod tcp;
-pub mod arp;
-pub mod icmp;
-pub mod icmpv6;
-pub mod vlan;

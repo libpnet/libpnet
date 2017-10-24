@@ -6,10 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! UDP packet abstraction
+//! Minimal GRE Packet implementation: suitable for inspection not generation (e.g. checksum not
+//! implemented).
 
-#[cfg(feature = "with-syntex")]
-include!(concat!(env!("OUT_DIR"), "/udp.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("udp.rs.in");
+include!(concat!(env!("OUT_DIR"), "/gre.rs"));

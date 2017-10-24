@@ -6,8 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use packet::ip::IpNextHeaderProtocols;
-use packet::PrimitiveValues;
+use ip::IpNextHeaderProtocols;
+use PrimitiveValues;
 use pnet_macros_support::types::*;
 use std::net::Ipv6Addr;
 
@@ -72,7 +72,7 @@ pub struct Icmpv6 {
 
 /// Calculates the checksum of an ICMPv6 packet
 pub fn checksum(packet: &Icmpv6Packet, source: Ipv6Addr, destination: Ipv6Addr) -> u16be {
-    use packet::Packet;
+    use Packet;
     use util;
 
     util::ipv6_checksum(packet.packet(), 1, &[], source, destination, IpNextHeaderProtocols::Icmpv6)
@@ -115,7 +115,7 @@ mod checksum_tests {
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod Icmpv6Types {
-    use packet::icmpv6::Icmpv6Type;
+    use icmpv6::Icmpv6Type;
     /// ICMPv6 type for "destination unreachable"
     pub const DestinationUnreachable: Icmpv6Type = Icmpv6Type(1);
     /// ICMPv6 type for "packet too big"
@@ -146,15 +146,16 @@ pub mod ndp {
     //!
     //! [RFC 4861]: https://tools.ietf.org/html/rfc4861
 
-    use packet::icmpv6::{Icmpv6Code, Icmpv6Type};
-    use packet::{PrimitiveValues, Packet};
+    use icmpv6::{Icmpv6Code, Icmpv6Type};
+    use PrimitiveValues;
+    use Packet;
     use pnet_macros_support::types::*;
     use std::net::Ipv6Addr;
 
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
     pub mod Icmpv6Codes {
-        use packet::icmpv6::Icmpv6Code;
+        use icmpv6::Icmpv6Code;
         /// 0 is the only available ICMPv6 Code for the NDP
         pub const NoCode: Icmpv6Code = Icmpv6Code(0);
     }
@@ -556,7 +557,7 @@ pub mod ndp {
 
     #[cfg(test)]
     mod ndp_tests {
-        use packet::icmpv6::{Icmpv6Types, Icmpv6Code};
+        use icmpv6::{Icmpv6Types, Icmpv6Code};
         use super::*;
 
         #[test]

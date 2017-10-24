@@ -13,25 +13,10 @@ env:
     - secure: kd+Q+IWrHUZK+BwwEh37IiR7B76yyvfjAB3Gx6roshKyAk2KmduoyLGv6v902gbLAtt/8JtPMBHZdKbMv7A1eKBsCOF/rMz1rHziuTbnFwfnx6UN+jalZZRIYmn20M7I1UfvhcvWXqvcrpo84NbhOYlXMmvI+X6HZ2rSIsYta6E=
     - VERBOSE: 1
   matrix:
-    - PNET_FEATURES="travis pcap with-syntex" PNET_MACROS_FEATURES="travis with-syntex"
-    - PNET_FEATURES="travis pcap nightly clippy" PNET_MACROS_FEATURES="travis clippy"
-    - PNET_FEATURES="travis pcap nightly" PNET_MACROS_FEATURES="travis"
+    - PNET_FEATURES="travis" PNET_MACROS_FEATURES="travis"
 matrix:
   allow_failures:
     - rust: nightly
-  exclude:
-    - rust: 1.15.0
-      env: PNET_FEATURES="travis pcap nightly clippy" PNET_MACROS_FEATURES="travis clippy"
-    - rust: 1.15.0
-      env: PNET_FEATURES="travis pcap nightly" PNET_MACROS_FEATURES="travis"
-    - rust: stable
-      env: PNET_FEATURES="travis pcap nightly clippy" PNET_MACROS_FEATURES="travis clippy"
-    - rust: stable
-      env: PNET_FEATURES="travis pcap nightly" PNET_MACROS_FEATURES="travis"
-    - rust: beta
-      env: PNET_FEATURES="travis pcap nightly clippy" PNET_MACROS_FEATURES="travis clippy"
-    - rust: beta
-      env: PNET_FEATURES="travis pcap nightly" PNET_MACROS_FEATURES="travis"
 script:
     - make travis_script
 notifications:
