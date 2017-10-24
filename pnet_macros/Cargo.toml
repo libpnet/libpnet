@@ -17,21 +17,11 @@ travis = []
 [dev-dependencies]
 compiletest_rs = ">=0.0"
 
-[dev-dependencies.pnet]
-default-features = false
-features = ["nightly"]
-path = "../"
-version = ">=0.13"
-
-[dev-dependencies.pnet_macros_plugin]
-path = "../pnet_macros_plugin"
-version = ">=0.1"
-
 [dev-dependencies.pnet_macros_support]
 path = "../pnet_macros_support"
 version = ">=0.1"
 
 [dependencies]
 regex = "0.2.*"
-syntex = { version = "0.42" }
-syntex_syntax = { version = "0.42" }
+syntex = "0.42"
+syntex_syntax = "0.42"
