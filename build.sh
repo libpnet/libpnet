@@ -18,7 +18,6 @@ SUDO="$(which sudo)"
 SYSTEM="$(uname -s)"
 TESTER="$CARGO test"
 CC="$(which clang || which gcc)"
-NIGHTLY=0
 MACROS_WITH_SYNTEX=0
 
 if [[ -n "$PNET_FEATURES" ]]; then
@@ -37,7 +36,6 @@ fi
 IFCONFIG=$(which ifconfig)
 IPROUTE2=$(which ip)
 
-"$RUSTC" -V | grep -q nightly && NIGHTLY=1
 echo $PNET_MACROS_FEATURES | grep -q with-syntex && MACROS_WITH_SYNTEX=1
 
 if [[ -x "$IFCONFIG" ]]; then
@@ -91,11 +89,9 @@ build_test() {
 # macros tests are only run on nightly, since they depend on compiletest_rs,
 # which needs a nightly Rust
 run_macro_tests() {
-    if [[ "$NIGHTLY" -eq 1 && "$MACROS_WITH_SYNTEX" -eq 0 ]]; then
-        cd pnet_macros &&
-        sh -c "$CARGO test $PNET_MACROS_CARGO_FLAGS" &&
-        cd ..
-    fi
+    cd pnet_macros &&
+    sh -c "$CARGO test $PNET_MACROS_CARGO_FLAGS" &&
+    cd ..
 }
 
 run_packet_tests() {
