@@ -10,11 +10,8 @@
 //! specify the format of on-the-wire packets, and automatically generate zero-copy accessors and
 //! mutators for the fields. It is used as follows:
 //!
-//! ```no_run
-//! #![feature(core, collections, custom_attribute, plugin)]
-//! #![plugin(pnet_macros_plugin)]
+//! ```ignore
 //!
-//! extern crate pnet;
 //! extern crate pnet_macros_support;
 //!
 //! /// This module contains a list of type aliases which may be used
