@@ -335,6 +335,8 @@ fn parse_length_expr(ecx: &mut ExtCtxt,
     -> Vec<TokenTree> {
     let error_msg = "Only field names, constants, integers, basic arithmetic expressions \
                      (+ - * / %) and parentheses are allowed in the \"length\" attribute";
+    let mut needs_constant: Option<Span> = None;
+    let mut has_constant = false;
     let tokens_packet = tts.iter().fold(Vec::new(), |mut acc_packet, tt_token| {
         match *tt_token {
             Token(span, token::Ident(name)) => {
@@ -343,10 +345,11 @@ fn parse_length_expr(ecx: &mut ExtCtxt,
                         let mut modified_packet_tokens =
                             ecx.parse_tts(format!("_self.get_{}() as usize", name).to_owned());
                         acc_packet.append(&mut modified_packet_tokens);
-                    } else {
-                        ecx.span_err(span,
-                                     "Field name must be a member of the struct and not the \
-                                      field itself");
+                    } else  {
+                        if let None = needs_constant {
+                            needs_constant = Some(span);
+                        }
+                        acc_packet.push(tt_token.clone());
                     }
                 }
                 // Constants are only recongized if they are all uppercase
@@ -354,6 +357,7 @@ fn parse_length_expr(ecx: &mut ExtCtxt,
                     let mut modified_packet_tokens =
                         ecx.parse_tts(format!("{} as usize", name).to_owned());
                     acc_packet.append(&mut modified_packet_tokens);
+                    has_constant = true;
                 }
             }
             Token(_, token::ModSep) => {
@@ -391,6 +395,13 @@ fn parse_length_expr(ecx: &mut ExtCtxt,
         };
         acc_packet
     });
+
+    if let Some(span) = needs_constant {
+        if !has_constant {
+            ecx.span_err(span,
+                         "Field name must be a member of the struct and not the field itself");
+        }
+    }
 
     tokens_packet
 }
@@ -1393,7 +1404,7 @@ fn generate_get_fields(packet: &Packet) -> String {
 #[cfg(test)]
 mod tests {
     use syntax::ast::CrateConfig;
-    use syntax::ext::base::ExtCtxt;
+    use syntax::ext::base::{DummyMacroLoader, ExtCtxt};
     use syntax::ext::expand::ExpansionConfig;
     use syntax::ext::quote::rt::ExtParseUtils;
     use syntax::parse::ParseSess;
@@ -1401,11 +1412,11 @@ mod tests {
 
     fn assert_parse_length_expr(expr: &str, field_names: &[&str], expected: &str) {
         let sess = ParseSess::new();
-        let mut feature_gated_cfgs = Vec::new();
+        let mut dummy_macro_loader = DummyMacroLoader;
         let mut ecx = ExtCtxt::new(&sess,
                                    CrateConfig::default(),
                                    ExpansionConfig::default("parse_length_expr".to_owned()),
-                                   &mut feature_gated_cfgs);
+                                   &mut dummy_macro_loader);
         let expr_tokens = ecx.parse_tts(expr.to_owned());
         let field_names_vec: Vec<String> =
             field_names.iter().map(|field_name| (*field_name).to_owned()).collect();

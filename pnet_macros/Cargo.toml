@@ -15,11 +15,8 @@ default = []
 travis = []
 
 [dev-dependencies]
-compiletest_rs = ">=0.0"
-
-[dev-dependencies.pnet_macros_support]
-path = "../pnet_macros_support"
-version = ">=0.1"
+pnet_base = { path = "../pnet_base" }
+pnet_macros_support = { path = "../pnet_macros_support", version = ">=0.1" }
 
 [dependencies]
 regex = "0.2.*"
