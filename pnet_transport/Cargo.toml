@@ -1,6 +1,6 @@
 [package]
 name = "pnet_transport"
-version = "0.19.0"
+version = "0.20.0"
 authors = ["Robert Clipsham <robert@octarineparrot.com>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
