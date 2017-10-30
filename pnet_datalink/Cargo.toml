@@ -12,8 +12,8 @@ categories = ["network-programming"]
 [dependencies]
 libc = "0.2"
 ipnetwork = "0.12"
-pnet_base = { path = "../pnet_base" }
-pnet_sys = { path = "../pnet_sys" }
+pnet_base = { path = "../pnet_base", version = "0.20.0" }
+pnet_sys = { path = "../pnet_sys", version = "0.20.0" }
 
 pcap = { version = "0.6", optional = true }
 netmap_sys = { version = ">=0.0", optional = true, features = ["netmap_with_libs"] }

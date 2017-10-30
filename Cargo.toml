@@ -22,11 +22,11 @@ travis = []
 libc = "0.2"
 ipnetwork = "0.12"
 
-pnet_base = { path = "pnet_base" }
-pnet_sys = { path = "pnet_sys" }
-pnet_datalink = { path = "pnet_datalink" }
-pnet_transport = { path = "pnet_transport" }
-pnet_packet = { path = "pnet_packet" }
+pnet_base = { path = "pnet_base", version = "0.20.0" }
+pnet_sys = { path = "pnet_sys", version = "0.20.0" }
+pnet_datalink = { path = "pnet_datalink", version = "0.20.0" }
+pnet_transport = { path = "pnet_transport", version = "0.20.0" }
+pnet_packet = { path = "pnet_packet", version = "0.20.0" }
 
 [dev-dependencies]
 time = ">=0.1"
