@@ -216,6 +216,26 @@ impl NetworkInterface {
     pub fn is_loopback(&self) -> bool {
         self.flags & (pnet_sys::IFF_LOOPBACK as u32) != 0
     }
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    pub fn is_up(&self) -> bool {
+        self.flags & (pnet_sys::IFF_UP as u32) != 0
+    }
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    pub fn is_broadcast(&self) -> bool {
+        self.flags & (pnet_sys::IFF_BROADCAST as u32) != 0
+    }
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    pub fn is_point_to_point(&self) -> bool {
+        self.flags & (pnet_sys::IFF_POINTOPOINT as u32) != 0
+    }
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    pub fn is_running(&self) -> bool {
+        self.flags & (pnet_sys::IFF_RUNNING as u32) != 0
+    }
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    pub fn is_multicast(&self) -> bool {
+        self.flags & (pnet_sys::IFF_MULTICAST as u32) != 0
+    }
 }
 
 /// Get a list of available network interfaces for the current machine.
