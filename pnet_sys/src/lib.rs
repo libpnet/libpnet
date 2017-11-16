@@ -138,6 +138,7 @@ pub fn addr_to_sockaddr(addr: SocketAddr,
                 (*storage).sin6_family = AF_INET6 as SockAddrFamily6;
                 (*storage).sin6_port = htons(addr.port());
                 (*storage).sin6_addr = inaddr;
+                (*storage).sin6_scope_id = sa.scope_id();
                 mem::size_of::<SockAddrIn6>()
             }
         };
@@ -175,7 +176,7 @@ pub fn sockaddr_to_addr(storage: &SockAddrStorage, len: usize) -> io::Result<Soc
             Ok(SocketAddr::V6(SocketAddrV6::new(ip,
                                                 ntohs(storage.sin6_port),
                                                 u32::from_be(storage.sin6_flowinfo),
-                                                u32::from_be(storage.sin6_scope_id))))
+                                                storage.sin6_scope_id)))
         }
         _ => Err(io::Error::new(io::ErrorKind::InvalidData, "expected IPv4 or IPv6 socket")),
     }
