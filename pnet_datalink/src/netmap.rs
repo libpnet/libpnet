@@ -50,7 +50,6 @@ type nfds_t = libc::c_uint;
 type nfds_t = libc::c_ulong;
 
 extern "C" {
-    fn poll(fds: *mut pollfd, nfds: nfds_t, timeout: libc::c_int) -> libc::c_int;
     fn ppoll(fds: *mut pollfd,
              nfds: nfds_t,
              timeout: *const libc::timespec,
@@ -105,8 +104,8 @@ pub struct Config {
     pub write_timeout: Option<Duration>,
 }
 
-impl<'a> From<&'a datalink::Config> for Config {
-    fn from(config: &datalink::Config) -> Config {
+impl<'a> From<&'a super::Config> for Config {
+    fn from(config: &super::Config) -> Config {
         Config {
             read_timeout: config.read_timeout,
             write_timeout: config.write_timeout,
@@ -137,7 +136,7 @@ fn get_timeout(to: Option<Duration>) -> Option<libc::timespec> {
 #[inline]
 pub fn channel(network_interface: &NetworkInterface,
                config: Config)
-    -> io::Result<datalink::Channel> {
+    -> io::Result<super::Channel> {
     // FIXME probably want one for each of send/recv
     let desc = NmDesc::new(network_interface);
     match desc {
@@ -210,8 +209,8 @@ impl DataLinkSender for DataLinkSenderImpl {
         -> Option<io::Result<()>> {
         self.build_and_send(1,
                             packet.len(),
-                            &mut |mut eh: &mut [u8]| {
-                                eh.clone_from(packet);
+                            &mut |eh: &mut [u8]| {
+                                eh.clone_from_slice(packet);
                             })
     }
 }
