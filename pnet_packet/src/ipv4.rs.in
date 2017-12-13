@@ -233,7 +233,20 @@ fn ipv4_options_length_test() {
 }
 
 fn ipv4_payload_length(ipv4: &Ipv4Packet) -> usize {
-    (ipv4.get_total_length() as usize).saturating_sub(ipv4.get_header_length() as usize)
+    (ipv4.get_total_length() as usize).saturating_sub(ipv4.get_header_length() as usize * 4)
+}
+
+#[test]
+fn ipv4_payload_length_test() {
+    let mut packet = [0u8; 30];
+    let mut ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
+    ip_header.set_header_length(5);
+    ip_header.set_total_length(20);
+    assert_eq!(ipv4_payload_length(&ip_header.to_immutable()), 0);
+    // just comparing with 0 is prone to false positives in this case.
+    // for instance if one forgets to set total_length, one always gets 0
+    ip_header.set_total_length(30);
+    assert_eq!(ipv4_payload_length(&ip_header.to_immutable()), 10);
 }
 
 /// Represents the IPv4 Option field
@@ -274,6 +287,7 @@ fn ipv4_option_payload_length(ipv4_option: &Ipv4OptionPacket) -> usize {
 fn ipv4_packet_test() {
     use ip::IpNextHeaderProtocols;
     use Packet;
+    use PacketSize;
 
     let mut packet = [0u8; 200];
     {
@@ -292,7 +306,8 @@ fn ipv4_packet_test() {
 
         ip_header.set_total_length(115);
         assert_eq!(ip_header.get_total_length(), 115);
-        assert_eq!(110, ip_header.payload().len());
+        assert_eq!(95, ip_header.payload().len());
+        assert_eq!(ip_header.get_total_length(), ip_header.packet_size() as u16);
 
         ip_header.set_identification(257);
         assert_eq!(ip_header.get_identification(), 257);
