@@ -19,7 +19,6 @@ appveyor = []
 travis = []
 
 [dependencies]
-libc = "0.2"
 ipnetwork = "0.12"
 
 pnet_base = { path = "pnet_base", version = "0.20.0" }

@@ -8,8 +8,6 @@
 
 #![allow(warnings)]
 
-extern crate libc;
-
 use datalink;
 
 use packet::Packet;
