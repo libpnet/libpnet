@@ -211,10 +211,69 @@ impl NetworkInterface {
     pub fn mac_address(&self) -> MacAddr {
         self.mac.unwrap()
     }
-
+    
+    pub fn is_up(&self) -> bool {
+        self.flags & (pnet_sys::IFF_UP as u32) != 0
+    }
+    pub fn is_broadcast(&self) -> bool {
+        self.flags & (pnet_sys::IFF_BROADCAST as u32) != 0
+    }
     /// Is the interface a loopback interface?
     pub fn is_loopback(&self) -> bool {
         self.flags & (pnet_sys::IFF_LOOPBACK as u32) != 0
+    }
+    pub fn is_point_to_point(&self) -> bool {
+        self.flags & (pnet_sys::IFF_POINTOPOINT as u32) != 0
+    }
+    pub fn is_multicast(&self) -> bool {
+        self.flags & (pnet_sys::IFF_MULTICAST as u32) != 0
+    }
+}
+
+
+impl ::std::fmt::Display for NetworkInterface {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        const FLAGS: [&'static str; 5] = ["UP", "BROADCAST", "LOOPBACK", "POINTOPOINT", "MULTICAST"];
+        let flags = if self.flags > 0 {
+            let rets = [
+                self.is_up(),
+                self.is_broadcast(),
+                self.is_loopback(), 
+                self.is_point_to_point(),
+                self.is_multicast()
+            ];
+            format!("{:X}<{}>", self.flags, 
+                rets.iter()
+                    .zip(FLAGS.iter()) 
+                    .filter(|&(ret, _)| ret == &true)
+                    .map(|(_, name)| name.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","))
+        } else {
+            format!("{:X}", self.flags)
+        };
+        
+        let mac = self.mac.map(|mac| mac.to_string())
+                    .unwrap_or("N/A".to_owned());
+        let ips = if self.ips.len() > 0 {
+            format!("\n{}",
+                self.ips.iter()
+                    .map(|ip| {
+                        if ip.is_ipv4(){
+                            format!("       inet: {}", ip)
+                        } else {
+                            format!("      inet6: {}", ip)
+                        }
+                    })
+                    .collect::<Vec<String>>()
+                    .join("\n"))
+        } else {
+            "".to_string()
+        };
+
+    write!(f, "{}: flags={}
+      index: {}
+      ether: {}{}", self.name, flags, self.index, mac, ips)
     }
 }
 
