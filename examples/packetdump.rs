@@ -15,7 +15,7 @@ use pnet::datalink::{self, NetworkInterface};
 
 use pnet::packet::Packet;
 use pnet::packet::arp::ArpPacket;
-use pnet::packet::ethernet::{EtherTypes, EthernetPacket};
+use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
 use pnet::packet::icmpv6::Icmpv6Packet;
 use pnet::packet::icmp::{echo_reply, echo_request, IcmpPacket, IcmpTypes};
 use pnet::packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
@@ -23,6 +23,8 @@ use pnet::packet::ipv4::Ipv4Packet;
 use pnet::packet::ipv6::Ipv6Packet;
 use pnet::packet::tcp::TcpPacket;
 use pnet::packet::udp::UdpPacket;
+use pnet::util::MacAddr;
+
 use std::env;
 use std::io::{self, Write};
 use std::process;
@@ -184,18 +186,21 @@ fn handle_arp_packet(interface_name: &str, ethernet: &EthernetPacket) {
     }
 }
 
-fn handle_packet(interface_name: &str, ethernet: &EthernetPacket) {
+fn handle_ethernet_frame(interface: &NetworkInterface, ethernet: &EthernetPacket) {
+    let interface_name = &interface.name[..];
     match ethernet.get_ethertype() {
         EtherTypes::Ipv4 => handle_ipv4_packet(interface_name, ethernet),
         EtherTypes::Ipv6 => handle_ipv6_packet(interface_name, ethernet),
         EtherTypes::Arp => handle_arp_packet(interface_name, ethernet),
         _ => {
-            println!("[{}]: Unknown packet: {} > {}; ethertype: {:?} length: {}",
-                     interface_name,
-                     ethernet.get_source(),
-                     ethernet.get_destination(),
-                     ethernet.get_ethertype(),
-                     ethernet.packet().len())
+            println!(
+                "[{}]: Unknown packet: {} > {}; ethertype: {:?} length: {}",
+                interface_name,
+                ethernet.get_source(),
+                ethernet.get_destination(),
+                ethernet.get_ethertype(),
+                ethernet.packet().len()
+            )
         }
     }
 }
@@ -224,8 +229,35 @@ fn main() {
     };
 
     loop {
+        let mut buf: [u8; 1600] = [0u8; 1600];
+        let mut fake_ethernet_frame = MutableEthernetPacket::new(&mut buf[..]).unwrap();
         match rx.next() {
-            Ok(packet) => handle_packet(&interface.name[..], &EthernetPacket::new(packet).unwrap()),
+            Ok(packet) => {
+                if cfg!(target_os = "macos") 
+                    && interface.is_up()
+                    && !interface.is_broadcast() 
+                    && !interface.is_loopback()
+                    && interface.is_point_to_point() {
+                        // Maybe is TUN interface
+                        let version = Ipv4Packet::new(&packet).unwrap().get_version();
+                        if version == 4 {
+                            fake_ethernet_frame.set_destination(MacAddr(0,0,0,0,0,0));
+                            fake_ethernet_frame.set_source(MacAddr(0,0,0,0,0,0));
+                            fake_ethernet_frame.set_ethertype(EtherTypes::Ipv4);
+                            fake_ethernet_frame.set_payload(&packet);
+                            handle_ethernet_frame(&interface, &fake_ethernet_frame.to_immutable());
+                            continue;
+                        } else if version == 6 {
+                            fake_ethernet_frame.set_destination(MacAddr(0,0,0,0,0,0));
+                            fake_ethernet_frame.set_source(MacAddr(0,0,0,0,0,0));
+                            fake_ethernet_frame.set_ethertype(EtherTypes::Ipv6);
+                            fake_ethernet_frame.set_payload(&packet);
+                            handle_ethernet_frame(&interface, &fake_ethernet_frame.to_immutable());
+                            continue;
+                        }
+                }
+                handle_ethernet_frame(&interface, &EthernetPacket::new(packet).unwrap());
+            },
             Err(e) => panic!("packetdump: unable to receive packet: {}", e),
         }
     }

@@ -31,8 +31,13 @@ pub mod public {
     pub const IPPROTO_IP: libc::c_int = winapi::IPPROTO_IP;
     pub const IP_HDRINCL: libc::c_int = winapi::IP_HDRINCL;
 
+    pub const IFF_UP: libc::c_int = 0x00000001;
+    pub const IFF_BROADCAST: libc::c_int = 0x00000002;
     pub const IFF_LOOPBACK: libc::c_int = 0x00000004;
-
+    pub const IFF_POINTTOPOINT: libc::c_int = 0x00000008;
+    pub const IFF_POINTOPOINT: libc::c_int = IFF_POINTTOPOINT;
+    pub const IFF_MULTICAST: libc::c_int = 0x00000010;
+    
     pub const INVALID_SOCKET: CSocket = winapi::INVALID_SOCKET;
 
 

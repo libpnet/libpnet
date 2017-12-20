@@ -116,8 +116,6 @@
 #[cfg(feature = "benchmark")]
 extern crate test;
 
-#[cfg(not(windows))]
-extern crate libc;
 extern crate ipnetwork;
 
 extern crate pnet_base;
