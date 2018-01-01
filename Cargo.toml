@@ -13,7 +13,7 @@ build = "build.rs"
 
 [features]
 benchmark = []
-netmap = ["pnet_datalink/netmap_sys"]
+netmap = ["pnet_datalink/netmap_sys", "pnet_datalink/netmap"]
 pcap = ["pnet_datalink/pcap"]
 appveyor = []
 travis = []

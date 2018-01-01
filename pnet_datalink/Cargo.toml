@@ -9,6 +9,9 @@ description = "Cross-platform, datalink layer networking."
 keywords = ["networking", "datalink", "ethernet", "raw"]
 categories = ["network-programming"]
 
+[features]
+netmap = []
+
 [dependencies]
 libc = "0.2.34"
 ipnetwork = "0.12"
