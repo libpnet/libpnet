@@ -236,7 +236,7 @@ fn tcp_options_length(tcp: &TcpPacket) -> usize {
 }
 
 /// Calculate the checksum for a packet built on IPv4
-pub fn ipv4_checksum(packet: &TcpPacket, source: Ipv4Addr, destination: Ipv4Addr) -> u16 {
+pub fn ipv4_checksum(packet: &TcpPacket, source: &Ipv4Addr, destination: &Ipv4Addr) -> u16 {
     ipv4_checksum_adv(packet, &[], source, destination)
 }
 
@@ -249,8 +249,8 @@ pub fn ipv4_checksum(packet: &TcpPacket, source: Ipv4Addr, destination: Ipv4Addr
 /// `extra_data`.
 pub fn ipv4_checksum_adv(packet: &TcpPacket,
                          extra_data: &[u8],
-                         source: Ipv4Addr,
-                         destination: Ipv4Addr)
+                         source: &Ipv4Addr,
+                         destination: &Ipv4Addr)
     -> u16 {
     util::ipv4_checksum(packet.packet(),
                         8,
@@ -261,7 +261,7 @@ pub fn ipv4_checksum_adv(packet: &TcpPacket,
 }
 
 /// Calculate the checksum for a packet built on IPv6
-pub fn ipv6_checksum(packet: &TcpPacket, source: Ipv6Addr, destination: Ipv6Addr) -> u16 {
+pub fn ipv6_checksum(packet: &TcpPacket, source: &Ipv6Addr, destination: &Ipv6Addr) -> u16 {
     ipv6_checksum_adv(packet, &[], source, destination)
 }
 
@@ -274,8 +274,8 @@ pub fn ipv6_checksum(packet: &TcpPacket, source: Ipv6Addr, destination: Ipv6Addr
 /// `extra_data`.
 pub fn ipv6_checksum_adv(packet: &TcpPacket,
                          extra_data: &[u8],
-                         source: Ipv6Addr,
-                         destination: Ipv6Addr)
+                         source: &Ipv6Addr,
+                         destination: &Ipv6Addr)
     -> u16 {
     util::ipv6_checksum(packet.packet(),
                         8,
@@ -336,7 +336,7 @@ fn tcp_header_ipv4_test() {
         let ts = TcpOption::timestamp(743951781, 44056978);
         tcp_header.set_options(&vec![TcpOption::nop(), TcpOption::nop(), ts]);
 
-        let checksum = ipv4_checksum(&tcp_header.to_immutable(), ipv4_source, ipv4_destination);
+        let checksum = ipv4_checksum(&tcp_header.to_immutable(), &ipv4_source, &ipv4_destination);
         tcp_header.set_checksum(checksum);
         assert_eq!(tcp_header.get_checksum(), 0xc031);
     }

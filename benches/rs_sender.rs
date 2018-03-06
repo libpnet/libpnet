@@ -67,7 +67,7 @@ pub fn build_udp4_packet(packet: &mut [u8], msg: &str) {
         data[4] = msg[4];
     }
 
-    let checksum = udp::ipv4_checksum(&udp_header.to_immutable(), source, destination);
+    let checksum = udp::ipv4_checksum(&udp_header.to_immutable(), &source, &destination);
     udp_header.set_checksum(checksum);
 }
 

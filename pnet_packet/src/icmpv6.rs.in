@@ -71,7 +71,7 @@ pub struct Icmpv6 {
 }
 
 /// Calculates the checksum of an ICMPv6 packet
-pub fn checksum(packet: &Icmpv6Packet, source: Ipv6Addr, destination: Ipv6Addr) -> u16be {
+pub fn checksum(packet: &Icmpv6Packet, source: &Ipv6Addr, destination: &Ipv6Addr) -> u16be {
     use Packet;
     use util;
 
@@ -85,7 +85,7 @@ mod checksum_tests {
     #[test]
     fn checksum_echo_request() {
         // The equivalent of your typical ping -6 ::1%lo
-        let lo = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
+        let lo = &Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
         let mut data = vec![
             0x80, // Icmpv6 Type
             0x00, // Code
