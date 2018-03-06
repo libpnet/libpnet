@@ -81,8 +81,8 @@ fn finalize_checksum(mut sum: u32) -> u16be {
 pub fn ipv4_checksum(data: &[u8],
                      skipword: usize,
                      extra_data: &[u8],
-                     source: Ipv4Addr,
-                     destination: Ipv4Addr,
+                     source: &Ipv4Addr,
+                     destination: &Ipv4Addr,
                      next_level_protocol: IpNextHeaderProtocol)
     -> u16be {
     let mut sum = 0u32;
@@ -104,7 +104,7 @@ pub fn ipv4_checksum(data: &[u8],
     finalize_checksum(sum)
 }
 
-fn ipv4_word_sum(ip: Ipv4Addr) -> u32 {
+fn ipv4_word_sum(ip: &Ipv4Addr) -> u32 {
     let octets = ip.octets();
     ((octets[0] as u32) << 8 | octets[1] as u32) + ((octets[2] as u32) << 8 | octets[3] as u32)
 }
@@ -113,8 +113,8 @@ fn ipv4_word_sum(ip: Ipv4Addr) -> u32 {
 pub fn ipv6_checksum(data: &[u8],
                      skipword: usize,
                      extra_data: &[u8],
-                     source: Ipv6Addr,
-                     destination: Ipv6Addr,
+                     source: &Ipv6Addr,
+                     destination: &Ipv6Addr,
                      next_level_protocol: IpNextHeaderProtocol)
     -> u16be {
     let mut sum = 0u32;
@@ -136,7 +136,7 @@ pub fn ipv6_checksum(data: &[u8],
     finalize_checksum(sum)
 }
 
-fn ipv6_word_sum(ip: Ipv6Addr) -> u32 {
+fn ipv6_word_sum(ip: &Ipv6Addr) -> u32 {
     ip.segments().iter().map(|x| *x as u32).sum()
 }
 
