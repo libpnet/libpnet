@@ -90,7 +90,7 @@ pub fn channel(network_interface: &NetworkInterface,
         }
     }
 
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "openbsd", target_os = "macos"))]
     fn get_fd(attempts: usize) -> libc::c_int {
         for i in 0..attempts {
             let fd = unsafe {
@@ -119,7 +119,7 @@ pub fn channel(network_interface: &NetworkInterface,
         Ok(())
     }
 
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "openbsd"))]
     fn set_feedback(_fd: libc::c_int) -> io::Result<()> {
         Ok(())
     }

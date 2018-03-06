@@ -43,6 +43,7 @@ pub mod linux;
 
 #[cfg(all(not(feature = "netmap"),
           any(target_os = "freebsd",
+              target_os = "openbsd",
               target_os = "macos")
              )
      )]
