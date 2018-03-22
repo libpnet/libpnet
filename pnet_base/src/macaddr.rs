@@ -6,11 +6,12 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use std::error::Error;
 use std::fmt;
 use std::str::FromStr;
 
 /// A MAC address
-#[derive(PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Ord, PartialOrd)]
 pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
 
 impl MacAddr {
@@ -39,9 +40,6 @@ impl fmt::Debug for MacAddr {
     }
 }
 
-// FIXME Is this the right way to do this? Which occurs is an implementation
-//       issue rather than actually defined - is it useful to provide these
-//       errors, or would it be better to just give ()?
 /// Represents an error which occurred whilst parsing a MAC address
 #[derive(Copy, Debug, PartialEq, Eq, Clone)]
 pub enum ParseMacAddrErr {
@@ -51,6 +49,22 @@ pub enum ParseMacAddrErr {
     TooFewComponents,
     /// One of the components contains an invalid value, eg. 00:GG:22:33:44:55
     InvalidComponent,
+}
+
+impl Error for ParseMacAddrErr {
+    fn description(&self) -> &str {
+        match *self {
+            ParseMacAddrErr::TooManyComponents => "Too many components in a MAC address string",
+            ParseMacAddrErr::TooFewComponents => "Too few components in a MAC address string",
+            ParseMacAddrErr::InvalidComponent => "Invalid component in a MAC address string",
+        }
+    }
+}
+
+impl fmt::Display for ParseMacAddrErr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.description())
+    }
 }
 
 impl FromStr for MacAddr {
