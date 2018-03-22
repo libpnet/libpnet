@@ -9,7 +9,12 @@ enum TestType {
 fn run_test(name: &str, ty: TestType) {
     use std::io::prelude::*;
     use std::fs::File;
+    use std::env;
     use TestType::*;
+
+    // Set the required target endian environment variable
+    let target_endian = if cfg!(target_endian = "little") { "little" } else { "big" };
+    env::set_var("CARGO_CFG_TARGET_ENDIAN", target_endian);
 
     let path = match ty { CompileFail => "compile-fail", RunPass => "run-pass" };
     let file_name = format!("tests/{}/{}.rs", path, name);
