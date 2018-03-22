@@ -10,6 +10,7 @@
 
 use regex::Regex;
 use std::rc::Rc;
+use std::env;
 
 use syntax::ast;
 use syntax::codemap::Span;
@@ -472,9 +473,18 @@ fn handle_misc_field(cx: &mut GenContext,
     for (i, arg) in field.construct_with.as_ref().unwrap().iter().enumerate() {
         if let Type::Primitive(ref ty_str, size, endianness) = *arg {
             let mut ops = operations(*bit_offset % 8, size).unwrap();
+            let target_endianness = if env::var("CARGO_CFG_TARGET_ENDIAN")
+                .expect("Missing CARGO_CFG_TARGET_ENDIAN")
+                == "little"
+            {
+                Endianness::Little
+            } else {
+                Endianness::Big
+            };
 
             if endianness == Endianness::Little
-                || (cfg!(target_endian = "little") && endianness == Endianness::Host) {
+                || (target_endianness == Endianness::Little && endianness == Endianness::Host)
+            {
                 ops = to_little_endian(ops);
             } 
 
@@ -822,10 +832,19 @@ fn generate_packet_impl(cx: &mut GenContext,
         match field.ty {
             Type::Primitive(ref ty_str, size, endianness) => {
                 let mut ops = operations(bit_offset % 8, size).unwrap();
+                let target_endianness = if env::var("CARGO_CFG_TARGET_ENDIAN")
+                    .expect("Missing CARGO_CFG_TARGET_ENDIAN")
+                    == "little"
+                {
+                    Endianness::Little
+                } else {
+                    Endianness::Big
+                };
 
                 if endianness == Endianness::Little
-                    || (cfg!(target_endian = "little") && endianness == Endianness::Host) {
-                        ops = to_little_endian(ops);
+                    || (target_endianness == Endianness::Little && endianness == Endianness::Host)
+                {
+                    ops = to_little_endian(ops);
                 } 
 
                 mutators = mutators +
