@@ -59,15 +59,15 @@ pub enum TransportChannelType {
 
 /// Structure used for sending at the transport layer. Should be created with transport_channel()
 pub struct TransportSender {
-    socket: Arc<pnet_sys::FileDesc>,
+    pub socket: Arc<pnet_sys::FileDesc>,
     _channel_type: TransportChannelType,
 }
 
 /// Structure used for receiving at the transport layer. Should be created with transport_channel()
 pub struct TransportReceiver {
-    socket: Arc<pnet_sys::FileDesc>,
-    buffer: Vec<u8>,
-    channel_type: TransportChannelType,
+    pub socket: Arc<pnet_sys::FileDesc>,
+    pub buffer: Vec<u8>,
+    pub channel_type: TransportChannelType,
 }
 
 /// Create a new (TransportSender, TransportReceiver) pair
