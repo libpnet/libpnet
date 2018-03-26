@@ -41,6 +41,6 @@ install:
  - cargo -V
 build: false
 test_script:
-    - cargo test --verbose --features appveyor
+    - cargo test --verbose --features "appveyor serde"
 
 skip_branch_with_pr: true

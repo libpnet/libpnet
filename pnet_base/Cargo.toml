@@ -8,3 +8,13 @@ repository = "https://github.com/libpnet/libpnet"
 description = "Fundamental base types and code used by pnet."
 keywords = ["networking", "ethernet"]
 categories = ["network-programming"]
+
+[dependencies]
+serde = { version = "~1", optional = true, default-features = false }
+
+[dev-dependencies]
+serde_test = "~1"
+
+[package.metadata.docs.rs]
+# Enable the serde feature when generating docs on docs.rs, so the traits are visible
+features = ["serde"]
