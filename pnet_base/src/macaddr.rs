@@ -10,6 +10,9 @@ use std::error::Error;
 use std::fmt;
 use std::str::FromStr;
 
+#[cfg(feature = "serde")]
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+
 /// A MAC address
 #[derive(PartialEq, Eq, Clone, Copy, Hash, Ord, PartialOrd)]
 pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
@@ -31,6 +34,64 @@ impl fmt::Display for MacAddr {
                self.3,
                self.4,
                self.5)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for MacAddr {
+    /// Serializes the MAC address.
+    ///
+    /// It serializes either to a string or its binary representation, depending on what the format
+    /// prefers.
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        if serializer.is_human_readable() {
+            serializer.serialize_str(&format!("{}", self))
+        } else {
+            serializer.serialize_bytes(&[self.0, self.1, self.2, self.3, self.4, self.5])
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for MacAddr {
+    /// Deserializes the MAC address.
+    ///
+    /// It deserializes it from either a byte array (of size 6) or a string. If the format is
+    /// self-descriptive (like JSON or MessagePack), it auto-detects it. If not, it obeys the
+    /// human-readable property of the deserializer.
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct MacAddrVisitor;
+        impl<'de> de::Visitor<'de> for MacAddrVisitor {
+            type Value = MacAddr;
+
+            fn visit_str<E: de::Error>(self, value: &str) -> Result<MacAddr, E> {
+                value
+                    .parse()
+                    .map_err(|err| E::custom(&format!("{}", err)))
+            }
+
+            fn visit_bytes<E: de::Error>(self, v: &[u8]) -> Result<MacAddr, E> {
+                if v.len() == 6 {
+                    Ok(MacAddr::new(v[0], v[1], v[2], v[3], v[4], v[5]))
+                } else {
+                    Err(E::invalid_length(v.len(), &self))
+                }
+            }
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(
+                    formatter,
+                    "either a string representation of a MAC address or 6-element byte array"
+                )
+            }
+        }
+
+        // Decide what hint to provide to the deserializer based on if it is human readable or not
+        if deserializer.is_human_readable() {
+            deserializer.deserialize_str(MacAddrVisitor)
+        } else {
+            deserializer.deserialize_bytes(MacAddrVisitor)
+        }
     }
 }
 
@@ -92,39 +153,90 @@ impl FromStr for MacAddr {
     }
 }
 
-#[test]
-fn mac_addr_from_str() {
-    assert_eq!("00:00:00:00:00:00".parse(), Ok(MacAddr(0, 0, 0, 0, 0, 0)));
-    assert_eq!("ff:ff:ff:ff:ff:ff".parse(),
-               Ok(MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)));
-    assert_eq!("12:34:56:78:90:ab".parse(),
-               Ok(MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB)));
-    assert_eq!("::::::".parse::<MacAddr>(),
-               Err(ParseMacAddrErr::InvalidComponent));
-    assert_eq!("0::::::".parse::<MacAddr>(),
-               Err(ParseMacAddrErr::InvalidComponent));
-    assert_eq!("::::0::".parse::<MacAddr>(),
-               Err(ParseMacAddrErr::InvalidComponent));
-    assert_eq!("12:34:56:78".parse::<MacAddr>(),
-               Err(ParseMacAddrErr::TooFewComponents));
-    assert_eq!("12:34:56:78:".parse::<MacAddr>(),
-               Err(ParseMacAddrErr::InvalidComponent));
-    assert_eq!("12:34:56:78:90".parse::<MacAddr>(),
-               Err(ParseMacAddrErr::TooFewComponents));
-    assert_eq!("12:34:56:78:90:".parse::<MacAddr>(),
-               Err(ParseMacAddrErr::InvalidComponent));
-    assert_eq!("12:34:56:78:90:00:00".parse::<MacAddr>(),
-               Err(ParseMacAddrErr::TooManyComponents));
-    assert_eq!("xx:xx:xx:xx:xx:xx".parse::<MacAddr>(),
-               Err(ParseMacAddrErr::InvalidComponent));
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn str_from_mac_addr() {
-    assert_eq!(format!("{}", MacAddr(0, 0, 0, 0, 0, 0)),
-               "00:00:00:00:00:00");
-    assert_eq!(format!("{}", MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)),
-               "ff:ff:ff:ff:ff:ff");
-    assert_eq!(format!("{}", MacAddr(0x12, 0x34, 0x56, 0x78, 0x09, 0xAB)),
-               "12:34:56:78:09:ab");
+    #[test]
+    fn mac_addr_from_str() {
+        assert_eq!("00:00:00:00:00:00".parse(), Ok(MacAddr(0, 0, 0, 0, 0, 0)));
+        assert_eq!("ff:ff:ff:ff:ff:ff".parse(),
+                   Ok(MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)));
+        assert_eq!("12:34:56:78:90:ab".parse(),
+                   Ok(MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB)));
+        assert_eq!("::::::".parse::<MacAddr>(),
+                   Err(ParseMacAddrErr::InvalidComponent));
+        assert_eq!("0::::::".parse::<MacAddr>(),
+                   Err(ParseMacAddrErr::InvalidComponent));
+        assert_eq!("::::0::".parse::<MacAddr>(),
+                   Err(ParseMacAddrErr::InvalidComponent));
+        assert_eq!("12:34:56:78".parse::<MacAddr>(),
+                   Err(ParseMacAddrErr::TooFewComponents));
+        assert_eq!("12:34:56:78:".parse::<MacAddr>(),
+                   Err(ParseMacAddrErr::InvalidComponent));
+        assert_eq!("12:34:56:78:90".parse::<MacAddr>(),
+                   Err(ParseMacAddrErr::TooFewComponents));
+        assert_eq!("12:34:56:78:90:".parse::<MacAddr>(),
+                   Err(ParseMacAddrErr::InvalidComponent));
+        assert_eq!("12:34:56:78:90:00:00".parse::<MacAddr>(),
+                   Err(ParseMacAddrErr::TooManyComponents));
+        assert_eq!("xx:xx:xx:xx:xx:xx".parse::<MacAddr>(),
+                   Err(ParseMacAddrErr::InvalidComponent));
+    }
+
+    #[test]
+    fn str_from_mac_addr() {
+        assert_eq!(format!("{}", MacAddr(0, 0, 0, 0, 0, 0)),
+                   "00:00:00:00:00:00");
+        assert_eq!(format!("{}", MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)),
+                   "ff:ff:ff:ff:ff:ff");
+        assert_eq!(format!("{}", MacAddr(0x12, 0x34, 0x56, 0x78, 0x09, 0xAB)),
+                   "12:34:56:78:09:ab");
+    }
+
+    #[cfg(feature = "serde")]
+    mod serde {
+        extern crate serde_test;
+        use self::serde_test::{
+            assert_de_tokens, assert_de_tokens_error, assert_tokens, Compact, Configure, Readable,
+            Token
+        };
+        use super::*;
+
+        #[test]
+        fn string() {
+            let mac = MacAddr::new(0x11, 0x22, 0x33, 0x44, 0x55, 0x66);
+            assert_tokens(&mac.readable(), &[Token::Str("11:22:33:44:55:66")]);
+            assert_de_tokens(&mac.readable(), &[Token::String("11:22:33:44:55:66")]);
+            assert_de_tokens(&mac.readable(), &[Token::BorrowedStr("11:22:33:44:55:66")]);
+            assert_de_tokens_error::<Readable<MacAddr>>(
+                &[Token::Str("not an address")],
+                "Invalid component in a MAC address string",
+            );
+            // It still can detect bytes if provided
+            assert_de_tokens(
+                &mac.readable(),
+                &[Token::Bytes(&[0x11, 0x22, 0x33, 0x44, 0x55, 0x66])],
+            );
+        }
+
+        #[test]
+        fn bytes() {
+            let mac = MacAddr::new(0x11, 0x22, 0x33, 0x44, 0x55, 0x66);
+            assert_tokens(&mac.compact(), &[Token::Bytes(&[0x11, 0x22, 0x33, 0x44, 0x55, 0x66])]);
+            assert_de_tokens(
+                &mac.compact(),
+                &[Token::BorrowedBytes(&[0x11, 0x22, 0x33, 0x44, 0x55, 0x66])],
+            );
+            let err = "invalid length 2, expected either a string representation of a MAC address or 6-element byte array";
+            assert_de_tokens_error::<Compact<MacAddr>>(&[Token::Bytes(&[0x11, 0x33])], err);
+            let err = "invalid length 7, expected either a string representation of a MAC address or 6-element byte array";
+            assert_de_tokens_error::<Compact<MacAddr>>(
+                &[Token::Bytes(&[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77])],
+                err,
+            );
+            // Still can decode string in the compact mode
+            assert_de_tokens(&mac.compact(), &[Token::Str("11:22:33:44:55:66")]);
+        }
+    }
 }

@@ -6,5 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#[cfg(feature = "serde")]
+extern crate serde;
+
 mod macaddr;
 pub use macaddr::*;
