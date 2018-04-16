@@ -53,7 +53,7 @@ pub struct Icmp {
     #[construct_with(u8)]
     pub icmp_code: IcmpCode,
     pub checksum: u16be,
-    // theoritically, the header is 64 bytes long, but since the "Rest Of Header" part depends on
+    // theoretically, the header is 64 bytes long, but since the "Rest Of Header" part depends on
     // the ICMP type and ICMP code, we consider it's part of the payload.
     // rest_of_header: u32be,
     #[payload]
