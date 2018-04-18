@@ -19,7 +19,7 @@ use ipnetwork::{ip_mask_to_prefix, IpNetwork};
 use std::cmp;
 use std::collections::VecDeque;
 use std::ffi::{CStr, CString};
-use std::io;
+use std::io::{self, Error, ErrorKind};
 use std::mem;
 use std::slice;
 use std::str::from_utf8_unchecked;
@@ -253,7 +253,12 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
                 }
             }
         }
-        let (start, len) = self.packets.pop_front().unwrap();
+        let (start, len) = match self.packets.pop_front(){
+            Some(p) => (p),
+            None => {
+                return Err(Error::new(ErrorKind::Interrupted,"packets is empty"));
+            }
+        };
         let slice = unsafe {
             let data = (*self.packet.packet).Buffer as usize + start;
             slice::from_raw_parts(data as *const u8, len)
