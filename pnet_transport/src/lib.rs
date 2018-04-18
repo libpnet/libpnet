@@ -34,7 +34,6 @@ use self::TransportProtocol::{Ipv4, Ipv6};
 
 use std::io;
 use std::io::Error;
-use std::iter::repeat;
 use std::mem;
 use std::net::{self, IpAddr};
 use std::sync::Arc;
@@ -141,7 +140,7 @@ pub fn transport_channel(buffer_size: usize,
     };
     let receiver = TransportReceiver {
         socket: sock,
-        buffer: repeat(0u8).take(buffer_size).collect(),
+        buffer: vec![0; buffer_size],
         channel_type: channel_type,
     };
 
@@ -182,7 +181,7 @@ impl TransportSender {
         // ip_off field in the ip struct and contains both the offset and the three flag bits.
         // See `man 4 ip`/Raw IP Sockets)
         if let Layer3(_) = self._channel_type {
-            let mut mut_slice: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
+            let mut mut_slice: Vec<u8> = vec![0; packet.packet().len()];
 
             let mut new_packet = MutableIpv4Packet::new(&mut mut_slice[..]).unwrap();
             new_packet.clone_from(&packet);

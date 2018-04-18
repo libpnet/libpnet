@@ -19,7 +19,6 @@ use pnet_sys;
 use std::collections::VecDeque;
 use std::ffi::CString;
 use std::io;
-use std::iter::repeat;
 use std::mem;
 use std::ptr;
 use std::sync::Arc;
@@ -211,7 +210,7 @@ pub fn channel(network_interface: &NetworkInterface,
     let mut sender = Box::new(DataLinkSenderImpl {
         fd: fd.clone(),
         fd_set: unsafe { mem::zeroed() },
-        write_buffer: repeat(0u8).take(config.write_buffer_size).collect(),
+        write_buffer: vec![0; config.write_buffer_size],
         loopback: loopback,
         timeout: config.write_timeout.map(|to| pnet_sys::duration_to_timespec(to)),
     });
@@ -222,7 +221,7 @@ pub fn channel(network_interface: &NetworkInterface,
     let mut receiver = Box::new(DataLinkReceiverImpl {
         fd: fd.clone(),
         fd_set: unsafe { mem::zeroed() },
-        read_buffer: repeat(0u8).take(allocated_read_buffer_size).collect(),
+        read_buffer: vec![0; allocated_read_buffer_size],
         loopback: loopback,
         timeout: config.read_timeout.map(|to| pnet_sys::duration_to_timespec(to)),
         // Enough room for minimally sized packets without reallocating
