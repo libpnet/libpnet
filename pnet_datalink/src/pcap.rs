@@ -4,7 +4,6 @@ extern crate pcap;
 
 use std::marker::{Send, Sync};
 use std::io;
-use std::iter::repeat;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::path::Path;
@@ -76,7 +75,7 @@ pub fn channel(network_interface: &NetworkInterface,
         }),
         Box::new(DataLinkReceiverImpl {
             capture: cap.clone(),
-            read_buffer: repeat(0u8).take(config.read_buffer_size).collect(),
+            read_buffer: vec![0; config.read_buffer_size],
         })
     ))
 }
@@ -93,7 +92,7 @@ pub fn from_file<P: AsRef<Path>>(path: P, config: Config) -> io::Result<super::C
         Box::new(InvalidDataLinkSenderImpl {}),
         Box::new(DataLinkReceiverImpl {
             capture: cap.clone(),
-            read_buffer: repeat(0u8).take(config.read_buffer_size).collect(),
+            read_buffer: vec![0; config.read_buffer_size],
         })
     ))
 }

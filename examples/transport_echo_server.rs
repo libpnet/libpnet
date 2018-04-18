@@ -10,8 +10,6 @@ extern crate pnet;
 
 /// A simple echo server for packets using a test protocol
 
-use std::iter::repeat;
-
 use pnet::packet::{MutablePacket, Packet};
 use pnet::packet::ip::IpNextHeaderProtocols;
 use pnet::packet::udp::MutableUdpPacket;
@@ -38,7 +36,7 @@ fn main() {
         match iter.next() {
             Ok((packet, addr)) => {
                 // Allocate enough space for a new packet
-                let mut vec: Vec<u8> = repeat(0u8).take(packet.packet().len()).collect();
+                let mut vec: Vec<u8> = vec![0; packet.packet().len()];
                 let mut new_packet = MutableUdpPacket::new(&mut vec[..]).unwrap();
 
                 // Create a clone of the original packet

@@ -17,7 +17,6 @@ use pnet_sys;
 
 use std::cmp;
 use std::io;
-use std::iter::repeat;
 use std::mem;
 use std::ptr;
 use std::sync::Arc;
@@ -144,7 +143,7 @@ pub fn channel(network_interface: &NetworkInterface,
     let sender = Box::new(DataLinkSenderImpl {
         socket: fd.clone(),
         fd_set: unsafe { mem::zeroed() },
-        write_buffer: repeat(0u8).take(config.write_buffer_size).collect(),
+        write_buffer: vec![0; config.write_buffer_size],
         _channel_type: config.channel_type,
         send_addr: unsafe { *(send_addr as *const libc::sockaddr_ll) },
         send_addr_len: len,
@@ -153,7 +152,7 @@ pub fn channel(network_interface: &NetworkInterface,
     let receiver = Box::new(DataLinkReceiverImpl {
         socket: fd.clone(),
         fd_set: unsafe { mem::zeroed() },
-        read_buffer: repeat(0u8).take(config.read_buffer_size).collect(),
+        read_buffer: vec![0; config.read_buffer_size],
         _channel_type: config.channel_type,
         timeout: config.read_timeout.map(|to| pnet_sys::duration_to_timespec(to)),
     });
