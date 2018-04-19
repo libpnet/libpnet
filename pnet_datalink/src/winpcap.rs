@@ -232,7 +232,7 @@ unsafe impl Sync for DataLinkReceiverImpl {}
 impl DataLinkReceiver for DataLinkReceiverImpl {
     fn next(&mut self) -> io::Result<&[u8]> {
         // NOTE Most of the logic here is identical to FreeBSD/OS X
-        if self.packets.is_empty() {
+        while self.packets.is_empty() {
             let ret = unsafe {
                 winpcap::PacketReceivePacket(self.adapter.adapter, self.packet.packet, 0)
             };
