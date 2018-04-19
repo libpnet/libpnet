@@ -19,7 +19,7 @@ use ipnetwork::{ip_mask_to_prefix, IpNetwork};
 use std::cmp;
 use std::collections::VecDeque;
 use std::ffi::{CStr, CString};
-use std::io::{self, Error, ErrorKind};
+use std::io;
 use std::mem;
 use std::slice;
 use std::str::from_utf8_unchecked;
@@ -232,7 +232,7 @@ unsafe impl Sync for DataLinkReceiverImpl {}
 impl DataLinkReceiver for DataLinkReceiverImpl {
     fn next(&mut self) -> io::Result<&[u8]> {
         // NOTE Most of the logic here is identical to FreeBSD/OS X
-        if self.packets.is_empty() {
+        while self.packets.is_empty() {
             let ret = unsafe {
                 winpcap::PacketReceivePacket(self.adapter.adapter, self.packet.packet, 0)
             };
@@ -253,12 +253,7 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
                 }
             }
         }
-        let (start, len) = match self.packets.pop_front(){
-            Some(p) => (p),
-            None => {
-                return Err(Error::new(ErrorKind::Interrupted,"packets is empty"));
-            }
-        };
+        let (start, len) = self.packets.pop_front().unwrap();
         let slice = unsafe {
             let data = (*self.packet.packet).Buffer as usize + start;
             slice::from_raw_parts(data as *const u8, len)
