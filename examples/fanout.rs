@@ -7,6 +7,8 @@
 // except according to those terms.
 
 /// This example shows simple packet_fanout processing under linux.
+/// PACKET_FANOUT in linux allows to offload packet processing to multiple threads.
+/// See [man 7 packet](http://man7.org/linux/man-pages/man7/packet.7.html) for more details.
 extern crate pnet;
 extern crate pnet_datalink;
 
