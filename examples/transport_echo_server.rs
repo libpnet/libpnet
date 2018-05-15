@@ -6,16 +6,16 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+/// A simple echo server for packets using a test protocol
 extern crate pnet;
 
-/// A simple echo server for packets using a test protocol
-
-use pnet::packet::{MutablePacket, Packet};
 use pnet::packet::ip::IpNextHeaderProtocols;
 use pnet::packet::udp::MutableUdpPacket;
-use pnet::transport::{transport_channel, udp_packet_iter};
-use pnet::transport::TransportProtocol::Ipv4;
+use pnet::packet::{MutablePacket, Packet};
 use pnet::transport::TransportChannelType::Layer4;
+use pnet::transport::TransportProtocol::Ipv4;
+use pnet::transport::{transport_channel, udp_packet_iter};
+use std::iter::repeat;
 
 fn main() {
     let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Test1));
@@ -24,10 +24,10 @@ fn main() {
     // It has a receive buffer of 4096 bytes.
     let (mut tx, mut rx) = match transport_channel(4096, protocol) {
         Ok((tx, rx)) => (tx, rx),
-        Err(e) => {
-            panic!("An error occurred when creating the transport channel: {}",
-                   e)
-        }
+        Err(e) => panic!(
+            "An error occurred when creating the transport channel: {}",
+            e
+        ),
     };
 
     // We treat received packets as if they were UDP packets

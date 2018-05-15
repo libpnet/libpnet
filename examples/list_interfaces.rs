@@ -7,7 +7,6 @@
 // except according to those terms.
 
 /// This examples simply print all interfaces to stdout
-
 extern crate pnet_datalink;
 
 fn main() {

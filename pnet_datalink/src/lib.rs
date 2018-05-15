@@ -8,8 +8,8 @@
 
 //! Support for sending and receiving data link layer packets
 
-extern crate libc;
 extern crate ipnetwork;
+extern crate libc;
 extern crate pnet_base;
 extern crate pnet_sys;
 
@@ -23,7 +23,6 @@ pub use pnet_base::{MacAddr, ParseMacAddrErr};
 
 mod bindings;
 
-
 #[cfg(windows)]
 #[path = "winpcap.rs"]
 mod backend;
@@ -31,22 +30,19 @@ mod backend;
 #[cfg(windows)]
 pub mod winpcap;
 
-#[cfg(all(not(feature = "netmap"),
-          target_os = "linux"
-          )
-      )]
+#[cfg(all(not(feature = "netmap"), target_os = "linux"))]
 #[path = "linux.rs"]
 mod backend;
 
 #[cfg(target_os = "linux")]
 pub mod linux;
 
-#[cfg(all(not(feature = "netmap"),
-          any(target_os = "freebsd",
-              target_os = "openbsd",
-              target_os = "macos")
-             )
-     )]
+#[cfg(
+    all(
+        not(feature = "netmap"),
+        any(target_os = "freebsd", target_os = "openbsd", target_os = "macos")
+    )
+)]
 #[path = "bpf.rs"]
 mod backend;
 
@@ -154,7 +150,6 @@ pub fn channel(network_interface: &NetworkInterface, configuration: Config) -> i
     backend::channel(network_interface, (&configuration).into())
 }
 
-
 /// Trait to enable sending $packet packets
 pub trait DataLinkSender: Send {
     /// Create and send a number of packets
@@ -164,11 +159,12 @@ pub trait DataLinkSender: Send {
     /// built in-place, avoiding the copy required for `send`. If there is not sufficient
     /// capacity in the buffer, None will be returned.
     #[inline]
-    fn build_and_send(&mut self,
-                      num_packets: usize,
-                      packet_size: usize,
-                      func: &mut FnMut(&mut [u8]))
-    -> Option<io::Result<()>>;
+    fn build_and_send(
+        &mut self,
+        num_packets: usize,
+        packet_size: usize,
+        func: &mut FnMut(&mut [u8]),
+    ) -> Option<io::Result<()>>;
 
     /// Send a packet
     ///
@@ -176,12 +172,8 @@ pub trait DataLinkSender: Send {
     /// operating system being used. The second parameter is currently ignored, however
     /// `None` should be passed.
     #[inline]
-    fn send_to(&mut self,
-                packet: &[u8],
-                dst: Option<NetworkInterface>)
-        -> Option<io::Result<()>>;
+    fn send_to(&mut self, packet: &[u8], dst: Option<NetworkInterface>) -> Option<io::Result<()>>;
 }
-
 
 /// Structure for receiving packets at the data link layer. Should be constructed using
 /// datalink_channel().
@@ -190,7 +182,6 @@ pub trait DataLinkReceiver: Send {
     /// Get the next Ethernet frame in the channel
     fn next(&mut self) -> io::Result<&[u8]>;
 }
-
 
 /// Represents a network interface and its associated addresses
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
@@ -212,7 +203,7 @@ impl NetworkInterface {
     pub fn mac_address(&self) -> MacAddr {
         self.mac.unwrap()
     }
-    
+
     pub fn is_up(&self) -> bool {
         self.flags & (pnet_sys::IFF_UP as u32) != 0
     }
@@ -231,50 +222,61 @@ impl NetworkInterface {
     }
 }
 
-
 impl ::std::fmt::Display for NetworkInterface {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        const FLAGS: [&'static str; 5] = ["UP", "BROADCAST", "LOOPBACK", "POINTOPOINT", "MULTICAST"];
+        const FLAGS: [&'static str; 5] =
+            ["UP", "BROADCAST", "LOOPBACK", "POINTOPOINT", "MULTICAST"];
         let flags = if self.flags > 0 {
             let rets = [
                 self.is_up(),
                 self.is_broadcast(),
-                self.is_loopback(), 
+                self.is_loopback(),
                 self.is_point_to_point(),
-                self.is_multicast()
+                self.is_multicast(),
             ];
-            format!("{:X}<{}>", self.flags, 
+            format!(
+                "{:X}<{}>",
+                self.flags,
                 rets.iter()
-                    .zip(FLAGS.iter()) 
+                    .zip(FLAGS.iter())
                     .filter(|&(ret, _)| ret == &true)
                     .map(|(_, name)| name.to_string())
                     .collect::<Vec<String>>()
-                    .join(","))
+                    .join(",")
+            )
         } else {
             format!("{:X}", self.flags)
         };
-        
-        let mac = self.mac.map(|mac| mac.to_string())
-                    .unwrap_or("N/A".to_owned());
+
+        let mac = self.mac
+            .map(|mac| mac.to_string())
+            .unwrap_or("N/A".to_owned());
         let ips = if self.ips.len() > 0 {
-            format!("\n{}",
-                self.ips.iter()
+            format!(
+                "\n{}",
+                self.ips
+                    .iter()
                     .map(|ip| {
-                        if ip.is_ipv4(){
+                        if ip.is_ipv4() {
                             format!("       inet: {}", ip)
                         } else {
                             format!("      inet6: {}", ip)
                         }
                     })
                     .collect::<Vec<String>>()
-                    .join("\n"))
+                    .join("\n")
+            )
         } else {
             "".to_string()
         };
 
-    write!(f, "{}: flags={}
+        write!(
+            f,
+            "{}: flags={}
       index: {}
-      ether: {}{}", self.name, flags, self.index, mac, ips)
+      ether: {}{}",
+            self.name, flags, self.index, mac, ips
+        )
     }
 }
 

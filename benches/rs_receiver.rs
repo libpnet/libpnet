@@ -6,7 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-
 extern crate pnet_datalink;
 extern crate time;
 
@@ -19,7 +18,8 @@ fn main() {
 
     // Find the network interface with the provided name
     let interfaces = pnet_datalink::interfaces();
-    let interface = interfaces.into_iter()
+    let interface = interfaces
+        .into_iter()
         .filter(|iface| iface.name == iface_name)
         .next()
         .unwrap();

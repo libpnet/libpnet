@@ -9,5 +9,4 @@
 //! Miscellaneous utilities for low level networking
 
 pub use pnet_base::{MacAddr, ParseMacAddrErr};
-pub use pnet_packet::util::{Octets, checksum, ipv4_checksum, ipv6_checksum};
-
+pub use pnet_packet::util::{checksum, ipv4_checksum, ipv6_checksum, Octets};

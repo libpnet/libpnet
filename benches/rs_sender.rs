@@ -9,11 +9,11 @@
 extern crate pnet;
 
 use pnet::datalink;
-use pnet::packet::MutablePacket;
 use pnet::packet::ethernet::{EtherTypes, MutableEthernetPacket};
 use pnet::packet::ip::IpNextHeaderProtocols;
 use pnet::packet::ipv4::{self, MutableIpv4Packet};
 use pnet::packet::udp::{self, MutableUdpPacket};
+use pnet::packet::MutablePacket;
 
 use std::env;
 use std::net::Ipv4Addr;
@@ -78,7 +78,11 @@ fn main() {
     let destination = (&env::args().nth(2).unwrap()[..]).parse().unwrap();
     // Find the network interface with the provided name
     let interfaces = datalink::interfaces();
-    let interface = interfaces.iter().filter(|iface| iface.name == interface_name).next().unwrap();
+    let interface = interfaces
+        .iter()
+        .filter(|iface| iface.name == interface_name)
+        .next()
+        .unwrap();
 
     // Create a channel to send on
     let mut tx = match datalink::channel(interface, Default::default()) {
