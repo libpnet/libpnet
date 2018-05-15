@@ -94,6 +94,28 @@ pub enum Channel {
     PleaseIncludeACatchAllVariantWhenMatchingOnThisEnum,
 }
 
+/// Socket fanout type (Linux only)
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum FanoutType {
+    HASH,
+    LB,
+    CPU,
+    ROLLOVER,
+    RND,
+    QM,
+    CBPF,
+    EBPF,
+}
+
+/// Fanout settings (Linux only)
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct FanoutOption {
+    pub group_id: u16,
+    pub fanout_type: FanoutType,
+    pub defrag: bool,
+    pub rollover: bool,
+}
+
 /// A generic configuration type, encapsulating all options supported by each backend
 ///
 /// Each option should be treated as a hint - each backend is free to ignore any and all
@@ -119,6 +141,8 @@ pub struct Config {
     /// BPF/OS X only: The number of /dev/bpf* file descriptors to attempt before failing. Defaults
     /// to: 1000
     pub bpf_fd_attempts: usize,
+
+    pub linux_fanout: Option<FanoutOption>,
 }
 
 impl Default for Config {
@@ -126,10 +150,11 @@ impl Default for Config {
         Config {
             write_buffer_size: 4096,
             read_buffer_size: 4096,
-            channel_type: ChannelType::Layer2,
-            bpf_fd_attempts: 1000,
             read_timeout: None,
             write_timeout: None,
+            channel_type: ChannelType::Layer2,
+            bpf_fd_attempts: 1000,
+            linux_fanout: None,
         }
     }
 }
