@@ -1,4 +1,3 @@
-fn_return_indent = "WithWhereClause"
+required_version = "0.6.1"
 reorder_imports = true
-take_source_hints = false
 format_strings = false
