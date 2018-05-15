@@ -38,7 +38,7 @@ fn main() {
     let interface_names_match = |iface: &NetworkInterface| iface.name == iface_name;
 
     // Find the network interface with the provided name
-    let interfaces = datalink::interfaces();
+    let interfaces = datalink::linux::interfaces();
     let interface = interfaces
         .into_iter()
         .filter(interface_names_match)
