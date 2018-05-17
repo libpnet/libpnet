@@ -10,20 +10,21 @@
 
 use datalink;
 
-use packet::Packet;
 use packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
 use packet::ipv4;
 use packet::ipv4::{Ipv4Packet, MutableIpv4Packet};
 use packet::ipv6::MutableIpv6Packet;
 use packet::udp;
 use packet::udp::{MutableUdpPacket, UdpPacket};
+use packet::Packet;
 use std::iter::Iterator;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::mpsc::channel;
 use std::thread;
-use transport::{TransportChannelType, TransportProtocol, ipv4_packet_iter, transport_channel,
-                udp_packet_iter};
 use transport::TransportProtocol::{Ipv4, Ipv6};
+use transport::{
+    ipv4_packet_iter, transport_channel, udp_packet_iter, TransportChannelType, TransportProtocol,
+};
 
 const IPV4_HEADER_LEN: usize = 20;
 const IPV6_HEADER_LEN: usize = 40;
@@ -85,13 +86,19 @@ fn build_udp_header(packet: &mut [u8], offset: usize) {
 }
 
 fn is_ipv4(ip: &IpAddr) -> bool {
-    if let IpAddr::V4(_) = *ip { true } else { false }
+    if let IpAddr::V4(_) = *ip {
+        true
+    } else {
+        false
+    }
 }
 
-fn build_udp4_packet(packet: &mut [u8],
-                     start: usize,
-                     msg: &str,
-                     ni: Option<&datalink::NetworkInterface>) {
+fn build_udp4_packet(
+    packet: &mut [u8],
+    start: usize,
+    msg: &str,
+    ni: Option<&datalink::NetworkInterface>,
+) {
     build_ipv4_header(packet, start);
     build_udp_header(packet, start + IPV4_HEADER_LEN as usize);
 
@@ -104,7 +111,11 @@ fn build_udp4_packet(packet: &mut [u8],
     packet[data_start + 3] = msg[3];
 
     let (source, dest) = if let Some(ni) = ni {
-        let ipmask = ni.ips.iter().filter(|addr| is_ipv4(&addr.ip())).next().unwrap();
+        let ipmask = ni.ips
+            .iter()
+            .filter(|addr| is_ipv4(&addr.ip()))
+            .next()
+            .unwrap();
         match (ipmask.ip()).clone() {
             IpAddr::V4(v4) => (v4, v4),
             IpAddr::V6(_) => panic!("found ipv6 addresses when expecting ipv4 addresses"),
@@ -131,9 +142,11 @@ fn build_udp6_packet(packet: &mut [u8], start: usize, msg: &str) {
     packet[data_start + 3] = msg[3];
 
     let slice = &mut packet[(start + IPV6_HEADER_LEN as usize)..];
-    let checksum = udp::ipv6_checksum(&UdpPacket::new(slice).unwrap(),
-                                      &ipv6_source(),
-                                      &ipv6_destination());
+    let checksum = udp::ipv6_checksum(
+        &UdpPacket::new(slice).unwrap(),
+        &ipv6_source(),
+        &ipv6_destination(),
+    );
     MutableUdpPacket::new(slice).unwrap().set_checksum(checksum);
 }
 
@@ -148,11 +161,15 @@ fn check_ipv4_header(packet: &[u8], header: &Ipv4Packet) {
     assert_eq!(header.get_ecn(), ipv4_header.get_ecn());
     assert_eq!(header.get_total_length(), ipv4_header.get_total_length());
     assert_eq!(header.get_flags(), ipv4_header.get_flags());
-    assert_eq!(header.get_fragment_offset(),
-               ipv4_header.get_fragment_offset());
+    assert_eq!(
+        header.get_fragment_offset(),
+        ipv4_header.get_fragment_offset()
+    );
     assert_eq!(header.get_ttl(), ipv4_header.get_ttl());
-    assert_eq!(header.get_next_level_protocol(),
-               ipv4_header.get_next_level_protocol());
+    assert_eq!(
+        header.get_next_level_protocol(),
+        ipv4_header.get_next_level_protocol()
+    );
     assert_eq!(header.get_source(), ipv4_header.get_source());
     assert_eq!(header.get_destination(), ipv4_header.get_destination());
 }
@@ -184,15 +201,16 @@ fn layer4(ip: IpAddr, header_len: usize) {
             match next {
                 Ok((header, addr)) => {
                     assert_eq!(addr, ip);
-                    assert_eq!(header,
-                               UdpPacket::new(&packet[header_len..packet_len]).unwrap());
+                    assert_eq!(
+                        header,
+                        UdpPacket::new(&packet[header_len..packet_len]).unwrap()
+                    );
                     break;
                 }
                 Err(e) => {
                     panic!("Receive failed for layer4_test(): {}", e);
                 }
             }
-
         }
     });
 
@@ -220,8 +238,7 @@ fn layer4_ipv4() {
 
 // travis does not currently support IPv6
 #[test]
-#[cfg(all(not(feature = "appveyor"),
-          not(all(target_os = "linux", feature = "travis"))))]
+#[cfg(all(not(feature = "appveyor"), not(all(target_os = "linux", feature = "travis"))))]
 fn layer4_ipv6() {
     layer4(IpAddr::V6(ipv6_source()), IPV6_HEADER_LEN);
 }
@@ -236,8 +253,10 @@ fn layer3_ipv4() {
 
     let (tx, rx) = channel();
 
-    let tc = transport_channel(IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN,
-                               TransportChannelType::Layer3(TEST_PROTO));
+    let tc = transport_channel(
+        IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN,
+        TransportChannelType::Layer3(TEST_PROTO),
+    );
     let (mut ttx, mut trx) = match tc {
         Ok((tx, rx)) => (tx, rx),
         Err(e) => panic!("layer3: unable to create channel: {}", e),
@@ -252,15 +271,18 @@ fn layer3_ipv4() {
                 Ok((header, addr)) => {
                     assert_eq!(addr, send_addr);
                     check_ipv4_header(&packet[..], &header);
-                    let udp_header =
-                        UdpPacket::new(&header.packet()[(header.get_header_length() as usize *
-                                                         4usize)..])
-                            .unwrap();
-                    assert_eq!(udp_header,
-                               UdpPacket::new(&packet[IPV4_HEADER_LEN..]).unwrap());
+                    let udp_header = UdpPacket::new(
+                        &header.packet()[(header.get_header_length() as usize * 4usize)..],
+                    ).unwrap();
+                    assert_eq!(
+                        udp_header,
+                        UdpPacket::new(&packet[IPV4_HEADER_LEN..]).unwrap()
+                    );
 
-                    assert_eq!(&udp_header.packet()[UDP_HEADER_LEN..],
-                               &packet[IPV4_HEADER_LEN + UDP_HEADER_LEN..]);
+                    assert_eq!(
+                        &udp_header.packet()[UDP_HEADER_LEN..],
+                        &packet[IPV4_HEADER_LEN + UDP_HEADER_LEN..]
+                    );
                     break;
                 }
                 Err(e) => {
@@ -269,7 +291,6 @@ fn layer3_ipv4() {
             }
         }
     });
-
 
     rx.recv().unwrap();
     match ttx.send_to(Ipv4Packet::new(&packet[..]).unwrap(), send_addr) {
@@ -286,12 +307,11 @@ fn get_test_interface() -> datalink::NetworkInterface {
     use std::env;
     let interfaces = datalink::interfaces();
 
-    interfaces.iter()
-        .filter(|x| {
-            match env::var("PNET_TEST_IFACE") {
-                Ok(name) => x.name == name,
-                Err(_) => true,
-            }
+    interfaces
+        .iter()
+        .filter(|x| match env::var("PNET_TEST_IFACE") {
+            Ok(name) => x.name == name,
+            Err(_) => true,
         })
         .next()
         .unwrap()
@@ -304,12 +324,11 @@ fn get_test_interface() -> datalink::NetworkInterface {
     use std::env;
     let interfaces = datalink::interfaces();
 
-    interfaces.iter()
-        .filter(|x| {
-            match env::var("PNET_TEST_IFACE") {
-                Ok(name) => x.name == name,
-                Err(_) => x.is_loopback(),
-            }
+    interfaces
+        .iter()
+        .filter(|x| match env::var("PNET_TEST_IFACE") {
+            Ok(name) => x.name == name,
+            Err(_) => x.is_loopback(),
         })
         .next()
         .unwrap()
@@ -337,10 +356,12 @@ fn layer2() {
         ethernet_header.set_ethertype(EtherTypes::Ipv4);
     }
 
-    build_udp4_packet(&mut packet[..],
-                      ETHERNET_HEADER_LEN as usize,
-                      "l2tt",
-                      Some(&interface));
+    build_udp4_packet(
+        &mut packet[..],
+        ETHERNET_HEADER_LEN as usize,
+        "l2tt",
+        Some(&interface),
+    );
 
     let (tx, rx) = channel();
 
@@ -368,7 +389,9 @@ fn layer2() {
                     if i == 10_000 {
                         panic!("layer2: did not find matching packet after 10_000 iterations");
                     }
-                    if EthernetPacket::new(&packet[..]).unwrap().payload() == EthernetPacket::new(eh).unwrap().payload() {
+                    if EthernetPacket::new(&packet[..]).unwrap().payload()
+                        == EthernetPacket::new(eh).unwrap().payload()
+                    {
                         return;
                     }
                     i += 1;
@@ -393,11 +416,11 @@ fn layer2() {
 #[test]
 #[cfg(target_os = "linux")]
 fn layer2_timeouts() {
-    use std::time::Duration;
-    use std::io::ErrorKind;
     use datalink;
     use datalink::Channel::Ethernet;
     use packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
+    use std::io::ErrorKind;
+    use std::time::Duration;
 
     const ETHERNET_HEADER_LEN: usize = 14;
 
@@ -412,10 +435,12 @@ fn layer2_timeouts() {
         ethernet_header.set_ethertype(EtherTypes::Ipv4);
     }
 
-    build_udp4_packet(&mut packet[..],
-                      ETHERNET_HEADER_LEN as usize,
-                      "l2tt",
-                      Some(&interface));
+    build_udp4_packet(
+        &mut packet[..],
+        ETHERNET_HEADER_LEN as usize,
+        "l2tt",
+        Some(&interface),
+    );
 
     let (tx, rx) = channel();
 
@@ -444,9 +469,11 @@ fn layer2_timeouts() {
         loop {
             match dlrx.next() {
                 Ok(eh) => {
-                    panic!("layer2_timeouts: should have exceeded timeout ({}/{})",
-                           eh.len(),
-                           packet_len);
+                    panic!(
+                        "layer2_timeouts: should have exceeded timeout ({}/{})",
+                        eh.len(),
+                        packet_len
+                    );
                 }
                 Err(e) => {
                     assert!(e.kind() == ErrorKind::TimedOut);

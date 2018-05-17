@@ -22,11 +22,11 @@ use std::ptr;
 use std::sync::Arc;
 use std::time::Duration;
 
-
-fn network_addr_to_sockaddr(ni: &NetworkInterface,
-                            storage: *mut libc::sockaddr_storage,
-                            proto: libc::c_int)
-    -> usize {
+fn network_addr_to_sockaddr(
+    ni: &NetworkInterface,
+    storage: *mut libc::sockaddr_storage,
+    proto: libc::c_int,
+) -> usize {
     unsafe {
         let sll: *mut libc::sockaddr_ll = mem::transmute(storage);
         (*sll).sll_family = libc::AF_PACKET as libc::sa_family_t;
@@ -59,6 +59,9 @@ pub struct Config {
     /// NOTE FIXME Currently ignored
     /// Defaults to Layer2
     pub channel_type: super::ChannelType,
+
+    /// Specifies packet fanout option, if desired. Defaults to None.
+    pub fanout: Option<super::FanoutOption>,
 }
 
 impl<'a> From<&'a super::Config> for Config {
@@ -69,6 +72,7 @@ impl<'a> From<&'a super::Config> for Config {
             channel_type: config.channel_type,
             read_timeout: config.read_timeout,
             write_timeout: config.write_timeout,
+            fanout: config.linux_fanout,
         }
     }
 }
@@ -81,15 +85,14 @@ impl Default for Config {
             read_timeout: None,
             write_timeout: None,
             channel_type: super::ChannelType::Layer2,
+            fanout: None,
         }
     }
 }
 
 /// Create a data link channel using the Linux's AF_PACKET socket type
 #[inline]
-pub fn channel(network_interface: &NetworkInterface,
-               config: Config)
-    -> io::Result<super::Channel> {
+pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Result<super::Channel> {
     let eth_p_all = 0x0003;
     let (typ, proto) = match config.channel_type {
         super::ChannelType::Layer2 => (libc::SOCK_RAW, eth_p_all),
@@ -119,12 +122,15 @@ pub fn channel(network_interface: &NetworkInterface,
 
     // Enable promiscuous capture
     if unsafe {
-        libc::setsockopt(socket,
-                         linux::SOL_PACKET,
-                         linux::PACKET_ADD_MEMBERSHIP,
-                         (&pmr as *const linux::packet_mreq) as *const libc::c_void,
-                         mem::size_of::<linux::packet_mreq>() as u32)
-    } == -1 {
+        libc::setsockopt(
+            socket,
+            linux::SOL_PACKET,
+            linux::PACKET_ADD_MEMBERSHIP,
+            (&pmr as *const linux::packet_mreq) as *const libc::c_void,
+            mem::size_of::<linux::packet_mreq>() as u32,
+        )
+    } == -1
+    {
         let err = io::Error::last_os_error();
         unsafe {
             pnet_sys::close(socket);
@@ -132,10 +138,55 @@ pub fn channel(network_interface: &NetworkInterface,
         return Err(err);
     }
 
+    // Enable packet fanout
+    if let Some(fanout) = config.fanout {
+        use super::FanoutType;
+        let mut typ = match fanout.fanout_type {
+            FanoutType::HASH => linux::PACKET_FANOUT_HASH,
+            FanoutType::LB => linux::PACKET_FANOUT_LB,
+            FanoutType::CPU => linux::PACKET_FANOUT_CPU,
+            FanoutType::ROLLOVER => linux::PACKET_FANOUT_ROLLOVER,
+            FanoutType::RND => linux::PACKET_FANOUT_RND,
+            FanoutType::QM => linux::PACKET_FANOUT_QM,
+            FanoutType::CBPF => linux::PACKET_FANOUT_CBPF,
+            FanoutType::EBPF => linux::PACKET_FANOUT_EBPF,
+        } as u32;
+        // set defrag flag
+        if fanout.defrag {
+            typ = typ | linux::PACKET_FANOUT_FLAG_DEFRAG;
+        }
+        // set rollover flag
+        if fanout.rollover {
+            typ = typ | linux::PACKET_FANOUT_FLAG_ROLLOVER;
+        }
+        // set uniqueid flag -- probably not needed atm..
+        // PACKET_FANOUT_FLAG_UNIQUEID -- https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=4a69a864209e9ab436d4a58e8028ac96cc873d15
+        let arg: libc::c_uint = fanout.group_id as u32 | (typ << 16);
+
+        if unsafe {
+            libc::setsockopt(
+                socket,
+                linux::SOL_PACKET,
+                linux::PACKET_FANOUT,
+                (&arg as *const libc::c_uint) as *const libc::c_void,
+                mem::size_of::<libc::c_uint>() as u32,
+            )
+        } == -1
+        {
+            let err = io::Error::last_os_error();
+            unsafe {
+                pnet_sys::close(socket);
+            }
+            return Err(err);
+        }
+    }
+
     // Enable nonblocking
     if unsafe { libc::fcntl(socket, libc::F_SETFL, libc::O_NONBLOCK) } == -1 {
         let err = io::Error::last_os_error();
-        unsafe { pnet_sys::close(socket); }
+        unsafe {
+            pnet_sys::close(socket);
+        }
         return Err(err);
     }
 
@@ -147,14 +198,18 @@ pub fn channel(network_interface: &NetworkInterface,
         _channel_type: config.channel_type,
         send_addr: unsafe { *(send_addr as *const libc::sockaddr_ll) },
         send_addr_len: len,
-        timeout: config.write_timeout.map(|to| pnet_sys::duration_to_timespec(to)),
+        timeout: config
+            .write_timeout
+            .map(|to| pnet_sys::duration_to_timespec(to)),
     });
     let receiver = Box::new(DataLinkReceiverImpl {
         socket: fd.clone(),
         fd_set: unsafe { mem::zeroed() },
         read_buffer: vec![0; config.read_buffer_size],
         _channel_type: config.channel_type,
-        timeout: config.read_timeout.map(|to| pnet_sys::duration_to_timespec(to)),
+        timeout: config
+            .read_timeout
+            .map(|to| pnet_sys::duration_to_timespec(to)),
     });
 
     Ok(super::Channel::Ethernet(sender, receiver))
@@ -173,11 +228,12 @@ struct DataLinkSenderImpl {
 impl DataLinkSender for DataLinkSenderImpl {
     // FIXME Layer 3
     #[inline]
-    fn build_and_send(&mut self,
-                      num_packets: usize,
-                      packet_size: usize,
-                      func: &mut FnMut(&mut [u8]))
-        -> Option<io::Result<()>> {
+    fn build_and_send(
+        &mut self,
+        num_packets: usize,
+        packet_size: usize,
+        func: &mut FnMut(&mut [u8]),
+    ) -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len < self.write_buffer.len() {
             let min = cmp::min(self.write_buffer[..].len(), len);
@@ -192,25 +248,29 @@ impl DataLinkSender for DataLinkSenderImpl {
                     libc::FD_SET(self.socket.fd, &mut self.fd_set as *mut libc::fd_set);
                 }
                 let ret = unsafe {
-                    libc::pselect(self.socket.fd + 1,
-                                  ptr::null_mut(),
-                                  &mut self.fd_set as *mut libc::fd_set,
-                                  ptr::null_mut(),
-                                  self.timeout
-                                      .as_ref()
-                                      .map(|to| to as *const libc::timespec)
-                                      .unwrap_or(ptr::null()),
-                                  ptr::null())
+                    libc::pselect(
+                        self.socket.fd + 1,
+                        ptr::null_mut(),
+                        &mut self.fd_set as *mut libc::fd_set,
+                        ptr::null_mut(),
+                        self.timeout
+                            .as_ref()
+                            .map(|to| to as *const libc::timespec)
+                            .unwrap_or(ptr::null()),
+                        ptr::null(),
+                    )
                 };
                 if ret == -1 {
                     return Some(Err(io::Error::last_os_error()));
                 } else if ret == 0 {
                     return Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")));
                 } else {
-                    if let Err(e) = pnet_sys::send_to(self.socket.fd,
-                                                      chunk,
-                                                      send_addr,
-                                                      self.send_addr_len as libc::socklen_t) {
+                    if let Err(e) = pnet_sys::send_to(
+                        self.socket.fd,
+                        chunk,
+                        send_addr,
+                        self.send_addr_len as libc::socklen_t,
+                    ) {
                         return Some(Err(e));
                     }
                 }
@@ -223,34 +283,35 @@ impl DataLinkSender for DataLinkSenderImpl {
     }
 
     #[inline]
-    fn send_to(&mut self,
-               packet: &[u8],
-               _dst: Option<NetworkInterface>)
-        -> Option<io::Result<()>> {
+    fn send_to(&mut self, packet: &[u8], _dst: Option<NetworkInterface>) -> Option<io::Result<()>> {
         unsafe {
             libc::FD_ZERO(&mut self.fd_set as *mut libc::fd_set);
             libc::FD_SET(self.socket.fd, &mut self.fd_set as *mut libc::fd_set);
         }
         let ret = unsafe {
-            libc::pselect(self.socket.fd + 1,
-                          ptr::null_mut(),
-                          &mut self.fd_set as *mut libc::fd_set,
-                          ptr::null_mut(),
-                          self.timeout
-                              .as_ref()
-                              .map(|to| to as *const libc::timespec)
-                              .unwrap_or(ptr::null()),
-                          ptr::null())
+            libc::pselect(
+                self.socket.fd + 1,
+                ptr::null_mut(),
+                &mut self.fd_set as *mut libc::fd_set,
+                ptr::null_mut(),
+                self.timeout
+                    .as_ref()
+                    .map(|to| to as *const libc::timespec)
+                    .unwrap_or(ptr::null()),
+                ptr::null(),
+            )
         };
         if ret == -1 {
             Some(Err(io::Error::last_os_error()))
         } else if ret == 0 {
             Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")))
         } else {
-            match pnet_sys::send_to(self.socket.fd,
-                                    packet,
-                                    (&self.send_addr as *const libc::sockaddr_ll) as *const _,
-                                    self.send_addr_len as libc::socklen_t) {
+            match pnet_sys::send_to(
+                self.socket.fd,
+                packet,
+                (&self.send_addr as *const libc::sockaddr_ll) as *const _,
+                self.send_addr_len as libc::socklen_t,
+            ) {
                 Err(e) => Some(Err(e)),
                 Ok(_) => Some(Ok(())),
             }
@@ -274,16 +335,17 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
             libc::FD_SET(self.socket.fd, &mut self.fd_set as *mut libc::fd_set);
         }
         let ret = unsafe {
-            libc::pselect(self.socket.fd + 1,
-                          &mut self.fd_set as *mut libc::fd_set,
-                          ptr::null_mut(),
-                          ptr::null_mut(),
-                          self
-                              .timeout
-                              .as_ref()
-                              .map(|to| to as *const libc::timespec)
-                              .unwrap_or(ptr::null()),
-                          ptr::null())
+            libc::pselect(
+                self.socket.fd + 1,
+                &mut self.fd_set as *mut libc::fd_set,
+                ptr::null_mut(),
+                ptr::null_mut(),
+                self.timeout
+                    .as_ref()
+                    .map(|to| to as *const libc::timespec)
+                    .unwrap_or(ptr::null()),
+                ptr::null(),
+            )
         };
         if ret == -1 {
             Err(io::Error::last_os_error())

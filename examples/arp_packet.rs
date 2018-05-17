@@ -2,21 +2,27 @@ extern crate pnet;
 extern crate pnet_datalink;
 
 use std::env;
-use std::process;
 use std::io::{self, Write};
-use std::net::{Ipv4Addr, AddrParseError};
+use std::net::{AddrParseError, Ipv4Addr};
+use std::process;
 
-use pnet_datalink::{Channel, NetworkInterface, MacAddr, ParseMacAddrErr};
+use pnet_datalink::{Channel, MacAddr, NetworkInterface, ParseMacAddrErr};
 
-use pnet::packet::ethernet::MutableEthernetPacket;
 use pnet::packet::arp::MutableArpPacket;
+use pnet::packet::arp::{ArpHardwareTypes, ArpOperation, ArpOperations};
 use pnet::packet::ethernet::EtherTypes;
-use pnet::packet::{Packet, MutablePacket};
-use pnet::packet::arp::{ArpHardwareTypes, ArpOperations, ArpOperation};
+use pnet::packet::ethernet::MutableEthernetPacket;
+use pnet::packet::{MutablePacket, Packet};
 
-
-fn send_arp_packet(interface: NetworkInterface, source_ip: Ipv4Addr, source_mac: MacAddr, target_ip: Ipv4Addr, target_mac: MacAddr, arp_operation: ArpOperation) {
-    let(mut tx, _) = match pnet_datalink::channel(&interface, Default::default()) {
+fn send_arp_packet(
+    interface: NetworkInterface,
+    source_ip: Ipv4Addr,
+    source_mac: MacAddr,
+    target_ip: Ipv4Addr,
+    target_mac: MacAddr,
+    arp_operation: ArpOperation,
+) {
+    let (mut tx, _) = match pnet_datalink::channel(&interface, Default::default()) {
         Ok(Channel::Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => panic!("Unknown channel type"),
         Err(e) => panic!("Error happened {}", e),
@@ -51,42 +57,65 @@ fn main() {
     let iface_name = match env::args().nth(1) {
         Some(n) => n,
         None => {
-            writeln!(io::stderr(), "USAGE: packetdump <NETWORK INTERFACE> <SOURCE IP>").unwrap();
+            writeln!(
+                io::stderr(),
+                "USAGE: packetdump <NETWORK INTERFACE> <SOURCE IP>"
+            ).unwrap();
             process::exit(1);
-        },
+        }
     };
 
     let source_ip: Result<Ipv4Addr, AddrParseError> = match env::args().nth(2) {
         Some(n) => n.parse(),
         None => {
-            writeln!(io::stderr(), "USAGE: packetdump <NETWORK INTERFACE> <SOURCE IP> <TARGET IP> <TARGET MAC>").unwrap();
+            writeln!(
+                io::stderr(),
+                "USAGE: packetdump <NETWORK INTERFACE> <SOURCE IP> <TARGET IP> <TARGET MAC>"
+            ).unwrap();
             process::exit(1);
-        },
+        }
     };
 
     let target_ip: Result<Ipv4Addr, AddrParseError> = match env::args().nth(3) {
         Some(n) => n.parse(),
         None => {
-            writeln!(io::stderr(), "USAGE: packetdump <NETWORK INTERFACE> <SOURCE IP> <TARGET IP> <TARGET MAC>").unwrap();
+            writeln!(
+                io::stderr(),
+                "USAGE: packetdump <NETWORK INTERFACE> <SOURCE IP> <TARGET IP> <TARGET MAC>"
+            ).unwrap();
             process::exit(1);
-        },
+        }
     };
 
     let target_mac: Result<MacAddr, ParseMacAddrErr> = match env::args().nth(4) {
         Some(n) => n.parse(),
         None => {
-            writeln!(io::stderr(), "USAGE: packetdump <NETWORK INTERFACE> <SOURCE IP> <TARGET IP> <TARGET MAC>").unwrap();
+            writeln!(
+                io::stderr(),
+                "USAGE: packetdump <NETWORK INTERFACE> <SOURCE IP> <TARGET IP> <TARGET MAC>"
+            ).unwrap();
             process::exit(1);
         }
     };
 
     let interfaces = pnet_datalink::interfaces();
     let interfaces_name_match = |iface: &NetworkInterface| iface.name == iface_name;
-    let interface = interfaces.into_iter().filter(interfaces_name_match).next().unwrap();
+    let interface = interfaces
+        .into_iter()
+        .filter(interfaces_name_match)
+        .next()
+        .unwrap();
     let source_mac = interface.mac_address();
     let arp_operation: ArpOperation = ArpOperations::Request;
 
-    send_arp_packet(interface, source_ip.unwrap(), source_mac, target_ip.unwrap(), target_mac.unwrap(), arp_operation);
-    
+    send_arp_packet(
+        interface,
+        source_ip.unwrap(),
+        source_mac,
+        target_ip.unwrap(),
+        target_mac.unwrap(),
+        arp_operation,
+    );
+
     println!("Sent ARP packet.");
 }
