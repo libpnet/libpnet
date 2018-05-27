@@ -324,16 +324,16 @@ pub fn interfaces() -> Vec<NetworkInterface> {
         }
     }
 
-    let mut buf = [0u8; 4096];
+    const IFACE_BUF_LEN: usize = 4096;
+    let mut buf = vec![0u8; IFACE_BUF_LEN];
     let mut buflen = buf.len() as u32;
 
-    // Gets list of supported adapters in form:
-    // adapter1\0adapter2\0\0desc1\0desc2\0\0
     if unsafe { winpcap::PacketGetAdapterNames(buf.as_mut_ptr() as *mut i8, &mut buflen) } == 0 {
-        // FIXME [windows] Should allocate a buffer big enough and try again
-        //        - size should be buf.len() + buflen (buflen is overwritten)
-        panic!("FIXME [windows] unable to get interface list");
+
+        buf = vec![0u8; IFACE_BUF_LEN + buflen as usize];
+        unsafe { winpcap::PacketGetAdapterNames(buf.as_mut_ptr() as *mut i8, &mut buflen) };
     }
+
 
     let buf_str = unsafe { from_utf8_unchecked(&buf) };
     let iface_names = buf_str.split("\0\0").next();
