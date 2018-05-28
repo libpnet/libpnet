@@ -324,14 +324,17 @@ pub fn interfaces() -> Vec<NetworkInterface> {
         }
     }
 
-    const IFACE_BUF_LEN: usize = 4096;
-    let mut buf = vec![0u8; IFACE_BUF_LEN];
+    let mut buf = vec![0u8; 4096];
     let mut buflen = buf.len() as u32;
 
     if unsafe { winpcap::PacketGetAdapterNames(buf.as_mut_ptr() as *mut i8, &mut buflen) } == 0 {
+        buf.resize(buflen as usize, 0);
 
-        buf = vec![0u8; IFACE_BUF_LEN + buflen as usize];
-        unsafe { winpcap::PacketGetAdapterNames(buf.as_mut_ptr() as *mut i8, &mut buflen) };
+        // Second call should now work with the correct buffer size. If not, this may be
+        // due to some privilege or other unforseen issue.
+        if unsafe { winpcap::PacketGetAdapterNames(buf.as_mut_ptr() as *mut i8, &mut buflen) } == 0 {
+            panic!("Unable to get interface list despite increasing buffer size");
+        }
     }
 
 
