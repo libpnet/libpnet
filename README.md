@@ -86,9 +86,10 @@ involved.
 
 There are three requirements for building on Windows:
 
- * You must use a nightly version of Rust which uses the MSVC toolchain
- * You must have [WinPcap](https://www.winpcap.org/) installed (tested with
-   version 4.1.3)
+ * You must use a version of Rust which uses the MSVC toolchain
+ * You must have [WinPcap](https://www.winpcap.org/) or [npcap](https://nmap.org/npcap/) installed
+   (tested with version WinPcap 4.1.3)
  * You must place `Packet.lib` from the [WinPcap Developers pack](https://www.winpcap.org/devel.htm)
-   in a directory named `lib`, in the root of this repository. For the 64 bit toolchain it is in
-   `WpdPack/Lib/x64/Packet.lib`, for the 32 bit toolchain, it is in `WpdPack/Lib/Packet.lib`.
+   in a directory named `lib`, in the root of this repository. Alternatively, you can use any of the
+   locations listed in the `%LIB%`/`$Env:LIB` environment variables. For the 64 bit toolchain it is
+   in `WpdPack/Lib/x64/Packet.lib`, for the 32 bit toolchain, it is in `WpdPack/Lib/Packet.lib`.
