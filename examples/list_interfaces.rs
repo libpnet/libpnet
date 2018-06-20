@@ -7,10 +7,10 @@
 // except according to those terms.
 
 /// This examples simply print all interfaces to stdout
-extern crate pnet_datalink;
+extern crate pnet;
 
 fn main() {
-    for interface in pnet_datalink::interfaces() {
+    for interface in pnet::datalink::interfaces() {
         println!("{}", interface);
     }
 }
