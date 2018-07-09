@@ -210,14 +210,14 @@ pub mod echo_reply {
     #[packet]
     pub struct EchoReply {
         #[construct_with(u8)]
-        icmp_type: IcmpType,
+        pub icmp_type: IcmpType,
         #[construct_with(u8)]
-        icmp_code: IcmpCode,
-        checksum: u16be,
-        identifier: u16be,
-        sequence_number: u16be,
+        pub icmp_code: IcmpCode,
+        pub checksum: u16be,
+        pub identifier: u16be,
+        pub sequence_number: u16be,
         #[payload]
-        payload: Vec<u8>,
+        pub payload: Vec<u8>,
     }
 }
 
@@ -288,14 +288,14 @@ pub mod echo_request {
     #[packet]
     pub struct EchoRequest {
         #[construct_with(u8)]
-        icmp_type: IcmpType,
+        pub icmp_type: IcmpType,
         #[construct_with(u8)]
-        icmp_code: IcmpCode,
-        checksum: u16be,
-        identifier: u16be,
-        sequence_number: u16be,
+        pub icmp_code: IcmpCode,
+        pub checksum: u16be,
+        pub identifier: u16be,
+        pub sequence_number: u16be,
         #[payload]
-        payload: Vec<u8>,
+        pub payload: Vec<u8>,
     }
 }
 
@@ -358,13 +358,13 @@ pub mod destination_unreachable {
     #[packet]
     pub struct DestinationUnreachable {
         #[construct_with(u8)]
-        icmp_type: IcmpType,
+        pub icmp_type: IcmpType,
         #[construct_with(u8)]
-        icmp_code: IcmpCode,
-        checksum: u16be,
-        unused: u32be,
+        pub icmp_code: IcmpCode,
+        pub checksum: u16be,
+        pub unused: u32be,
         #[payload]
-        payload: Vec<u8>,
+        pub payload: Vec<u8>,
     }
 }
 
@@ -400,12 +400,12 @@ pub mod time_exceeded {
     #[packet]
     pub struct TimeExceeded {
         #[construct_with(u8)]
-        icmp_type: IcmpType,
+        pub icmp_type: IcmpType,
         #[construct_with(u8)]
-        icmp_code: IcmpCode,
-        checksum: u16be,
-        unused: u32be,
+        pub icmp_code: IcmpCode,
+        pub checksum: u16be,
+        pub unused: u32be,
         #[payload]
-        payload: Vec<u8>,
+        pub payload: Vec<u8>,
     }
 }
