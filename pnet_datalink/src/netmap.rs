@@ -31,7 +31,7 @@ use std::slice;
 use std::sync::Arc;
 use std::time::Duration;
 
-#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd"))]
 #[repr(C)]
 struct pollfd {
     fd: libc::c_int,
@@ -39,14 +39,14 @@ struct pollfd {
     revents: libc::c_short,
 }
 
-#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd"))]
 const POLLIN: libc::c_short = 0x0001;
-#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd"))]
 const POLLOUT: libc::c_short = 0x0004;
 
 #[cfg(target_os = "freebsd")]
 type nfds_t = libc::c_uint;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 type nfds_t = libc::c_ulong;
 
 extern "C" {

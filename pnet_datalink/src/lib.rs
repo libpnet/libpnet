@@ -31,13 +31,15 @@ mod backend;
 pub mod winpcap;
 
 #[cfg(all(not(feature = "netmap"),
-          target_os = "linux"
-          )
+          any(target_os = "linux",
+              target_os = "android"
+             )
+         )
       )]
 #[path = "linux.rs"]
 mod backend;
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod linux;
 
 #[cfg(all(not(feature = "netmap"),
