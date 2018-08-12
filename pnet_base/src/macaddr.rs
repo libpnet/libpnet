@@ -13,14 +13,81 @@ use std::str::FromStr;
 #[cfg(feature = "serde")]
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
+/// The number of bytes in an ethernet (MAC) address.
+pub const ETHER_ADDR_LEN: usize = 6;
+
+/// Structure of a 48-bit Ethernet address.
+pub type EtherAddr = [u8; ETHER_ADDR_LEN];
+
+const LOCAL_ADDR_BIT: u8 = 0x02;
+const MULTICAST_ADDR_BIT: u8 = 0x01;
+
 /// A MAC address
-#[derive(PartialEq, Eq, Clone, Copy, Hash, Ord, PartialOrd)]
+#[derive(PartialEq, Eq, Clone, Copy, Default, Hash, Ord, PartialOrd)]
 pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
 
 impl MacAddr {
     /// Construct a new MacAddr
     pub fn new(a: u8, b: u8, c: u8, d: u8, e: u8, f: u8) -> MacAddr {
         MacAddr(a, b, c, d, e, f)
+    }
+
+    /// Construct a empty MacAddr
+    pub fn empty() -> MacAddr {
+        Default::default()
+    }
+
+    /// Construct a broadcast MacAddr
+    pub fn broadcast() -> MacAddr {
+        [0xff; ETHER_ADDR_LEN].into()
+    }
+
+    /// Returns true if the MacAddr is a empty address
+    pub fn is_empty(&self) -> bool {
+        *self == Self::empty()
+    }
+
+    /// Returns true if the MacAddr is a universally administered addresses (UAA)
+    pub fn is_universal(&self) -> bool {
+        !self.is_local()
+    }
+
+    /// Returns true if the MacAddr is a locally administered addresses (LAA)
+    pub fn is_local(&self) -> bool {
+        (self.0 & LOCAL_ADDR_BIT) == LOCAL_ADDR_BIT
+    }
+
+    /// Returns true if the MacAddr is a unicast address
+    pub fn is_unicast(&self) -> bool {
+        !self.is_multicast()
+    }
+
+    /// Returns true if the MacAddr is a multicast address
+    pub fn is_multicast(&self) -> bool {
+        (self.0 & MULTICAST_ADDR_BIT) == MULTICAST_ADDR_BIT
+    }
+
+    /// Returns true if the MacAddr is a broadcast address
+    pub fn is_broadcast(&self) -> bool {
+        *self == Self::broadcast()
+    }
+}
+
+impl From<EtherAddr> for MacAddr {
+    fn from(addr: EtherAddr) -> MacAddr {
+        MacAddr(addr[0], addr[1], addr[2], addr[3], addr[4], addr[5])
+    }
+}
+
+impl From<MacAddr> for EtherAddr {
+    fn from(addr: MacAddr) -> Self {
+        [addr.0, addr.1, addr.2, addr.3, addr.4, addr.5]
+    }
+}
+
+impl PartialEq<EtherAddr> for MacAddr {
+    fn eq(&self, other: &EtherAddr) -> bool {
+        *self == MacAddr::from(*other)
     }
 }
 
@@ -159,9 +226,9 @@ mod tests {
 
     #[test]
     fn mac_addr_from_str() {
-        assert_eq!("00:00:00:00:00:00".parse(), Ok(MacAddr(0, 0, 0, 0, 0, 0)));
+        assert_eq!("00:00:00:00:00:00".parse(), Ok(MacAddr::empty()));
         assert_eq!("ff:ff:ff:ff:ff:ff".parse(),
-                   Ok(MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)));
+                   Ok(MacAddr::broadcast()));
         assert_eq!("12:34:56:78:90:ab".parse(),
                    Ok(MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB)));
         assert_eq!("::::::".parse::<MacAddr>(),
@@ -186,12 +253,36 @@ mod tests {
 
     #[test]
     fn str_from_mac_addr() {
-        assert_eq!(format!("{}", MacAddr(0, 0, 0, 0, 0, 0)),
+        assert_eq!(format!("{}", MacAddr::empty()),
                    "00:00:00:00:00:00");
-        assert_eq!(format!("{}", MacAddr(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF)),
+        assert_eq!(format!("{}", MacAddr::broadcast()),
                    "ff:ff:ff:ff:ff:ff");
         assert_eq!(format!("{}", MacAddr(0x12, 0x34, 0x56, 0x78, 0x09, 0xAB)),
                    "12:34:56:78:09:ab");
+    }
+
+    #[test]
+    fn type_of_addr() {
+        assert!(MacAddr::empty().is_empty());
+        assert!(MacAddr::broadcast().is_broadcast());
+
+        let mac = MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB);
+        assert!(mac.is_local());
+        assert!(mac.is_unicast());
+
+        let mac = MacAddr(0xac, 0x87, 0xa3, 0x07, 0x32, 0xb8);
+        assert!(mac.is_universal());
+        assert!(mac.is_unicast());
+    }
+
+    #[test]
+    fn convertion() {
+        let mac = MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB);
+        let addr = [0x12, 0x34, 0x56, 0x78, 0x90, 0xAB];
+
+        assert_eq!(mac, MacAddr::from(addr));
+        assert_eq!(addr, EtherAddr::from(mac));
+        assert!(mac == addr);
     }
 
     #[cfg(feature = "serde")]
