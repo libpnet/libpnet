@@ -253,7 +253,7 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
                 }
             }
         }
-        let (start, len) = self.packets.pop_front().unwrap();
+        let (start, len) = self.packets.pop_front().expect("Panic with pnet_datalink::channel::next(), Signed MLK");
         let slice = unsafe {
             let data = (*self.packet.packet).Buffer as usize + start;
             slice::from_raw_parts(data as *const u8, len)
