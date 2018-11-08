@@ -17,7 +17,7 @@ use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 pub const ETHER_ADDR_LEN: usize = 6;
 
 /// Structure of a 48-bit Ethernet address.
-pub type EtherAddr = [u8; ETHER_ADDR_LEN];
+type EtherAddr = [u8; ETHER_ADDR_LEN];
 
 const LOCAL_ADDR_BIT: u8 = 0x02;
 const MULTICAST_ADDR_BIT: u8 = 0x01;
@@ -32,8 +32,8 @@ impl MacAddr {
         MacAddr(a, b, c, d, e, f)
     }
 
-    /// Construct a empty MacAddr
-    pub fn empty() -> MacAddr {
+    /// Construct an all-zero MacAddr
+    pub fn zero() -> MacAddr {
         Default::default()
     }
 
@@ -42,9 +42,9 @@ impl MacAddr {
         [0xff; ETHER_ADDR_LEN].into()
     }
 
-    /// Returns true if the MacAddr is a empty address
-    pub fn is_empty(&self) -> bool {
-        *self == Self::empty()
+    /// Returns true if the MacAddr is an all-zero address
+    pub fn is_zero(&self) -> bool {
+        *self == Self::zero()
     }
 
     /// Returns true if the MacAddr is a universally administered addresses (UAA)
@@ -93,14 +93,11 @@ impl PartialEq<EtherAddr> for MacAddr {
 
 impl fmt::Display for MacAddr {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt,
-               "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
-               self.0,
-               self.1,
-               self.2,
-               self.3,
-               self.4,
-               self.5)
+        write!(
+            fmt,
+            "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+            self.0, self.1, self.2, self.3, self.4, self.5
+        )
     }
 }
 
@@ -132,9 +129,7 @@ impl<'de> Deserialize<'de> for MacAddr {
             type Value = MacAddr;
 
             fn visit_str<E: de::Error>(self, value: &str) -> Result<MacAddr, E> {
-                value
-                    .parse()
-                    .map_err(|err| E::custom(&format!("{}", err)))
+                value.parse().map_err(|err| E::custom(&format!("{}", err)))
             }
 
             fn visit_bytes<E: de::Error>(self, v: &[u8]) -> Result<MacAddr, E> {
@@ -213,7 +208,9 @@ impl FromStr for MacAddr {
         }
 
         if i == 6 {
-            Ok(MacAddr(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]))
+            Ok(MacAddr(
+                parts[0], parts[1], parts[2], parts[3], parts[4], parts[5],
+            ))
         } else {
             Err(ParseMacAddrErr::TooFewComponents)
         }
@@ -226,44 +223,63 @@ mod tests {
 
     #[test]
     fn mac_addr_from_str() {
-        assert_eq!("00:00:00:00:00:00".parse(), Ok(MacAddr::empty()));
-        assert_eq!("ff:ff:ff:ff:ff:ff".parse(),
-                   Ok(MacAddr::broadcast()));
-        assert_eq!("12:34:56:78:90:ab".parse(),
-                   Ok(MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB)));
-        assert_eq!("::::::".parse::<MacAddr>(),
-                   Err(ParseMacAddrErr::InvalidComponent));
-        assert_eq!("0::::::".parse::<MacAddr>(),
-                   Err(ParseMacAddrErr::InvalidComponent));
-        assert_eq!("::::0::".parse::<MacAddr>(),
-                   Err(ParseMacAddrErr::InvalidComponent));
-        assert_eq!("12:34:56:78".parse::<MacAddr>(),
-                   Err(ParseMacAddrErr::TooFewComponents));
-        assert_eq!("12:34:56:78:".parse::<MacAddr>(),
-                   Err(ParseMacAddrErr::InvalidComponent));
-        assert_eq!("12:34:56:78:90".parse::<MacAddr>(),
-                   Err(ParseMacAddrErr::TooFewComponents));
-        assert_eq!("12:34:56:78:90:".parse::<MacAddr>(),
-                   Err(ParseMacAddrErr::InvalidComponent));
-        assert_eq!("12:34:56:78:90:00:00".parse::<MacAddr>(),
-                   Err(ParseMacAddrErr::TooManyComponents));
-        assert_eq!("xx:xx:xx:xx:xx:xx".parse::<MacAddr>(),
-                   Err(ParseMacAddrErr::InvalidComponent));
+        assert_eq!("00:00:00:00:00:00".parse(), Ok(MacAddr::zero()));
+        assert_eq!("ff:ff:ff:ff:ff:ff".parse(), Ok(MacAddr::broadcast()));
+        assert_eq!(
+            "12:34:56:78:90:ab".parse(),
+            Ok(MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB))
+        );
+        assert_eq!(
+            "::::::".parse::<MacAddr>(),
+            Err(ParseMacAddrErr::InvalidComponent)
+        );
+        assert_eq!(
+            "0::::::".parse::<MacAddr>(),
+            Err(ParseMacAddrErr::InvalidComponent)
+        );
+        assert_eq!(
+            "::::0::".parse::<MacAddr>(),
+            Err(ParseMacAddrErr::InvalidComponent)
+        );
+        assert_eq!(
+            "12:34:56:78".parse::<MacAddr>(),
+            Err(ParseMacAddrErr::TooFewComponents)
+        );
+        assert_eq!(
+            "12:34:56:78:".parse::<MacAddr>(),
+            Err(ParseMacAddrErr::InvalidComponent)
+        );
+        assert_eq!(
+            "12:34:56:78:90".parse::<MacAddr>(),
+            Err(ParseMacAddrErr::TooFewComponents)
+        );
+        assert_eq!(
+            "12:34:56:78:90:".parse::<MacAddr>(),
+            Err(ParseMacAddrErr::InvalidComponent)
+        );
+        assert_eq!(
+            "12:34:56:78:90:00:00".parse::<MacAddr>(),
+            Err(ParseMacAddrErr::TooManyComponents)
+        );
+        assert_eq!(
+            "xx:xx:xx:xx:xx:xx".parse::<MacAddr>(),
+            Err(ParseMacAddrErr::InvalidComponent)
+        );
     }
 
     #[test]
     fn str_from_mac_addr() {
-        assert_eq!(format!("{}", MacAddr::empty()),
-                   "00:00:00:00:00:00");
-        assert_eq!(format!("{}", MacAddr::broadcast()),
-                   "ff:ff:ff:ff:ff:ff");
-        assert_eq!(format!("{}", MacAddr(0x12, 0x34, 0x56, 0x78, 0x09, 0xAB)),
-                   "12:34:56:78:09:ab");
+        assert_eq!(format!("{}", MacAddr::zero()), "00:00:00:00:00:00");
+        assert_eq!(format!("{}", MacAddr::broadcast()), "ff:ff:ff:ff:ff:ff");
+        assert_eq!(
+            format!("{}", MacAddr(0x12, 0x34, 0x56, 0x78, 0x09, 0xAB)),
+            "12:34:56:78:09:ab"
+        );
     }
 
     #[test]
     fn type_of_addr() {
-        assert!(MacAddr::empty().is_empty());
+        assert!(MacAddr::zero().is_zero());
         assert!(MacAddr::broadcast().is_broadcast());
 
         let mac = MacAddr(0x12, 0x34, 0x56, 0x78, 0x90, 0xAB);
@@ -290,7 +306,7 @@ mod tests {
         extern crate serde_test;
         use self::serde_test::{
             assert_de_tokens, assert_de_tokens_error, assert_tokens, Compact, Configure, Readable,
-            Token
+            Token,
         };
         use super::*;
 
@@ -314,7 +330,10 @@ mod tests {
         #[test]
         fn bytes() {
             let mac = MacAddr::new(0x11, 0x22, 0x33, 0x44, 0x55, 0x66);
-            assert_tokens(&mac.compact(), &[Token::Bytes(&[0x11, 0x22, 0x33, 0x44, 0x55, 0x66])]);
+            assert_tokens(
+                &mac.compact(),
+                &[Token::Bytes(&[0x11, 0x22, 0x33, 0x44, 0x55, 0x66])],
+            );
             assert_de_tokens(
                 &mac.compact(),
                 &[Token::BorrowedBytes(&[0x11, 0x22, 0x33, 0x44, 0x55, 0x66])],
