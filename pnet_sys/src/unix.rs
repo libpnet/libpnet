@@ -24,6 +24,9 @@ pub mod public {
     pub const AF_INET6: libc::c_int = libc::AF_INET6;
     pub const SOCK_RAW: libc::c_int = libc::SOCK_RAW;
 
+    pub const SOL_SOCKET: libc::c_int = libc::SOL_SOCKET;
+    pub const SO_RCVTIMEO: libc::c_int = libc::SO_RCVTIMEO;
+
     pub const IPPROTO_IP: libc::c_int = libc::IPPROTO_IP;
     pub const IP_HDRINCL: libc::c_int = libc::IP_HDRINCL;
 
@@ -39,6 +42,15 @@ pub mod public {
     pub unsafe fn socket(af: libc::c_int, sock: libc::c_int, proto: libc::c_int) -> CSocket {
         libc::socket(af, sock, proto)
     }
+
+    //pub unsafe fn getsockopt(socket: CSocket,
+    //                        level: libc::c_int,
+    //                        name: libc::c_int,
+    //                        value: &mut Buf,
+    //                        option_len: SockLen)
+    //    -> libc::c_int {
+    //    libc::getsockopt(socket, level, name, value, option_len)
+    //}
 
     pub unsafe fn setsockopt(socket: CSocket,
                             level: libc::c_int,

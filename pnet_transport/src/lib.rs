@@ -37,6 +37,7 @@ use std::io::Error;
 use std::mem;
 use std::net::{self, IpAddr};
 use std::sync::Arc;
+use std::time::Duration;
 
 /// Represents a transport layer protocol
 #[derive(Clone, Copy)]
@@ -222,8 +223,9 @@ macro_rules! transport_channel_iterator {
                 tr: tr
             }
         }
+
         impl<'a> $iter<'a> {
-            /// Get the next ($ty, IpAddr) pair for the given channel
+            /// Get the next ($ty, IpAddr) pair for the given channel.
             pub fn next(&mut self) -> io::Result<($ty, IpAddr)> {
                 let mut caddr: pnet_sys::SockAddrStorage = unsafe { mem::zeroed() };
                 let res = pnet_sys::recv_from(self.tr.socket.fd,
@@ -258,7 +260,6 @@ macro_rules! transport_channel_iterator {
                     },
                     Err(e) => Err(e),
                 };
-
                 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
                 fn fixup_packet(buffer: &mut [u8]) {
                     use pnet_packet::ipv4::MutableIpv4Packet;
@@ -284,6 +285,33 @@ macro_rules! transport_channel_iterator {
                 #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]
                 fn fixup_packet(_buffer: &mut [u8]) {}
             }
+
+            /// If `t` is larger than zero, wait at maximum this number of seconds.
+            #[cfg(unix)]
+            pub fn next_with_timeout(&mut self, t: u64) -> io::Result<($ty, IpAddr)> {
+                //let old_duration = pnet_sys::getsockopt(self.tr.socket.df,
+                //                                         pnet_sys::SOL_SOCKET,
+                //                                         pnet_sys::SO_RCVTIMEO,
+                //                                         duration,
+                //                                         mem::size_of::<libc::timespec>() as pnet_sys::SockLen
+                //                        );
+                let duration = pnet_sys::duration_to_timespec(Duration::new(t, 0));
+
+                unsafe {
+                pnet_sys::setsockopt(self.tr.socket.fd,
+                                     pnet_sys::SOL_SOCKET,
+                                     pnet_sys::SO_RCVTIMEO,
+                                     (&duration as *const libc::timespec) as pnet_sys::Buf,
+                                     mem::size_of::<libc::timespec>() as pnet_sys::SockLen
+                    );
+                };
+
+                // FIXME: Remember previous setting and restore it
+                // Fixme: Analyse result and return Option::None for timed-out packets
+                self.next() 
+            }
+
+
         }
     )
 }
