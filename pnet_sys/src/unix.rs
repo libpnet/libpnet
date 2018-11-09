@@ -4,6 +4,7 @@ use std::io;
 pub mod public {
     use libc;
     use std::time::Duration;
+    use std::mem;
 
     pub type CSocket = libc::c_int;
     pub type Buf = *const libc::c_void;
@@ -11,6 +12,7 @@ pub mod public {
     pub type BufLen = libc::size_t;
     pub type CouldFail = libc::ssize_t;
     pub type SockLen = libc::socklen_t;
+    pub type MutSockLen = *mut libc::socklen_t;
     pub type SockAddr = libc::sockaddr;
     pub type SockAddrIn = libc::sockaddr_in;
     pub type SockAddrIn6 = libc::sockaddr_in6;
@@ -43,14 +45,14 @@ pub mod public {
         libc::socket(af, sock, proto)
     }
 
-    //pub unsafe fn getsockopt(socket: CSocket,
-    //                        level: libc::c_int,
-    //                        name: libc::c_int,
-    //                        value: &mut Buf,
-    //                        option_len: SockLen)
-    //    -> libc::c_int {
-    //    libc::getsockopt(socket, level, name, value, option_len)
-    //}
+    pub unsafe fn getsockopt(socket: CSocket,
+                            level: libc::c_int,
+                            name: libc::c_int,
+                            value: MutBuf,
+                            option_len: MutSockLen)
+        -> libc::c_int {
+        libc::getsockopt(socket, level, name, value, option_len)
+    }
 
     pub unsafe fn setsockopt(socket: CSocket,
                             level: libc::c_int,
@@ -59,6 +61,10 @@ pub mod public {
                             option_len: SockLen)
         -> libc::c_int {
         libc::setsockopt(socket, level, name, value, option_len)
+    }
+
+    pub fn timespec_to_duration(ts: libc::timespec) -> Duration {
+        Duration::new(ts.tv_sec as u64, ts.tv_nsec as u32)
     }
 
     pub fn duration_to_timespec(dur: Duration) -> libc::timespec {

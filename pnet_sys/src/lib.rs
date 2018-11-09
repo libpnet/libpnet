@@ -11,6 +11,7 @@ extern crate libc;
 use std::io;
 use std::mem;
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::time::Duration;
 
 
 #[cfg(unix)]
@@ -85,6 +86,37 @@ pub fn recv_from(socket: CSocket,
     }
 }
 
+
+/// Set the timeout for the receiving from the socket
+#[cfg(unix)]
+pub fn set_socket_receive_timeout(socket: CSocket, t: Duration)
+    -> bool {
+    let ts = duration_to_timespec(t);
+    let r = unsafe {
+        setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO,
+                   (&ts as *const libc::timespec) as Buf,
+                   mem::size_of::<libc::timespec>() as SockLen
+        )
+    };
+    true
+}
+
+/// Extracts and returns the timout for reading from the socket
+#[cfg(unix)]
+pub fn get_socket_receive_timeout(socket: CSocket)
+    -> Duration {
+    let ts = libc::timespec { tv_sec: 0, tv_nsec: 0 };
+    let len : MutSockLen = mem::size_of::<libc::timespec>() as MutSockLen;
+    let r = unsafe{
+        getsockopt(socket, SOL_SOCKET, SO_RCVTIMEO,
+                   (&ts as *const libc::timespec) as MutBuf,
+                   len
+        )
+    };
+
+    // FIXME: Evaluate r
+    timespec_to_duration(ts)
+}
 
 
 

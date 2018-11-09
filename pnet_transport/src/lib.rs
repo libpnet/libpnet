@@ -288,30 +288,14 @@ macro_rules! transport_channel_iterator {
 
             /// If `t` is larger than zero, wait at maximum this number of seconds.
             #[cfg(unix)]
-            pub fn next_with_timeout(&mut self, t: u64) -> io::Result<($ty, IpAddr)> {
-                //let old_duration = pnet_sys::getsockopt(self.tr.socket.df,
-                //                                         pnet_sys::SOL_SOCKET,
-                //                                         pnet_sys::SO_RCVTIMEO,
-                //                                         duration,
-                //                                         mem::size_of::<libc::timespec>() as pnet_sys::SockLen
-                //                        );
-                let duration = pnet_sys::duration_to_timespec(Duration::new(t, 0));
-
-                unsafe {
-                pnet_sys::setsockopt(self.tr.socket.fd,
-                                     pnet_sys::SOL_SOCKET,
-                                     pnet_sys::SO_RCVTIMEO,
-                                     (&duration as *const libc::timespec) as pnet_sys::Buf,
-                                     mem::size_of::<libc::timespec>() as pnet_sys::SockLen
-                    );
-                };
-
-                // FIXME: Remember previous setting and restore it
-                // Fixme: Analyse result and return Option::None for timed-out packets
-                self.next() 
+            pub fn next_with_timeout(&mut self, t: Duration) -> io::Result<($ty, IpAddr)> {
+                let socket_fd = self.tr.socket.fd;
+                let old_timeout = pnet_sys::get_socket_receive_timeout(socket_fd);
+                pnet_sys::set_socket_receive_timeout(socket_fd, t);
+                let r = self.next();
+                pnet_sys::set_socket_receive_timeout(socket_fd, old_timeout);
+                r
             }
-
-
         }
     )
 }
