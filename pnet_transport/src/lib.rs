@@ -34,6 +34,7 @@ use self::TransportProtocol::{Ipv4, Ipv6};
 
 use std::io;
 use std::io::Error;
+use std::io::ErrorKind;
 use std::mem;
 use std::net::{self, IpAddr};
 use std::sync::Arc;
@@ -260,6 +261,7 @@ macro_rules! transport_channel_iterator {
                     },
                     Err(e) => Err(e),
                 };
+
                 #[cfg(any(target_os = "freebsd", target_os = "macos"))]
                 fn fixup_packet(buffer: &mut [u8]) {
                     use pnet_packet::ipv4::MutableIpv4Packet;
@@ -286,13 +288,22 @@ macro_rules! transport_channel_iterator {
                 fn fixup_packet(_buffer: &mut [u8]) {}
             }
 
-            /// If `t` is larger than zero, wait at maximum this number of seconds.
+            /// Wait only for a timespan of `t` to receive some data, then return. If no data was
+            /// received, then `Ok(None)` is returned.
             #[cfg(unix)]
-            pub fn next_with_timeout(&mut self, t: Duration) -> io::Result<($ty, IpAddr)> {
+            pub fn next_with_timeout(&mut self, t: Duration) -> io::Result<Option<($ty, IpAddr)>> {
                 let socket_fd = self.tr.socket.fd;
                 let old_timeout = pnet_sys::get_socket_receive_timeout(socket_fd);
                 pnet_sys::set_socket_receive_timeout(socket_fd, t);
-                let r = self.next();
+                let r = match self.next() {
+                    Ok(r) => Ok(Some(r)),
+                    Err(e) => match e.kind() {
+                        ErrorKind::WouldBlock => Ok(None),
+                        _ => {
+                            Err(e)
+                        }
+                    }
+                };
                 pnet_sys::set_socket_receive_timeout(socket_fd, old_timeout);
                 r
             }
