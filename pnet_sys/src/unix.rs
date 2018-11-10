@@ -4,7 +4,6 @@ use std::io;
 pub mod public {
     use libc;
     use std::time::Duration;
-    use std::mem;
 
     pub type CSocket = libc::c_int;
     pub type Buf = *const libc::c_void;

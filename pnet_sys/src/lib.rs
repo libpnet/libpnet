@@ -90,7 +90,7 @@ pub fn recv_from(socket: CSocket,
 /// Set the timeout for the receiving from the socket
 #[cfg(unix)]
 pub fn set_socket_receive_timeout(socket: CSocket, t: Duration)
-    -> bool {
+    -> io::Result<Duration> {
     let ts = duration_to_timespec(t);
     let r = unsafe {
         setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO,
@@ -98,13 +98,20 @@ pub fn set_socket_receive_timeout(socket: CSocket, t: Duration)
                    mem::size_of::<libc::timespec>() as SockLen
         )
     };
-    true
+
+    if r < 0 {
+        Err(io::Error::last_os_error()) 
+    } else if r > 0 {
+        Err(io::Error::new(io::ErrorKind::Other, format!("Unknown return value from getsockopt(): {}", r)))
+    } else {
+        Ok(t)
+    }
 }
 
 /// Extracts and returns the timout for reading from the socket
 #[cfg(unix)]
 pub fn get_socket_receive_timeout(socket: CSocket)
-    -> Duration {
+    -> io::Result<Duration> {
     let ts = libc::timespec { tv_sec: 0, tv_nsec: 0 };
     let len : MutSockLen = mem::size_of::<libc::timespec>() as MutSockLen;
     let r = unsafe{
@@ -113,9 +120,14 @@ pub fn get_socket_receive_timeout(socket: CSocket)
                    len
         )
     };
-
-    // FIXME: Evaluate r
-    timespec_to_duration(ts)
+    
+    if r < 0 {
+        Err(io::Error::last_os_error()) 
+    } else if r > 0 {
+        Err(io::Error::new(io::ErrorKind::Other, format!("Unknown return value from getsockopt(): {}", r)))
+    } else {
+        Ok(timespec_to_duration(ts))
+    }
 }
 
 

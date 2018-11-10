@@ -293,8 +293,17 @@ macro_rules! transport_channel_iterator {
             #[cfg(unix)]
             pub fn next_with_timeout(&mut self, t: Duration) -> io::Result<Option<($ty, IpAddr)>> {
                 let socket_fd = self.tr.socket.fd;
-                let old_timeout = pnet_sys::get_socket_receive_timeout(socket_fd);
-                pnet_sys::set_socket_receive_timeout(socket_fd, t);
+                
+                let old_timeout = match pnet_sys::get_socket_receive_timeout(socket_fd) {
+                    Err(e) => return Err(e),
+                    Ok(t) => t
+                };
+
+                match pnet_sys::set_socket_receive_timeout(socket_fd, t) {
+                    Err(e) => return Err(e),
+                    Ok(_) => {}
+                }
+                    
                 let r = match self.next() {
                     Ok(r) => Ok(Some(r)),
                     Err(e) => match e.kind() {
@@ -304,7 +313,12 @@ macro_rules! transport_channel_iterator {
                         }
                     }
                 };
-                pnet_sys::set_socket_receive_timeout(socket_fd, old_timeout);
+                
+                match pnet_sys::set_socket_receive_timeout(socket_fd, old_timeout) {
+                    Err(e) => eprintln!("Warning: can not reset timeout: {}", e),
+                    _ => {}
+                };
+
                 r
             }
         }
