@@ -295,12 +295,18 @@ macro_rules! transport_channel_iterator {
                 let socket_fd = self.tr.socket.fd;
                 
                 let old_timeout = match pnet_sys::get_socket_receive_timeout(socket_fd) {
-                    Err(e) => return Err(e),
+                    Err(e) => {
+                        eprintln!("Can not get socket timeout before receiving: {}", e);
+                        return Err(e)
+                    }
                     Ok(t) => t
                 };
 
                 match pnet_sys::set_socket_receive_timeout(socket_fd, t) {
-                    Err(e) => return Err(e),
+                    Err(e) => {
+                        eprintln!("Can not set socket timeout for receiving: {}", e);
+                        return Err(e)
+                    }
                     Ok(_) => {}
                 }
                     
@@ -315,7 +321,9 @@ macro_rules! transport_channel_iterator {
                 };
                 
                 match pnet_sys::set_socket_receive_timeout(socket_fd, old_timeout) {
-                    Err(e) => eprintln!("Warning: can not reset timeout: {}", e),
+                    Err(e) => {
+                        eprintln!("Can not reset socket timeout after receiving: {}", e);
+                    },
                     _ => {}
                 };
 

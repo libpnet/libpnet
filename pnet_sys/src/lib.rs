@@ -113,11 +113,11 @@ pub fn set_socket_receive_timeout(socket: CSocket, t: Duration)
 pub fn get_socket_receive_timeout(socket: CSocket)
     -> io::Result<Duration> {
     let ts = libc::timespec { tv_sec: 0, tv_nsec: 0 };
-    let len : MutSockLen = mem::size_of::<libc::timespec>() as MutSockLen;
+    let len : SockLen = 0;
     let r = unsafe{
         getsockopt(socket, SOL_SOCKET, SO_RCVTIMEO,
                    (&ts as *const libc::timespec) as MutBuf,
-                   len
+                   (&len as *const libc::socklen_t) as MutSockLen
         )
     };
     
