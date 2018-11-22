@@ -90,12 +90,12 @@ pub fn recv_from(socket: CSocket,
 /// Set the timeout for the receiving from the socket
 #[cfg(unix)]
 pub fn set_socket_receive_timeout(socket: CSocket, t: Duration)
-    -> io::Result<Duration> {
-    let ts = duration_to_timespec(t);
+    -> io::Result<()> {
+    let ts = duration_to_timeval(t);
     let r = unsafe {
         setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO,
-                   (&ts as *const libc::timespec) as Buf,
-                   mem::size_of::<libc::timespec>() as SockLen
+                   (&ts as *const libc::timeval) as Buf,
+                   mem::size_of::<libc::timeval>() as SockLen
         )
     };
 
@@ -104,7 +104,7 @@ pub fn set_socket_receive_timeout(socket: CSocket, t: Duration)
     } else if r > 0 {
         Err(io::Error::new(io::ErrorKind::Other, format!("Unknown return value from getsockopt(): {}", r)))
     } else {
-        Ok(t)
+        Ok(())
     }
 }
 
@@ -112,21 +112,22 @@ pub fn set_socket_receive_timeout(socket: CSocket, t: Duration)
 #[cfg(unix)]
 pub fn get_socket_receive_timeout(socket: CSocket)
     -> io::Result<Duration> {
-    let ts = libc::timespec { tv_sec: 0, tv_nsec: 0 };
-    let len : SockLen = 0;
+    let ts = libc::timeval { tv_sec: 0, tv_usec: 0 };
+    let len : SockLen = mem::size_of::<libc::timeval>() as SockLen;
     let r = unsafe{
         getsockopt(socket, SOL_SOCKET, SO_RCVTIMEO,
-                   (&ts as *const libc::timespec) as MutBuf,
-                   (&len as *const libc::socklen_t) as MutSockLen
+                   (&ts as *const libc::timeval) as MutBuf,
+                   (&len as *const SockLen) as MutSockLen
         )
     };
+    assert_eq!(len, mem::size_of::<libc::timeval>() as SockLen, "getsockopt did not set size of return value");
     
     if r < 0 {
         Err(io::Error::last_os_error()) 
     } else if r > 0 {
         Err(io::Error::new(io::ErrorKind::Other, format!("Unknown return value from getsockopt(): {}", r)))
     } else {
-        Ok(timespec_to_duration(ts))
+        Ok(timeval_to_duration(ts))
     }
 }
 
@@ -225,3 +226,91 @@ pub fn sockaddr_to_addr(storage: &SockAddrStorage, len: usize) -> io::Result<Soc
         _ => Err(io::Error::new(io::ErrorKind::InvalidData, "expected IPv4 or IPv6 socket")),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::mem;
+    use std::time::{Duration,Instant};
+    use set_socket_receive_timeout;
+    use get_socket_receive_timeout;
+    use recv_from;
+    use CSocket;
+    use SockAddrStorage;
+
+    fn test_timeout(socket: CSocket) -> Duration {
+        let mut buffer = [0u8; 1024];
+        let mut caddr :SockAddrStorage = unsafe { mem::zeroed() };
+
+        let t0 = Instant::now();
+        let res = recv_from(socket, &mut buffer, &mut caddr);
+        assert!(!res.is_ok());
+        Instant::now() - t0
+    }
+
+    #[test]
+    fn test_set_socket_receive_timeout_1s() {
+        let socket = unsafe { libc::socket(libc::AF_INET, libc::SOCK_RAW, 1 as libc::c_int) };
+        let d = Duration::new(1,0);
+        let res = set_socket_receive_timeout(socket, d.clone());
+        match res {
+            Err(e) => panic!("set_socket_receive_timeout reslted in error: {}", e),
+            _ => {}
+        };
+
+        let t = test_timeout(socket);
+        assert!(t >= Duration::new(1,0));
+        assert!(t < Duration::from_millis(1100));
+    }
+
+    #[test]
+    fn test_set_socket_receive_timeout_500ms() {
+        let socket = unsafe { libc::socket(libc::AF_INET, libc::SOCK_RAW, 1 as libc::c_int) };
+        let d = Duration::from_millis(500);
+        let res = set_socket_receive_timeout(socket, d);
+        match res {
+            Err(e) => panic!("set_socket_receive_timeout reslted in error: {}", e),
+            _ => {}
+        };
+
+        let t = test_timeout(socket);
+        assert!(t >= Duration::from_millis(500));
+        assert!(t < Duration::from_millis(600));
+    }
+
+    #[test]
+    fn test_set_socket_receive_timeout_1500ms() {
+        let socket = unsafe { libc::socket(libc::AF_INET, libc::SOCK_RAW, 1 as libc::c_int) };
+        let d = Duration::from_millis(1500);
+        let res = set_socket_receive_timeout(socket, d);
+        match res {
+            Err(e) => panic!("set_socket_receive_timeout reslted in error: {}", e),
+            _ => {}
+        };
+
+        let t = test_timeout(socket);
+        assert!(t >= Duration::from_millis(1500));
+        assert!(t < Duration::from_millis(1600));
+    }
+
+    #[test]
+    fn test_get_socket_receive_timeout() {
+        let socket = unsafe { libc::socket(libc::AF_INET, libc::SOCK_RAW, 1 as libc::c_int) };
+        let s1 = Duration::new(1, 0);
+        set_socket_receive_timeout(socket, s1).ok();
+        let g1 = get_socket_receive_timeout(socket);
+        match g1 {
+            Err(e) => panic!("get_socket_receive_timeout resulted in error: {}", e),
+            Ok(t) => assert_eq!(s1, t, "Expected to receive 1s timeout")
+        }
+
+        let s2 = Duration::from_millis(500);
+        set_socket_receive_timeout(socket, s2).ok();
+        let g2 = get_socket_receive_timeout(socket);
+        match g2 {
+            Err(e) => panic!("get_socket_receive_timeout resulted in error: {}", e),
+            Ok(t) => assert_eq!(s2, t, "Expected to receive 500ms timeout")
+        }
+    }
+}
+
+
