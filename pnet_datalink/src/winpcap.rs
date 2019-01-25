@@ -276,6 +276,10 @@ pub fn interfaces() -> Vec<NetworkInterface> {
     }
 
     let vec_size = adapters_size / mem::size_of::<winpcap::IP_ADAPTER_INFO>() as u32;
+    
+    if adapters_size % mem::size_of::<winpcap::IP_ADAPTER_INFO>() as u32 != 0 {
+        vec_size += 1;
+    }
 
     let mut adapters = Vec::with_capacity(vec_size as usize);
 
