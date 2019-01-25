@@ -275,12 +275,10 @@ pub fn interfaces() -> Vec<NetworkInterface> {
         winpcap::GetAdaptersInfo(&mut tmp, &mut adapters_size);
     }
 
-    let vec_size = adapters_size / mem::size_of::<winpcap::IP_ADAPTER_INFO>() as u32;
-    
+    let mut vec_size = adapters_size / mem::size_of::<winpcap::IP_ADAPTER_INFO>() as u32;
     if adapters_size % mem::size_of::<winpcap::IP_ADAPTER_INFO>() as u32 != 0 {
         vec_size += 1;
     }
-
     let mut adapters = Vec::with_capacity(vec_size as usize);
 
     // FIXME [windows] Check return code
