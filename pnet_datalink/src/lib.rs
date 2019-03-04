@@ -13,11 +13,10 @@ extern crate libc;
 extern crate pnet_base;
 extern crate pnet_sys;
 
+use ipnetwork::IpNetwork;
 use std::io;
 use std::option::Option;
 use std::time::Duration;
-
-use ipnetwork::IpNetwork;
 
 pub use pnet_base::{MacAddr, ParseMacAddrErr};
 
@@ -91,7 +90,7 @@ pub enum ChannelType {
 /// ```
 pub enum Channel {
     /// A datalink channel which sends and receives Ethernet packets
-    Ethernet(Box<DataLinkSender>, Box<DataLinkReceiver>),
+    Ethernet(Box<dyn DataLinkSender>, Box<dyn DataLinkReceiver>),
 
     /// This variant should never be used
     ///
@@ -193,7 +192,7 @@ pub trait DataLinkSender: Send {
         &mut self,
         num_packets: usize,
         packet_size: usize,
-        func: &mut FnMut(&mut [u8]),
+        func: &mut dyn FnMut(&mut [u8]),
     ) -> Option<io::Result<()>>;
 
     /// Send a packet
@@ -233,7 +232,7 @@ impl NetworkInterface {
     pub fn mac_address(&self) -> MacAddr {
         self.mac.unwrap()
     }
-    
+
     pub fn is_up(&self) -> bool {
         self.flags & (pnet_sys::IFF_UP as u32) != 0
     }
@@ -253,7 +252,7 @@ impl NetworkInterface {
 }
 
 impl ::std::fmt::Display for NetworkInterface {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         const FLAGS: [&'static str; 5] =
             ["UP", "BROADCAST", "LOOPBACK", "POINTOPOINT", "MULTICAST"];
         let flags = if self.flags > 0 {
@@ -268,7 +267,7 @@ impl ::std::fmt::Display for NetworkInterface {
                 "{:X}<{}>",
                 self.flags,
                 rets.iter()
-                    .zip(FLAGS.iter()) 
+                    .zip(FLAGS.iter())
                     .filter(|&(ret, _)| ret == &true)
                     .map(|(_, name)| name.to_string())
                     .collect::<Vec<String>>()

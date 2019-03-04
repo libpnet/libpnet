@@ -10,7 +10,7 @@
 //! by in memory FIFO queues. Useful for writing tests.
 
 
-use {DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
+use super::{DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
 
 use std::io;
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -105,7 +105,7 @@ impl DataLinkSender for MockDataLinkSender {
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(&mut [u8]))
+                      func: &mut dyn FnMut(&mut [u8]))
         -> Option<io::Result<()>> {
         for _ in 0..num_packets {
             let mut buffer = vec![0; packet_size];

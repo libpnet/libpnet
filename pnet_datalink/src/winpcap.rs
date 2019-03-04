@@ -8,11 +8,10 @@
 
 //! Support for sending and receiving data link layer packets using the WinPcap library
 
-extern crate libc;
 extern crate winapi;
 
-use bindings::{bpf, winpcap};
-use {DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
+use super::bindings::{bpf, winpcap};
+use super::{DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
 
@@ -24,6 +23,7 @@ use std::mem;
 use std::slice;
 use std::str::from_utf8_unchecked;
 use std::sync::Arc;
+use self::winapi::ctypes;
 
 struct WinPcapAdapter {
     adapter: winpcap::LPADAPTER,
@@ -90,7 +90,7 @@ pub fn channel(network_interface: &NetworkInterface,
 
     let adapter = unsafe {
         let net_if_str = CString::new(network_interface.name.as_bytes()).unwrap();
-        winpcap::PacketOpenAdapter(net_if_str.as_ptr() as *mut libc::c_char)
+        winpcap::PacketOpenAdapter(net_if_str.as_ptr() as *mut ctypes::c_char)
     };
     if adapter.is_null() {
         return Err(io::Error::last_os_error());
@@ -102,7 +102,7 @@ pub fn channel(network_interface: &NetworkInterface,
     }
 
     // Set kernel buffer size
-    let ret = unsafe { winpcap::PacketSetBuff(adapter, config.read_buffer_size as libc::c_int) };
+    let ret = unsafe { winpcap::PacketSetBuff(adapter, config.read_buffer_size as ctypes::c_int) };
     if ret == 0 {
         return Err(io::Error::last_os_error());
     }
@@ -169,7 +169,7 @@ impl DataLinkSender for DataLinkSenderImpl {
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(&mut [u8]))
+                      func: &mut dyn FnMut(&mut [u8]))
         -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len >= unsafe { (*self.packet.packet).Length } as usize {
@@ -253,7 +253,7 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
                 }
             }
         }
-        let (start, len) = self.packets.pop_front().expect("Panic with pnet_datalink::channel::next(), Signed MLK");
+        let (start, len) = self.packets.pop_front().expect("Expected packets in self.packets.pop_front(),  within pnet_datalink::channel::next()");
         let slice = unsafe {
             let data = (*self.packet.packet).Buffer as usize + start;
             slice::from_raw_parts(data as *const u8, len)
@@ -264,7 +264,7 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
 
 /// Get a list of available network interfaces for the current machine.
 pub fn interfaces() -> Vec<NetworkInterface> {
-    use bindings::winpcap;
+    // use super::bindings::winpcap;
 
     let mut adapters_size = 0u32;
 

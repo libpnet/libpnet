@@ -8,7 +8,7 @@
 
 //! Interface listing implementation for all non-Windows platforms
 
-use {NetworkInterface, MacAddr};
+use super::{NetworkInterface, MacAddr};
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
 use pnet_sys;

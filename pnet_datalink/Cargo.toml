@@ -13,7 +13,7 @@ categories = ["network-programming"]
 netmap = []
 
 [dependencies]
-libc = "0.2.42"
+libc = "0.2"
 ipnetwork = "0.14.0"
 pnet_base = { path = "../pnet_base", version = "0.22.0" }
 pnet_sys = { path = "../pnet_sys", version = "0.22.0" }
@@ -22,4 +22,4 @@ pcap = { version = "0.7", optional = true }
 netmap_sys = { version = ">=0.0", optional = true, features = ["netmap_with_libs"] }
 
 [target.'cfg(windows)'.dependencies]
-winapi = "0.2"
+winapi = { git = "https://github.com/mattlknight/winapi-rs", branch = "iphlpapi", features = ["guiddef", "in6addr", "inaddr", "iptypes", "minwinbase", "minwindef", "winerror", "winnt", "winsock2", "ws2def", "ws2ipdef"] }
