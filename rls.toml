@@ -1,7 +1,0 @@
-# rls.toml
-# features = ["serde"]
-all_features = true
-build_bin = false
-build_lib = true
-clippy_preference = "opt-in"
-target = "x86_64-pc-windows-msvc"
