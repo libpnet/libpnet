@@ -13,10 +13,10 @@ use std::ops::{Deref, DerefMut, Index, IndexMut, Range, RangeFrom, RangeFull, Ra
 
 /// Represents a generic network packet
 pub trait Packet {
-    /// Retreive the underlying buffer for the packet
+    /// Retrieve the underlying buffer for the packet
     fn packet(&self) -> &[u8];
 
-    /// Retreive the payload for the packet
+    /// Retrieve the payload for the packet
     fn payload(&self) -> &[u8];
 }
 
