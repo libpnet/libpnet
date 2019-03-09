@@ -12,7 +12,7 @@ extern crate libc;
 
 
 use bindings::bpf;
-use {DataLinkReceiver, DataLinkSender, NetworkInterface};
+use {DataLinkReceiver, DataLinkSender, NetworkInterface, MacAddr};
 
 use pnet_sys;
 
