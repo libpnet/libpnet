@@ -21,9 +21,9 @@ pub mod public {
     pub type InAddr = libc::in_addr;
     pub type In6Addr = libc::in6_addr;
 
-    #[cfg(not(targetos="macos"))]
+    #[cfg(not(any(target_os = "macos")))]
     pub type TvUsecType = libc::c_long;
-    #[cfg(targetos="macos")]
+    #[cfg(any(target_os = "macos"))]
     pub type TvUsecType = libc::__darwin_suseconds_t;
 
     pub const AF_INET: libc::c_int = libc::AF_INET;
