@@ -21,6 +21,11 @@ pub mod public {
     pub type InAddr = libc::in_addr;
     pub type In6Addr = libc::in6_addr;
 
+    #[cfg(not(targetos="macos"))]
+    pub type TvUsecType = libc::c_long;
+    #[cfg(targetos="macos")]
+    pub type TvUsecType = libc::__darwin_suseconds_t;
+
     pub const AF_INET: libc::c_int = libc::AF_INET;
     pub const AF_INET6: libc::c_int = libc::AF_INET6;
     pub const SOCK_RAW: libc::c_int = libc::SOCK_RAW;
@@ -64,25 +69,29 @@ pub mod public {
         libc::setsockopt(socket, level, name, value, option_len)
     }
 
+    /// Convert a platform specific `timeval` into a Duration
     pub fn timeval_to_duration(tv: libc::timeval) -> Duration {
         Duration::new(tv.tv_sec as u64, (tv.tv_usec as u32) * 1000)
     }
 
+    /// Convert a Duration into a platform specific `timeval`
     pub fn duration_to_timeval(dur: Duration) -> libc::timeval {
         libc::timeval {
             tv_sec: dur.as_secs() as libc::time_t,
-            tv_usec: dur.subsec_micros() as libc::c_long,
+            tv_usec: dur.subsec_micros() as TvUsecType
         }
     }
 
+    /// Convert a platform specific `timespec` into a Duration
     pub fn timespec_to_duration(ts: libc::timespec) -> Duration {
         Duration::new(ts.tv_sec as u64, ts.tv_nsec as u32)
     }
 
+    /// Convert a Duration into a platform specific `timespec`
     pub fn duration_to_timespec(dur: Duration) -> libc::timespec {
         libc::timespec {
             tv_sec: dur.as_secs() as libc::time_t,
-            tv_nsec: dur.subsec_nanos() as libc::c_long,
+            tv_nsec: dur.subsec_nanos() as TvUsecType
         }
     }
 
