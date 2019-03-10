@@ -60,15 +60,22 @@ pub enum TransportChannelType {
 
 /// Structure used for sending at the transport layer. Should be created with transport_channel()
 pub struct TransportSender {
-    socket: Arc<pnet_sys::FileDesc>,
+    pub socket: Arc<pnet_sys::FileDesc>,
     _channel_type: TransportChannelType,
 }
 
 /// Structure used for receiving at the transport layer. Should be created with transport_channel()
 pub struct TransportReceiver {
-    socket: Arc<pnet_sys::FileDesc>,
-    buffer: Vec<u8>,
-    channel_type: TransportChannelType,
+    pub socket: Arc<pnet_sys::FileDesc>,
+    pub buffer: Vec<u8>,
+    pub channel_type: TransportChannelType,
+}
+
+/// Structure used for holding all configurable options for describing possible options
+/// for transport channels.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct Config {
+        time_to_live: u8,
 }
 
 /// Create a new (TransportSender, TransportReceiver) pair
@@ -149,6 +156,46 @@ pub fn transport_channel(buffer_size: usize,
     Ok((sender, receiver))
 }
 
+/// Create a new (TransportSender, TransportReceiver) pair using the additional
+/// options specified.
+///
+/// For a more exhaustive descriptive, see above.
+pub fn transport_channel_with(buffer_size: usize,
+                              channel_type: TransportChannelType,
+                              configuration: Config)
+    -> io::Result<(TransportSender, TransportReceiver)> {
+
+    let (sender, receiver) = transport_channel(buffer_size, channel_type)?;
+
+    set_socket_ttl(sender.socket.clone(), configuration.time_to_live)?;
+    Ok((sender, receiver))
+}
+
+/// Sets the time-to-live for all IP packets sent on the specified socket.
+fn set_socket_ttl(socket: Arc<pnet_sys::FileDesc>, ttl: u8) -> io::Result<()> {
+    let ttl = ttl as i32;
+    let res = unsafe {
+        pnet_sys::setsockopt(
+            socket.fd,
+            pnet_sys::IPPROTO_IP,
+            pnet_sys::IP_TTL,
+            (&ttl as *const libc::c_int) as pnet_sys::Buf,
+            mem::size_of::<libc::c_int>() as pnet_sys::SockLen
+        )
+    };
+
+    match res {
+        -1 => {
+            let err = Error::last_os_error();
+            unsafe {
+                pnet_sys::close(socket.fd);
+            }
+            Err(err)
+        },
+        _ => Ok(()),
+    }
+}
+
 impl TransportSender {
     fn send<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
         let mut caddr = unsafe { mem::zeroed() };
@@ -166,6 +213,11 @@ impl TransportSender {
     #[inline]
     pub fn send_to<T: Packet>(&mut self, packet: T, destination: IpAddr) -> io::Result<usize> {
         self.send_to_impl(packet, destination)
+    }
+
+    /// Sets the time-to-live on the socket, which then applies for all packets sent.
+    pub fn set_ttl(&mut self, time_to_live: u8) -> io::Result<()> {
+        set_socket_ttl(self.socket.clone(), time_to_live)
     }
 
     #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]

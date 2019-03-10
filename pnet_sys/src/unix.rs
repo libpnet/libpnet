@@ -31,9 +31,10 @@ pub mod public {
 
     pub const IPPROTO_IP: libc::c_int = libc::IPPROTO_IP;
     pub const IP_HDRINCL: libc::c_int = libc::IP_HDRINCL;
+    pub const IP_TTL: libc::c_int = libc::IP_TTL;
 
     pub use libc::{IFF_UP, IFF_BROADCAST, IFF_LOOPBACK, IFF_POINTOPOINT, IFF_MULTICAST};
-    
+
     pub const INVALID_SOCKET: CSocket = -1;
 
 
