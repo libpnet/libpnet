@@ -15,7 +15,7 @@ pub mod public {
     pub type BufLen = libc::c_int;
     pub type CouldFail = libc::c_int;
     pub type SockLen = winapi::socklen_t;
-    pub type SockLen = *mut winapi::socklen_t;
+    pub type MutSockLen = *mut winapi::socklen_t;
     pub type SockAddr = winapi::SOCKADDR;
     pub type SockAddrIn = winapi::SOCKADDR_IN;
     pub type SockAddrIn6 = winapi::sockaddr_in6;
