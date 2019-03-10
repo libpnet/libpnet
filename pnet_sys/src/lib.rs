@@ -11,6 +11,7 @@ extern crate libc;
 use std::io;
 use std::mem;
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::time::Duration;
 
 #[cfg(unix)]
 #[path = "unix.rs"]
