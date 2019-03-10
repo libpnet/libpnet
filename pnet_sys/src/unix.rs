@@ -91,7 +91,7 @@ pub mod public {
     pub fn duration_to_timespec(dur: Duration) -> libc::timespec {
         libc::timespec {
             tv_sec: dur.as_secs() as libc::time_t,
-            tv_nsec: dur.subsec_nanos() as TvUsecType
+            tv_nsec: (dur.subsec_nanos() as TvUsecType).into()
         }
     }
 
