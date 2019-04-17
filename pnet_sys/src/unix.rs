@@ -11,6 +11,7 @@ pub mod public {
     pub type BufLen = libc::size_t;
     pub type CouldFail = libc::ssize_t;
     pub type SockLen = libc::socklen_t;
+    pub type MutSockLen = *mut libc::socklen_t;
     pub type SockAddr = libc::sockaddr;
     pub type SockAddrIn = libc::sockaddr_in;
     pub type SockAddrIn6 = libc::sockaddr_in6;
@@ -20,9 +21,18 @@ pub mod public {
     pub type InAddr = libc::in_addr;
     pub type In6Addr = libc::in6_addr;
 
+    #[cfg(not(any(target_os = "macos", target_os = "ios")))]
+    pub type TvUsecType = libc::c_long;
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    pub type TvUsecType = libc::c_int;
+
     pub const AF_INET: libc::c_int = libc::AF_INET;
     pub const AF_INET6: libc::c_int = libc::AF_INET6;
     pub const SOCK_RAW: libc::c_int = libc::SOCK_RAW;
+
+    pub const SOL_SOCKET: libc::c_int = libc::SOL_SOCKET;
+    pub const SO_RCVTIMEO: libc::c_int = libc::SO_RCVTIMEO;
+    pub const SO_SNDTIMEO: libc::c_int = libc::SO_SNDTIMEO;
 
     pub const IPPROTO_IP: libc::c_int = libc::IPPROTO_IP;
     pub const IP_HDRINCL: libc::c_int = libc::IP_HDRINCL;
@@ -41,6 +51,15 @@ pub mod public {
         libc::socket(af, sock, proto)
     }
 
+    pub unsafe fn getsockopt(socket: CSocket,
+                            level: libc::c_int,
+                            name: libc::c_int,
+                            value: MutBuf,
+                            option_len: MutSockLen)
+        -> libc::c_int {
+        libc::getsockopt(socket, level, name, value, option_len)
+    }
+
     pub unsafe fn setsockopt(socket: CSocket,
                             level: libc::c_int,
                             name: libc::c_int,
@@ -50,10 +69,29 @@ pub mod public {
         libc::setsockopt(socket, level, name, value, option_len)
     }
 
+    /// Convert a platform specific `timeval` into a Duration
+    pub fn timeval_to_duration(tv: libc::timeval) -> Duration {
+        Duration::new(tv.tv_sec as u64, (tv.tv_usec as u32) * 1000)
+    }
+
+    /// Convert a Duration into a platform specific `timeval`
+    pub fn duration_to_timeval(dur: Duration) -> libc::timeval {
+        libc::timeval {
+            tv_sec: dur.as_secs() as libc::time_t,
+            tv_usec: dur.subsec_micros() as TvUsecType
+        }
+    }
+
+    /// Convert a platform specific `timespec` into a Duration
+    pub fn timespec_to_duration(ts: libc::timespec) -> Duration {
+        Duration::new(ts.tv_sec as u64, ts.tv_nsec as u32)
+    }
+
+    /// Convert a Duration into a platform specific `timespec`
     pub fn duration_to_timespec(dur: Duration) -> libc::timespec {
         libc::timespec {
             tv_sec: dur.as_secs() as libc::time_t,
-            tv_nsec: dur.subsec_nanos() as libc::c_long,
+            tv_nsec: (dur.subsec_nanos() as TvUsecType).into()
         }
     }
 
@@ -107,4 +145,29 @@ pub fn retry<F>(f: &mut F) -> libc::ssize_t
 
 fn errno() -> i32 {
     io::Error::last_os_error().raw_os_error().unwrap()
+}
+
+
+
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+    use duration_to_timespec;
+    use timespec_to_duration;
+
+    #[test]
+    fn test_duration_to_timespec(){
+        let d1 = Duration::new(1, 0);
+        let d2 = Duration::from_millis(500);
+
+        let t1 = duration_to_timespec(d1);
+        let t2 = duration_to_timespec(d2);
+
+        let r1 = timespec_to_duration(t1);
+        let r2 = timespec_to_duration(t2);
+
+        assert_eq!(d1, r1);
+        assert_eq!(d2, r2);
+    }
 }

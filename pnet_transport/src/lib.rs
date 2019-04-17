@@ -34,9 +34,11 @@ use self::TransportProtocol::{Ipv4, Ipv6};
 
 use std::io;
 use std::io::Error;
+use std::io::ErrorKind;
 use std::mem;
 use std::net::{self, IpAddr};
 use std::sync::Arc;
+use std::time::Duration;
 
 /// Represents a transport layer protocol
 #[derive(Clone, Copy)]
@@ -274,8 +276,9 @@ macro_rules! transport_channel_iterator {
                 tr: tr
             }
         }
+
         impl<'a> $iter<'a> {
-            /// Get the next ($ty, IpAddr) pair for the given channel
+            /// Get the next ($ty, IpAddr) pair for the given channel.
             pub fn next(&mut self) -> io::Result<($ty, IpAddr)> {
                 let mut caddr: pnet_sys::SockAddrStorage = unsafe { mem::zeroed() };
                 let res = pnet_sys::recv_from(self.tr.socket.fd,
@@ -335,6 +338,48 @@ macro_rules! transport_channel_iterator {
 
                 #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]
                 fn fixup_packet(_buffer: &mut [u8]) {}
+            }
+
+            /// Wait only for a timespan of `t` to receive some data, then return. If no data was
+            /// received, then `Ok(None)` is returned.
+            #[cfg(unix)]
+            pub fn next_with_timeout(&mut self, t: Duration) -> io::Result<Option<($ty, IpAddr)>> {
+                let socket_fd = self.tr.socket.fd;
+                
+                let old_timeout = match pnet_sys::get_socket_receive_timeout(socket_fd) {
+                    Err(e) => {
+                        eprintln!("Can not get socket timeout before receiving: {}", e);
+                        return Err(e)
+                    }
+                    Ok(t) => t
+                };
+
+                match pnet_sys::set_socket_receive_timeout(socket_fd, t) {
+                    Err(e) => {
+                        eprintln!("Can not set socket timeout for receiving: {}", e);
+                        return Err(e)
+                    }
+                    Ok(_) => {}
+                }
+                    
+                let r = match self.next() {
+                    Ok(r) => Ok(Some(r)),
+                    Err(e) => match e.kind() {
+                        ErrorKind::WouldBlock => Ok(None),
+                        _ => {
+                            Err(e)
+                        }
+                    }
+                };
+                
+                match pnet_sys::set_socket_receive_timeout(socket_fd, old_timeout) {
+                    Err(e) => {
+                        eprintln!("Can not reset socket timeout after receiving: {}", e);
+                    },
+                    _ => {}
+                };
+
+                r
             }
         }
     )

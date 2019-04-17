@@ -15,6 +15,7 @@ pub mod public {
     pub type BufLen = libc::c_int;
     pub type CouldFail = libc::c_int;
     pub type SockLen = winapi::socklen_t;
+    pub type MutSockLen = *mut winapi::socklen_t;
     pub type SockAddr = winapi::SOCKADDR;
     pub type SockAddrIn = winapi::SOCKADDR_IN;
     pub type SockAddrIn6 = winapi::sockaddr_in6;
@@ -58,6 +59,16 @@ pub mod public {
         -> libc::c_int {
         ws2_32::setsockopt(socket, level, name, value, option_len)
     }
+
+    pub unsafe fn getsockopt(socket: CSocket,
+                            level: libc::c_int,
+                            name: libc::c_int,
+                            value: MutBuf,
+                            option_len: MutSockLen)
+        -> libc::c_int {
+        ws2_32::getsockopt(socket, level, name, value, option_len)
+    }
+
 }
 
 use self::public::*;
