@@ -24,12 +24,13 @@ extern crate pnet_packet;
 
 use pnet_packet::Packet;
 use pnet_packet::ip::IpNextHeaderProtocol;
+use pnet_packet::ipv6::Ipv6Packet;
 use pnet_packet::ipv4::Ipv4Packet;
 use pnet_packet::udp::UdpPacket;
 use pnet_packet::icmp::IcmpPacket;
 use pnet_packet::icmpv6::Icmpv6Packet;
 use pnet_packet::tcp::TcpPacket;
-use self::TransportChannelType::{Layer3, Layer4};
+use self::TransportChannelType::{Layer3, Layer4, Ipv6Layer3};
 use self::TransportProtocol::{Ipv4, Ipv6};
 
 use std::io;
@@ -56,6 +57,8 @@ pub enum TransportChannelType {
     Layer4(TransportProtocol),
     /// The application will send and receive IPv4 packets, with the specified transport protocol
     Layer3(IpNextHeaderProtocol),
+    /// The application will send and receive IPv6 packets, with the specified transport protocol
+    Ipv6Layer3(IpNextHeaderProtocol),
 }
 
 /// Structure used for sending at the transport layer. Should be created with transport_channel()
@@ -107,7 +110,8 @@ pub fn transport_channel(buffer_size: usize,
             Layer3(IpNextHeaderProtocol(proto)) => {
                 pnet_sys::socket(pnet_sys::AF_INET, pnet_sys::SOCK_RAW, proto as libc::c_int)
             }
-            Layer4(Ipv6(IpNextHeaderProtocol(proto))) => {
+            Layer4(Ipv6(IpNextHeaderProtocol(proto))) |
+            Ipv6Layer3(IpNextHeaderProtocol(proto)) => {
                 pnet_sys::socket(pnet_sys::AF_INET6, pnet_sys::SOCK_RAW, proto as libc::c_int)
             }
         }
@@ -116,30 +120,31 @@ pub fn transport_channel(buffer_size: usize,
         return Err(Error::last_os_error());
     }
 
-    if match channel_type {
-        Layer3(_) | Layer4(Ipv4(_)) => true,
-        _ => false,
-    } {
-        let hincl: libc::c_int = match channel_type {
-            Layer4(..) => 0,
-            _ => 1,
-        };
-        let res = unsafe {
-            pnet_sys::setsockopt(
-                socket,
-                pnet_sys::IPPROTO_IP,
-                pnet_sys::IP_HDRINCL,
-                (&hincl as *const libc::c_int) as pnet_sys::Buf,
-                mem::size_of::<libc::c_int>() as pnet_sys::SockLen
-            )
-        };
-        if res == -1 {
-            let err = Error::last_os_error();
-            unsafe {
-                pnet_sys::close(socket);
-            }
-            return Err(err);
+    let (level, optname) = match channel_type {
+        Layer4(Ipv4(_)) | Layer3(_) => (pnet_sys::SOL_IP, pnet_sys::IP_HDRINCL),
+        Layer4(Ipv6(_)) | Ipv6Layer3(_) => (pnet_sys::SOL_IPV6, pnet_sys::IPV6_HDRINCL),
+    };
+
+    let hincl: libc::c_int = match channel_type {
+        Layer4(..) => 0,
+        _ => 1,
+    };
+
+    let res = unsafe {
+        pnet_sys::setsockopt(
+            socket,
+            level,
+            optname,
+            (&hincl as *const libc::c_int) as pnet_sys::Buf,
+            mem::size_of::<libc::c_int>() as pnet_sys::SockLen
+        )
+    };
+    if res == -1 {
+        let err = Error::last_os_error();
+        unsafe {
+            pnet_sys::close(socket);
         }
+        return Err(err);
     }
 
     let sock = Arc::new(pnet_sys::FileDesc { fd: socket });
@@ -174,6 +179,7 @@ pub fn transport_channel_with(buffer_size: usize,
 /// Sets the time-to-live for all IP packets sent on the specified socket.
 fn set_socket_ttl(socket: Arc<pnet_sys::FileDesc>, ttl: u8) -> io::Result<()> {
     let ttl = ttl as i32;
+    // TODO SOL_IPV6 and IPV6_HOPLIMIT
     let res = unsafe {
         pnet_sys::setsockopt(
             socket.fd,

@@ -31,6 +31,7 @@ pub mod public {
 
     pub const IPPROTO_IP: libc::c_int = winapi::IPPROTO_IP;
     pub const IP_HDRINCL: libc::c_int = winapi::IP_HDRINCL;
+    pub const IPV6_HDRINCL: libc::c_int = winapi::IPV6_HDRINCL;
     pub const IP_TTL: libc::c_int = winapi::IP_TTL;
 
     pub const IFF_UP: libc::c_int = 0x00000001;
