@@ -6,6 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! TCP packet abstraction
+//! An TCP packet abstraction.
 
 include!(concat!(env!("OUT_DIR"), "/tcp.rs"));

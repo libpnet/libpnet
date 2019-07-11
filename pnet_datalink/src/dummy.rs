@@ -9,7 +9,6 @@
 //! Support for sending and receiving data link layer packets on a fake network managed
 //! by in memory FIFO queues. Useful for writing tests.
 
-
 use {DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
 
 use std::io;
@@ -50,13 +49,13 @@ impl Config {
     }
 
     /// Get the `Sender` handle that can inject packets in the fake network.
-    /// Only usable with `Config`s generated from `default()`
+    /// Only usable with `Config`s generated from `default()`.
     pub fn inject_handle(&mut self) -> Option<Sender<io::Result<Box<[u8]>>>> {
         self.inject_handle.take()
     }
 
     /// Get the `Receiver` handle where packets sent to the fake network can be read.
-    /// Only usable with `Config`s generated from `default()`
+    /// Only usable with `Config`s generated from `default()`.
     pub fn read_handle(&mut self) -> Option<Receiver<Box<[u8]>>> {
         self.read_handle.take()
     }
@@ -71,7 +70,7 @@ impl<'a> From<&'a super::Config> for Config {
 
 impl Default for Config {
     /// Creates a default config with one input and one output channel. The handles used to inject
-    /// to and read form the network can be fetched with `inject_handle()` and `read_handle()`
+    /// to and read form the network can be fetched with `inject_handle()` and `read_handle()`.
     fn default() -> Config {
         let (in_tx, in_rx) = mpsc::channel();
         let (out_tx, out_rx) = mpsc::channel();

@@ -86,7 +86,7 @@ pub fn recv_from(socket: CSocket,
 }
 
 
-/// Set the timeout for the receiving from the socket
+/// Set a timeout for receiving from the socket.
 #[cfg(unix)]
 pub fn set_socket_receive_timeout(socket: CSocket, t: Duration)
     -> io::Result<()> {
@@ -107,7 +107,7 @@ pub fn set_socket_receive_timeout(socket: CSocket, t: Duration)
     }
 }
 
-/// Extracts and returns the timout for reading from the socket
+/// Extracts and returns a timout for reading from the socket.
 #[cfg(unix)]
 pub fn get_socket_receive_timeout(socket: CSocket)
     -> io::Result<Duration> {

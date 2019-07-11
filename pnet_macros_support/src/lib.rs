@@ -6,9 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Support library for libpnet_macros
+//! Support library for `libpnet_macros`.
 //!
-//! This exists to remove the need for the plugin_as_library feature, and allow for static linking
+//! This exists to remove the need for the plugin_as_library feature, and allow for static linking.
 
 #![deny(missing_docs)]
 

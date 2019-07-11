@@ -12,12 +12,12 @@ use ethernet::EtherType;
 use std::net::Ipv4Addr;
 use pnet_base::MacAddr;
 
-/// Represents ARP operation
+/// Represents an ARP operation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ArpOperation(pub u16);
 
 impl ArpOperation {
-    /// Create a new ArpOperation
+    /// Create a new `ArpOperation`.
     pub fn new(value: u16) -> Self {
         ArpOperation(value)
     }
@@ -30,7 +30,7 @@ impl PrimitiveValues for ArpOperation {
     }
 }
 
-/// ARP protocol operations
+/// The ARP protocol operations.
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod ArpOperations {
@@ -43,12 +43,12 @@ pub mod ArpOperations {
     pub const Reply: ArpOperation = ArpOperation(2);
 }
 
-/// Represents ARP hardware types
+/// Represents the ARP hardware types.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ArpHardwareType(pub u16);
 
 impl ArpHardwareType {
-    /// Create a new ArpHardwareType
+    /// Create a new `ArpHardwareType`.
     pub fn new(value: u16) -> Self {
         ArpHardwareType(value)
     }
@@ -61,7 +61,7 @@ impl PrimitiveValues for ArpHardwareType {
     }
 }
 
-/// ARP protocol hardware types
+/// The ARP protocol hardware types.
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod ArpHardwareTypes {
@@ -71,7 +71,7 @@ pub mod ArpHardwareTypes {
     pub const Ethernet: ArpHardwareType = ArpHardwareType(1);
 }
 
-/// Represents an ARP Packet
+/// Represents an ARP Packet.
 #[packet]
 #[allow(non_snake_case)]
 pub struct Arp {

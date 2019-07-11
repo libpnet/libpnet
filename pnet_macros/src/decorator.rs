@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Implements the #[packet] decorator
+//! Implements the #[packet] decorator.
 
 use regex::Regex;
 use std::rc::Rc;
@@ -24,7 +24,7 @@ use syntax::tokenstream::TokenTree::{self, Sequence, Token};
 
 use util::{Endianness, GetOperation, SetOperation, operations, to_little_endian, to_mutator};
 
-/// Lower and upper bounds of a payload
+/// Lower and upper bounds of a payload.
 /// Represented as strings since they may involve functions.
 struct PayloadBounds {
     lower: String,
@@ -33,11 +33,11 @@ struct PayloadBounds {
 
 #[derive(Clone, PartialEq)]
 enum Type {
-    /// Any of the u* types from pnet_macros::types::*
+    /// Any of the `u*` types from `pnet_macros::types::*`.
     Primitive(String, usize, Endianness),
-    /// Any type of the form Vec<T>
+    /// Any type of the form `Vec<T>`.
     Vector(Box<Type>),
-    /// Any type which isn't a primitive or a vector
+    /// Any type which isn't a primitive or a vector.
     Misc(String),
 }
 
@@ -329,7 +329,7 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &Annotatable) -> Option<Vec
     }
 }
 
-/// Return the processed length expression for the packet
+/// Return the processed length expression for a packet.
 fn parse_length_expr(ecx: &mut ExtCtxt,
                      tts: &[TokenTree],
                      field_names: &[String])
@@ -515,7 +515,7 @@ fn handle_misc_field(cx: &mut GenContext,
         }
     }
     *mutators = format!("{mutators}
-                    /// Set the value of the {name} field
+                    /// Set the value of the {name} field.
                     #[inline]
                     #[allow(trivial_numeric_casts)]
                     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]

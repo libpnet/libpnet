@@ -12,10 +12,10 @@ Discussion and support: [#libpnet on freenode](http://webchat.freenode.net/?chan
 
 There are four key components:
 
- * The packet module, allowing safe construction and manipulation of packets
- * The pnet_macros crate, providing infrastructure for the packet module
- * The transport module, which allows implementation of transport protocols
- * The datalink module, which allows sending and receiving data link packets directly
+ * The `packet` module, allowing safe construction and manipulation of packets;
+ * The `pnet_macros` crate, providing infrastructure for the packet module;
+ * The `transport` module, which allows implementation of transport protocols;
+ * The `datalink` module, which allows sending and receiving data link packets directly.
 
 ## Why?
 
@@ -26,8 +26,8 @@ outlined here:
 
 There are usually two ways to go about developing a new transport layer protocol:
 
- * Write it in a scripting language such as Python
- * Write it using C
+ * Write it in a scripting language such as Python;
+ * Write it using C.
 
 The former is great for trying out new ideas and rapid prototyping, however not so great as a
 real-world implementation. While you can usually get reasonable performance out of these

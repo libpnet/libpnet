@@ -22,52 +22,52 @@ type EtherAddr = [u8; ETHER_ADDR_LEN];
 const LOCAL_ADDR_BIT: u8 = 0x02;
 const MULTICAST_ADDR_BIT: u8 = 0x01;
 
-/// A MAC address
+/// A MAC address.
 #[derive(PartialEq, Eq, Clone, Copy, Default, Hash, Ord, PartialOrd)]
 pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
 
 impl MacAddr {
-    /// Construct a new MacAddr
+    /// Construct a new `MacAddr` instance.
     pub fn new(a: u8, b: u8, c: u8, d: u8, e: u8, f: u8) -> MacAddr {
         MacAddr(a, b, c, d, e, f)
     }
 
-    /// Construct an all-zero MacAddr
+    /// Construct an all-zero `MacAddr` instance.
     pub fn zero() -> MacAddr {
         Default::default()
     }
 
-    /// Construct a broadcast MacAddr
+    /// Construct a broadcast `MacAddr` instance.
     pub fn broadcast() -> MacAddr {
         [0xff; ETHER_ADDR_LEN].into()
     }
 
-    /// Returns true if the MacAddr is an all-zero address
+    /// Returns true if a `MacAddr` is an all-zero address.
     pub fn is_zero(&self) -> bool {
         *self == Self::zero()
     }
 
-    /// Returns true if the MacAddr is a universally administered addresses (UAA)
+    /// Returns true if the MacAddr is a universally administered addresses (UAA).
     pub fn is_universal(&self) -> bool {
         !self.is_local()
     }
 
-    /// Returns true if the MacAddr is a locally administered addresses (LAA)
+    /// Returns true if the MacAddr is a locally administered addresses (LAA).
     pub fn is_local(&self) -> bool {
         (self.0 & LOCAL_ADDR_BIT) == LOCAL_ADDR_BIT
     }
 
-    /// Returns true if the MacAddr is a unicast address
+    /// Returns true if the MacAddr is a unicast address.
     pub fn is_unicast(&self) -> bool {
         !self.is_multicast()
     }
 
-    /// Returns true if the MacAddr is a multicast address
+    /// Returns true if the MacAddr is a multicast address.
     pub fn is_multicast(&self) -> bool {
         (self.0 & MULTICAST_ADDR_BIT) == MULTICAST_ADDR_BIT
     }
 
-    /// Returns true if the MacAddr is a broadcast address
+    /// Returns true if the MacAddr is a broadcast address.
     pub fn is_broadcast(&self) -> bool {
         *self == Self::broadcast()
     }
@@ -163,14 +163,14 @@ impl fmt::Debug for MacAddr {
     }
 }
 
-/// Represents an error which occurred whilst parsing a MAC address
+/// Represents an error which occurred whilst parsing a MAC address.
 #[derive(Copy, Debug, PartialEq, Eq, Clone)]
 pub enum ParseMacAddrErr {
-    /// The MAC address has too many components, eg. 00:11:22:33:44:55:66
+    /// The MAC address has too many components, eg. 00:11:22:33:44:55:66.
     TooManyComponents,
-    /// The MAC address has too few components, eg. 00:11
+    /// The MAC address has too few components, eg. 00:11.
     TooFewComponents,
-    /// One of the components contains an invalid value, eg. 00:GG:22:33:44:55
+    /// One of the components contains an invalid value, eg. 00:GG:22:33:44:55.
     InvalidComponent,
 }
 

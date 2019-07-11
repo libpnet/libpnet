@@ -1,5 +1,6 @@
 //! Support for sending and receiving data link layer packets using libpcap.
 //! Also has support for reading pcap files.
+
 extern crate pcap;
 
 use std::marker::{Send, Sync};
@@ -13,7 +14,7 @@ use self::pcap::{Active, Activated};
 use {DataLinkReceiver, DataLinkSender, NetworkInterface};
 use Channel::Ethernet;
 
-/// Configuration for the pcap datalink backend
+/// Configuration for the pcap datalink backend.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Config {
     /// The size of buffer to use when reading packets. Must be at least
@@ -50,7 +51,7 @@ impl Default for Config {
     }
 }
 
-/// Create a datalink channel from the provided pcap device
+/// Create a datalink channel from the provided pcap device.
 #[inline]
 pub fn channel(network_interface: &NetworkInterface,
                config: Config) -> io::Result<super::Channel> {
@@ -80,7 +81,7 @@ pub fn channel(network_interface: &NetworkInterface,
     ))
 }
 
-/// Create a datalink channel from a pcap file
+/// Create a datalink channel from a pcap file.
 #[inline]
 pub fn from_file<P: AsRef<Path>>(path: P, config: Config) -> io::Result<super::Channel> {
     let cap = match pcap::Capture::from_file(path) {

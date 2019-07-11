@@ -14,7 +14,7 @@ use pnet_macros_support::types::*;
 pub struct IcmpType(pub u8);
 
 impl IcmpType {
-    /// Create an ICMP type
+    /// Create a new `IcmpType` instance.
     pub fn new(val: u8) -> IcmpType {
         IcmpType(val)
     }
@@ -32,7 +32,7 @@ impl PrimitiveValues for IcmpType {
 pub struct IcmpCode(pub u8);
 
 impl IcmpCode {
-    /// Create an ICMP code
+    /// Create a new `IcmpCode` instance.
     pub fn new(val: u8) -> IcmpCode {
         IcmpCode(val)
     }
@@ -45,7 +45,7 @@ impl PrimitiveValues for IcmpCode {
     }
 }
 
-/// Represents a generic ICMP packet
+/// Represents a generic ICMP packet.
 #[packet]
 pub struct Icmp {
     #[construct_with(u8)]
@@ -60,7 +60,7 @@ pub struct Icmp {
     pub payload: Vec<u8>,
 }
 
-/// Calculates the checksum of an ICMP packet
+/// Calculates a checksum of an ICMP packet.
 pub fn checksum(packet: &IcmpPacket) -> u16be {
     use Packet;
     use util;
@@ -102,43 +102,43 @@ mod checksum_tests {
 }
 
 
-/// Enumeration of the recognized ICMP types
+/// The enumeration of the recognized ICMP types.
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod IcmpTypes {
 
     use icmp::IcmpType;
-    /// ICMP type for "echo reply" packet
+    /// ICMP type for "echo reply" packet.
     pub const EchoReply: IcmpType = IcmpType(0);
-    /// ICMP type for "destination unreachable" packet
+    /// ICMP type for "destination unreachable" packet.
     pub const DestinationUnreachable: IcmpType = IcmpType(3);
-    /// ICMP type for "source quench" packet
+    /// ICMP type for "source quench" packet.
     pub const SourceQuench: IcmpType = IcmpType(4);
-    /// ICMP type for "redirect message" packet
+    /// ICMP type for "redirect message" packet.
     pub const RedirectMessage: IcmpType = IcmpType(5);
-    /// ICMP type for "echo request" packet
+    /// ICMP type for "echo request" packet.
     pub const EchoRequest: IcmpType = IcmpType(8);
-    /// ICMP type for "router advertisement" packet
+    /// ICMP type for "router advertisement" packet.
     pub const RouterAdvertisement: IcmpType = IcmpType(9);
-    /// ICMP type for "router solicitation" packet
+    /// ICMP type for "router solicitation" packet.
     pub const RouterSolicitation: IcmpType = IcmpType(10);
-    /// ICMP type for "time exceeded" packet
+    /// ICMP type for "time exceeded" packet.
     pub const TimeExceeded: IcmpType = IcmpType(11);
-    /// ICMP type for "parameter problem" packet
+    /// ICMP type for "parameter problem" packet.
     pub const ParameterProblem: IcmpType = IcmpType(12);
-    /// ICMP type for "timestamp" packet
+    /// ICMP type for "timestamp" packet.
     pub const Timestamp: IcmpType = IcmpType(13);
-    /// ICMP type for "timestamp reply" packet
+    /// ICMP type for "timestamp reply" packet.
     pub const TimestampReply: IcmpType = IcmpType(14);
-    /// ICMP type for "information request" packet
+    /// ICMP type for "information request" packet.
     pub const InformationRequest: IcmpType = IcmpType(15);
-    /// ICMP type for "information reply" packet
+    /// ICMP type for "information reply" packet.
     pub const InformationReply: IcmpType = IcmpType(16);
-    /// ICMP type for "address mask request" packet
+    /// ICMP type for "address mask request" packet.
     pub const AddressMaskRequest: IcmpType = IcmpType(17);
-    /// ICMP type for "address mask reply" packet
+    /// ICMP type for "address mask reply" packet.
     pub const AddressMaskReply: IcmpType = IcmpType(18);
-    /// ICMP type for "traceroute" packet
+    /// ICMP type for "traceroute" packet.
     pub const Traceroute: IcmpType = IcmpType(30);
 }
 
@@ -165,7 +165,7 @@ pub mod echo_reply {
     pub struct Identifier(pub u16);
 
     impl Identifier {
-        /// Create an identifier
+        /// Create a new `Identifier` instance.
         pub fn new(val: u16) -> Identifier {
             Identifier(val)
         }
@@ -183,7 +183,7 @@ pub mod echo_reply {
     pub struct SequenceNumber(pub u16);
 
     impl SequenceNumber {
-        /// Create a sequence number
+        /// Create a new `SequenceNumber` instance.
         pub fn new(val: u16) -> SequenceNumber {
             SequenceNumber(val)
         }
@@ -238,12 +238,12 @@ pub mod echo_request {
     use icmp::{IcmpCode, IcmpType};
     use pnet_macros_support::types::*;
 
-    /// Represents an indentifier field
+    /// Represents the identifier field.
     #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Identifier(pub u16);
 
     impl Identifier {
-        /// Create an identifier
+        /// Create a new `Identifier` instance.
         pub fn new(val: u16) -> Identifier {
             Identifier(val)
         }
@@ -256,12 +256,12 @@ pub mod echo_request {
         }
     }
 
-    /// Represents a sequence number field
+    /// Represents the sequence number field.
     #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct SequenceNumber(pub u16);
 
     impl SequenceNumber {
-        /// Create a sequence number
+        /// Create a new `SequenceNumber` instance.
         pub fn new(val: u16) -> SequenceNumber {
             SequenceNumber(val)
         }
@@ -320,37 +320,37 @@ pub mod destination_unreachable {
     #[allow(non_upper_case_globals)]
     pub mod IcmpCodes {
         use icmp::IcmpCode;
-        /// ICMP code for "destination network unreachable" packet
+        /// ICMP code for "destination network unreachable" packet.
         pub const DestinationNetworkUnreachable: IcmpCode = IcmpCode(0);
-        /// ICMP code for "destination host unreachable" packet
+        /// ICMP code for "destination host unreachable" packet.
         pub const DestinationHostUnreachable: IcmpCode = IcmpCode(1);
-        /// ICMP code for "destination protocol unreachable" packet
+        /// ICMP code for "destination protocol unreachable" packet.
         pub const DestinationProtocolUnreachable: IcmpCode = IcmpCode(2);
-        /// ICMP code for "destination port unreachable" packet
+        /// ICMP code for "destination port unreachable" packet.
         pub const DestinationPortUnreachable: IcmpCode = IcmpCode(3);
-        /// ICMP code for "fragmentation required and DFF flag set" packet
+        /// ICMP code for "fragmentation required and DFF flag set" packet.
         pub const FragmentationRequiredAndDFFlagSet: IcmpCode = IcmpCode(4);
-        /// ICMP code for "source route failed" packet
+        /// ICMP code for "source route failed" packet.
         pub const SourceRouteFailed: IcmpCode = IcmpCode(5);
-        /// ICMP code for "destination network unknown" packet
+        /// ICMP code for "destination network unknown" packet.
         pub const DestinationNetworkUnknown: IcmpCode = IcmpCode(6);
-        /// ICMP code for "destination host unknown" packet
+        /// ICMP code for "destination host unknown" packet.
         pub const DestinationHostUnknown: IcmpCode = IcmpCode(7);
-        /// ICMP code for "source host isolated" packet
+        /// ICMP code for "source host isolated" packet.
         pub const SourceHostIsolated: IcmpCode = IcmpCode(8);
-        /// ICMP code for "network administrative prohibited" packet
+        /// ICMP code for "network administrative prohibited" packet.
         pub const NetworkAdministrativelyProhibited: IcmpCode = IcmpCode(9);
-        /// ICMP code for "host administrative prohibited" packet
+        /// ICMP code for "host administrative prohibited" packet.
         pub const HostAdministrativelyProhibited: IcmpCode = IcmpCode(10);
-        /// ICMP code for "network unreachable for this Type Of Service" packet
+        /// ICMP code for "network unreachable for this Type Of Service" packet.
         pub const NetworkUnreachableForTOS: IcmpCode = IcmpCode(11);
-        /// ICMP code for "host unreachable for this Type Of Service" packet
+        /// ICMP code for "host unreachable for this Type Of Service" packet.
         pub const HostUnreachableForTOS: IcmpCode = IcmpCode(12);
-        /// ICMP code for "communication administratively prohibited" packet
+        /// ICMP code for "communication administratively prohibited" packet.
         pub const CommunicationAdministrativelyProhibited: IcmpCode = IcmpCode(13);
-        /// ICMP code for "host precedence violation" packet
+        /// ICMP code for "host precedence violation" packet.
         pub const HostPrecedenceViolation: IcmpCode = IcmpCode(14);
-        /// ICMP code for "precedence cut off in effect" packet
+        /// ICMP code for "precedence cut off in effect" packet.
         pub const PrecedenceCutoffInEffect: IcmpCode = IcmpCode(15);
     }
 

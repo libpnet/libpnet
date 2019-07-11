@@ -12,19 +12,19 @@
 //!
 //! There are four key components:
 //!
-//!  * The packet module, allowing safe construction and manipulation of packets
-//!  * The pnet_packet crate, providing infrastructure for the packet module
-//!  * The transport module, which allows implementation of transport protocols
-//!  * The datalink module, which allows sending and receiving data link
-//!    packets directly
+//!  * The `packet` module, allowing safe construction and manipulation of packets;
+//!  * The `pnet_packet` crate, providing infrastructure for the packet module;
+//!  * The `transport` module, which allows implementation of transport protocols;
+//!  * The `datalink` module, which allows sending and receiving data link
+//!    packets directly.
 //!
 //! ## Terminology
 //!
 //! The documentation uses the following terms interchangably:
 //!
-//!  * Layer 2, datalink layer
-//!  * Layer 3, network layer
-//!  * Layer 4, transport layer
+//!  * Layer 2, datalink layer;
+//!  * Layer 3, network layer;
+//!  * Layer 4, transport layer.
 //!
 //! Unless otherwise stated, all interactions with libpnet are in host-byte
 //! order - any platform specific variations are handled internally.
@@ -32,7 +32,7 @@
 //! ## Examples
 //!
 //! More examples, including a packet logger, and a version of the echo server
-//! written at the transport layer, can be found in the examples/ directory.
+//! written at the transport layer, can be found in the `examples/` directory.
 //!
 //! ### Ethernet echo server
 //!
@@ -123,17 +123,17 @@ extern crate pnet_packet;
 extern crate pnet_sys;
 extern crate pnet_transport;
 
-/// Support for sending and receiving data link layer packets
+/// Support for sending and receiving data link layer packets.
 pub mod datalink {
     pub use pnet_datalink::*;
 }
 
-/// Support for packet parsing and manipulation
+/// Support for packet parsing and manipulation.
 pub mod packet {
     pub use pnet_packet::*;
 }
 
-/// Support for sending and receiving transport layer packets
+/// Support for sending and receiving transport layer packets.
 pub mod transport {
     pub use pnet_transport::*;
 }

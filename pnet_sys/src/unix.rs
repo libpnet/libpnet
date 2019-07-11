@@ -69,12 +69,12 @@ pub mod public {
         libc::setsockopt(socket, level, name, value, option_len)
     }
 
-    /// Convert a platform specific `timeval` into a Duration
+    /// Convert a platform specific `timeval` into a Duration.
     pub fn timeval_to_duration(tv: libc::timeval) -> Duration {
         Duration::new(tv.tv_sec as u64, (tv.tv_usec as u32) * 1000)
     }
 
-    /// Convert a Duration into a platform specific `timeval`
+    /// Convert a Duration into a platform specific `timeval`.
     pub fn duration_to_timeval(dur: Duration) -> libc::timeval {
         libc::timeval {
             tv_sec: dur.as_secs() as libc::time_t,
@@ -82,12 +82,12 @@ pub mod public {
         }
     }
 
-    /// Convert a platform specific `timespec` into a Duration
+    /// Convert a platform specific `timespec` into a Duration.
     pub fn timespec_to_duration(ts: libc::timespec) -> Duration {
         Duration::new(ts.tv_sec as u64, ts.tv_nsec as u32)
     }
 
-    /// Convert a Duration into a platform specific `timespec`
+    /// Convert a Duration into a platform specific `timespec`.
     pub fn duration_to_timespec(dur: Duration) -> libc::timespec {
         libc::timespec {
             tv_sec: dur.as_secs() as libc::time_t,

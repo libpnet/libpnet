@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Provides interfaces for interacting with packets and headers
+//! Provides interfaces for interacting with packets and headers.
 #![allow(missing_docs)]
 #![macro_use]
 

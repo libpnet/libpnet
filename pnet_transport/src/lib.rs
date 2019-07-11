@@ -40,7 +40,7 @@ use std::net::{self, IpAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
-/// Represents a transport layer protocol
+/// Represents a transport layer protocol.
 #[derive(Clone, Copy)]
 pub enum TransportProtocol {
     /// Represents a transport protocol built on top of IPv4
@@ -49,22 +49,22 @@ pub enum TransportProtocol {
     Ipv6(IpNextHeaderProtocol),
 }
 
-/// Type of transport channel to present
+/// Type of transport channel to present.
 #[derive(Clone, Copy)]
 pub enum TransportChannelType {
-    /// The application will send and receive transport layer packets
+    /// The application will send and receive transport layer packets.
     Layer4(TransportProtocol),
-    /// The application will send and receive IPv4 packets, with the specified transport protocol
+    /// The application will send and receive IPv4 packets, with the specified transport protocol.
     Layer3(IpNextHeaderProtocol),
 }
 
-/// Structure used for sending at the transport layer. Should be created with transport_channel()
+/// Structure used for sending at the transport layer. Should be created with `transport_channel()`.
 pub struct TransportSender {
     pub socket: Arc<pnet_sys::FileDesc>,
     _channel_type: TransportChannelType,
 }
 
-/// Structure used for receiving at the transport layer. Should be created with transport_channel()
+/// Structure used for receiving at the transport layer. Should be created with `transport_channel()`.
 pub struct TransportReceiver {
     pub socket: Arc<pnet_sys::FileDesc>,
     pub buffer: Vec<u8>,
@@ -78,14 +78,14 @@ pub struct Config {
         time_to_live: u8,
 }
 
-/// Create a new (TransportSender, TransportReceiver) pair
+/// Create a new `(TransportSender, TransportReceiver)` pair.
 ///
 /// This allows for sending and receiving packets at the transport layer. The buffer size should be
 /// large enough to handle the largest packet you wish to receive.
 ///
 /// The channel type specifies what layer to send and receive packets at, and the transport
 /// protocol you wish to implement. For example, `Layer4(Ipv4(IpNextHeaderProtocols::Udp))` would
-/// allow sending and receiving UDP packets using IPv4; whereas Layer3(IpNextHeaderProtocols::Udp)
+/// allow sending and receiving UDP packets using IPv4; whereas `Layer3(IpNextHeaderProtocols::Udp)`
 /// would include the IPv4 Header in received values, and require manual construction of an IP
 /// header when sending.
 pub fn transport_channel(buffer_size: usize,
@@ -156,7 +156,7 @@ pub fn transport_channel(buffer_size: usize,
     Ok((sender, receiver))
 }
 
-/// Create a new (TransportSender, TransportReceiver) pair using the additional
+/// Create a new `(TransportSender, TransportReceiver)` pair using the additional
 /// options specified.
 ///
 /// For a more exhaustive descriptive, see above.
@@ -171,7 +171,7 @@ pub fn transport_channel_with(buffer_size: usize,
     Ok((sender, receiver))
 }
 
-/// Sets the time-to-live for all IP packets sent on the specified socket.
+/// Sets a time-to-live for all IP packets sent on the specified socket.
 fn set_socket_ttl(socket: Arc<pnet_sys::FileDesc>, ttl: u8) -> io::Result<()> {
     let ttl = ttl as i32;
     let res = unsafe {
@@ -209,13 +209,13 @@ impl TransportSender {
         pnet_sys::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen)
     }
 
-    /// Send a packet to the provided destination
+    /// Send a packet to the provided destination.
     #[inline]
     pub fn send_to<T: Packet>(&mut self, packet: T, destination: IpAddr) -> io::Result<usize> {
         self.send_to_impl(packet, destination)
     }
 
-    /// Sets the time-to-live on the socket, which then applies for all packets sent.
+    /// Sets a time-to-live on the socket, which then applies for all packets sent.
     pub fn set_ttl(&mut self, time_to_live: u8) -> io::Result<()> {
         set_socket_ttl(self.socket.clone(), time_to_live)
     }
@@ -266,11 +266,11 @@ impl TransportSender {
 #[macro_export]
 macro_rules! transport_channel_iterator {
     ($ty:ident, $iter:ident, $func:ident) => (
-        /// An iterator over packets of type $ty
+        /// An iterator over packets of type $ty.
         pub struct $iter<'a> {
             tr: &'a mut TransportReceiver
         }
-        /// Return a packet iterator with packets of type $ty for some transport receiver
+        /// Return a packet iterator with packets of type $ty for some transport receiver.
         pub fn $func(tr: &mut TransportReceiver) -> $iter {
             $iter {
                 tr: tr

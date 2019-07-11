@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Utilities for working with packets, eg. checksumming
+//! Utilities for working with packets, eg. checksumming.
 
 use ip::IpNextHeaderProtocol;
 use pnet_macros_support::types::u16be;
@@ -15,12 +15,12 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 use std::slice;
 use std::u8;
 
-/// Convert value to byte array
+/// Convert a value to a byte array.
 pub trait Octets {
-    /// Output type - bytes array
+    /// Output type - bytes array.
     type Output;
 
-    /// Return value as bytes (big-endian order)
+    /// Return a value as bytes (big-endian order).
     fn octets(&self) -> Self::Output;
 }
 
@@ -77,7 +77,7 @@ fn finalize_checksum(mut sum: u32) -> u16be {
     !sum as u16
 }
 
-/// Calculate the checksum for a packet built on IPv4. Used by udp and tcp.
+/// Calculate the checksum for a packet built on IPv4. Used by UDP and TCP.
 pub fn ipv4_checksum(data: &[u8],
                      skipword: usize,
                      extra_data: &[u8],
@@ -109,7 +109,7 @@ fn ipv4_word_sum(ip: &Ipv4Addr) -> u32 {
     ((octets[0] as u32) << 8 | octets[1] as u32) + ((octets[2] as u32) << 8 | octets[3] as u32)
 }
 
-/// Calculate the checksum for a packet built on IPv6
+/// Calculate the checksum for a packet built on IPv6.
 pub fn ipv6_checksum(data: &[u8],
                      skipword: usize,
                      extra_data: &[u8],
