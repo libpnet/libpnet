@@ -6,6 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! UDP packet abstraction
+//! A UDP packet abstraction.
 
 include!(concat!(env!("OUT_DIR"), "/udp.rs"));

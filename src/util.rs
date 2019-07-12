@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Miscellaneous utilities for low level networking
+//! Miscellaneous utilities for low-level networking.
 
 pub use pnet_base::{MacAddr, ParseMacAddrErr};
 pub use pnet_packet::util::{checksum, ipv4_checksum, ipv6_checksum, Octets};

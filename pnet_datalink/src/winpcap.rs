@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Support for sending and receiving data link layer packets using the WinPcap library
+//! Support for sending and receiving data link layer packets using the WinPcap library.
 
 extern crate libc;
 extern crate winapi;
@@ -49,13 +49,13 @@ impl Drop for WinPcapPacket {
     }
 }
 
-/// WinPcap specific configuration
+/// The WinPcap's specific configuration.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Config {
-    /// The size of buffer to use when writing packets. Defaults to 4096
+    /// The size of buffer to use when writing packets. Defaults to 4096.
     pub write_buffer_size: usize,
 
-    /// The size of buffer to use when reading packets. Defaults to 4096
+    /// The size of buffer to use when reading packets. Defaults to 4096.
     pub read_buffer_size: usize,
 }
 
@@ -77,7 +77,7 @@ impl Default for Config {
     }
 }
 
-/// Create a datalink channel using the WinPcap library
+/// Create a datalink channel using the WinPcap library.
 #[inline]
 pub fn channel(network_interface: &NetworkInterface,
                config: Config)

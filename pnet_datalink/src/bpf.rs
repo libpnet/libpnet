@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Support for sending and receiving data link layer packets using the /dev/bpf device
+//! Support for sending and receiving data link layer packets using the /dev/bpf device.
 
 extern crate libc;
 
@@ -26,13 +26,13 @@ use std::time::Duration;
 
 static ETHERNET_HEADER_SIZE: usize = 14;
 
-/// BPF-specific configuration
+/// The BPF-specific configuration.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Config {
-    /// The size of buffer to use when writing packets. Defaults to 4096
+    /// The size of buffer to use when writing packets. Defaults to 4096.
     pub write_buffer_size: usize,
 
-    /// The size of buffer to use when reading packets. Defaults to 4096
+    /// The size of buffer to use when reading packets. Defaults to 4096.
     pub read_buffer_size: usize,
 
     /// The read timeout. Defaults to None.
@@ -46,7 +46,7 @@ pub struct Config {
     /// This setting is only used on OS X - FreeBSD uses a single /dev/bpf rather than creating a
     /// new descriptor each time one is opened.
     ///
-    /// Defaults to: 1000
+    /// Defaults to: 1000.
     pub bpf_fd_attempts: usize,
 }
 

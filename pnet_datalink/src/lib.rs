@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Support for sending and receiving data link layer packets
+//! Support for sending and receiving data link layer packets.
 
 extern crate ipnetwork;
 extern crate libc;
@@ -66,19 +66,19 @@ pub mod pcap;
 
 pub mod dummy;
 
-/// Type alias for an EtherType.
+/// Type alias for an `EtherType`.
 pub type EtherType = u16;
 
-/// Type of data link channel to present (Linux only)
+/// Type of data link channel to present (Linux only).
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChannelType {
-    /// Send and receive layer 2 packets directly, including headers
+    /// Send and receive layer 2 packets directly, including headers.
     Layer2,
-    /// Send and receive "cooked" packets - send and receive network layer packets
+    /// Send and receive "cooked" packets - send and receive network layer packets.
     Layer3(EtherType),
 }
 
-/// A channel for sending and receiving at the data link layer
+/// A channel for sending and receiving at the data link layer.
 ///
 /// NOTE: It is important to always include a catch-all variant in match statements using this
 /// enum, since new variants may be added. For example:
@@ -90,16 +90,16 @@ pub enum ChannelType {
 /// }
 /// ```
 pub enum Channel {
-    /// A datalink channel which sends and receives Ethernet packets
+    /// A datalink channel which sends and receives Ethernet packets.
     Ethernet(Box<DataLinkSender>, Box<DataLinkReceiver>),
 
-    /// This variant should never be used
+    /// This variant should never be used.
     ///
     /// Including it allows new variants to be added to `Channel` without breaking existing code.
     PleaseIncludeACatchAllVariantWhenMatchingOnThisEnum,
 }
 
-/// Socket fanout type (Linux only)
+/// Socket fanout type (Linux only).
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum FanoutType {
     HASH,
@@ -112,7 +112,7 @@ pub enum FanoutType {
     EBPF,
 }
 
-/// Fanout settings (Linux only)
+/// Fanout settings (Linux only).
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct FanoutOption {
     pub group_id: u16,
@@ -121,16 +121,16 @@ pub struct FanoutOption {
     pub rollover: bool,
 }
 
-/// A generic configuration type, encapsulating all options supported by each backend
+/// A generic configuration type, encapsulating all options supported by each backend.
 ///
 /// Each option should be treated as a hint - each backend is free to ignore any and all
 /// options which don't apply to it.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Config {
-    /// The size of buffer to use when writing packets. Defaults to 4096
+    /// The size of buffer to use when writing packets. Defaults to 4096.
     pub write_buffer_size: usize,
 
-    /// The size of buffer to use when reading packets. Defaults to 4096
+    /// The size of buffer to use when reading packets. Defaults to 4096.
     pub read_buffer_size: usize,
 
     /// Linux/BPF/Netmap only: The read timeout. Defaults to None.
@@ -144,7 +144,7 @@ pub struct Config {
     pub channel_type: ChannelType,
 
     /// BPF/OS X only: The number of /dev/bpf* file descriptors to attempt before failing. Defaults
-    /// to: 1000
+    /// to: 1000.
     pub bpf_fd_attempts: usize,
 
     pub linux_fanout: Option<FanoutOption>,
@@ -164,7 +164,7 @@ impl Default for Config {
     }
 }
 
-/// Create a new datalink channel for sending and receiving data
+/// Create a new datalink channel for sending and receiving data.
 ///
 /// This allows for sending and receiving packets at the data link layer.
 ///
@@ -180,9 +180,9 @@ pub fn channel(network_interface: &NetworkInterface, configuration: Config) -> i
     backend::channel(network_interface, (&configuration).into())
 }
 
-/// Trait to enable sending $packet packets
+/// Trait to enable sending `$packet` packets.
 pub trait DataLinkSender: Send {
-    /// Create and send a number of packets
+    /// Create and send a number of packets.
     ///
     /// This will call `func` `num_packets` times. The function will be provided with a
     /// mutable packet to manipulate, which will then be sent. This allows packets to be
@@ -196,7 +196,7 @@ pub trait DataLinkSender: Send {
         func: &mut FnMut(&mut [u8]),
     ) -> Option<io::Result<()>>;
 
-    /// Send a packet
+    /// Send a packet.
     ///
     /// This may require an additional copy compared to `build_and_send`, depending on the
     /// operating system being used. The second parameter is currently ignored, however
@@ -206,30 +206,30 @@ pub trait DataLinkSender: Send {
 }
 
 /// Structure for receiving packets at the data link layer. Should be constructed using
-/// datalink_channel().
+/// `datalink_channel()`.
 pub trait DataLinkReceiver: Send {
     #[inline]
-    /// Get the next Ethernet frame in the channel
+    /// Get the next ethernet frame in the channel.
     fn next(&mut self) -> io::Result<&[u8]>;
 }
 
-/// Represents a network interface and its associated addresses
+/// Represents a network interface and its associated addresses.
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub struct NetworkInterface {
-    /// The name of the interface
+    /// The name of the interface.
     pub name: String,
-    /// The interface index (operating system specific)
+    /// The interface index (operating system specific).
     pub index: u32,
-    /// A MAC address for the interface
+    /// A MAC address for the interface.
     pub mac: Option<MacAddr>,
-    /// IP addresses and netmasks for the interface
+    /// IP addresses and netmasks for the interface.
     pub ips: Vec<IpNetwork>,
-    /// Operating system specific flags for the interface
+    /// Operating system specific flags for the interface.
     pub flags: u32,
 }
 
 impl NetworkInterface {
-    /// Retrieve the MAC address associated with the interface
+    /// Retrieve the MAC address associated with the interface.
     pub fn mac_address(&self) -> MacAddr {
         self.mac.unwrap()
     }

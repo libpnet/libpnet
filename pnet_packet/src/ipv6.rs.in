@@ -12,7 +12,7 @@ use pnet_macros_support::types::*;
 
 use std::net::Ipv6Addr;
 
-/// Represents an IPv6 Packet
+/// Represents an IPv6 Packet.
 #[packet]
 pub struct Ipv6 {
     pub version: u4,
@@ -37,7 +37,7 @@ impl<'p> ExtensionIterable<'p> {
     }
 }
 
-/// Represents an IPv6 Extension
+/// Represents an IPv6 Extension.
 #[packet]
 pub struct Extension {
     #[construct_with(u8)]
@@ -52,14 +52,14 @@ fn ipv6_extension_length(ext: &ExtensionPacket) -> usize {
     ext.get_hdr_ext_len() as usize * 8 + 8 - 2
 }
 
-/// Represents an IPv6 Hop-by-Hop Options
+/// Represents an IPv6 Hop-by-Hop Options.
 pub type HopByHop = Extension;
-/// A structure enabling manipulation of on the wire packets
+/// A structure enabling manipulation of on the wire packets.
 pub type HopByHopPacket<'p> = ExtensionPacket<'p>;
-/// A structure enabling manipulation of on the wire packets
+/// A structure enabling manipulation of on the wire packets.
 pub type MutableHopByHopPacket<'p> = MutableExtensionPacket<'p>;
 
-/// Represents an IPv6 Routing Extension
+/// Represents an IPv6 Routing Extension.
 #[packet]
 pub struct Routing {
     #[construct_with(u8)]
@@ -76,7 +76,7 @@ fn routing_extension_length(ext: &RoutingPacket) -> usize {
     ext.get_hdr_ext_len() as usize * 8 + 8 - 4
 }
 
-/// Represents an IPv6 Fragment Extension
+/// Represents an IPv6 Fragment Extension.
 #[packet]
 pub struct Fragment {
     #[construct_with(u8)]
@@ -131,11 +131,11 @@ impl<'p> MutableFragmentPacket<'p> {
     }
 }
 
-/// Represents an Destination Options
+/// Represents an Destination Options.
 pub type Destination = Extension;
-/// A structure enabling manipulation of on the wire packets
+/// A structure enabling manipulation of on the wire packets.
 pub type DestinationPacket<'p> = ExtensionPacket<'p>;
-/// A structure enabling manipulation of on the wire packets
+/// A structure enabling manipulation of on the wire packets.
 pub type MutableDestinationPacket<'p> = MutableExtensionPacket<'p>;
 
 #[test]

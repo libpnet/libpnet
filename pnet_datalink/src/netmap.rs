@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Support for sending and receiving data link layer packets using the netmap library
+//! Support for sending and receiving data link layer packets using the netmap library.
 
 #![allow(bad_style)]
 
@@ -94,7 +94,7 @@ impl Drop for NmDesc {
     }
 }
 
-/// Netmap specific configuration
+/// The netmap's specific configuration.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Config {
     /// The read timeout. Defaults to None.
@@ -132,7 +132,7 @@ fn get_timeout(to: Option<Duration>) -> Option<libc::timespec> {
     })
 }
 
-/// Create a datalink channel using the netmap library
+/// Create a datalink channel using the netmap library.
 #[inline]
 pub fn channel(network_interface: &NetworkInterface,
                config: Config)

@@ -16,7 +16,7 @@ use std::net::Ipv6Addr;
 pub struct Icmpv6Type(pub u8);
 
 impl Icmpv6Type {
-    /// Create an ICMPv6 type
+    /// Create a new `Icmpv6Type` instance.
     pub fn new(val: u8) -> Icmpv6Type {
         Icmpv6Type(val)
     }
@@ -34,7 +34,7 @@ impl PrimitiveValues for Icmpv6Type {
 pub struct Icmpv6Code(pub u8);
 
 impl Icmpv6Code {
-    /// Create an ICMPv6 code
+    /// Create a new `Icmpv6Code` instance.
     pub fn new(val: u8) -> Icmpv6Code {
         Icmpv6Code(val)
     }
@@ -70,7 +70,7 @@ pub struct Icmpv6 {
     pub payload: Vec<u8>,
 }
 
-/// Calculates the checksum of an ICMPv6 packet
+/// Calculates a checksum of an ICMPv6 packet.
 pub fn checksum(packet: &Icmpv6Packet, source: &Ipv6Addr, destination: &Ipv6Addr) -> u16be {
     use Packet;
     use util;
@@ -111,33 +111,33 @@ mod checksum_tests {
 }
 
 
-/// Enumeration of the recognized ICMPv6 types
+/// The enumeration of the recognized ICMPv6 types.
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod Icmpv6Types {
     use icmpv6::Icmpv6Type;
-    /// ICMPv6 type for "destination unreachable"
+    /// ICMPv6 type for "destination unreachable".
     pub const DestinationUnreachable: Icmpv6Type = Icmpv6Type(1);
-    /// ICMPv6 type for "packet too big"
+    /// ICMPv6 type for "packet too big".
     pub const PacketTooBig: Icmpv6Type = Icmpv6Type(2);
-    /// ICMPv6 type for "time exceeded"
+    /// ICMPv6 type for "time exceeded".
     pub const TimeExceeded: Icmpv6Type = Icmpv6Type(3);
-    /// ICMPv6 type for "parameter problem"
+    /// ICMPv6 type for "parameter problem".
     pub const ParameterProblem: Icmpv6Type = Icmpv6Type(4);
-    /// ICMPv6 type for "echo request"
+    /// ICMPv6 type for "echo request".
     pub const EchoRequest: Icmpv6Type = Icmpv6Type(128);
-    /// ICMPv6 type for "echo reply"
+    /// ICMPv6 type for "echo reply".
     pub const EchoReply: Icmpv6Type = Icmpv6Type(129);
     // Neighbor Discovery Protocol [RFC4861]
-    /// ICMPv6 type for "router solicitation"
+    /// ICMPv6 type for "router solicitation".
     pub const RouterSolicit: Icmpv6Type = Icmpv6Type(133);
-    /// ICMPv6 type for "router advertisement"
+    /// ICMPv6 type for "router advertisement".
     pub const RouterAdvert: Icmpv6Type = Icmpv6Type(134);
-    /// ICMPv6 type for "neighbor solicitation"
+    /// ICMPv6 type for "neighbor solicitation".
     pub const NeighborSolicit: Icmpv6Type = Icmpv6Type(135);
-    /// ICMPv6 type for "neighbor advertisement"
+    /// ICMPv6 type for "neighbor advertisement".
     pub const NeighborAdvert: Icmpv6Type = Icmpv6Type(136);
-    /// ICMPv6 type for "redirect"
+    /// ICMPv6 type for "redirect".
     pub const Redirect: Icmpv6Type = Icmpv6Type(137);
 }
 
@@ -156,16 +156,16 @@ pub mod ndp {
     #[allow(non_upper_case_globals)]
     pub mod Icmpv6Codes {
         use icmpv6::Icmpv6Code;
-        /// 0 is the only available ICMPv6 Code for the NDP
+        /// 0 is the only available ICMPv6 Code for the NDP.
         pub const NoCode: Icmpv6Code = Icmpv6Code(0);
     }
 
-    /// Represents a Neighbor Discovery Option Type
+    /// Represents a Neighbor Discovery Option Type.
     #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct NdpOptionType(pub u8);
 
     impl NdpOptionType {
-        /// Create a new TcpOptionNumber
+        /// Create a new `NdpOptionType` instance.
         pub fn new(value: u8) -> NdpOptionType {
             NdpOptionType(value)
         }
@@ -286,7 +286,7 @@ pub mod ndp {
         pub data: Vec<u8>,
     }
 
-    /// Calculate the length of the NdpOption's payload
+    /// Calculate a length of a `NdpOption`'s payload.
     fn ndp_option_payload_length(option: &NdpOptionPacket) -> usize {
         let len = option.get_length();
         if len > 0 {
@@ -332,7 +332,7 @@ pub mod ndp {
         }
     }
 
-    /// Enumeration of recognized Router Advert flags
+    /// The enumeration of recognized Router Advert flags.
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
     pub mod RouterAdvertFlags {
@@ -436,7 +436,7 @@ pub mod ndp {
         }
     }
 
-    /// Enumeration of recognized Neighbor Advert flags
+    /// Enumeration of recognized Neighbor Advert flags.
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
     pub mod NeighborAdvertFlags {

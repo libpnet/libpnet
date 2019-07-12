@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Interface listing implementation for all non-Windows platforms
+//! Interface listing implementation for all non-Windows platforms.
 
 use {NetworkInterface, MacAddr};
 

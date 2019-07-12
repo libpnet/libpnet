@@ -22,25 +22,25 @@
 
 // TODO signed equivalents?
 
-/// Represents an unsigned, 1-bit integer
+/// Represents an unsigned, 1-bit integer.
 pub type u1 = u8;
 
-/// Represents an unsigned, 2-bit integer
+/// Represents an unsigned, 2-bit integer.
 pub type u2 = u8;
 
-/// Represents an unsigned, 3-bit integer
+/// Represents an unsigned, 3-bit integer.
 pub type u3 = u8;
 
-/// Represents an unsigned, 4-bit integer
+/// Represents an unsigned, 4-bit integer.
 pub type u4 = u8;
 
-/// Represents an unsigned, 5-bit integer
+/// Represents an unsigned, 5-bit integer.
 pub type u5 = u8;
 
-/// Represents an unsigned, 6-bit integer
+/// Represents an unsigned, 6-bit integer.
 pub type u6 = u8;
 
-/// Represents an unsigned, 7-bit integer
+/// Represents an unsigned, 7-bit integer.
 pub type u7 = u8;
 
 
