@@ -991,7 +991,7 @@ fn generate_packet_impl(cx: &mut GenContext,
         /// The minimum size (in bytes) a packet of this type can be. It's based on the total size
         /// of the fixed-size fields.
         #[inline]
-        pub fn minimum_packet_size() -> usize {{
+        pub const fn minimum_packet_size() -> usize {{
             {byte_size}
         }}
 
