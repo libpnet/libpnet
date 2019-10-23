@@ -6,7 +6,7 @@ use std::io::{self, Write};
 use std::net::{AddrParseError, IpAddr, Ipv4Addr};
 use std::process;
 
-use pnet_datalink::{Channel, MacAddr, NetworkInterface, ParseMacAddrErr};
+use pnet_datalink::{Channel, MacAddr, NetworkInterface};
 
 use pnet::packet::arp::{ArpHardwareTypes, ArpOperations};
 use pnet::packet::arp::{ArpPacket, MutableArpPacket};
@@ -100,7 +100,7 @@ fn main() {
         .into_iter()
         .find(|iface| iface.name == iface_name)
         .unwrap();
-    let source_mac = interface.mac_address();
+    let _source_mac = interface.mac_address();
 
     let target_mac = get_mac_through_arp(interface, target_ip.unwrap());
 

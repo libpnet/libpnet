@@ -91,8 +91,6 @@ pub struct Config {
 pub fn transport_channel(buffer_size: usize,
                          channel_type: TransportChannelType)
     -> io::Result<(TransportSender, TransportReceiver)> {
-    use std::net;
-
     // This hack makes sure that winsock is initialised
     let _ = {
         let ip = net::Ipv4Addr::new(255, 255, 255, 255);

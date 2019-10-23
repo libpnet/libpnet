@@ -91,7 +91,7 @@ pub enum ChannelType {
 /// ```
 pub enum Channel {
     /// A datalink channel which sends and receives Ethernet packets.
-    Ethernet(Box<DataLinkSender>, Box<DataLinkReceiver>),
+    Ethernet(Box<dyn DataLinkSender>, Box<dyn DataLinkReceiver>),
 
     /// This variant should never be used.
     ///
@@ -193,7 +193,7 @@ pub trait DataLinkSender: Send {
         &mut self,
         num_packets: usize,
         packet_size: usize,
-        func: &mut FnMut(&mut [u8]),
+        func: &mut dyn FnMut(&mut [u8]),
     ) -> Option<io::Result<()>>;
 
     /// Send a packet.
