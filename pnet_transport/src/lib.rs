@@ -266,11 +266,19 @@ impl TransportSender {
 #[macro_export]
 macro_rules! transport_channel_iterator {
     ($ty:ident, $iter:ident, $func:ident) => (
-        /// An iterator over packets of type $ty.
+        transport_channel_iterator!($ty, $iter, $func, stringify!($ty));
+    );
+    ($ty:ident, $iter:ident, $func:ident, $tyname:expr) => (
+        #[doc = "An iterator over packets of type `"]
+        #[doc = $tyname]
+        #[doc = "`."]
         pub struct $iter<'a> {
             tr: &'a mut TransportReceiver
         }
-        /// Return a packet iterator with packets of type $ty for some transport receiver.
+
+        #[doc = "Return a packet iterator with packets of type `"]
+        #[doc = $tyname]
+        #[doc = "` for some transport receiver."]
         pub fn $func(tr: &mut TransportReceiver) -> $iter {
             $iter {
                 tr: tr
@@ -278,7 +286,9 @@ macro_rules! transport_channel_iterator {
         }
 
         impl<'a> $iter<'a> {
-            /// Get the next ($ty, IpAddr) pair for the given channel.
+            #[doc = "Get the next (`"]
+            #[doc = $tyname ]
+            #[doc = "`, `IpAddr`) pair for the given channel."]
             pub fn next(&mut self) -> io::Result<($ty, IpAddr)> {
                 let mut caddr: pnet_sys::SockAddrStorage = unsafe { mem::zeroed() };
                 let res = pnet_sys::recv_from(self.tr.socket.fd,
@@ -382,7 +392,7 @@ macro_rules! transport_channel_iterator {
                 r
             }
         }
-    )
+    );
 }
 
 transport_channel_iterator!(Ipv4Packet, Ipv4TransportChannelIterator, ipv4_packet_iter);
