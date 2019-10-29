@@ -410,7 +410,7 @@ fn parse_length_expr(ecx: &mut ExtCtxt,
 
 struct GenContext<'a, 'b: 'a, 'c> {
     ecx: &'a mut ExtCtxt<'b>,
-    push: &'c mut FnMut(P<ast::Item>),
+    push: &'c mut dyn FnMut(P<ast::Item>),
 }
 
 impl<'a, 'b, 'c> GenContext<'a, 'b, 'c> {
@@ -423,7 +423,7 @@ pub fn generate_packet(ecx: &mut ExtCtxt,
                        span: Span,
                        _meta_item: &ast::MetaItem,
                        item: &Annotatable,
-                       push: &mut FnMut(Annotatable)) {
+                       push: &mut dyn FnMut(Annotatable)) {
     if let Some(packets) = make_packets(ecx, span, item) {
         let mut cx = GenContext {
             ecx: ecx,

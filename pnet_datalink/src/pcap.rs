@@ -107,7 +107,7 @@ impl DataLinkSender for DataLinkSenderImpl {
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(&mut [u8]))
+                      func: &mut dyn FnMut(&mut [u8]))
                       -> Option<io::Result<()>> {
         for _ in 0..num_packets {
             let mut data = vec![0; packet_size];
@@ -139,7 +139,7 @@ impl DataLinkSender for InvalidDataLinkSenderImpl {
     fn build_and_send(&mut self,
                       _num_packets: usize,
                       _packet_size: usize,
-                      _func: &mut FnMut(&mut [u8]))
+                      _func: &mut dyn FnMut(&mut [u8]))
                       -> Option<io::Result<()>> {
         None
     }
