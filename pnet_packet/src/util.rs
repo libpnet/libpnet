@@ -64,8 +64,11 @@ impl Octets for u8 {
 }
 
 /// Calculates a checksum. Used by ipv4 and icmp. The two bytes starting at `skipword * 2` will be
-/// ignored. Supposed to be the checksum field, which is regarded as zero during calculation.
+/// ignored. Supposed to be the checksum field, which is regarded as zero during calculation. Will
+/// panic if data is not u16-aligned.
 pub fn checksum(data: &[u8], skipword: usize) -> u16be {
+    if data.len() == 0 { return 0 }
+    assert_eq!(0, data.as_ptr() as usize % 2, "Cannot sum mis-aligned words at {:p}", data.as_ptr());
     let sum = sum_be_words(data, skipword);
     finalize_checksum(sum)
 }
@@ -141,8 +144,11 @@ fn ipv6_word_sum(ip: &Ipv6Addr) -> u32 {
 }
 
 /// Sum all words (16 bit chunks) in the given data. The word at word offset
-/// `skipword` will be skipped. Each word is treated as big endian.
+/// `skipword` will be skipped. Each word is treated as big endian. Must be
+/// called with u16-aligned data.
 fn sum_be_words(data: &[u8], mut skipword: usize) -> u32 {
+    if data.len() == 0 { return 0 }
+    debug_assert_eq!(0, data.as_ptr() as usize % 2, "Cannot sum mis-aligned words at {:p}", data.as_ptr());
     let len = data.len();
     let wdata: &[u16] = unsafe { slice::from_raw_parts(data.as_ptr() as *const u16, len / 2) };
     skipword = ::std::cmp::min(skipword, wdata.len());
