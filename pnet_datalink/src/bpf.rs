@@ -260,6 +260,7 @@ impl DataLinkSender for DataLinkSenderImpl {
             for chunk in self.write_buffer[..len].chunks_mut(packet_size) {
                 func(chunk);
                 let ret = unsafe {
+                    libc::FD_SET(self.fd.fd, &mut self.fd_set as *mut libc::fd_set);
                     libc::pselect(self.fd.fd + 1,
                                   ptr::null_mut(),
                                   &mut self.fd_set as *mut libc::fd_set,
@@ -299,6 +300,7 @@ impl DataLinkSender for DataLinkSenderImpl {
         // The OS will prepend the packet with 4 bytes set to AF_INET.
         let offset = if self.loopback { ETHERNET_HEADER_SIZE } else { 0 };
         let ret = unsafe {
+            libc::FD_SET(self.fd.fd, &mut self.fd_set as *mut libc::fd_set);
             libc::pselect(self.fd.fd + 1,
                           ptr::null_mut(),
                           &mut self.fd_set as *mut libc::fd_set,
@@ -348,6 +350,7 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
         if self.packets.is_empty() {
             let buffer = &mut self.read_buffer[buffer_offset..];
             let ret = unsafe {
+                libc::FD_SET(self.fd.fd, &mut self.fd_set as *mut libc::fd_set);
                 libc::pselect(self.fd.fd + 1,
                               &mut self.fd_set as *mut libc::fd_set,
                               ptr::null_mut(),
