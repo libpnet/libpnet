@@ -12,7 +12,6 @@ use ip::IpNextHeaderProtocol;
 use pnet_macros_support::types::u16be;
 
 use std::net::{Ipv4Addr, Ipv6Addr};
-use std::slice;
 use std::u8;
 
 /// Convert a value to a byte array.
@@ -64,11 +63,9 @@ impl Octets for u8 {
 }
 
 /// Calculates a checksum. Used by ipv4 and icmp. The two bytes starting at `skipword * 2` will be
-/// ignored. Supposed to be the checksum field, which is regarded as zero during calculation. Will
-/// panic if data is not u16-aligned.
+/// ignored. Supposed to be the checksum field, which is regarded as zero during calculation.
 pub fn checksum(data: &[u8], skipword: usize) -> u16be {
     if data.len() == 0 { return 0 }
-    assert_eq!(0, data.as_ptr() as usize % 2, "Cannot sum mis-aligned words at {:p}", data.as_ptr());
     let sum = sum_be_words(data, skipword);
     finalize_checksum(sum)
 }
@@ -144,29 +141,39 @@ fn ipv6_word_sum(ip: &Ipv6Addr) -> u32 {
 }
 
 /// Sum all words (16 bit chunks) in the given data. The word at word offset
-/// `skipword` will be skipped. Each word is treated as big endian. Must be
-/// called with u16-aligned data.
+/// `skipword` will be skipped. Each word is treated as big endian.
 fn sum_be_words(data: &[u8], mut skipword: usize) -> u32 {
-    if data.len() == 0 { return 0 }
-    debug_assert_eq!(0, data.as_ptr() as usize % 2, "Cannot sum mis-aligned words at {:p}", data.as_ptr());
-    let len = data.len();
-    let wdata: &[u16] = unsafe { slice::from_raw_parts(data.as_ptr() as *const u16, len / 2) };
-    skipword = ::std::cmp::min(skipword, wdata.len());
+    if data.is_empty() {
+        return 0;
+    }
 
     let mut sum = 0u32;
+    let mut wdata = data.clone();
+    skipword = ::std::cmp::min(skipword, wdata.len() / 2);
     let mut i = 0;
+    // add words before skipword
     while i < skipword {
-        sum += u16::from_be(unsafe { *wdata.get_unchecked(i) }) as u32;
+        let word =
+            unsafe { (*wdata.get_unchecked(0) as u32) << 8 | *wdata.get_unchecked(1) as u32 };
+        sum += word;
         i += 1;
+        wdata = &wdata[2..];
     }
-    i += 1;
-    while i < wdata.len() {
-        sum += u16::from_be(unsafe { *wdata.get_unchecked(i) }) as u32;
-        i += 1;
+    // skip word
+    if wdata.len() >= 2 {
+        wdata = &wdata[2..];
     }
+    // and add next words
+    while wdata.len() >= 2 {
+        let word =
+            unsafe { (*wdata.get_unchecked(0) as u32) << 8 | *wdata.get_unchecked(1) as u32 };
+        sum += word;
+        wdata = &wdata[2..];
+    }
+
     // If the length is odd, make sure to checksum the final byte
-    if len & 1 != 0 {
-        sum += (unsafe { *data.get_unchecked(len - 1) } as u32) << 8;
+    if !wdata.is_empty() {
+        sum += (unsafe { *wdata.get_unchecked(0) } as u32) << 8;
     }
 
     sum
