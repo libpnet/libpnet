@@ -17,4 +17,4 @@ pnet_macros_support = { path = "../pnet_macros_support", version = "0.25.0" }
 [build-dependencies]
 glob = "0.2"
 syntex = "0.42"
-pnet_macros = { path = "../pnet_macros", version = ">=0.20" }
+pnet_macros = { path = "../pnet_macros", version = "0.25.0" }
