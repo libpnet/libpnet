@@ -22,7 +22,7 @@ serde = ["pnet_base/serde"]
 [dependencies]
 ipnetwork = "0.15.0"
 
-pnet_base = "0.22.0"
+pnet_base = "0.25.0"
 pnet_sys = { path = "pnet_sys", version = "0.25.0" }
 pnet_datalink = { path = "pnet_datalink", version = "0.25.0" }
 pnet_transport = { path = "pnet_transport", version = "0.25.0" }
