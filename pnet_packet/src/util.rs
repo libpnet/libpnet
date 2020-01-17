@@ -12,7 +12,6 @@ use ip::IpNextHeaderProtocol;
 use pnet_macros_support::types::u16be;
 
 use std::net::{Ipv4Addr, Ipv6Addr};
-use std::slice;
 use std::u8;
 use std::u16;
 use std::convert::TryInto;
@@ -145,7 +144,7 @@ fn ipv6_word_sum(ip: &Ipv6Addr) -> u32 {
 
 /// Sum all words (16 bit chunks) in the given data. The word at word offset
 /// `skipword` will be skipped. Each word is treated as big endian. 
-fn sum_be_words(data: &[u8], mut skipword: usize) -> u32 {
+fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
     if data.len() == 0 { return 0 }
     let len = data.len();
     let mut cur_data = &data[..];
