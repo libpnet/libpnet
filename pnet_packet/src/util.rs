@@ -170,6 +170,7 @@ fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::sum_be_words;
+    use std::slice;
 
     #[test]
     fn sum_be_words_different_skipwords() {
@@ -180,6 +181,29 @@ mod tests {
         // results
         assert_eq!(7705, sum_be_words(&data, 99));
         assert_eq!(7705, sum_be_words(&data, 101));
+    }
+
+    #[test]
+    fn sum_be_words_misaligned_ptr() {
+        let mut data = vec![0; 13];
+        let ptr = match data.as_ptr() as usize % 2 { 
+            0 => {
+                unsafe { data.as_mut_ptr().offset(1) }
+            }
+            _ => data.as_mut_ptr(),
+        }; 
+        unsafe {
+            let slice_data = slice::from_raw_parts_mut(ptr, 12);
+            for i in 0..11 {
+                slice_data[i] = i as u8;
+            }
+            assert_eq!(7190, sum_be_words(&slice_data, 1));
+            assert_eq!(6676, sum_be_words(&slice_data, 2));
+            // Assert having the skipword outside the range gives correct and equal
+            // results
+            assert_eq!(7705, sum_be_words(&slice_data, 99));
+            assert_eq!(7705, sum_be_words(&slice_data, 101));
+        }
     }
 }
 
