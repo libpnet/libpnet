@@ -160,7 +160,7 @@ fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
     }
 
     // If the length is odd, make sure to checksum the final byte
-    if len & 1 != 0 {
+    if i != skipword && len & 1 != 0 {
         sum += (data[len - 1] as u32) << 8;
     }
 
@@ -181,6 +181,24 @@ mod tests {
         // results
         assert_eq!(7705, sum_be_words(&data, 99));
         assert_eq!(7705, sum_be_words(&data, 101));
+    }
+
+    #[test]
+    fn sum_be_words_small_sizes() {
+        let data_zero = vec![0; 0];
+        assert_eq!(0, sum_be_words(&data_zero, 0));
+        assert_eq!(0, sum_be_words(&data_zero, 10));
+        let data_one = vec![1; 1];
+        assert_eq!(0, sum_be_words(&data_zero, 0));
+        assert_eq!(256, sum_be_words(&data_one, 1));
+        let data_two = vec![1; 2];
+        assert_eq!(0, sum_be_words(&data_two, 0));
+        assert_eq!(257, sum_be_words(&data_two, 1));
+        let data_three = vec![4; 3];
+        assert_eq!(1024, sum_be_words(&data_three, 0));
+        assert_eq!(1028, sum_be_words(&data_three, 1));
+        assert_eq!(2052, sum_be_words(&data_three, 2));
+        assert_eq!(2052, sum_be_words(&data_three, 3));
     }
 
     #[test]
