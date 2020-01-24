@@ -62,6 +62,7 @@ pub enum TransportChannelType {
 pub struct TransportSender {
     pub socket: Arc<pnet_sys::FileDesc>,
     _channel_type: TransportChannelType,
+    port: u16,
 }
 
 /// Structure used for receiving at the transport layer. Should be created with `transport_channel()`.
@@ -89,7 +90,8 @@ pub struct Config {
 /// would include the IPv4 Header in received values, and require manual construction of an IP
 /// header when sending.
 pub fn transport_channel(buffer_size: usize,
-                         channel_type: TransportChannelType)
+                         channel_type: TransportChannelType,
+                         port: u16,)
     -> io::Result<(TransportSender, TransportReceiver)> {
     // This hack makes sure that winsock is initialised
     let _ = {
@@ -144,6 +146,7 @@ pub fn transport_channel(buffer_size: usize,
     let sender = TransportSender {
         socket: sock.clone(),
         _channel_type: channel_type,
+        port,
     };
     let receiver = TransportReceiver {
         socket: sock,
@@ -160,10 +163,11 @@ pub fn transport_channel(buffer_size: usize,
 /// For a more exhaustive descriptive, see above.
 pub fn transport_channel_with(buffer_size: usize,
                               channel_type: TransportChannelType,
-                              configuration: Config)
+                              configuration: Config,
+                              port: u16,)
     -> io::Result<(TransportSender, TransportReceiver)> {
 
-    let (sender, receiver) = transport_channel(buffer_size, channel_type)?;
+    let (sender, receiver) = transport_channel(buffer_size, channel_type, port)?;
 
     set_socket_ttl(sender.socket.clone(), configuration.time_to_live)?;
     Ok((sender, receiver))
@@ -198,8 +202,8 @@ impl TransportSender {
     fn send<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
         let mut caddr = unsafe { mem::zeroed() };
         let sockaddr = match dst {
-            IpAddr::V4(ip_addr) => net::SocketAddr::V4(net::SocketAddrV4::new(ip_addr, 0)),
-            IpAddr::V6(ip_addr) => net::SocketAddr::V6(net::SocketAddrV6::new(ip_addr, 0, 0, 0)),
+            IpAddr::V4(ip_addr) => net::SocketAddr::V4(net::SocketAddrV4::new(ip_addr, self.port)),
+            IpAddr::V6(ip_addr) => net::SocketAddr::V6(net::SocketAddrV6::new(ip_addr, self.port, 0, 0)),
         };
         let slen = pnet_sys::addr_to_sockaddr(sockaddr, &mut caddr);
         let caddr_ptr = (&caddr as *const pnet_sys::SockAddrStorage) as *const pnet_sys::SockAddr;
