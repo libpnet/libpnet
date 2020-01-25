@@ -187,7 +187,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
 
     let (tx, rx) = channel();
 
-    let tc = transport_channel(128, TransportChannelType::Layer4(get_proto(ip)));
+    let tc = transport_channel(128, TransportChannelType::Layer4(get_proto(ip)), 12345 as u16);
     let (mut ttx, mut trx) = match tc {
         Ok((tx, rx)) => (tx, rx),
         Err(e) => panic!("layer4: unable to create channel: {}", e),
@@ -256,6 +256,7 @@ fn layer3_ipv4() {
     let tc = transport_channel(
         IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN,
         TransportChannelType::Layer3(TEST_PROTO),
+        12345 as u16,
     );
     let (mut ttx, mut trx) = match tc {
         Ok((tx, rx)) => (tx, rx),

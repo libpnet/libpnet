@@ -21,7 +21,7 @@ fn main() {
 
     // Create a new transport channel, dealing with layer 4 packets on a test protocol
     // It has a receive buffer of 4096 bytes.
-    let (mut tx, mut rx) = match transport_channel(4096, protocol) {
+    let (mut tx, mut rx) = match transport_channel(4096, protocol, 12345 as u16) {
         Ok((tx, rx)) => (tx, rx),
         Err(e) => panic!(
             "An error occurred when creating the transport channel: {}",
