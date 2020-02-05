@@ -12,8 +12,9 @@ use ip::IpNextHeaderProtocol;
 use pnet_macros_support::types::u16be;
 
 use std::net::{Ipv4Addr, Ipv6Addr};
-use std::slice;
 use std::u8;
+use std::u16;
+use std::convert::TryInto;
 
 /// Convert a value to a byte array.
 pub trait Octets {
@@ -64,11 +65,9 @@ impl Octets for u8 {
 }
 
 /// Calculates a checksum. Used by ipv4 and icmp. The two bytes starting at `skipword * 2` will be
-/// ignored. Supposed to be the checksum field, which is regarded as zero during calculation. Will
-/// panic if data is not u16-aligned.
+/// ignored. Supposed to be the checksum field, which is regarded as zero during calculation. 
 pub fn checksum(data: &[u8], skipword: usize) -> u16be {
     if data.len() == 0 { return 0 }
-    assert_eq!(0, data.as_ptr() as usize % 2, "Cannot sum mis-aligned words at {:p}", data.as_ptr());
     let sum = sum_be_words(data, skipword);
     finalize_checksum(sum)
 }
@@ -144,29 +143,25 @@ fn ipv6_word_sum(ip: &Ipv6Addr) -> u32 {
 }
 
 /// Sum all words (16 bit chunks) in the given data. The word at word offset
-/// `skipword` will be skipped. Each word is treated as big endian. Must be
-/// called with u16-aligned data.
-fn sum_be_words(data: &[u8], mut skipword: usize) -> u32 {
+/// `skipword` will be skipped. Each word is treated as big endian. 
+fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
     if data.len() == 0 { return 0 }
-    debug_assert_eq!(0, data.as_ptr() as usize % 2, "Cannot sum mis-aligned words at {:p}", data.as_ptr());
     let len = data.len();
-    let wdata: &[u16] = unsafe { slice::from_raw_parts(data.as_ptr() as *const u16, len / 2) };
-    skipword = ::std::cmp::min(skipword, wdata.len());
-
+    let mut cur_data = &data[..];
     let mut sum = 0u32;
     let mut i = 0;
-    while i < skipword {
-        sum += u16::from_be(unsafe { *wdata.get_unchecked(i) }) as u32;
+    while cur_data.len() >= 2 {
+        if i != skipword {
+            // It's safe to unwrap because we verified there are at least 2 bytes
+            sum += u16::from_be_bytes(cur_data[0..2].try_into().unwrap()) as u32;
+        }
+        cur_data = &cur_data[2..];
         i += 1;
     }
-    i += 1;
-    while i < wdata.len() {
-        sum += u16::from_be(unsafe { *wdata.get_unchecked(i) }) as u32;
-        i += 1;
-    }
+
     // If the length is odd, make sure to checksum the final byte
-    if len & 1 != 0 {
-        sum += (unsafe { *data.get_unchecked(len - 1) } as u32) << 8;
+    if i != skipword && len & 1 != 0 {
+        sum += (data[len - 1] as u32) << 8;
     }
 
     sum
@@ -175,6 +170,7 @@ fn sum_be_words(data: &[u8], mut skipword: usize) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::sum_be_words;
+    use std::slice;
 
     #[test]
     fn sum_be_words_different_skipwords() {
@@ -185,6 +181,47 @@ mod tests {
         // results
         assert_eq!(7705, sum_be_words(&data, 99));
         assert_eq!(7705, sum_be_words(&data, 101));
+    }
+
+    #[test]
+    fn sum_be_words_small_sizes() {
+        let data_zero = vec![0; 0];
+        assert_eq!(0, sum_be_words(&data_zero, 0));
+        assert_eq!(0, sum_be_words(&data_zero, 10));
+        let data_one = vec![1; 1];
+        assert_eq!(0, sum_be_words(&data_zero, 0));
+        assert_eq!(256, sum_be_words(&data_one, 1));
+        let data_two = vec![1; 2];
+        assert_eq!(0, sum_be_words(&data_two, 0));
+        assert_eq!(257, sum_be_words(&data_two, 1));
+        let data_three = vec![4; 3];
+        assert_eq!(1024, sum_be_words(&data_three, 0));
+        assert_eq!(1028, sum_be_words(&data_three, 1));
+        assert_eq!(2052, sum_be_words(&data_three, 2));
+        assert_eq!(2052, sum_be_words(&data_three, 3));
+    }
+
+    #[test]
+    fn sum_be_words_misaligned_ptr() {
+        let mut data = vec![0; 13];
+        let ptr = match data.as_ptr() as usize % 2 { 
+            0 => {
+                unsafe { data.as_mut_ptr().offset(1) }
+            }
+            _ => data.as_mut_ptr(),
+        }; 
+        unsafe {
+            let slice_data = slice::from_raw_parts_mut(ptr, 12);
+            for i in 0..11 {
+                slice_data[i] = i as u8;
+            }
+            assert_eq!(7190, sum_be_words(&slice_data, 1));
+            assert_eq!(6676, sum_be_words(&slice_data, 2));
+            // Assert having the skipword outside the range gives correct and equal
+            // results
+            assert_eq!(7705, sum_be_words(&slice_data, 99));
+            assert_eq!(7705, sum_be_words(&slice_data, 101));
+        }
     }
 }
 
