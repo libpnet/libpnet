@@ -234,7 +234,7 @@ fn main() {
         .into_iter()
         .filter(interface_names_match)
         .next()
-        .unwrap();
+        .unwrap_or_else(|| panic!("No such network interface: {}", iface_name));
 
     // Create a channel to receive on
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
