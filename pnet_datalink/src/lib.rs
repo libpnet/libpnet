@@ -311,6 +311,31 @@ impl ::std::fmt::Display for NetworkInterface {
 }
 
 /// Get a list of available network interfaces for the current machine.
+///
+/// If you need the default network interface, you can choose the first
+/// one that is up, not loopback and has an IP. This is not guaranteed to
+/// work on each system but should work for basic packet sniffing:
+///
+/// ```
+/// use pnet_datalink::interfaces;
+///
+/// // Get a vector with all network interfaces found
+/// let all_interfaces = interfaces();
+///
+/// // Search for the default interface - the one that is
+/// // up, not loopback and has an IP.
+/// let default_interface = all_interfaces
+///     .iter()
+///     .filter(|e| e.is_up() && !e.is_loopback() && e.ips.len() > 0)
+///     .next();
+///
+/// match default_interface {
+///     Some(interface) => println!("Found default interface with [{}].", interface.name),
+///     None => println!("Error while finding the default interface."),
+/// }
+///
+/// ```
+///
 pub fn interfaces() -> Vec<NetworkInterface> {
     backend::interfaces()
 }
