@@ -486,7 +486,7 @@ fn handle_misc_field(cx: &mut GenContext,
                 || (target_endianness == Endianness::Little && endianness == Endianness::Host)
             {
                 ops = to_little_endian(ops);
-            } 
+            }
 
             let arg_name = format!("arg{}", i);
             inner_accessors =
@@ -576,7 +576,7 @@ fn handle_vec_primitive(cx: &mut GenContext,
             *accessors = format!("{accessors}
                                     /// Get the value of the {name} field (copies contents)
                                     #[inline]
-                                    #[allow(trivial_numeric_casts)]
+                                    #[allow(trivial_numeric_casts, unused_parens)]
                                     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                     pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
                                         use std::cmp::min;
@@ -845,7 +845,7 @@ fn generate_packet_impl(cx: &mut GenContext,
                     || (target_endianness == Endianness::Little && endianness == Endianness::Host)
                 {
                     ops = to_little_endian(ops);
-                } 
+                }
 
                 mutators = mutators +
                            &generate_mutator_str(&field.name[..],
@@ -1370,7 +1370,7 @@ fn generate_accessor_str(name: &str,
 
     let accessor = if let Some(struct_name) = inner {
         format!("#[inline(always)]
-        #[allow(trivial_numeric_casts)]
+        #[allow(trivial_numeric_casts, unused_parens)]
         #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
         fn get_{name}(_self: &{struct_name}) -> {ty} {{
             let co = {co};
@@ -1380,7 +1380,7 @@ fn generate_accessor_str(name: &str,
         let comment = generate_accessor_or_mutator_comment(name, ty, AccessorMutator::Accessor);
         format!("{comment}
         #[inline]
-        #[allow(trivial_numeric_casts)]
+        #[allow(trivial_numeric_casts, unused_parens)]
         #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
         pub fn get_{name}(&self) -> {ty} {{
             let _self = self;
