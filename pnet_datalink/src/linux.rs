@@ -127,7 +127,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
             linux::SOL_PACKET,
             linux::PACKET_ADD_MEMBERSHIP,
             (&pmr as *const linux::packet_mreq) as *const libc::c_void,
-            mem::size_of::<linux::packet_mreq>() as u32,
+            mem::size_of::<linux::packet_mreq>() as libc::socklen_t,
         )
     } == -1
     {
@@ -169,7 +169,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
                 linux::SOL_PACKET,
                 linux::PACKET_FANOUT,
                 (&arg as *const libc::c_uint) as *const libc::c_void,
-                mem::size_of::<libc::c_uint>() as u32,
+                mem::size_of::<libc::c_uint>() as libc::socklen_t,
             )
         } == -1
         {
