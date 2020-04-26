@@ -106,4 +106,3 @@ fn main() {
 
     println!("Target MAC address: {}", target_mac);
 }
-

@@ -79,9 +79,7 @@ impl Default for Config {
 
 /// Create a datalink channel using the WinPcap library.
 #[inline]
-pub fn channel(network_interface: &NetworkInterface,
-               config: Config)
-    -> io::Result<super::Channel> {
+pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Result<super::Channel> {
     let mut read_buffer = Vec::new();
     read_buffer.resize(config.read_buffer_size, 0u8);
 
@@ -122,9 +120,11 @@ pub fn channel(network_interface: &NetworkInterface,
     }
 
     unsafe {
-        winpcap::PacketInitPacket(read_packet,
-                                  read_buffer.as_mut_ptr() as winpcap::PVOID,
-                                  config.read_buffer_size as winpcap::UINT)
+        winpcap::PacketInitPacket(
+            read_packet,
+            read_buffer.as_mut_ptr() as winpcap::PVOID,
+            config.read_buffer_size as winpcap::UINT,
+        )
     }
 
     let write_packet = unsafe { winpcap::PacketAllocatePacket() };
@@ -137,21 +137,27 @@ pub fn channel(network_interface: &NetworkInterface,
     }
 
     unsafe {
-        winpcap::PacketInitPacket(write_packet,
-                                  write_buffer.as_mut_ptr() as winpcap::PVOID,
-                                  config.write_buffer_size as winpcap::UINT)
+        winpcap::PacketInitPacket(
+            write_packet,
+            write_buffer.as_mut_ptr() as winpcap::PVOID,
+            config.write_buffer_size as winpcap::UINT,
+        )
     }
 
     let adapter = Arc::new(WinPcapAdapter { adapter: adapter });
     let sender = Box::new(DataLinkSenderImpl {
         adapter: adapter.clone(),
         _write_buffer: write_buffer,
-        packet: WinPcapPacket { packet: write_packet },
+        packet: WinPcapPacket {
+            packet: write_packet,
+        },
     });
     let receiver = Box::new(DataLinkReceiverImpl {
         adapter: adapter,
         _read_buffer: read_buffer,
-        packet: WinPcapPacket { packet: read_packet },
+        packet: WinPcapPacket {
+            packet: read_packet,
+        },
         // Enough room for minimally sized packets without reallocating
         packets: VecDeque::with_capacity(unsafe { (*read_packet).Length } as usize / 64),
     });
@@ -166,11 +172,12 @@ struct DataLinkSenderImpl {
 
 impl DataLinkSender for DataLinkSenderImpl {
     #[inline]
-    fn build_and_send(&mut self,
-                      num_packets: usize,
-                      packet_size: usize,
-                      func: &mut FnMut(&mut [u8]))
-        -> Option<io::Result<()>> {
+    fn build_and_send(
+        &mut self,
+        num_packets: usize,
+        packet_size: usize,
+        func: &mut FnMut(&mut [u8]),
+    ) -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len >= unsafe { (*self.packet.packet).Length } as usize {
             None
@@ -204,15 +211,10 @@ impl DataLinkSender for DataLinkSenderImpl {
     }
 
     #[inline]
-    fn send_to(&mut self,
-               packet: &[u8],
-               _dst: Option<NetworkInterface>)
-        -> Option<io::Result<()>> {
-        self.build_and_send(1,
-                            packet.len(),
-                            &mut |eh: &mut [u8]| {
-                                eh.copy_from_slice(packet);
-                            })
+    fn send_to(&mut self, packet: &[u8], _dst: Option<NetworkInterface>) -> Option<io::Result<()>> {
+        self.build_and_send(1, packet.len(), &mut |eh: &mut [u8]| {
+            eh.copy_from_slice(packet);
+        })
     }
 }
 
@@ -245,9 +247,10 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
             while ptr < end {
                 unsafe {
                     let packet: *const bpf::bpf_hdr = mem::transmute(ptr);
-                    let start = ptr as isize + (*packet).bh_hdrlen as isize -
-                                (*self.packet.packet).Buffer as isize;
-                    self.packets.push_back((start as usize, (*packet).bh_caplen as usize));
+                    let start = ptr as isize + (*packet).bh_hdrlen as isize
+                        - (*self.packet.packet).Buffer as isize;
+                    self.packets
+                        .push_back((start as usize, (*packet).bh_caplen as usize));
                     let offset = (*packet).bh_hdrlen as isize + (*packet).bh_caplen as isize;
                     ptr = ptr.offset(bpf::BPF_WORDALIGN(offset));
                 }
@@ -291,12 +294,14 @@ pub fn interfaces() -> Vec<NetworkInterface> {
     let mut all_ifaces = Vec::with_capacity(vec_size as usize);
     while !cursor.is_null() {
         let mac = unsafe {
-            MacAddr((*cursor).Address[0],
-                    (*cursor).Address[1],
-                    (*cursor).Address[2],
-                    (*cursor).Address[3],
-                    (*cursor).Address[4],
-                    (*cursor).Address[5])
+            MacAddr(
+                (*cursor).Address[0],
+                (*cursor).Address[1],
+                (*cursor).Address[2],
+                (*cursor).Address[3],
+                (*cursor).Address[4],
+                (*cursor).Address[5],
+            )
         };
         let mut ip_cursor = unsafe { &mut (*cursor).IpAddressList as winpcap::PIP_ADDR_STRING };
         let mut ips = Vec::new();
@@ -334,11 +339,11 @@ pub fn interfaces() -> Vec<NetworkInterface> {
 
         // Second call should now work with the correct buffer size. If not, this may be
         // due to some privilege or other unforseen issue.
-        if unsafe { winpcap::PacketGetAdapterNames(buf.as_mut_ptr() as *mut i8, &mut buflen) } == 0 {
+        if unsafe { winpcap::PacketGetAdapterNames(buf.as_mut_ptr() as *mut i8, &mut buflen) } == 0
+        {
             panic!("Unable to get interface list despite increasing buffer size");
         }
     }
-
 
     let buf_str = unsafe { from_utf8_unchecked(&buf) };
     let iface_names = buf_str.split("\0\0").next();
@@ -349,7 +354,10 @@ pub fn interfaces() -> Vec<NetworkInterface> {
         Some(iface_names) => {
             for iface in iface_names.split('\0') {
                 let name = iface.to_owned();
-                let next = all_ifaces.iter().filter(|x| name[..].ends_with(&x.name[..])).next();
+                let next = all_ifaces
+                    .iter()
+                    .filter(|x| name[..].ends_with(&x.name[..]))
+                    .next();
                 if next.is_some() {
                     let mut iface = next.unwrap().clone();
                     iface.name = name;

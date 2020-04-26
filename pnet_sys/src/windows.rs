@@ -5,9 +5,9 @@ use libc;
 use std::io;
 
 pub mod public {
-    use libc;
     use super::winapi;
     use super::ws2_32;
+    use libc;
 
     pub type CSocket = winapi::SOCKET;
     pub type Buf = *const libc::c_char;
@@ -42,7 +42,6 @@ pub mod public {
 
     pub const INVALID_SOCKET: CSocket = winapi::INVALID_SOCKET;
 
-
     pub unsafe fn close(sock: CSocket) {
         let _ = ws2_32::closesocket(sock);
     }
@@ -51,24 +50,25 @@ pub mod public {
         ws2_32::socket(af, sock, proto)
     }
 
-    pub unsafe fn setsockopt(socket: CSocket,
-                            level: libc::c_int,
-                            name: libc::c_int,
-                            value: Buf,
-                            option_len: SockLen)
-        -> libc::c_int {
+    pub unsafe fn setsockopt(
+        socket: CSocket,
+        level: libc::c_int,
+        name: libc::c_int,
+        value: Buf,
+        option_len: SockLen,
+    ) -> libc::c_int {
         ws2_32::setsockopt(socket, level, name, value, option_len)
     }
 
-    pub unsafe fn getsockopt(socket: CSocket,
-                            level: libc::c_int,
-                            name: libc::c_int,
-                            value: MutBuf,
-                            option_len: MutSockLen)
-        -> libc::c_int {
+    pub unsafe fn getsockopt(
+        socket: CSocket,
+        level: libc::c_int,
+        name: libc::c_int,
+        value: MutBuf,
+        option_len: MutSockLen,
+    ) -> libc::c_int {
         ws2_32::getsockopt(socket, level, name, value, option_len)
     }
-
 }
 
 use self::public::*;
@@ -80,34 +80,37 @@ pub fn ipv4_addr(addr: InAddr) -> u32 {
 
 #[inline(always)]
 pub fn mk_inaddr(addr: u32) -> InAddr {
-    InAddr { S_un: addr as winapi::ULONG }
+    InAddr {
+        S_un: addr as winapi::ULONG,
+    }
 }
 
-
-pub unsafe fn sendto(socket: CSocket,
-                     buf: Buf,
-                     len: BufLen,
-                     flags: libc::c_int,
-                     to: *const SockAddr,
-                     tolen: SockLen)
-    -> CouldFail {
+pub unsafe fn sendto(
+    socket: CSocket,
+    buf: Buf,
+    len: BufLen,
+    flags: libc::c_int,
+    to: *const SockAddr,
+    tolen: SockLen,
+) -> CouldFail {
     ws2_32::sendto(socket, buf, len, flags, to, tolen)
 }
 
-pub unsafe fn recvfrom(socket: CSocket,
-                       buf: MutBuf,
-                       len: BufLen,
-                       flags: libc::c_int,
-                       addr: *mut SockAddr,
-                       addrlen: *mut SockLen)
-    -> CouldFail {
+pub unsafe fn recvfrom(
+    socket: CSocket,
+    buf: MutBuf,
+    len: BufLen,
+    flags: libc::c_int,
+    addr: *mut SockAddr,
+    addrlen: *mut SockLen,
+) -> CouldFail {
     ws2_32::recvfrom(socket, buf, len, flags, addr, addrlen)
 }
 
-
 #[inline]
 pub fn retry<F>(f: &mut F) -> libc::c_int
-    where F: FnMut() -> libc::c_int
+where
+    F: FnMut() -> libc::c_int,
 {
     loop {
         let ret = f();
@@ -116,7 +119,6 @@ pub fn retry<F>(f: &mut F) -> libc::c_int
         }
     }
 }
-
 
 fn errno() -> i32 {
     io::Error::last_os_error().raw_os_error().unwrap()

@@ -3,16 +3,16 @@
 
 extern crate pcap;
 
-use std::marker::{Send, Sync};
 use std::io;
+use std::marker::{Send, Sync};
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use std::path::Path;
 
-use self::pcap::{Active, Activated};
+use self::pcap::{Activated, Active};
 
-use {DataLinkReceiver, DataLinkSender, NetworkInterface};
 use Channel::Ethernet;
+use {DataLinkReceiver, DataLinkSender, NetworkInterface};
 
 /// Configuration for the pcap datalink backend.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -27,7 +27,7 @@ pub struct Config {
 
 impl<'a> From<&'a super::Config> for Config {
     fn from(config: &super::Config) -> Config {
-        let mut c = Config{
+        let mut c = Config {
             read_buffer_size: config.read_buffer_size,
             read_timeout: config.read_timeout,
         };
@@ -43,7 +43,7 @@ impl<'a> From<&'a super::Config> for Config {
 
 impl Default for Config {
     fn default() -> Config {
-        Config{
+        Config {
             // Just let pcap pick the default size
             read_buffer_size: 0,
             read_timeout: None,
@@ -53,17 +53,15 @@ impl Default for Config {
 
 /// Create a datalink channel from the provided pcap device.
 #[inline]
-pub fn channel(network_interface: &NetworkInterface,
-               config: Config) -> io::Result<super::Channel> {
+pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Result<super::Channel> {
     let cap = match pcap::Capture::from_device(&*network_interface.name) {
         Ok(cap) => cap,
         Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
-    }.buffer_size(config.read_buffer_size as i32);
+    }
+    .buffer_size(config.read_buffer_size as i32);
     let cap = match config.read_timeout {
-        Some(to) => cap.timeout(
-            (to.as_secs() * 1000 + (to.subsec_nanos() / 1000) as u64) as i32
-        ),
-        None => cap
+        Some(to) => cap.timeout((to.as_secs() * 1000 + (to.subsec_nanos() / 1000) as u64) as i32),
+        None => cap,
     };
     let cap = match cap.open() {
         Ok(cap) => cap,
@@ -77,7 +75,7 @@ pub fn channel(network_interface: &NetworkInterface,
         Box::new(DataLinkReceiverImpl {
             capture: cap.clone(),
             read_buffer: vec![0; config.read_buffer_size],
-        })
+        }),
     ))
 }
 
@@ -94,7 +92,7 @@ pub fn from_file<P: AsRef<Path>>(path: P, config: Config) -> io::Result<super::C
         Box::new(DataLinkReceiverImpl {
             capture: cap.clone(),
             read_buffer: vec![0; config.read_buffer_size],
-        })
+        }),
     ))
 }
 
@@ -104,26 +102,25 @@ struct DataLinkSenderImpl {
 
 impl DataLinkSender for DataLinkSenderImpl {
     #[inline]
-    fn build_and_send(&mut self,
-                      num_packets: usize,
-                      packet_size: usize,
-                      func: &mut dyn FnMut(&mut [u8]))
-                      -> Option<io::Result<()>> {
+    fn build_and_send(
+        &mut self,
+        num_packets: usize,
+        packet_size: usize,
+        func: &mut dyn FnMut(&mut [u8]),
+    ) -> Option<io::Result<()>> {
         for _ in 0..num_packets {
             let mut data = vec![0; packet_size];
             func(&mut data);
             let mut cap = self.capture.lock().unwrap();
             if let Err(e) = cap.sendpacket(data) {
-                return Some(Err(io::Error::new(io::ErrorKind::Other, e)))
+                return Some(Err(io::Error::new(io::ErrorKind::Other, e)));
             }
         }
         Some(Ok(()))
     }
 
     #[inline]
-    fn send_to(&mut self,
-               packet: &[u8],
-               _dst: Option<NetworkInterface>) -> Option<io::Result<()>> {
+    fn send_to(&mut self, packet: &[u8], _dst: Option<NetworkInterface>) -> Option<io::Result<()>> {
         let mut cap = self.capture.lock().unwrap();
         Some(match cap.sendpacket(packet) {
             Ok(()) => Ok(()),
@@ -136,18 +133,21 @@ struct InvalidDataLinkSenderImpl {}
 
 impl DataLinkSender for InvalidDataLinkSenderImpl {
     #[inline]
-    fn build_and_send(&mut self,
-                      _num_packets: usize,
-                      _packet_size: usize,
-                      _func: &mut dyn FnMut(&mut [u8]))
-                      -> Option<io::Result<()>> {
+    fn build_and_send(
+        &mut self,
+        _num_packets: usize,
+        _packet_size: usize,
+        _func: &mut dyn FnMut(&mut [u8]),
+    ) -> Option<io::Result<()>> {
         None
     }
 
     #[inline]
-    fn send_to(&mut self,
-               _packet: &[u8],
-               _dst: Option<NetworkInterface>) -> Option<io::Result<()>> {
+    fn send_to(
+        &mut self,
+        _packet: &[u8],
+        _dst: Option<NetworkInterface>,
+    ) -> Option<io::Result<()>> {
         None
     }
 }
@@ -157,15 +157,14 @@ struct DataLinkReceiverImpl<T: Activated + Send + Sync> {
     read_buffer: Vec<u8>,
 }
 
-
-impl <T: Activated + Send + Sync> DataLinkReceiver for DataLinkReceiverImpl<T> {
+impl<T: Activated + Send + Sync> DataLinkReceiver for DataLinkReceiverImpl<T> {
     fn next(&mut self) -> io::Result<&[u8]> {
         let mut cap = self.capture.lock().unwrap();
         match cap.next() {
             Ok(pkt) => {
                 self.read_buffer.truncate(0);
                 self.read_buffer.extend(pkt.data);
-            },
+            }
             Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
         };
         Ok(&self.read_buffer)
@@ -175,15 +174,17 @@ impl <T: Activated + Send + Sync> DataLinkReceiver for DataLinkReceiverImpl<T> {
 /// Get a list of available network interfaces for the current machine.
 pub fn interfaces() -> Vec<NetworkInterface> {
     if let Ok(devices) = pcap::Device::list() {
-        devices.iter().enumerate().map(|(i, dev)| {
-            NetworkInterface {
+        devices
+            .iter()
+            .enumerate()
+            .map(|(i, dev)| NetworkInterface {
                 name: dev.name.clone(),
                 index: i as u32,
                 mac: None,
                 ips: Vec::new(),
                 flags: 0,
-            }
-        }).collect()
+            })
+            .collect()
     } else {
         vec![]
     }

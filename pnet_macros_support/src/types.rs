@@ -43,7 +43,6 @@ pub type u6 = u8;
 /// Represents an unsigned, 7-bit integer.
 pub type u7 = u8;
 
-
 /// Represents an unsigned 9-bit integer. libpnet #[packet]-derived structs using this type will
 /// hold it in memory as big-endian, but accessors/mutators will return/take host-order values.
 pub type u9be = u16;
@@ -267,7 +266,6 @@ pub type u63be = u64;
 /// Represents an unsigned 64-bit integer. libpnet #[packet]-derived structs using this type will
 /// hold it in memory as big-endian, but accessors/mutators will return/take host-order values.
 pub type u64be = u64;
-
 
 /// Represents an unsigned 9-bit integer. libpnet #[packet]-derived structs using this type will
 /// hold it in memory as little-endian, but accessors/mutators will return/take host-order values.

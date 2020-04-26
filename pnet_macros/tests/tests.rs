@@ -7,16 +7,23 @@ enum TestType {
 }
 
 fn run_test(name: &str, ty: TestType) {
-    use std::io::prelude::*;
-    use std::fs::File;
     use std::env;
+    use std::fs::File;
+    use std::io::prelude::*;
     use TestType::*;
 
     // Set the required target endian environment variable
-    let target_endian = if cfg!(target_endian = "little") { "little" } else { "big" };
+    let target_endian = if cfg!(target_endian = "little") {
+        "little"
+    } else {
+        "big"
+    };
     env::set_var("CARGO_CFG_TARGET_ENDIAN", target_endian);
 
-    let path = match ty { CompileFail => "compile-fail", RunPass => "run-pass" };
+    let path = match ty {
+        CompileFail => "compile-fail",
+        RunPass => "run-pass",
+    };
     let file_name = format!("tests/{}/{}.rs", path, name);
 
     let mut f = File::open(&file_name).unwrap();
@@ -33,7 +40,7 @@ fn run_test(name: &str, ty: TestType) {
             if res.is_ok() {
                 panic!(format!("unexpected success: {}", file_name));
             }
-        },
+        }
         RunPass => {
             res.unwrap();
         }
@@ -47,8 +54,7 @@ mod run_pass {
             fn $name() {
                 ::run_test(stringify!($name), super::TestType::RunPass);
             }
-
-        }
+        };
     }
 
     run_pass!(length_expr);
@@ -72,23 +78,40 @@ mod compile_fail {
 
                 ::run_test(stringify!($name), super::TestType::CompileFail);
             }
-        }
+        };
     }
 
     compile_fail!(payload_fn2, "unknown attribute: payload");
-    compile_fail!(endianness_not_specified, "endianness must be specified for types of size >= 8");
-    compile_fail!(length_expr, "Only field names, constants, integers, \
+    compile_fail!(
+        endianness_not_specified,
+        "endianness must be specified for types of size >= 8"
+    );
+    compile_fail!(
+        length_expr,
+        "Only field names, constants, integers, \
                                 basic arithmetic expressions (+ - * / %) \
-                                and parentheses are allowed in the \"length\" attribute");
+                                and parentheses are allowed in the \"length\" attribute"
+    );
     compile_fail!(unnamed_field, "all fields in a packet must be named");
     compile_fail!(must_be_pub, "#[packet] structs must be public");
     compile_fail!(no_payload, "#[packet]'s must contain a payload");
-    compile_fail!(invalid_type, "non-primitive field types must specify #[construct_with]");
-    compile_fail!(length_expr_parentheses, "this file contains an un-closed delimiter");
+    compile_fail!(
+        invalid_type,
+        "non-primitive field types must specify #[construct_with]"
+    );
+    compile_fail!(
+        length_expr_parentheses,
+        "this file contains an un-closed delimiter"
+    );
     compile_fail!(multiple_payload, "packet may not have multiple payloads");
-    compile_fail!(variable_length_fields, "variable length field must have #[length = \"\"] or \
-                                           #[length_fn = \"\"] attribute");
-    compile_fail!(length_expr_key, "Field name must be a member of the struct and not the field \
-                                    itself");
+    compile_fail!(
+        variable_length_fields,
+        "variable length field must have #[length = \"\"] or \
+                                           #[length_fn = \"\"] attribute"
+    );
+    compile_fail!(
+        length_expr_key,
+        "Field name must be a member of the struct and not the field \
+                                    itself"
+    );
 }
-

@@ -138,10 +138,9 @@
 //!        `#[construct_with(...)]` attribute, and in the `new` method.
 
 #![deny(missing_docs)]
-
-#![cfg_attr(feature="clippy", feature(plugin))]
-#![cfg_attr(feature="clippy", plugin(clippy))]
-#![cfg_attr(feature="clippy", allow(let_and_return))]
+#![cfg_attr(feature = "clippy", feature(plugin))]
+#![cfg_attr(feature = "clippy", plugin(clippy))]
+#![cfg_attr(feature = "clippy", allow(let_and_return))]
 
 extern crate syntex;
 extern crate syntex_syntax as syntax;
@@ -168,11 +167,12 @@ fn mw(ecx: &mut ExtCtxt, span: Span, word: &'static str) -> P<ast::MetaItem> {
 ///
 /// The #[packet] attribute is consumed, so we replace it with two internal attributes,
 /// #[packet_generator], which is used to generate the packet implementations, and
-fn packet_modifier(ecx: &mut ExtCtxt,
-                   span: Span,
-                   _meta_item: &ast::MetaItem,
-                   item: Annotatable)
-    -> Annotatable {
+fn packet_modifier(
+    ecx: &mut ExtCtxt,
+    span: Span,
+    _meta_item: &ast::MetaItem,
+    item: Annotatable,
+) -> Annotatable {
     let item = item.expect_item();
     let mut new_item = (*item).clone();
 
@@ -182,14 +182,22 @@ fn packet_modifier(ecx: &mut ExtCtxt,
     let unused_attrs = mw(ecx, span, "unused_attributes");
 
     let a1 = ecx.attribute(span, packet_generator);
-    let a2 = ecx.attribute(span,
-                           ecx.meta_list(span,
-                                         token::InternedString::new("derive"),
-                                         vec![clone, debug]));
-    let a3 = ecx.attribute(span,
-                           ecx.meta_list(span,
-                                         token::InternedString::new("allow"),
-                                         vec![unused_attrs]));
+    let a2 = ecx.attribute(
+        span,
+        ecx.meta_list(
+            span,
+            token::InternedString::new("derive"),
+            vec![clone, debug],
+        ),
+    );
+    let a3 = ecx.attribute(
+        span,
+        ecx.meta_list(
+            span,
+            token::InternedString::new("allow"),
+            vec![unused_attrs],
+        ),
+    );
 
     new_item.attrs.push(a1);
     new_item.attrs.push(a2);
@@ -211,12 +219,10 @@ fn variant_data_fields(vd: &mut ast::VariantData) -> &mut [ast::StructField] {
 fn remove_attributes_struct(vd: &mut ast::VariantData) {
     for field in variant_data_fields(vd) {
         let attrs = &mut field.attrs;
-        attrs.retain(|attr| {
-            match attr.node.value.node {
-                ast::MetaItemKind::Word(ref s) => *s != "payload",
-                ast::MetaItemKind::List(ref s, _) => *s != "construct_with",
-                ast::MetaItemKind::NameValue(ref s, _) => !(*s == "length_fn" || *s == "length"),
-            }
+        attrs.retain(|attr| match attr.node.value.node {
+            ast::MetaItemKind::Word(ref s) => *s != "payload",
+            ast::MetaItemKind::List(ref s, _) => *s != "construct_with",
+            ast::MetaItemKind::NameValue(ref s, _) => !(*s == "length_fn" || *s == "length"),
         });
     }
 }
@@ -268,4 +274,3 @@ pub fn register(registry: &mut syntex::Registry) {
     registry.add_decorator("packet_generator", decorator::generate_packet);
     registry.add_post_expansion_pass(remove_attributes);
 }
-

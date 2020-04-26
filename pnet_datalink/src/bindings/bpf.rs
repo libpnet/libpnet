@@ -86,7 +86,11 @@ pub struct sockaddr_dl {
 }
 
 // See man 4 bpf or /usr/include/net/bpf.h [windows: or Common/Packet32.h]
-#[cfg(any(target_os = "freebsd", all(target_os = "macos", target_pointer_width = "32"), windows))]
+#[cfg(any(
+    target_os = "freebsd",
+    all(target_os = "macos", target_pointer_width = "32"),
+    windows
+))]
 pub struct bpf_hdr {
     pub bh_tstamp: libc::timeval,
     pub bh_caplen: u32,
@@ -99,7 +103,10 @@ pub struct timeval32 {
     pub tv_usec: i32,
 }
 
-#[cfg(any(target_os = "openbsd", all(target_os = "macos", target_pointer_width = "64")))]
+#[cfg(any(
+    target_os = "openbsd",
+    all(target_os = "macos", target_pointer_width = "64")
+))]
 pub struct bpf_hdr {
     pub bh_tstamp: timeval32,
     pub bh_caplen: u32,

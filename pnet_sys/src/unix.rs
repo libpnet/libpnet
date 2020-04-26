@@ -38,10 +38,9 @@ pub mod public {
     pub const IP_HDRINCL: libc::c_int = libc::IP_HDRINCL;
     pub const IP_TTL: libc::c_int = libc::IP_TTL;
 
-    pub use libc::{IFF_UP, IFF_BROADCAST, IFF_LOOPBACK, IFF_POINTOPOINT, IFF_MULTICAST};
+    pub use libc::{IFF_BROADCAST, IFF_LOOPBACK, IFF_MULTICAST, IFF_POINTOPOINT, IFF_UP};
 
     pub const INVALID_SOCKET: CSocket = -1;
-
 
     pub unsafe fn close(sock: CSocket) {
         let _ = libc::close(sock);
@@ -51,21 +50,23 @@ pub mod public {
         libc::socket(af, sock, proto)
     }
 
-    pub unsafe fn getsockopt(socket: CSocket,
-                            level: libc::c_int,
-                            name: libc::c_int,
-                            value: MutBuf,
-                            option_len: MutSockLen)
-        -> libc::c_int {
+    pub unsafe fn getsockopt(
+        socket: CSocket,
+        level: libc::c_int,
+        name: libc::c_int,
+        value: MutBuf,
+        option_len: MutSockLen,
+    ) -> libc::c_int {
         libc::getsockopt(socket, level, name, value, option_len)
     }
 
-    pub unsafe fn setsockopt(socket: CSocket,
-                            level: libc::c_int,
-                            name: libc::c_int,
-                            value: Buf,
-                            option_len: SockLen)
-        -> libc::c_int {
+    pub unsafe fn setsockopt(
+        socket: CSocket,
+        level: libc::c_int,
+        name: libc::c_int,
+        value: Buf,
+        option_len: SockLen,
+    ) -> libc::c_int {
         libc::setsockopt(socket, level, name, value, option_len)
     }
 
@@ -78,7 +79,7 @@ pub mod public {
     pub fn duration_to_timeval(dur: Duration) -> libc::timeval {
         libc::timeval {
             tv_sec: dur.as_secs() as libc::time_t,
-            tv_usec: dur.subsec_micros() as TvUsecType
+            tv_usec: dur.subsec_micros() as TvUsecType,
         }
     }
 
@@ -91,10 +92,9 @@ pub mod public {
     pub fn duration_to_timespec(dur: Duration) -> libc::timespec {
         libc::timespec {
             tv_sec: dur.as_secs() as libc::time_t,
-            tv_nsec: (dur.subsec_nanos() as TvUsecType).into()
+            tv_nsec: (dur.subsec_nanos() as TvUsecType).into(),
         }
     }
-
 }
 
 use self::public::*;
@@ -109,31 +109,32 @@ pub fn mk_inaddr(addr: u32) -> InAddr {
     InAddr { s_addr: addr }
 }
 
-
-pub unsafe fn sendto(socket: CSocket,
-                     buf: Buf,
-                     len: BufLen,
-                     flags: libc::c_int,
-                     addr: *const SockAddr,
-                     addrlen: SockLen)
-    -> CouldFail {
+pub unsafe fn sendto(
+    socket: CSocket,
+    buf: Buf,
+    len: BufLen,
+    flags: libc::c_int,
+    addr: *const SockAddr,
+    addrlen: SockLen,
+) -> CouldFail {
     libc::sendto(socket, buf, len, flags, addr, addrlen)
 }
 
-pub unsafe fn recvfrom(socket: CSocket,
-                       buf: MutBuf,
-                       len: BufLen,
-                       flags: libc::c_int,
-                       addr: *mut SockAddr,
-                       addrlen: *mut SockLen)
-    -> CouldFail {
+pub unsafe fn recvfrom(
+    socket: CSocket,
+    buf: MutBuf,
+    len: BufLen,
+    flags: libc::c_int,
+    addr: *mut SockAddr,
+    addrlen: *mut SockLen,
+) -> CouldFail {
     libc::recvfrom(socket, buf, len, flags, addr, addrlen)
 }
 
-
 #[inline]
 pub fn retry<F>(f: &mut F) -> libc::ssize_t
-    where F: FnMut() -> libc::ssize_t
+where
+    F: FnMut() -> libc::ssize_t,
 {
     loop {
         let ret = f();
@@ -147,17 +148,14 @@ fn errno() -> i32 {
     io::Error::last_os_error().raw_os_error().unwrap()
 }
 
-
-
-
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
     use duration_to_timespec;
+    use std::time::Duration;
     use timespec_to_duration;
 
     #[test]
-    fn test_duration_to_timespec(){
+    fn test_duration_to_timespec() {
         let d1 = Duration::new(1, 0);
         let d2 = Duration::from_millis(500);
 

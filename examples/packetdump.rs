@@ -249,23 +249,23 @@ fn main() {
         match rx.next() {
             Ok(packet) => {
                 let payload_offset;
-                if cfg!(target_os = "macos") && interface.is_up() && !interface.is_broadcast() 
-                    && ((!interface.is_loopback() && interface.is_point_to_point()) 
-                         || interface.is_loopback())
+                if cfg!(target_os = "macos")
+                    && interface.is_up()
+                    && !interface.is_broadcast()
+                    && ((!interface.is_loopback() && interface.is_point_to_point())
+                        || interface.is_loopback())
                 {
-                    if interface.is_loopback()
-                    {
+                    if interface.is_loopback() {
                         // The pnet code for BPF loopback adds a zero'd out Ethernet header
                         payload_offset = 14;
-                    }
-                    else
-                    {
+                    } else {
                         // Maybe is TUN interface
                         payload_offset = 0;
                     }
-                    if packet.len() > payload_offset
-                    {
-                        let version = Ipv4Packet::new(&packet[payload_offset..]).unwrap().get_version();
+                    if packet.len() > payload_offset {
+                        let version = Ipv4Packet::new(&packet[payload_offset..])
+                            .unwrap()
+                            .get_version();
                         if version == 4 {
                             fake_ethernet_frame.set_destination(MacAddr(0, 0, 0, 0, 0, 0));
                             fake_ethernet_frame.set_source(MacAddr(0, 0, 0, 0, 0, 0));

@@ -23,8 +23,6 @@ mod imp;
 
 pub use self::imp::public::*;
 
-
-
 /// Any file descriptor on unix, only sockets on Windows.
 pub struct FileDesc {
     pub fd: CSocket,
@@ -38,12 +36,12 @@ impl Drop for FileDesc {
     }
 }
 
-pub fn send_to(socket: CSocket,
-               buffer: &[u8],
-               dst: *const SockAddr,
-               slen: SockLen)
-    -> io::Result<usize> {
-
+pub fn send_to(
+    socket: CSocket,
+    buffer: &[u8],
+    dst: *const SockAddr,
+    slen: SockLen,
+) -> io::Result<usize> {
     let send_len = imp::retry(&mut || unsafe {
         imp::sendto(
             socket,
@@ -51,7 +49,7 @@ pub fn send_to(socket: CSocket,
             buffer.len() as BufLen,
             0,
             dst,
-            slen
+            slen,
         )
     });
 
@@ -62,10 +60,11 @@ pub fn send_to(socket: CSocket,
     }
 }
 
-pub fn recv_from(socket: CSocket,
-                 buffer: &mut [u8],
-                 caddr: *mut SockAddrStorage)
-    -> io::Result<usize> {
+pub fn recv_from(
+    socket: CSocket,
+    buffer: &mut [u8],
+    caddr: *mut SockAddrStorage,
+) -> io::Result<usize> {
     let mut caddrlen = mem::size_of::<SockAddrStorage>() as SockLen;
     let len = imp::retry(&mut || unsafe {
         imp::recvfrom(
@@ -74,7 +73,7 @@ pub fn recv_from(socket: CSocket,
             buffer.len() as BufLen,
             0,
             caddr as *mut SockAddr,
-            &mut caddrlen
+            &mut caddrlen,
         )
     });
 
@@ -85,23 +84,27 @@ pub fn recv_from(socket: CSocket,
     }
 }
 
-
 /// Set a timeout for receiving from the socket.
 #[cfg(unix)]
-pub fn set_socket_receive_timeout(socket: CSocket, t: Duration)
-    -> io::Result<()> {
+pub fn set_socket_receive_timeout(socket: CSocket, t: Duration) -> io::Result<()> {
     let ts = duration_to_timeval(t);
     let r = unsafe {
-        setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO,
-                   (&ts as *const libc::timeval) as Buf,
-                   mem::size_of::<libc::timeval>() as SockLen
+        setsockopt(
+            socket,
+            SOL_SOCKET,
+            SO_RCVTIMEO,
+            (&ts as *const libc::timeval) as Buf,
+            mem::size_of::<libc::timeval>() as SockLen,
         )
     };
 
     if r < 0 {
-        Err(io::Error::last_os_error()) 
+        Err(io::Error::last_os_error())
     } else if r > 0 {
-        Err(io::Error::new(io::ErrorKind::Other, format!("Unknown return value from getsockopt(): {}", r)))
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            format!("Unknown return value from getsockopt(): {}", r),
+        ))
     } else {
         Ok(())
     }
@@ -109,28 +112,38 @@ pub fn set_socket_receive_timeout(socket: CSocket, t: Duration)
 
 /// Extracts and returns a timout for reading from the socket.
 #[cfg(unix)]
-pub fn get_socket_receive_timeout(socket: CSocket)
-    -> io::Result<Duration> {
-    let ts = libc::timeval { tv_sec: 0, tv_usec: 0 };
-    let len : SockLen = mem::size_of::<libc::timeval>() as SockLen;
-    let r = unsafe{
-        getsockopt(socket, SOL_SOCKET, SO_RCVTIMEO,
-                   (&ts as *const libc::timeval) as MutBuf,
-                   (&len as *const SockLen) as MutSockLen
+pub fn get_socket_receive_timeout(socket: CSocket) -> io::Result<Duration> {
+    let ts = libc::timeval {
+        tv_sec: 0,
+        tv_usec: 0,
+    };
+    let len: SockLen = mem::size_of::<libc::timeval>() as SockLen;
+    let r = unsafe {
+        getsockopt(
+            socket,
+            SOL_SOCKET,
+            SO_RCVTIMEO,
+            (&ts as *const libc::timeval) as MutBuf,
+            (&len as *const SockLen) as MutSockLen,
         )
     };
-    assert_eq!(len, mem::size_of::<libc::timeval>() as SockLen, "getsockopt did not set size of return value");
-    
+    assert_eq!(
+        len,
+        mem::size_of::<libc::timeval>() as SockLen,
+        "getsockopt did not set size of return value"
+    );
+
     if r < 0 {
-        Err(io::Error::last_os_error()) 
+        Err(io::Error::last_os_error())
     } else if r > 0 {
-        Err(io::Error::new(io::ErrorKind::Other, format!("Unknown return value from getsockopt(): {}", r)))
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            format!("Unknown return value from getsockopt(): {}", r),
+        ))
     } else {
         Ok(timeval_to_duration(ts))
     }
 }
-
-
 
 // These functions are taken/adapted from libnative::io::{mod, net}
 
@@ -144,30 +157,32 @@ fn ntohs(u: u16) -> u16 {
 fn make_in6_addr(segments: [u16; 8]) -> In6Addr {
     let mut val: In6Addr = unsafe { mem::MaybeUninit::<In6Addr>::uninit().assume_init() };
     val.s6_addr = unsafe {
-        mem::transmute([htons(segments[0]),
-                        htons(segments[1]),
-                        htons(segments[2]),
-                        htons(segments[3]),
-                        htons(segments[4]),
-                        htons(segments[5]),
-                        htons(segments[6]),
-                        htons(segments[7])])
+        mem::transmute([
+            htons(segments[0]),
+            htons(segments[1]),
+            htons(segments[2]),
+            htons(segments[3]),
+            htons(segments[4]),
+            htons(segments[5]),
+            htons(segments[6]),
+            htons(segments[7]),
+        ])
     };
     val
 }
 
-pub fn addr_to_sockaddr(addr: SocketAddr,
-                        storage: &mut SockAddrStorage)
-    -> SockLen {
+pub fn addr_to_sockaddr(addr: SocketAddr, storage: &mut SockAddrStorage) -> SockLen {
     unsafe {
         let len = match addr {
             SocketAddr::V4(sa) => {
                 let ip_addr = sa.ip();
                 let octets = ip_addr.octets();
-                let inaddr = imp::mk_inaddr(u32::from_be(((octets[0] as u32) << 24) |
-                                                             ((octets[1] as u32) << 16) |
-                                                             ((octets[2] as u32) << 8) |
-                                                             (octets[3] as u32)));
+                let inaddr = imp::mk_inaddr(u32::from_be(
+                    ((octets[0] as u32) << 24)
+                        | ((octets[1] as u32) << 16)
+                        | ((octets[2] as u32) << 8)
+                        | (octets[3] as u32),
+                ));
                 let storage = storage as *mut _ as *mut SockAddrIn;
                 (*storage).sin_family = AF_INET as SockAddrFamily;
                 (*storage).sin_port = htons(addr.port());
@@ -217,28 +232,33 @@ pub fn sockaddr_to_addr(storage: &SockAddrStorage, len: usize) -> io::Result<Soc
             let g = ntohs(arr[6]);
             let h = ntohs(arr[7]);
             let ip = Ipv6Addr::new(a, b, c, d, e, f, g, h);
-            Ok(SocketAddr::V6(SocketAddrV6::new(ip,
-                                                ntohs(storage.sin6_port),
-                                                u32::from_be(storage.sin6_flowinfo),
-                                                storage.sin6_scope_id)))
+            Ok(SocketAddr::V6(SocketAddrV6::new(
+                ip,
+                ntohs(storage.sin6_port),
+                u32::from_be(storage.sin6_flowinfo),
+                storage.sin6_scope_id,
+            )))
         }
-        _ => Err(io::Error::new(io::ErrorKind::InvalidData, "expected IPv4 or IPv6 socket")),
+        _ => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "expected IPv4 or IPv6 socket",
+        )),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::mem;
-    use std::time::{Duration,Instant};
-    use set_socket_receive_timeout;
     use get_socket_receive_timeout;
     use recv_from;
+    use set_socket_receive_timeout;
+    use std::mem;
+    use std::time::{Duration, Instant};
     use CSocket;
     use SockAddrStorage;
 
     fn test_timeout(socket: CSocket) -> Duration {
         let mut buffer = [0u8; 1024];
-        let mut caddr :SockAddrStorage = unsafe { mem::zeroed() };
+        let mut caddr: SockAddrStorage = unsafe { mem::zeroed() };
 
         let t0 = Instant::now();
         let res = recv_from(socket, &mut buffer, &mut caddr);
@@ -249,7 +269,7 @@ mod tests {
     #[test]
     fn test_set_socket_receive_timeout_1s() {
         let socket = unsafe { libc::socket(libc::AF_INET, libc::SOCK_RAW, 1 as libc::c_int) };
-        let d = Duration::new(1,0);
+        let d = Duration::new(1, 0);
         let res = set_socket_receive_timeout(socket, d.clone());
         match res {
             Err(e) => panic!("set_socket_receive_timeout reslted in error: {}", e),
@@ -257,7 +277,7 @@ mod tests {
         };
 
         let t = test_timeout(socket);
-        assert!(t >= Duration::new(1,0));
+        assert!(t >= Duration::new(1, 0));
         assert!(t < Duration::from_millis(1100));
     }
 
@@ -299,7 +319,7 @@ mod tests {
         let g1 = get_socket_receive_timeout(socket);
         match g1 {
             Err(e) => panic!("get_socket_receive_timeout resulted in error: {}", e),
-            Ok(t) => assert_eq!(s1, t, "Expected to receive 1s timeout")
+            Ok(t) => assert_eq!(s1, t, "Expected to receive 1s timeout"),
         }
 
         let s2 = Duration::from_millis(500);
@@ -307,9 +327,7 @@ mod tests {
         let g2 = get_socket_receive_timeout(socket);
         match g2 {
             Err(e) => panic!("get_socket_receive_timeout resulted in error: {}", e),
-            Ok(t) => assert_eq!(s2, t, "Expected to receive 500ms timeout")
+            Ok(t) => assert_eq!(s2, t, "Expected to receive 500ms timeout"),
         }
     }
 }
-
-
