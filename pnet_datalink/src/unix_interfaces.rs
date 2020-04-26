@@ -34,7 +34,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
 
     let mut ifaces: Vec<NetworkInterface> = Vec::new();
     unsafe {
-        let mut addrs: *mut libc::ifaddrs = mem::uninitialized();
+        let mut addrs: *mut libc::ifaddrs = mem::MaybeUninit::<libc::ifaddrs>::uninit().as_mut_ptr();
         if libc::getifaddrs(&mut addrs) != 0 {
             return ifaces;
         }
