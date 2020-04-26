@@ -142,7 +142,7 @@ fn ntohs(u: u16) -> u16 {
 }
 
 fn make_in6_addr(segments: [u16; 8]) -> In6Addr {
-    let mut val: In6Addr = unsafe { mem::uninitialized() };
+    let mut val: In6Addr = unsafe { mem::MaybeUninit::<In6Addr>::uninit().assume_init() };
     val.s6_addr = unsafe {
         mem::transmute([htons(segments[0]),
                         htons(segments[1]),
