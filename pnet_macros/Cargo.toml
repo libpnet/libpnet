@@ -15,7 +15,7 @@ default = []
 travis = []
 
 [dev-dependencies]
-pnet_base = "0.22.0"
+pnet_base = "0.25.0"
 pnet_macros_support = { path = "../pnet_macros_support", version = "0.25.0" }
 
 [dependencies]

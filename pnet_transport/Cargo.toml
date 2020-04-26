@@ -11,6 +11,6 @@ categories = ["network-programming"]
 
 [dependencies]
 libc = "0.2.39"
-pnet_base = "0.22.0"
+pnet_base = "0.25.0"
 pnet_sys = { path = "../pnet_sys", version = "0.25.0" }
 pnet_packet = { path = "../pnet_packet", version = "0.25.0" }

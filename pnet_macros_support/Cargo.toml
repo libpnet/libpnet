@@ -11,4 +11,4 @@ readme = "../README.md"
 keywords = ["networking", "bitfields", "packet", "protocol"]
 
 [dependencies]
-pnet_base = "0.22.0"
+pnet_base = "0.25.0"
