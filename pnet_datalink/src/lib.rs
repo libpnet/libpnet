@@ -188,7 +188,6 @@ pub trait DataLinkSender: Send {
     /// mutable packet to manipulate, which will then be sent. This allows packets to be
     /// built in-place, avoiding the copy required for `send`. If there is not sufficient
     /// capacity in the buffer, None will be returned.
-    #[inline]
     fn build_and_send(
         &mut self,
         num_packets: usize,
@@ -201,14 +200,12 @@ pub trait DataLinkSender: Send {
     /// This may require an additional copy compared to `build_and_send`, depending on the
     /// operating system being used. The second parameter is currently ignored, however
     /// `None` should be passed.
-    #[inline]
     fn send_to(&mut self, packet: &[u8], dst: Option<NetworkInterface>) -> Option<io::Result<()>>;
 }
 
 /// Structure for receiving packets at the data link layer. Should be constructed using
 /// `datalink_channel()`.
 pub trait DataLinkReceiver: Send {
-    #[inline]
     /// Get the next ethernet frame in the channel.
     fn next(&mut self) -> io::Result<&[u8]>;
 }
