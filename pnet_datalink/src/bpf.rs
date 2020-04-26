@@ -248,7 +248,7 @@ impl DataLinkSender for DataLinkSenderImpl {
     fn build_and_send(&mut self,
                       num_packets: usize,
                       packet_size: usize,
-                      func: &mut FnMut(&mut [u8]))
+                      func: &mut dyn FnMut(&mut [u8]))
         -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len >= self.write_buffer.len() {
