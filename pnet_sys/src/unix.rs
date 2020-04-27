@@ -31,11 +31,14 @@ pub mod public {
     pub const SOCK_RAW: libc::c_int = libc::SOCK_RAW;
 
     pub const SOL_SOCKET: libc::c_int = libc::SOL_SOCKET;
+    pub const SOL_IP: libc::c_int = libc::SOL_IP;
+    pub const SOL_IPV6: libc::c_int = libc::SOL_IPV6;
     pub const SO_RCVTIMEO: libc::c_int = libc::SO_RCVTIMEO;
     pub const SO_SNDTIMEO: libc::c_int = libc::SO_SNDTIMEO;
 
     pub const IPPROTO_IP: libc::c_int = libc::IPPROTO_IP;
     pub const IP_HDRINCL: libc::c_int = libc::IP_HDRINCL;
+    pub const IPV6_HDRINCL: libc::c_int = 36; // FIXME
     pub const IP_TTL: libc::c_int = libc::IP_TTL;
 
     pub use libc::{IFF_UP, IFF_BROADCAST, IFF_LOOPBACK, IFF_POINTOPOINT, IFF_MULTICAST};
