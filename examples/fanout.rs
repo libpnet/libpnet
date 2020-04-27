@@ -95,7 +95,8 @@ fn main() {
                                 io::stdout(),
                                 "Received packet on thread {:?}",
                                 handle.name()
-                            ).unwrap();
+                            )
+                            .unwrap();
                         }
                         Err(e) => panic!("packetdump: unable to receive packet: {}", e),
                     }

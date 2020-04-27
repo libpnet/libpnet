@@ -64,7 +64,6 @@ pub type PIP_ADDRESS_STRING = *mut _IP_ADDRESS_STRING;
 pub type IP_MASK_STRING = _IP_ADDRESS_STRING;
 pub type PIP_MASK_STRING = *mut _IP_ADDRESS_STRING;
 
-
 #[repr(C)]
 pub struct _IP_ADDR_STRING {
     pub Next: *mut _IP_ADDR_STRING,
@@ -343,26 +342,29 @@ extern "system" {
 
     // from IPHlpApi.h
     pub fn GetAdaptersInfo(pAdapterInfo: PIP_ADAPTER_INFO, pOutBufLen: PULONG) -> win::DWORD;
-    pub fn GetAdaptersAddresses(Family: ULONG,
-                                Flags: ULONG,
-                                Reserved: PVOID,
-                                AdapterAddresses: PIP_ADAPTER_ADDRESSES,
-                                SizePointer: PULONG)
-        -> win::DWORD;
+    pub fn GetAdaptersAddresses(
+        Family: ULONG,
+        Flags: ULONG,
+        Reserved: PVOID,
+        AdapterAddresses: PIP_ADAPTER_ADDRESSES,
+        SizePointer: PULONG,
+    ) -> win::DWORD;
 }
 
 #[link(name = "Packet")]
 #[allow(improper_ctypes)]
 extern "C" {
     // from Packet32.h
-    pub fn PacketSendPacket(AdapterObject: LPADAPTER,
-                            pPacket: LPPACKET,
-                            Sync: win::BOOLEAN)
-        -> win::BOOLEAN;
-    pub fn PacketReceivePacket(AdapterObject: LPADAPTER,
-                               lpPacket: LPPACKET,
-                               Sync: win::BOOLEAN)
-        -> win::BOOLEAN;
+    pub fn PacketSendPacket(
+        AdapterObject: LPADAPTER,
+        pPacket: LPPACKET,
+        Sync: win::BOOLEAN,
+    ) -> win::BOOLEAN;
+    pub fn PacketReceivePacket(
+        AdapterObject: LPADAPTER,
+        lpPacket: LPPACKET,
+        Sync: win::BOOLEAN,
+    ) -> win::BOOLEAN;
     pub fn PacketAllocatePacket() -> LPPACKET;
     pub fn PacketInitPacket(lpPacket: LPPACKET, Buffer: PVOID, Length: UINT);
     pub fn PacketFreePacket(lpPacket: LPPACKET);

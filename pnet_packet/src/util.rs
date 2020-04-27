@@ -11,10 +11,10 @@
 use ip::IpNextHeaderProtocol;
 use pnet_macros_support::types::u16be;
 
-use std::net::{Ipv4Addr, Ipv6Addr};
-use std::u8;
-use std::u16;
 use std::convert::TryInto;
+use std::net::{Ipv4Addr, Ipv6Addr};
+use std::u16;
+use std::u8;
 
 /// Convert a value to a byte array.
 pub trait Octets {
@@ -29,14 +29,16 @@ impl Octets for u64 {
     type Output = [u8; 8];
 
     fn octets(&self) -> Self::Output {
-        [(*self >> 56) as u8,
-         (*self >> 48) as u8,
-         (*self >> 40) as u8,
-         (*self >> 32) as u8,
-         (*self >> 24) as u8,
-         (*self >> 16) as u8,
-         (*self >> 8) as u8,
-         *self as u8]
+        [
+            (*self >> 56) as u8,
+            (*self >> 48) as u8,
+            (*self >> 40) as u8,
+            (*self >> 32) as u8,
+            (*self >> 24) as u8,
+            (*self >> 16) as u8,
+            (*self >> 8) as u8,
+            *self as u8,
+        ]
     }
 }
 
@@ -44,7 +46,12 @@ impl Octets for u32 {
     type Output = [u8; 4];
 
     fn octets(&self) -> Self::Output {
-        [(*self >> 24) as u8, (*self >> 16) as u8, (*self >> 8) as u8, *self as u8]
+        [
+            (*self >> 24) as u8,
+            (*self >> 16) as u8,
+            (*self >> 8) as u8,
+            *self as u8,
+        ]
     }
 }
 
@@ -65,9 +72,11 @@ impl Octets for u8 {
 }
 
 /// Calculates a checksum. Used by ipv4 and icmp. The two bytes starting at `skipword * 2` will be
-/// ignored. Supposed to be the checksum field, which is regarded as zero during calculation. 
+/// ignored. Supposed to be the checksum field, which is regarded as zero during calculation.
 pub fn checksum(data: &[u8], skipword: usize) -> u16be {
-    if data.len() == 0 { return 0 }
+    if data.len() == 0 {
+        return 0;
+    }
     let sum = sum_be_words(data, skipword);
     finalize_checksum(sum)
 }
@@ -80,13 +89,14 @@ fn finalize_checksum(mut sum: u32) -> u16be {
 }
 
 /// Calculate the checksum for a packet built on IPv4. Used by UDP and TCP.
-pub fn ipv4_checksum(data: &[u8],
-                     skipword: usize,
-                     extra_data: &[u8],
-                     source: &Ipv4Addr,
-                     destination: &Ipv4Addr,
-                     next_level_protocol: IpNextHeaderProtocol)
-    -> u16be {
+pub fn ipv4_checksum(
+    data: &[u8],
+    skipword: usize,
+    extra_data: &[u8],
+    source: &Ipv4Addr,
+    destination: &Ipv4Addr,
+    next_level_protocol: IpNextHeaderProtocol,
+) -> u16be {
     let mut sum = 0u32;
 
     // Checksum pseudo-header
@@ -112,13 +122,14 @@ fn ipv4_word_sum(ip: &Ipv4Addr) -> u32 {
 }
 
 /// Calculate the checksum for a packet built on IPv6.
-pub fn ipv6_checksum(data: &[u8],
-                     skipword: usize,
-                     extra_data: &[u8],
-                     source: &Ipv6Addr,
-                     destination: &Ipv6Addr,
-                     next_level_protocol: IpNextHeaderProtocol)
-    -> u16be {
+pub fn ipv6_checksum(
+    data: &[u8],
+    skipword: usize,
+    extra_data: &[u8],
+    source: &Ipv6Addr,
+    destination: &Ipv6Addr,
+    next_level_protocol: IpNextHeaderProtocol,
+) -> u16be {
     let mut sum = 0u32;
 
     // Checksum pseudo-header
@@ -143,9 +154,11 @@ fn ipv6_word_sum(ip: &Ipv6Addr) -> u32 {
 }
 
 /// Sum all words (16 bit chunks) in the given data. The word at word offset
-/// `skipword` will be skipped. Each word is treated as big endian. 
+/// `skipword` will be skipped. Each word is treated as big endian.
 fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
-    if data.len() == 0 { return 0 }
+    if data.len() == 0 {
+        return 0;
+    }
     let len = data.len();
     let mut cur_data = &data[..];
     let mut sum = 0u32;
@@ -204,12 +217,10 @@ mod tests {
     #[test]
     fn sum_be_words_misaligned_ptr() {
         let mut data = vec![0; 13];
-        let ptr = match data.as_ptr() as usize % 2 { 
-            0 => {
-                unsafe { data.as_mut_ptr().offset(1) }
-            }
+        let ptr = match data.as_ptr() as usize % 2 {
+            0 => unsafe { data.as_mut_ptr().offset(1) },
             _ => data.as_mut_ptr(),
-        }; 
+        };
         unsafe {
             let slice_data = slice::from_raw_parts_mut(ptr, 12);
             for i in 0..11 {
@@ -228,7 +239,7 @@ mod tests {
 #[cfg(all(test, feature = "benchmark"))]
 mod checksum_benchmarks {
     use super::checksum;
-    use test::{Bencher, black_box};
+    use test::{black_box, Bencher};
 
     #[bench]
     fn bench_checksum_small(b: &mut Bencher) {
@@ -242,4 +253,3 @@ mod checksum_benchmarks {
         b.iter(|| checksum(black_box(&data), 5));
     }
 }
-

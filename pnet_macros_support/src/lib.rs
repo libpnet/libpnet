@@ -14,5 +14,5 @@
 
 extern crate pnet_base;
 
-pub mod types;
 pub mod packet;
+pub mod types;

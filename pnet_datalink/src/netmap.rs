@@ -10,15 +10,16 @@
 
 #![allow(bad_style)]
 
-extern crate netmap_sys;
 extern crate libc;
+extern crate netmap_sys;
 
-
-use {DataLinkReceiver, DataLinkSender, NetworkInterface};
-use Channel::Ethernet;
 use self::netmap_sys::netmap::{netmap_slot, nm_ring_empty};
-use self::netmap_sys::netmap_user::{NETMAP_BUF, NETMAP_FD, NETMAP_TXRING, nm_close, nm_desc,
-                                    nm_nextpkt, nm_open, nm_pkthdr, nm_ring_next};
+use self::netmap_sys::netmap_user::{
+    nm_close, nm_desc, nm_nextpkt, nm_open, nm_pkthdr, nm_ring_next, NETMAP_BUF, NETMAP_FD,
+    NETMAP_TXRING,
+};
+use Channel::Ethernet;
+use {DataLinkReceiver, DataLinkSender, NetworkInterface};
 
 use std::ffi::CString;
 use std::fs::File;
@@ -50,11 +51,12 @@ type nfds_t = libc::c_uint;
 type nfds_t = libc::c_ulong;
 
 extern "C" {
-    fn ppoll(fds: *mut pollfd,
-             nfds: nfds_t,
-             timeout: *const libc::timespec,
-             newsigmask: *const libc::sigset_t)
-        -> libc::c_int;
+    fn ppoll(
+        fds: *mut pollfd,
+        nfds: nfds_t,
+        timeout: *const libc::timespec,
+        newsigmask: *const libc::sigset_t,
+    ) -> libc::c_int;
 }
 
 struct NmDesc {
@@ -73,7 +75,9 @@ impl NmDesc {
         if desc.is_null() {
             Err(io::Error::last_os_error())
         } else {
-            let mut f = try!(File::open(&Path::new("/sys/module/netmap/parameters/buf_size")));
+            let mut f = try!(File::open(&Path::new(
+                "/sys/module/netmap/parameters/buf_size"
+            )));
             let mut num_str = String::new();
             try!(f.read_to_string(&mut num_str));
             let buf_size = num_str.trim_right().parse().unwrap();
@@ -124,33 +128,31 @@ impl Default for Config {
 
 #[inline]
 fn get_timeout(to: Option<Duration>) -> Option<libc::timespec> {
-    to.map(|dur| {
-        libc::timespec {
-            tv_sec: dur.as_secs() as libc::time_t,
-            tv_nsec: dur.subsec_nanos() as libc::c_long,
-        }
+    to.map(|dur| libc::timespec {
+        tv_sec: dur.as_secs() as libc::time_t,
+        tv_nsec: dur.subsec_nanos() as libc::c_long,
     })
 }
 
 /// Create a datalink channel using the netmap library.
 #[inline]
-pub fn channel(network_interface: &NetworkInterface,
-               config: Config)
-    -> io::Result<super::Channel> {
+pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Result<super::Channel> {
     // FIXME probably want one for each of send/recv
     let desc = NmDesc::new(network_interface);
     match desc {
         Ok(desc) => {
             let arc = Arc::new(desc);
 
-            Ok(Ethernet(Box::new(DataLinkSenderImpl {
-                            desc: arc.clone(),
-                            timeout: get_timeout(config.write_timeout),
-                        }),
-                        Box::new(DataLinkReceiverImpl {
-                            desc: arc,
-                            timeout: get_timeout(config.read_timeout),
-                        })))
+            Ok(Ethernet(
+                Box::new(DataLinkSenderImpl {
+                    desc: arc.clone(),
+                    timeout: get_timeout(config.write_timeout),
+                }),
+                Box::new(DataLinkReceiverImpl {
+                    desc: arc,
+                    timeout: get_timeout(config.read_timeout),
+                }),
+            ))
         }
         Err(e) => Err(e),
     }
@@ -163,11 +165,12 @@ struct DataLinkSenderImpl {
 
 impl DataLinkSender for DataLinkSenderImpl {
     #[inline]
-    fn build_and_send(&mut self,
-                      num_packets: usize,
-                      packet_size: usize,
-                      func: &mut FnMut(&mut [u8]))
-        -> Option<io::Result<()>> {
+    fn build_and_send(
+        &mut self,
+        num_packets: usize,
+        packet_size: usize,
+        func: &mut FnMut(&mut [u8]),
+    ) -> Option<io::Result<()>> {
         assert!(packet_size <= self.desc.buf_size as usize);
         let desc = self.desc.desc;
         let mut fds = pollfd {
@@ -178,8 +181,11 @@ impl DataLinkSender for DataLinkSenderImpl {
         let mut packet_idx = 0usize;
         while packet_idx < num_packets {
             unsafe {
-                let timespec =
-                    self.timeout.as_ref().map(|ts| ts as *const _).unwrap_or(ptr::null());
+                let timespec = self
+                    .timeout
+                    .as_ref()
+                    .map(|ts| ts as *const _)
+                    .unwrap_or(ptr::null());
                 if ppoll(&mut fds, 1, timespec, ptr::null()) < 0 {
                     return Some(Err(io::Error::last_os_error()));
                 }
@@ -203,15 +209,10 @@ impl DataLinkSender for DataLinkSenderImpl {
     }
 
     #[inline]
-    fn send_to(&mut self,
-               packet: &[u8],
-               _dst: Option<NetworkInterface>)
-        -> Option<io::Result<()>> {
-        self.build_and_send(1,
-                            packet.len(),
-                            &mut |eh: &mut [u8]| {
-                                eh.clone_from_slice(packet);
-                            })
+    fn send_to(&mut self, packet: &[u8], _dst: Option<NetworkInterface>) -> Option<io::Result<()>> {
+        self.build_and_send(1, packet.len(), &mut |eh: &mut [u8]| {
+            eh.clone_from_slice(packet);
+        })
     }
 }
 
@@ -231,7 +232,11 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
                 events: POLLIN,
                 revents: 0,
             };
-            let timespec = self.timeout.as_ref().map(|ts| ts as *const _).unwrap_or(ptr::null());
+            let timespec = self
+                .timeout
+                .as_ref()
+                .map(|ts| ts as *const _)
+                .unwrap_or(ptr::null());
             if unsafe { ppoll(&mut fds, 1, timespec, ptr::null()) } < 0 {
                 return Err(io::Error::last_os_error());
             }

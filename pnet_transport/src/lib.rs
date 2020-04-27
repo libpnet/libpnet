@@ -19,18 +19,18 @@
 #![macro_use]
 
 extern crate libc;
-extern crate pnet_sys;
 extern crate pnet_packet;
+extern crate pnet_sys;
 
-use pnet_packet::Packet;
-use pnet_packet::ip::IpNextHeaderProtocol;
-use pnet_packet::ipv4::Ipv4Packet;
-use pnet_packet::udp::UdpPacket;
-use pnet_packet::icmp::IcmpPacket;
-use pnet_packet::icmpv6::Icmpv6Packet;
-use pnet_packet::tcp::TcpPacket;
 use self::TransportChannelType::{Layer3, Layer4};
 use self::TransportProtocol::{Ipv4, Ipv6};
+use pnet_packet::icmp::IcmpPacket;
+use pnet_packet::icmpv6::Icmpv6Packet;
+use pnet_packet::ip::IpNextHeaderProtocol;
+use pnet_packet::ipv4::Ipv4Packet;
+use pnet_packet::tcp::TcpPacket;
+use pnet_packet::udp::UdpPacket;
+use pnet_packet::Packet;
 
 use std::io;
 use std::io::Error;
@@ -75,7 +75,7 @@ pub struct TransportReceiver {
 /// for transport channels.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Config {
-        time_to_live: u8,
+    time_to_live: u8,
 }
 
 /// Create a new `(TransportSender, TransportReceiver)` pair.
@@ -88,9 +88,10 @@ pub struct Config {
 /// allow sending and receiving UDP packets using IPv4; whereas `Layer3(IpNextHeaderProtocols::Udp)`
 /// would include the IPv4 Header in received values, and require manual construction of an IP
 /// header when sending.
-pub fn transport_channel(buffer_size: usize,
-                         channel_type: TransportChannelType)
-    -> io::Result<(TransportSender, TransportReceiver)> {
+pub fn transport_channel(
+    buffer_size: usize,
+    channel_type: TransportChannelType,
+) -> io::Result<(TransportSender, TransportReceiver)> {
     // This hack makes sure that winsock is initialised
     let _ = {
         let ip = net::Ipv4Addr::new(255, 255, 255, 255);
@@ -101,8 +102,7 @@ pub fn transport_channel(buffer_size: usize,
 
     let socket = unsafe {
         match channel_type {
-            Layer4(Ipv4(IpNextHeaderProtocol(proto))) |
-            Layer3(IpNextHeaderProtocol(proto)) => {
+            Layer4(Ipv4(IpNextHeaderProtocol(proto))) | Layer3(IpNextHeaderProtocol(proto)) => {
                 pnet_sys::socket(pnet_sys::AF_INET, pnet_sys::SOCK_RAW, proto as libc::c_int)
             }
             Layer4(Ipv6(IpNextHeaderProtocol(proto))) => {
@@ -128,7 +128,7 @@ pub fn transport_channel(buffer_size: usize,
                 pnet_sys::IPPROTO_IP,
                 pnet_sys::IP_HDRINCL,
                 (&hincl as *const libc::c_int) as pnet_sys::Buf,
-                mem::size_of::<libc::c_int>() as pnet_sys::SockLen
+                mem::size_of::<libc::c_int>() as pnet_sys::SockLen,
             )
         };
         if res == -1 {
@@ -158,11 +158,11 @@ pub fn transport_channel(buffer_size: usize,
 /// options specified.
 ///
 /// For a more exhaustive descriptive, see above.
-pub fn transport_channel_with(buffer_size: usize,
-                              channel_type: TransportChannelType,
-                              configuration: Config)
-    -> io::Result<(TransportSender, TransportReceiver)> {
-
+pub fn transport_channel_with(
+    buffer_size: usize,
+    channel_type: TransportChannelType,
+    configuration: Config,
+) -> io::Result<(TransportSender, TransportReceiver)> {
     let (sender, receiver) = transport_channel(buffer_size, channel_type)?;
 
     set_socket_ttl(sender.socket.clone(), configuration.time_to_live)?;
@@ -178,7 +178,7 @@ fn set_socket_ttl(socket: Arc<pnet_sys::FileDesc>, ttl: u8) -> io::Result<()> {
             pnet_sys::IPPROTO_IP,
             pnet_sys::IP_TTL,
             (&ttl as *const libc::c_int) as pnet_sys::Buf,
-            mem::size_of::<libc::c_int>() as pnet_sys::SockLen
+            mem::size_of::<libc::c_int>() as pnet_sys::SockLen,
         )
     };
 
@@ -189,7 +189,7 @@ fn set_socket_ttl(socket: Arc<pnet_sys::FileDesc>, ttl: u8) -> io::Result<()> {
                 pnet_sys::close(socket.fd);
             }
             Err(err)
-        },
+        }
         _ => Ok(()),
     }
 }
@@ -225,8 +225,8 @@ impl TransportSender {
 
     #[cfg(any(target_os = "freebsd", target_os = "macos"))]
     fn send_to_impl<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
-        use pnet_packet::MutablePacket;
         use pnet_packet::ipv4::MutableIpv4Packet;
+        use pnet_packet::MutablePacket;
 
         // FreeBSD and OS X expect total length and fragment offset fields of IPv4
         // packets to be in host byte order rather than network byte order. Fragment offset is the
@@ -353,7 +353,7 @@ macro_rules! transport_channel_iterator {
             #[cfg(unix)]
             pub fn next_with_timeout(&mut self, t: Duration) -> io::Result<Option<($ty, IpAddr)>> {
                 let socket_fd = self.tr.socket.fd;
-                
+
                 let old_timeout = match pnet_sys::get_socket_receive_timeout(socket_fd) {
                     Err(e) => {
                         eprintln!("Can not get socket timeout before receiving: {}", e);
@@ -369,7 +369,7 @@ macro_rules! transport_channel_iterator {
                     }
                     Ok(_) => {}
                 }
-                    
+
                 let r = match self.next() {
                     Ok(r) => Ok(Some(r)),
                     Err(e) => match e.kind() {
@@ -379,7 +379,7 @@ macro_rules! transport_channel_iterator {
                         }
                     }
                 };
-                
+
                 match pnet_sys::set_socket_receive_timeout(socket_fd, old_timeout) {
                     Err(e) => {
                         eprintln!("Can not reset socket timeout after receiving: {}", e);
@@ -399,6 +399,10 @@ transport_channel_iterator!(UdpPacket, UdpTransportChannelIterator, udp_packet_i
 
 transport_channel_iterator!(IcmpPacket, IcmpTransportChannelIterator, icmp_packet_iter);
 
-transport_channel_iterator!(Icmpv6Packet, Icmpv6TransportChannelIterator, icmpv6_packet_iter);
+transport_channel_iterator!(
+    Icmpv6Packet,
+    Icmpv6TransportChannelIterator,
+    icmpv6_packet_iter
+);
 
 transport_channel_iterator!(TcpPacket, TcpTransportChannelIterator, tcp_packet_iter);
