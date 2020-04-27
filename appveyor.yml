@@ -2,11 +2,11 @@ environment:
   RUST_TEST_THREADS: 1
   matrix:
   - TARGET: x86_64-pc-windows-msvc
-    RUST_CHANNEL: 1.33.0
+    RUST_CHANNEL: 1.34.0
     WPD_LIB_PATH: "C:/dl/wpdpack/WpdPack/Lib/x64/Packet.lib"
     VCVARS: "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64\\vcvars64.bat"
   - TARGET: i686-pc-windows-msvc
-    RUST_CHANNEL: 1.33.0
+    RUST_CHANNEL: 1.34.0
     WPD_LIB_PATH: "C:/dl/wpdpack/WpdPack/Lib/Packet.lib"
     VCVARS: "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\vcvars32.bat"
   - TARGET: x86_64-pc-windows-msvc
