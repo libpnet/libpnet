@@ -176,7 +176,7 @@ impl DataLinkSender for DataLinkSenderImpl {
         &mut self,
         num_packets: usize,
         packet_size: usize,
-        func: &mut FnMut(&mut [u8]),
+        func: &mut dyn FnMut(&mut [u8]),
     ) -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len >= unsafe { (*self.packet.packet).Length } as usize {
@@ -267,8 +267,6 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
 
 /// Get a list of available network interfaces for the current machine.
 pub fn interfaces() -> Vec<NetworkInterface> {
-    use bindings::winpcap;
-
     let mut adapters_size = 0u32;
 
     unsafe {
