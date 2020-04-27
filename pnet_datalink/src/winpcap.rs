@@ -267,8 +267,6 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
 
 /// Get a list of available network interfaces for the current machine.
 pub fn interfaces() -> Vec<NetworkInterface> {
-    use bindings::winpcap;
-
     let mut adapters_size = 0u32;
 
     unsafe {
