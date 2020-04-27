@@ -20,7 +20,7 @@ travis = []
 serde = ["pnet_base/serde"]
 
 [dependencies]
-ipnetwork = "0.15.0"
+ipnetwork = "0.16.0"
 
 pnet_base = "0.25.0"
 pnet_sys = { path = "pnet_sys", version = "0.25.0" }
