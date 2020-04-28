@@ -115,7 +115,7 @@
 #[cfg(feature = "benchmark")]
 extern crate test;
 
-extern crate ipnetwork;
+pub extern crate ipnetwork;
 
 extern crate pnet_base;
 extern crate pnet_datalink;
