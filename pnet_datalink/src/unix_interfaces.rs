@@ -8,7 +8,7 @@
 
 //! Interface listing implementation for all non-Windows platforms.
 
-use {NetworkInterface, MacAddr};
+use {MacAddr, NetworkInterface};
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
 use pnet_sys;
@@ -34,6 +34,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
 
     let mut ifaces: Vec<NetworkInterface> = Vec::new();
     unsafe {
+        #[allow(deprecated)]
         let mut addrs: *mut libc::ifaddrs = mem::uninitialized();
         if libc::getifaddrs(&mut addrs) != 0 {
             return ifaces;
@@ -44,8 +45,11 @@ pub fn interfaces() -> Vec<NetworkInterface> {
             let bytes = CStr::from_ptr(c_str).to_bytes();
             let name = from_utf8_unchecked(bytes).to_owned();
             let (mac, ip) = sockaddr_to_network_addr((*addr).ifa_addr as *const libc::sockaddr);
-            let (_, netmask) = sockaddr_to_network_addr((*addr).ifa_netmask as *const libc::sockaddr);
-            let prefix = netmask.and_then(|netmask| ip_mask_to_prefix(netmask).ok()).unwrap_or(0);
+            let (_, netmask) =
+                sockaddr_to_network_addr((*addr).ifa_netmask as *const libc::sockaddr);
+            let prefix = netmask
+                .and_then(|netmask| ip_mask_to_prefix(netmask).ok())
+                .unwrap_or(0);
             let network = ip.and_then(|ip| IpNetwork::new(ip, prefix).ok());
             let ni = NetworkInterface {
                 name: name.clone(),
@@ -87,18 +91,20 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
             (None, None)
         } else if (*sa).sa_family as libc::c_int == libc::AF_PACKET {
             let sll: *const libc::sockaddr_ll = mem::transmute(sa);
-            let mac = MacAddr((*sll).sll_addr[0],
-                              (*sll).sll_addr[1],
-                              (*sll).sll_addr[2],
-                              (*sll).sll_addr[3],
-                              (*sll).sll_addr[4],
-                              (*sll).sll_addr[5]);
+            let mac = MacAddr(
+                (*sll).sll_addr[0],
+                (*sll).sll_addr[1],
+                (*sll).sll_addr[2],
+                (*sll).sll_addr[3],
+                (*sll).sll_addr[4],
+                (*sll).sll_addr[5],
+            );
 
             (Some(mac), None)
         } else {
             let addr = pnet_sys::sockaddr_to_addr(
                 mem::transmute(sa),
-                mem::size_of::<libc::sockaddr_storage>()
+                mem::size_of::<libc::sockaddr_storage>(),
             );
 
             match addr {
@@ -121,18 +127,20 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
         } else if (*sa).sa_family as libc::c_int == bpf::AF_LINK {
             let sdl: *const bpf::sockaddr_dl = mem::transmute(sa);
             let nlen = (*sdl).sdl_nlen as usize;
-            let mac = MacAddr((*sdl).sdl_data[nlen] as u8,
-                              (*sdl).sdl_data[nlen + 1] as u8,
-                              (*sdl).sdl_data[nlen + 2] as u8,
-                              (*sdl).sdl_data[nlen + 3] as u8,
-                              (*sdl).sdl_data[nlen + 4] as u8,
-                              (*sdl).sdl_data[nlen + 5] as u8);
+            let mac = MacAddr(
+                (*sdl).sdl_data[nlen] as u8,
+                (*sdl).sdl_data[nlen + 1] as u8,
+                (*sdl).sdl_data[nlen + 2] as u8,
+                (*sdl).sdl_data[nlen + 3] as u8,
+                (*sdl).sdl_data[nlen + 4] as u8,
+                (*sdl).sdl_data[nlen + 5] as u8,
+            );
 
             (Some(mac), None)
         } else {
             let addr = pnet_sys::sockaddr_to_addr(
                 mem::transmute(sa),
-                mem::size_of::<libc::sockaddr_storage>()
+                mem::size_of::<libc::sockaddr_storage>(),
             );
 
             match addr {

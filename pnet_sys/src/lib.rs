@@ -155,6 +155,7 @@ fn ntohs(u: u16) -> u16 {
 }
 
 fn make_in6_addr(segments: [u16; 8]) -> In6Addr {
+    #[allow(deprecated)]
     let mut val: In6Addr = unsafe { mem::uninitialized() };
     val.s6_addr = unsafe {
         mem::transmute([
