@@ -223,6 +223,10 @@ pub struct NetworkInterface {
 
 impl NetworkInterface {
     /// Retrieve the MAC address associated with the interface.
+    #[deprecated(
+        since = "0.26.0",
+        note = "Please use NetworkInterface's field 'mac' instead."
+    )]
     pub fn mac_address(&self) -> MacAddr {
         self.mac.unwrap()
     }
