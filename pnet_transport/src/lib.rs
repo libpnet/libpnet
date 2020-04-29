@@ -218,12 +218,12 @@ impl TransportSender {
         set_socket_ttl(self.socket.clone(), time_to_live)
     }
 
-    #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]
+    #[cfg(all(not(target_os = "freebsd"), not(any(target_os = "macos", target_os = "ios"))))]
     fn send_to_impl<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
         self.send(packet, dst)
     }
 
-    #[cfg(any(target_os = "freebsd", target_os = "macos"))]
+    #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "ios"))]
     fn send_to_impl<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
         use pnet_packet::ipv4::MutableIpv4Packet;
         use pnet_packet::MutablePacket;
@@ -322,7 +322,7 @@ macro_rules! transport_channel_iterator {
                     Err(e) => Err(e),
                 };
 
-                #[cfg(any(target_os = "freebsd", target_os = "macos"))]
+                #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "ios"))]
                 fn fixup_packet(buffer: &mut [u8]) {
                     use pnet_packet::ipv4::MutableIpv4Packet;
 
@@ -344,7 +344,7 @@ macro_rules! transport_channel_iterator {
                     new_packet.set_fragment_offset(offset);
                 }
 
-                #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]
+                #[cfg(all(not(target_os = "freebsd"), not(any(target_os = "macos", target_os = "ios"))))]
                 fn fixup_packet(_buffer: &mut [u8]) {}
             }
 

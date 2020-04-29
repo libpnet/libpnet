@@ -116,7 +116,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
     }
 }
 
-#[cfg(any(target_os = "openbsd", target_os = "freebsd", target_os = "macos"))]
+#[cfg(any(target_os = "openbsd", target_os = "freebsd", target_os = "macos", target_os = "ios"))]
 fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
     use bindings::bpf;
     use std::net::SocketAddr;
