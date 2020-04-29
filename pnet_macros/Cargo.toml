@@ -19,6 +19,6 @@ pnet_base = "0.25.0"
 pnet_macros_support = { path = "../pnet_macros_support", version = "0.25.0" }
 
 [dependencies]
-regex = "1.1.*"
+regex = "1.3"
 syntex = "0.42"
 syntex_syntax = "0.42"
