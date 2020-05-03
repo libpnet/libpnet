@@ -14,7 +14,7 @@ extern crate winapi;
 
 use self::winapi::ctypes;
 use self::winapi::shared::{guiddef, minwindef};
-use self::winapi::um::{iptypes, minwinbase, winnt};
+use self::winapi::um::{minwinbase, winnt};
 
 use pnet_sys;
 
@@ -96,8 +96,8 @@ pub struct _IP_ADAPTER_INFO {
     pub HaveWins: minwindef::BOOL,
     pub PrimaryWinsServer: IP_ADDR_STRING,
     pub SecondaryWinsServer: IP_ADDR_STRING,
-    pub LeaseObtained: iptypes::time_t,
-    pub LeaseExpires: iptypes::time_t,
+    pub LeaseObtained: libc::time_t,
+    pub LeaseExpires: libc::time_t,
 }
 
 pub type IP_ADAPTER_INFO = _IP_ADAPTER_INFO;

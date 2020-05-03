@@ -104,6 +104,23 @@ pub mod public {
         }
     }
 
+    fn make_in6_addr(segments: [u16; 8]) -> In6Addr {
+        let mut val: In6Addr = unsafe { mem::MaybeUninit::<In6Addr>::uninit().assume_init() };
+        val.s6_addr = unsafe {
+            mem::transmute([
+                htons(segments[0]),
+                htons(segments[1]),
+                htons(segments[2]),
+                htons(segments[3]),
+                htons(segments[4]),
+                htons(segments[5]),
+                htons(segments[6]),
+                htons(segments[7]),
+            ])
+        };
+        val
+    }
+
     pub fn addr_to_sockaddr(addr: SocketAddr, storage: &mut SockAddrStorage) -> SockLen {
         unsafe {
             let len = match addr {
@@ -125,7 +142,7 @@ pub mod public {
                 SocketAddr::V6(sa) => {
                     let ip_addr = sa.ip();
                     let segments = ip_addr.segments();
-                    let inaddr = super::make_in6_addr(segments);
+                    let inaddr = make_in6_addr(segments);
                     let storage = storage as *mut _ as *mut SockAddrIn6;
                     (*storage).sin6_family = AF_INET6 as SockAddrFamily6;
                     (*storage).sin6_port = htons(addr.port());
@@ -215,23 +232,23 @@ pub unsafe fn recvfrom(
     libc::recvfrom(socket, buf, len, flags, addr, addrlen)
 }
 
-pub fn make_in6_addr(segments: [u16; 8]) -> In6Addr {
-    let mut val: In6Addr = unsafe { mem::uninitialized() };
-    val.s6_addr = unsafe {
-        use super::htons;
-        mem::transmute([
-            htons(segments[0]),
-            htons(segments[1]),
-            htons(segments[2]),
-            htons(segments[3]),
-            htons(segments[4]),
-            htons(segments[5]),
-            htons(segments[6]),
-            htons(segments[7]),
-        ])
-    };
-    val
-}
+// pub fn make_in6_addr(segments: [u16; 8]) -> In6Addr {
+//     let mut val: In6Addr = unsafe { mem::uninitialized() };
+//     val.s6_addr = unsafe {
+//         use super::htons;
+//         mem::transmute([
+//             htons(segments[0]),
+//             htons(segments[1]),
+//             htons(segments[2]),
+//             htons(segments[3]),
+//             htons(segments[4]),
+//             htons(segments[5]),
+//             htons(segments[6]),
+//             htons(segments[7]),
+//         ])
+//     };
+//     val
+// }
 
 #[inline]
 pub fn retry<F>(f: &mut F) -> libc::ssize_t
