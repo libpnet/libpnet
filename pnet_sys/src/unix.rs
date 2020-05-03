@@ -232,24 +232,6 @@ pub unsafe fn recvfrom(
     libc::recvfrom(socket, buf, len, flags, addr, addrlen)
 }
 
-// pub fn make_in6_addr(segments: [u16; 8]) -> In6Addr {
-//     let mut val: In6Addr = unsafe { mem::uninitialized() };
-//     val.s6_addr = unsafe {
-//         use super::htons;
-//         mem::transmute([
-//             htons(segments[0]),
-//             htons(segments[1]),
-//             htons(segments[2]),
-//             htons(segments[3]),
-//             htons(segments[4]),
-//             htons(segments[5]),
-//             htons(segments[6]),
-//             htons(segments[7]),
-//         ])
-//     };
-//     val
-// }
-
 #[inline]
 pub fn retry<F>(f: &mut F) -> libc::ssize_t
 where
