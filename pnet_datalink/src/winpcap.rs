@@ -8,14 +8,14 @@
 
 //! Support for sending and receiving data link layer packets using the WinPcap library.
 
-extern crate libc;
 extern crate winapi;
 
-use bindings::{bpf, winpcap};
-use {DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
+use super::bindings::{bpf, winpcap};
+use super::{DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
 
+use self::winapi::ctypes;
 use std::cmp;
 use std::collections::VecDeque;
 use std::ffi::{CStr, CString};
@@ -88,7 +88,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
 
     let adapter = unsafe {
         let net_if_str = CString::new(network_interface.name.as_bytes()).unwrap();
-        winpcap::PacketOpenAdapter(net_if_str.as_ptr() as *mut libc::c_char)
+        winpcap::PacketOpenAdapter(net_if_str.as_ptr() as *mut ctypes::c_char)
     };
     if adapter.is_null() {
         return Err(io::Error::last_os_error());
@@ -100,7 +100,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
     }
 
     // Set kernel buffer size
-    let ret = unsafe { winpcap::PacketSetBuff(adapter, config.read_buffer_size as libc::c_int) };
+    let ret = unsafe { winpcap::PacketSetBuff(adapter, config.read_buffer_size as ctypes::c_int) };
     if ret == 0 {
         return Err(io::Error::last_os_error());
     }
@@ -267,6 +267,8 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
 
 /// Get a list of available network interfaces for the current machine.
 pub fn interfaces() -> Vec<NetworkInterface> {
+    // use super::bindings::winpcap;
+
     let mut adapters_size = 0u32;
 
     unsafe {
