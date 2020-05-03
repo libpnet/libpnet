@@ -2,7 +2,6 @@ extern crate libc;
 
 use super::{htons, ntohs};
 use std::io;
-use std::mem;
 
 pub mod public {
 
@@ -105,7 +104,8 @@ pub mod public {
     }
 
     fn make_in6_addr(segments: [u16; 8]) -> In6Addr {
-        let mut val: In6Addr = unsafe { mem::MaybeUninit::<In6Addr>::uninit().assume_init() };
+        #[allow(deprecated)]
+        let mut val: In6Addr = unsafe { mem::uninitialized() };
         val.s6_addr = unsafe {
             mem::transmute([
                 htons(segments[0]),
