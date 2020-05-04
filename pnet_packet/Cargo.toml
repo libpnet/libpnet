@@ -6,6 +6,7 @@ license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
 repository = "https://github.com/libpnet/libpnet"
 description = "Cross-platform, binary packet parsing and manipulation"
+readme = "../README.md"
 keywords = ["networking", "packet", "parsing", "raw"]
 categories = ["network-programming", "parser-implementations"]
 build = "build.rs"
