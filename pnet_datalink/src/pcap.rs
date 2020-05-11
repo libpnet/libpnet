@@ -63,6 +63,8 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         Some(to) => cap.timeout((to.as_secs() * 1000 + (to.subsec_nanos() / 1000) as u64) as i32),
         None => cap,
     };
+    // Enable promiscuous capture
+    let cap = cap.promisc(true);
     let cap = match cap.open() {
         Ok(cap) => cap,
         Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
