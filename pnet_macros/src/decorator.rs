@@ -6,11 +6,11 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Implements the #[packet] decorator
+//! Implements the #[packet] decorator.
 
 use regex::Regex;
-use std::rc::Rc;
 use std::env;
+use std::rc::Rc;
 
 use syntax::ast;
 use syntax::codemap::Span;
@@ -22,9 +22,9 @@ use syntax::ptr::P;
 use syntax::tokenstream::Delimited;
 use syntax::tokenstream::TokenTree::{self, Sequence, Token};
 
-use util::{Endianness, GetOperation, SetOperation, operations, to_little_endian, to_mutator};
+use util::{operations, to_little_endian, to_mutator, Endianness, GetOperation, SetOperation};
 
-/// Lower and upper bounds of a payload
+/// Lower and upper bounds of a payload.
 /// Represented as strings since they may involve functions.
 struct PayloadBounds {
     lower: String,
@@ -33,11 +33,11 @@ struct PayloadBounds {
 
 #[derive(Clone, PartialEq)]
 enum Type {
-    /// Any of the u* types from pnet_macros::types::*
+    /// Any of the `u*` types from `pnet_macros::types::*`.
     Primitive(String, usize, Endianness),
-    /// Any type of the form Vec<T>
+    /// Any type of the form `Vec<T>`.
     Vector(Box<Type>),
-    /// Any type which isn't a primitive or a vector
+    /// Any type which isn't a primitive or a vector.
     Misc(String),
 }
 
@@ -75,8 +75,10 @@ fn make_type(ty_str: String, endianness_important: bool) -> Result<Type, String>
             Err("endianness must be specified for types of size >= 8".to_owned())
         }
     } else if ty_str.starts_with("Vec<") {
-        let ty = make_type(String::from(&ty_str[4..ty_str.len() - 1]),
-                           endianness_important);
+        let ty = make_type(
+            String::from(&ty_str[4..ty_str.len() - 1]),
+            endianness_important,
+        );
         match ty {
             Ok(ty) => Ok(Type::Vector(Box::new(ty))),
             Err(e) => Err(e),
@@ -94,11 +96,12 @@ fn multiple_payload_error(ecx: &mut ExtCtxt, field_span: Span, payload_span: Spa
         .emit();
 }
 
-fn make_packet(ecx: &mut ExtCtxt,
-               span: Span,
-               name: String,
-               vd: &ast::VariantData)
-    -> Option<Packet> {
+fn make_packet(
+    ecx: &mut ExtCtxt,
+    span: Span,
+    name: String,
+    vd: &ast::VariantData,
+) -> Option<Packet> {
     let mut payload_span = None;
     let mut fields = Vec::new();
 
@@ -150,8 +153,10 @@ fn make_packet(ecx: &mut ExtCtxt,
                     seen.push(s.to_owned());
                     if &s[..] == "construct_with" {
                         if items.iter().len() == 0 {
-                            ecx.span_err(field.span,
-                                         "#[construct_with] must have at least one argument");
+                            ecx.span_err(
+                                field.span,
+                                "#[construct_with] must have at least one argument",
+                            );
                             return None;
                         }
                         for ty in items.iter() {
@@ -164,9 +169,11 @@ fn make_packet(ecx: &mut ExtCtxt,
                                     }
                                 }
                             } else {
-                                ecx.span_err(field.span,
-                                             "#[construct_with] should be of the form \
-                                              #[construct_with(<types>)]");
+                                ecx.span_err(
+                                    field.span,
+                                    "#[construct_with] should be of the form \
+                                              #[construct_with(<types>)]",
+                                );
                                 return None;
                             }
                         }
@@ -183,22 +190,27 @@ fn make_packet(ecx: &mut ExtCtxt,
                             if let ast::LitKind::Str(ref s, _) = *node {
                                 packet_length = Some(s.to_string() + "(&_self.to_immutable())");
                             } else {
-                                ecx.span_err(field.span,
-                                             "#[length_fn] should be used as #[length_fn = \
-                                              \"name_of_function\"]");
+                                ecx.span_err(
+                                    field.span,
+                                    "#[length_fn] should be used as #[length_fn = \
+                                              \"name_of_function\"]",
+                                );
                                 return None;
                             }
                         }
                         "length" => {
                             let node = &lit.node;
                             if let ast::LitKind::Str(ref s, _) = *node {
-                                let field_names: Vec<String> = sfields.iter()
+                                let field_names: Vec<String> = sfields
+                                    .iter()
                                     .filter_map(|field| {
-                                        field.ident
-                                            .map(|name| name.to_string())
-                                            .and_then(|name| {
-                                                if name == field_name { None } else { Some(name) }
-                                            })
+                                        field.ident.map(|name| name.to_string()).and_then(|name| {
+                                            if name == field_name {
+                                                None
+                                            } else {
+                                                Some(name)
+                                            }
+                                        })
                                     })
                                     .collect();
                                 let tt_tokens = ecx.parse_tts(s.to_string());
@@ -207,9 +219,11 @@ fn make_packet(ecx: &mut ExtCtxt,
                                 let parsed = tts_to_string(&tokens_packet[..]);
                                 packet_length = Some(parsed);
                             } else {
-                                ecx.span_err(field.span,
-                                             "#[length] should be used as #[length = \
-                                              \"field_name and/or arithmetic expression\"]");
+                                ecx.span_err(
+                                    field.span,
+                                    "#[length] should be used as #[length = \
+                                              \"field_name and/or arithmetic expression\"]",
+                                );
                                 return None;
                             }
                         }
@@ -240,16 +254,20 @@ fn make_packet(ecx: &mut ExtCtxt,
             Type::Vector(_) => {
                 struct_length = Some(format!("_packet.{}.len()", field_name).to_owned());
                 if !is_payload && packet_length.is_none() {
-                    ecx.span_err(field.span,
-                                 "variable length field must have #[length = \"\"] or \
-                                  #[length_fn = \"\"] attribute");
+                    ecx.span_err(
+                        field.span,
+                        "variable length field must have #[length = \"\"] or \
+                                  #[length_fn = \"\"] attribute",
+                    );
                     return None;
                 }
             }
             Type::Misc(_) => {
                 if construct_with.is_empty() {
-                    ecx.span_err(field.span,
-                                 "non-primitive field types must specify #[construct_with]");
+                    ecx.span_err(
+                        field.span,
+                        "non-primitive field types must specify #[construct_with]",
+                    );
                     return None;
                 }
             }
@@ -276,7 +294,6 @@ fn make_packet(ecx: &mut ExtCtxt,
         base_name: name,
         fields: fields,
     })
-
 }
 
 fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &Annotatable) -> Option<Vec<Packet>> {
@@ -329,11 +346,12 @@ fn make_packets(ecx: &mut ExtCtxt, span: Span, item: &Annotatable) -> Option<Vec
     }
 }
 
-/// Return the processed length expression for the packet
-fn parse_length_expr(ecx: &mut ExtCtxt,
-                     tts: &[TokenTree],
-                     field_names: &[String])
-    -> Vec<TokenTree> {
+/// Return the processed length expression for a packet.
+fn parse_length_expr(
+    ecx: &mut ExtCtxt,
+    tts: &[TokenTree],
+    field_names: &[String],
+) -> Vec<TokenTree> {
     let error_msg = "Only field names, constants, integers, basic arithmetic expressions \
                      (+ - * / %) and parentheses are allowed in the \"length\" attribute";
     let mut needs_constant: Option<Span> = None;
@@ -346,7 +364,7 @@ fn parse_length_expr(ecx: &mut ExtCtxt,
                         let mut modified_packet_tokens =
                             ecx.parse_tts(format!("_self.get_{}() as usize", name).to_owned());
                         acc_packet.append(&mut modified_packet_tokens);
-                    } else  {
+                    } else {
                         if let None = needs_constant {
                             needs_constant = Some(span);
                         }
@@ -399,18 +417,19 @@ fn parse_length_expr(ecx: &mut ExtCtxt,
 
     if let Some(span) = needs_constant {
         if !has_constant {
-            ecx.span_err(span,
-                         "Field name must be a member of the struct and not the field itself");
+            ecx.span_err(
+                span,
+                "Field name must be a member of the struct and not the field itself",
+            );
         }
     }
 
     tokens_packet
 }
 
-
 struct GenContext<'a, 'b: 'a, 'c> {
     ecx: &'a mut ExtCtxt<'b>,
-    push: &'c mut FnMut(P<ast::Item>),
+    push: &'c mut dyn FnMut(P<ast::Item>),
 }
 
 impl<'a, 'b, 'c> GenContext<'a, 'b, 'c> {
@@ -419,11 +438,13 @@ impl<'a, 'b, 'c> GenContext<'a, 'b, 'c> {
     }
 }
 
-pub fn generate_packet(ecx: &mut ExtCtxt,
-                       span: Span,
-                       _meta_item: &ast::MetaItem,
-                       item: &Annotatable,
-                       push: &mut FnMut(Annotatable)) {
+pub fn generate_packet(
+    ecx: &mut ExtCtxt,
+    span: Span,
+    _meta_item: &ast::MetaItem,
+    item: &Annotatable,
+    push: &mut dyn FnMut(Annotatable),
+) {
     if let Some(packets) = make_packets(ecx, span, item) {
         let mut cx = GenContext {
             ecx: ecx,
@@ -446,26 +467,34 @@ pub fn generate_packet(ecx: &mut ExtCtxt,
 }
 
 fn generate_packet_structs(cx: &mut GenContext, packet: &Packet) {
-    for (name, mutable) in vec![(packet.packet_name(), ""), (packet.packet_name_mut(), "Mut")] {
-        cx.push_item_from_string(format!("
+    for (name, mutable) in vec![
+        (packet.packet_name(), ""),
+        (packet.packet_name_mut(), "Mut"),
+    ] {
+        cx.push_item_from_string(format!(
+            "
             #[derive(PartialEq)]
             /// A structure enabling manipulation of on the wire packets
             pub struct {}<'p> {{
                 packet: ::pnet_macros_support::packet::{}PacketData<'p>,
-            }}", name, mutable));
+            }}",
+            name, mutable
+        ));
     }
 }
 
-fn handle_misc_field(cx: &mut GenContext,
-                     error: &mut bool,
-                     field: &Field,
-                     bit_offset: &mut usize,
-                     offset_fns: &[String],
-                     co: &mut String,
-                     name: &str,
-                     mutators: &mut String,
-                     accessors: &mut String,
-                     ty_str: &str) {
+fn handle_misc_field(
+    cx: &mut GenContext,
+    error: &mut bool,
+    field: &Field,
+    bit_offset: &mut usize,
+    offset_fns: &[String],
+    co: &mut String,
+    name: &str,
+    mutators: &mut String,
+    accessors: &mut String,
+    ty_str: &str,
+) {
     let mut inner_accessors = String::new();
     let mut inner_mutators = String::new();
     let mut get_args = String::new();
@@ -486,36 +515,41 @@ fn handle_misc_field(cx: &mut GenContext,
                 || (target_endianness == Endianness::Little && endianness == Endianness::Host)
             {
                 ops = to_little_endian(ops);
-            } 
+            }
 
             let arg_name = format!("arg{}", i);
-            inner_accessors =
-                inner_accessors +
-                &generate_accessor_str(&arg_name[..],
-                                       &ty_str[..],
-                                       &co[..],
-                                       &ops[..],
-                                       Some(&name[..]))[..];
-            inner_mutators =
-                inner_mutators +
-                &generate_mutator_str(&arg_name[..],
-                                      &ty_str[..],
-                                      &co[..],
-                                      &to_mutator(&ops[..])[..],
-                                      Some(&name[..]))[..];
+            inner_accessors = inner_accessors
+                + &generate_accessor_str(
+                    &arg_name[..],
+                    &ty_str[..],
+                    &co[..],
+                    &ops[..],
+                    Some(&name[..]),
+                )[..];
+            inner_mutators = inner_mutators
+                + &generate_mutator_str(
+                    &arg_name[..],
+                    &ty_str[..],
+                    &co[..],
+                    &to_mutator(&ops[..])[..],
+                    Some(&name[..]),
+                )[..];
             get_args = format!("{}get_{}(&self), ", get_args, arg_name);
             set_args = format!("{}set_{}(_self, vals.{});\n", set_args, arg_name, i);
             *bit_offset += size;
             // Current offset needs to be recalculated for each arg
             *co = current_offset(*bit_offset, offset_fns);
         } else {
-            cx.ecx.span_err(field.span,
-                            "arguments to #[construct_with] must be primitives");
+            cx.ecx.span_err(
+                field.span,
+                "arguments to #[construct_with] must be primitives",
+            );
             *error = true;
         }
     }
-    *mutators = format!("{mutators}
-                    /// Set the value of the {name} field
+    *mutators = format!(
+        "{mutators}
+                    /// Set the value of the {name} field.
                     #[inline]
                     #[allow(trivial_numeric_casts)]
                     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
@@ -529,23 +563,28 @@ fn handle_misc_field(cx: &mut GenContext,
                         {set_args}
                     }}
                     ",
-                        mutators = &mutators[..],
-                        name = field.name,
-                        ty_str = ty_str,
-                        inner_mutators = inner_mutators,
-                        set_args = set_args);
+        mutators = &mutators[..],
+        name = field.name,
+        ty_str = ty_str,
+        inner_mutators = inner_mutators,
+        set_args = set_args
+    );
     let ctor = if field.construct_with.is_some() {
-        format!("{} {}::new({})",
-                inner_accessors,
-                ty_str,
-                &get_args[..get_args.len() - 2])
+        format!(
+            "{} {}::new({})",
+            inner_accessors,
+            ty_str,
+            &get_args[..get_args.len() - 2]
+        )
     } else {
-        format!("let current_offset = {};
+        format!(
+            "let current_offset = {};
                  {}::new(&_self.packet[current_offset..])",
-                co,
-                ty_str)
+            co, ty_str
+        )
     };
-    *accessors = format!("{accessors}
+    *accessors = format!(
+        "{accessors}
                         /// Get the value of the {name} field
                         #[inline]
                         #[allow(trivial_numeric_casts)]
@@ -554,21 +593,23 @@ fn handle_misc_field(cx: &mut GenContext,
                             {ctor}
                         }}
                         ",
-                         accessors = accessors,
-                         name = field.name,
-                         ty_str = ty_str,
-                         ctor = ctor);
-
+        accessors = accessors,
+        name = field.name,
+        ty_str = ty_str,
+        ctor = ctor
+    );
 }
 
-fn handle_vec_primitive(cx: &mut GenContext,
-                        error: &mut bool,
-                        inner_ty_str: &str,
-                        size: usize,
-                        field: &Field,
-                        accessors: &mut String,
-                        mutators: &mut String,
-                        co: &mut String) {
+fn handle_vec_primitive(
+    cx: &mut GenContext,
+    error: &mut bool,
+    inner_ty_str: &str,
+    size: usize,
+    field: &Field,
+    accessors: &mut String,
+    mutators: &mut String,
+    co: &mut String,
+) {
     if inner_ty_str == "u8" || (size % 8) == 0 {
         let ops = operations(0, size).unwrap();
         if !field.is_payload {
@@ -576,7 +617,7 @@ fn handle_vec_primitive(cx: &mut GenContext,
             *accessors = format!("{accessors}
                                     /// Get the value of the {name} field (copies contents)
                                     #[inline]
-                                    #[allow(trivial_numeric_casts)]
+                                    #[allow(trivial_numeric_casts, unused_parens)]
                                     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                     pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
                                         use std::cmp::min;
@@ -606,9 +647,11 @@ fn handle_vec_primitive(cx: &mut GenContext,
                                  size = size / 8);
         }
         let check_len = if field.packet_length.is_some() {
-            format!("let len = {packet_length};
+            format!(
+                "let len = {packet_length};
                                              assert!(vals.len() <= len);",
-                    packet_length = field.packet_length.as_ref().unwrap())
+                packet_length = field.packet_length.as_ref().unwrap()
+            )
         } else {
             String::new()
         };
@@ -626,18 +669,21 @@ fn handle_vec_primitive(cx: &mut GenContext,
         } else {
             // e.g. Vec<u16> -> Vec<u8>
             let sop_strings = generate_sop_strings(&to_mutator(&ops));
-            format!("
+            format!(
+                "
                                 let mut co = current_offset;
                                 for i in 0..vals.len() {{
                                     let val = vals[i];
                                     {sop}
                                     co += {size};
                                 }}",
-                    sop = sop_strings,
-                    size = size / 8)
+                sop = sop_strings,
+                size = size / 8
+            )
         };
 
-        *mutators = format!("{mutators}
+        *mutators = format!(
+            "{mutators}
                                 /// Set the value of the {name} field (copies contents)
                                 #[inline]
                                 #[allow(trivial_numeric_casts)]
@@ -651,30 +697,34 @@ fn handle_vec_primitive(cx: &mut GenContext,
 
                                     {copy_vals}
                                }}",
-                            mutators = mutators,
-                            name = field.name,
-                            co = co,
-                            check_len = check_len,
-                            inner_ty_str = inner_ty_str,
-                            copy_vals = copy_vals);
-
+            mutators = mutators,
+            name = field.name,
+            co = co,
+            check_len = check_len,
+            inner_ty_str = inner_ty_str,
+            copy_vals = copy_vals
+        );
     } else {
-
-        cx.ecx.span_err(field.span, "unimplemented variable length field");
+        cx.ecx
+            .span_err(field.span, "unimplemented variable length field");
         *error = true;
     }
 }
 
-fn handle_vector_field(cx: &mut GenContext,
-                       error: &mut bool,
-                       field: &Field,
-                       accessors: &mut String,
-                       mutators: &mut String,
-                       inner_ty: &Box<Type>,
-                       co: &mut String) {
+fn handle_vector_field(
+    cx: &mut GenContext,
+    error: &mut bool,
+    field: &Field,
+    accessors: &mut String,
+    mutators: &mut String,
+    inner_ty: &Box<Type>,
+    co: &mut String,
+) {
     if !field.is_payload && !field.packet_length.is_some() {
-        cx.ecx.span_err(field.span,
-                        "variable length field must have #[length_fn = \"\"] attribute");
+        cx.ecx.span_err(
+            field.span,
+            "variable length field must have #[length_fn = \"\"] attribute",
+        );
         *error = true;
     }
     if !field.is_payload {
@@ -716,18 +766,19 @@ fn handle_vector_field(cx: &mut GenContext,
                             packet_length = field.packet_length.as_ref().unwrap());
     }
     match **inner_ty {
-        Type::Primitive(ref inner_ty_str, _size, _endianness) => {
-            handle_vec_primitive(cx,
-                                 error,
-                                 inner_ty_str,
-                                 _size,
-                                 field,
-                                 accessors,
-                                 mutators,
-                                 co)
-        }
+        Type::Primitive(ref inner_ty_str, _size, _endianness) => handle_vec_primitive(
+            cx,
+            error,
+            inner_ty_str,
+            _size,
+            field,
+            accessors,
+            mutators,
+            co,
+        ),
         Type::Vector(_) => {
-            cx.ecx.span_err(field.span, "variable length fields may not contain vectors");
+            cx.ecx
+                .span_err(field.span, "variable length fields may not contain vectors");
             *error = true;
         }
         Type::Misc(ref inner_ty_str) => {
@@ -796,11 +847,12 @@ fn handle_vector_field(cx: &mut GenContext,
     }
 }
 
-fn generate_packet_impl(cx: &mut GenContext,
-                        packet: &Packet,
-                        mutable: bool,
-                        name: String)
-    -> Option<(PayloadBounds, String)> {
+fn generate_packet_impl(
+    cx: &mut GenContext,
+    packet: &Packet,
+    mutable: bool,
+    name: String,
+) -> Option<(PayloadBounds, String)> {
     let mut bit_offset = 0;
     let mut offset_fns_packet = Vec::new();
     let mut offset_fns_struct = Vec::new();
@@ -818,9 +870,11 @@ fn generate_packet_impl(cx: &mut GenContext,
                     format!("{} + {}", co.clone(), field.packet_length.as_ref().unwrap());
             } else {
                 if idx != packet.fields.len() - 1 {
-                    cx.ecx.span_err(field.span,
-                                    "#[payload] must specify a #[length_fn], unless it is the \
-                                     last field of a packet");
+                    cx.ecx.span_err(
+                        field.span,
+                        "#[payload] must specify a #[length_fn], unless it is the \
+                                     last field of a packet",
+                    );
                     error = true;
                 }
             }
@@ -845,43 +899,42 @@ fn generate_packet_impl(cx: &mut GenContext,
                     || (target_endianness == Endianness::Little && endianness == Endianness::Host)
                 {
                     ops = to_little_endian(ops);
-                } 
+                }
 
-                mutators = mutators +
-                           &generate_mutator_str(&field.name[..],
-                                                 &ty_str[..],
-                                                 &co[..],
-                                                 &to_mutator(&ops[..])[..],
-                                                 None)[..];
-                accessors = accessors +
-                            &generate_accessor_str(&field.name[..],
-                                                   &ty_str[..],
-                                                   &co[..],
-                                                   &ops[..],
-                                                   None)[..];
+                mutators = mutators
+                    + &generate_mutator_str(
+                        &field.name[..],
+                        &ty_str[..],
+                        &co[..],
+                        &to_mutator(&ops[..])[..],
+                        None,
+                    )[..];
+                accessors = accessors
+                    + &generate_accessor_str(&field.name[..], &ty_str[..], &co[..], &ops[..], None)
+                        [..];
                 bit_offset += size;
             }
-            Type::Vector(ref inner_ty) => {
-                handle_vector_field(cx,
-                                    &mut error,
-                                    &field,
-                                    &mut accessors,
-                                    &mut mutators,
-                                    inner_ty,
-                                    &mut co)
-            }
-            Type::Misc(ref ty_str) => {
-                handle_misc_field(cx,
-                                  &mut error,
-                                  &field,
-                                  &mut bit_offset,
-                                  &offset_fns_packet[..],
-                                  &mut co,
-                                  &name,
-                                  &mut mutators,
-                                  &mut accessors,
-                                  &ty_str)
-            }
+            Type::Vector(ref inner_ty) => handle_vector_field(
+                cx,
+                &mut error,
+                &field,
+                &mut accessors,
+                &mut mutators,
+                inner_ty,
+                &mut co,
+            ),
+            Type::Misc(ref ty_str) => handle_misc_field(
+                cx,
+                &mut error,
+                &field,
+                &mut bit_offset,
+                &offset_fns_packet[..],
+                &mut co,
+                &name,
+                &mut mutators,
+                &mut accessors,
+                &ty_str,
+            ),
         }
         if field.packet_length.is_some() {
             offset_fns_packet.push(field.packet_length.as_ref().unwrap().clone());
@@ -900,14 +953,12 @@ fn generate_packet_impl(cx: &mut GenContext,
         for field in &packet.fields {
             match field.ty {
                 Type::Vector(_) => {
-                    set_fields = set_fields +
-                                 &format!("_self.set_{field}(&packet.{field});\n",
-                                          field = field.name)[..];
+                    set_fields = set_fields
+                        + &format!("_self.set_{field}(&packet.{field});\n", field = field.name)[..];
                 }
                 _ => {
-                    set_fields = set_fields +
-                                 &format!("_self.set_{field}(packet.{field});\n",
-                                          field = field.name)[..];
+                    set_fields = set_fields
+                        + &format!("_self.set_{field}(packet.{field});\n", field = field.name)[..];
                 }
             }
         }
@@ -918,31 +969,34 @@ fn generate_packet_impl(cx: &mut GenContext,
     let populate = if mutable {
         let set_fields = generate_set_fields(&packet);
         let imm_name = packet.packet_name();
-        format!("/// Populates a {name}Packet using a {name} structure
+        format!(
+            "/// Populates a {name}Packet using a {name} structure
              #[inline]
              #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
              pub fn populate(&mut self, packet: &{name}) {{
                  let _self = self;
                  {set_fields}
              }}",
-                name = &imm_name[..imm_name.len() - 6],
-                set_fields = set_fields)
+            name = &imm_name[..imm_name.len() - 6],
+            set_fields = set_fields
+        )
     } else {
         "".to_owned()
     };
 
     // If there are no variable length fields defined, then `_packet` is not used, hence
     // the leading underscore
-    let packet_size_struct = format!("/// The size (in bytes) of a {base_name} instance when converted into
+    let packet_size_struct = format!(
+        "/// The size (in bytes) of a {base_name} instance when converted into
             /// a byte-array
             #[inline]
             pub fn packet_size(_packet: \
                  &{base_name}) -> usize {{
                 {struct_size}
             }}",
-                                     base_name = packet.base_name,
-                                     struct_size = current_offset(bit_offset,
-                                                                  &offset_fns_struct[..]));
+        base_name = packet.base_name,
+        struct_size = current_offset(bit_offset, &offset_fns_struct[..])
+    );
 
     let byte_size = if bit_offset % 8 == 0 {
         bit_offset / 8
@@ -991,7 +1045,7 @@ fn generate_packet_impl(cx: &mut GenContext,
         /// The minimum size (in bytes) a packet of this type can be. It's based on the total size
         /// of the fixed-size fields.
         #[inline]
-        pub fn minimum_packet_size() -> usize {{
+        pub const fn minimum_packet_size() -> usize {{
             {byte_size}
         }}
 
@@ -1013,14 +1067,18 @@ fn generate_packet_impl(cx: &mut GenContext,
     packet_size_struct = packet_size_struct
         ));
 
-    Some((payload_bounds.unwrap(), current_offset(bit_offset, &offset_fns_packet[..])))
+    Some((
+        payload_bounds.unwrap(),
+        current_offset(bit_offset, &offset_fns_packet[..]),
+    ))
 }
-
 
 fn generate_packet_impls(cx: &mut GenContext, packet: &Packet) -> Option<(PayloadBounds, String)> {
     let mut ret = None;
-    for (mutable, name) in vec![(false, packet.packet_name()),
-                                (true, packet.packet_name_mut())] {
+    for (mutable, name) in vec![
+        (false, packet.packet_name()),
+        (true, packet.packet_name_mut()),
+    ] {
         ret = generate_packet_impl(cx, packet, mutable, name);
     }
 
@@ -1029,7 +1087,8 @@ fn generate_packet_impls(cx: &mut GenContext, packet: &Packet) -> Option<(Payloa
 
 fn generate_packet_size_impls(cx: &mut GenContext, packet: &Packet, size: &str) {
     for name in &[packet.packet_name(), packet.packet_name_mut()] {
-        cx.push_item_from_string(format!("
+        cx.push_item_from_string(format!(
+            "
             impl<'a> ::pnet_macros_support::packet::PacketSize for {name}<'a> {{
                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                 fn packet_size(&self) -> usize {{
@@ -1037,17 +1096,22 @@ fn generate_packet_size_impls(cx: &mut GenContext, packet: &Packet, size: &str) 
                     {size}
                 }}
             }}
-        ", name = name, size = size));
+        ",
+            name = name,
+            size = size
+        ));
     }
 }
 
-fn generate_packet_trait_impls(cx: &mut GenContext,
-                               packet: &Packet,
-                               payload_bounds: &PayloadBounds) {
+fn generate_packet_trait_impls(
+    cx: &mut GenContext,
+    packet: &Packet,
+    payload_bounds: &PayloadBounds,
+) {
     for (name, mutable, u_mut, mut_) in vec![
         (packet.packet_name_mut(), "Mutable", "_mut", "mut"),
         (packet.packet_name_mut(), "", "", ""),
-        (packet.packet_name(), "", "", "")
+        (packet.packet_name(), "", "", ""),
     ] {
         let mut pre = "".to_owned();
         let mut start = "".to_owned();
@@ -1057,11 +1121,15 @@ fn generate_packet_trait_impls(cx: &mut GenContext,
             start = "start".to_owned();
         }
         if !payload_bounds.upper.is_empty() {
-            pre = pre + &format!("let end = ::std::cmp::min({}, _self.packet.len());",
-                                    payload_bounds.upper)[..];
+            pre = pre
+                + &format!(
+                    "let end = ::std::cmp::min({}, _self.packet.len());",
+                    payload_bounds.upper
+                )[..];
             end = "end".to_owned();
         }
-        cx.push_item_from_string(format!("impl<'a> ::pnet_macros_support::packet::{mutable}Packet for {name}<'a> {{
+        cx.push_item_from_string(format!(
+            "impl<'a> ::pnet_macros_support::packet::{mutable}Packet for {name}<'a> {{
             #[inline]
             fn packet{u_mut}<'p>(&'p {mut_} self) -> &'p {mut_} [u8] {{ &{mut_} self.packet[..] }}
 
@@ -1075,27 +1143,33 @@ fn generate_packet_trait_impls(cx: &mut GenContext,
                 }}
                 &{mut_} _self.packet[{start}..{end}]
             }}
-        }}", name = name,
-             start = start,
-             end = end,
-             pre = pre,
-             mutable = mutable,
-             u_mut = u_mut,
-             mut_ = mut_));
+        }}",
+            name = name,
+            start = start,
+            end = end,
+            pre = pre,
+            mutable = mutable,
+            u_mut = u_mut,
+            mut_ = mut_
+        ));
     }
 }
 
 fn generate_iterables(cx: &mut GenContext, packet: &Packet) {
     let name = &packet.base_name;
 
-    cx.push_item_from_string(format!("
+    cx.push_item_from_string(format!(
+        "
     /// Used to iterate over a slice of `{name}Packet`s
     pub struct {name}Iterable<'a> {{
         buf: &'a [u8],
     }}
-    ", name = name));
+    ",
+        name = name
+    ));
 
-    cx.push_item_from_string(format!("
+    cx.push_item_from_string(format!(
+        "
     impl<'a> Iterator for {name}Iterable<'a> {{
         type Item = {name}Packet<'a>;
 
@@ -1117,14 +1191,17 @@ fn generate_iterables(cx: &mut GenContext, packet: &Packet) {
             (0, None)
         }}
     }}
-    ", name = name));
+    ",
+        name = name
+    ));
 }
 
 fn generate_converters(cx: &mut GenContext, packet: &Packet) {
     let get_fields = generate_get_fields(packet);
 
     for name in &[packet.packet_name(), packet.packet_name_mut()] {
-        cx.push_item_from_string(format!("
+        cx.push_item_from_string(format!(
+            "
         impl<'p> ::pnet_macros_support::packet::FromPacket for {packet}<'p> {{
             type T = {name};
             #[inline]
@@ -1135,12 +1212,15 @@ fn generate_converters(cx: &mut GenContext, packet: &Packet) {
                     {get_fields}
                 }}
             }}
-        }}", packet = name, name = packet.base_name, get_fields = get_fields));
+        }}",
+            packet = name,
+            name = packet.base_name,
+            get_fields = get_fields
+        ));
     }
 }
 
 fn generate_debug_impls(cx: &mut GenContext, packet: &Packet) {
-
     let mut field_fmt_str = String::new();
     let mut get_fields = String::new();
 
@@ -1152,7 +1232,8 @@ fn generate_debug_impls(cx: &mut GenContext, packet: &Packet) {
     }
 
     for packet in &[packet.packet_name(), packet.packet_name_mut()] {
-        cx.push_item_from_string(format!("
+        cx.push_item_from_string(format!(
+            "
         impl<'p> ::std::fmt::Debug for {packet}<'p> {{
             #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
             fn fmt(&self, fmt: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {{
@@ -1162,7 +1243,11 @@ fn generate_debug_impls(cx: &mut GenContext, packet: &Packet) {
                        {get_fields}
                 )
             }}
-        }}", packet = packet, field_fmt_str = field_fmt_str, get_fields = get_fields));
+        }}",
+            packet = packet,
+            field_fmt_str = field_fmt_str,
+            get_fields = get_fields
+        ));
     }
 }
 
@@ -1209,12 +1294,30 @@ fn parse_ty(ty: &str) -> Option<(usize, Endianness, EndiannessSpecified)> {
 
 #[test]
 fn test_parse_ty() {
-    assert_eq!(parse_ty("u8"), Some((8, Endianness::Big, EndiannessSpecified::No)));
-    assert_eq!(parse_ty("u21be"), Some((21, Endianness::Big, EndiannessSpecified::Yes)));
-    assert_eq!(parse_ty("u21le"), Some((21, Endianness::Little, EndiannessSpecified::Yes)));
-    assert_eq!(parse_ty("u21he"), Some((21, Endianness::Host, EndiannessSpecified::Yes)));
-    assert_eq!(parse_ty("u9"), Some((9, Endianness::Big, EndiannessSpecified::No)));
-    assert_eq!(parse_ty("u16"), Some((16, Endianness::Big, EndiannessSpecified::No)));
+    assert_eq!(
+        parse_ty("u8"),
+        Some((8, Endianness::Big, EndiannessSpecified::No))
+    );
+    assert_eq!(
+        parse_ty("u21be"),
+        Some((21, Endianness::Big, EndiannessSpecified::Yes))
+    );
+    assert_eq!(
+        parse_ty("u21le"),
+        Some((21, Endianness::Little, EndiannessSpecified::Yes))
+    );
+    assert_eq!(
+        parse_ty("u21he"),
+        Some((21, Endianness::Host, EndiannessSpecified::Yes))
+    );
+    assert_eq!(
+        parse_ty("u9"),
+        Some((9, Endianness::Big, EndiannessSpecified::No))
+    );
+    assert_eq!(
+        parse_ty("u16"),
+        Some((16, Endianness::Big, EndiannessSpecified::No))
+    );
     assert_eq!(parse_ty("uable"), None);
     assert_eq!(parse_ty("u21re"), None);
     assert_eq!(parse_ty("i21be"), None);
@@ -1225,59 +1328,85 @@ fn generate_sop_strings(operations: &[SetOperation]) -> String {
     for (idx, sop) in operations.iter().enumerate() {
         let pkt_replace = format!("_self.packet[co + {}]", idx);
         let val_replace = "val";
-        let sop =
-            sop.to_string().replace("{packet}", &pkt_replace[..]).replace("{val}", val_replace);
+        let sop = sop
+            .to_string()
+            .replace("{packet}", &pkt_replace[..])
+            .replace("{val}", val_replace);
         op_strings = op_strings + &sop[..] + ";\n";
     }
 
     op_strings
 }
 
-enum AccessorMutator { Accessor, Mutator }
+enum AccessorMutator {
+    Accessor,
+    Mutator,
+}
 
 fn generate_accessor_or_mutator_comment(name: &str, ty: &str, op_type: AccessorMutator) -> String {
-    let get_or_set = match op_type { AccessorMutator::Accessor => "Get",
-                                     AccessorMutator::Mutator  => "Set" };
+    let get_or_set = match op_type {
+        AccessorMutator::Accessor => "Get",
+        AccessorMutator::Mutator => "Set",
+    };
     if let Some((_, endianness, end_specified)) = parse_ty(ty) {
         if end_specified == EndiannessSpecified::Yes {
-            let return_or_want = match op_type { AccessorMutator::Accessor => "accessor returns",
-                                                 AccessorMutator::Mutator  => "mutator wants" };
+            let return_or_want = match op_type {
+                AccessorMutator::Accessor => "accessor returns",
+                AccessorMutator::Mutator => "mutator wants",
+            };
             let endian_str = match endianness {
-                Endianness::Big => { "big-endian" },
-                Endianness::Little => { "little-endian" },
-                Endianness::Host => { "host-endian" },
+                Endianness::Big => "big-endian",
+                Endianness::Little => "little-endian",
+                Endianness::Host => "host-endian",
             };
 
-            return format!("/// {get_or_set} the {name} field. This field is always stored {endian}
+            return format!(
+                "/// {get_or_set} the {name} field. This field is always stored {endian}
                 /// within the struct, but this {return_or_want} host order.",
-                get_or_set = get_or_set, name = name, endian = endian_str,
-                return_or_want = return_or_want);
+                get_or_set = get_or_set,
+                name = name,
+                endian = endian_str,
+                return_or_want = return_or_want
+            );
         }
     }
-    format!("/// {get_or_set} the {name} field.", get_or_set = get_or_set, name = name)
+    format!(
+        "/// {get_or_set} the {name} field.",
+        get_or_set = get_or_set,
+        name = name
+    )
 }
 
 /// Given the name of a field, and a set of operations required to set that field, return
 /// the Rust code required to set the field
-fn generate_mutator_str(name: &str,
-                        ty: &str,
-                        offset: &str,
-                        operations: &[SetOperation],
-                        inner: Option<&str>)
-    -> String {
+fn generate_mutator_str(
+    name: &str,
+    ty: &str,
+    offset: &str,
+    operations: &[SetOperation],
+    inner: Option<&str>,
+) -> String {
     let op_strings = generate_sop_strings(operations);
 
     let mutator = if let Some(struct_name) = inner {
-        format!("#[inline]
+        format!(
+            "#[inline]
     #[allow(trivial_numeric_casts)]
     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
     fn set_{name}(_self: &mut {struct_name}, val: {ty}) {{
         let co = {co};
         {operations}
-    }}", struct_name = struct_name, name = name, ty = ty, co = offset, operations = op_strings)
+    }}",
+            struct_name = struct_name,
+            name = name,
+            ty = ty,
+            co = offset,
+            operations = op_strings
+        )
     } else {
         let comment = generate_accessor_or_mutator_comment(name, ty, AccessorMutator::Mutator);
-        format!("{comment}
+        format!(
+            "{comment}
     #[inline]
     #[allow(trivial_numeric_casts)]
     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
@@ -1285,7 +1414,13 @@ fn generate_mutator_str(name: &str,
         let _self = self;
         let co = {co};
         {operations}
-    }}", comment = comment, name = name, ty = ty, co = offset, operations = op_strings)
+    }}",
+            comment = comment,
+            name = name,
+            ty = ty,
+            co = offset,
+            operations = op_strings
+        )
     };
 
     mutator
@@ -1296,7 +1431,6 @@ fn generate_mutator_str(name: &str,
 ///  let b1 = ((_self.packet[co + 1] as u16be) as u16be;
 ///  b0 | b1"
 fn generate_accessor_op_str(name: &str, ty: &str, operations: &[GetOperation]) -> String {
-
     fn build_return(max: usize) -> String {
         let mut ret = "".to_owned();
         for i in 0..max {
@@ -1310,7 +1444,11 @@ fn generate_accessor_op_str(name: &str, ty: &str, operations: &[GetOperation]) -
 
     let op_strings = if operations.len() == 1 {
         let replacement_str = format!("({}[co] as {})", name, ty);
-        operations.first().unwrap().to_string().replace("{}", &replacement_str[..])
+        operations
+            .first()
+            .unwrap()
+            .to_string()
+            .replace("{}", &replacement_str[..])
     } else {
         let mut op_strings = "".to_owned();
         for (idx, operation) in operations.iter().enumerate() {
@@ -1328,7 +1466,6 @@ fn generate_accessor_op_str(name: &str, ty: &str, operations: &[GetOperation]) -
 
 #[test]
 fn test_generate_accessor_op_str() {
-
     {
         let ops = operations(0, 24).unwrap();
         let result = generate_accessor_op_str("test", "u24be", &ops);
@@ -1359,34 +1496,48 @@ fn test_generate_accessor_op_str() {
 
 /// Given the name of a field, and a set of operations required to get the value of that field,
 /// return the Rust code required to get the field.
-fn generate_accessor_str(name: &str,
-                         ty: &str,
-                         offset: &str,
-                         operations: &[GetOperation],
-                         inner: Option<&str>)
-    -> String {
-
+fn generate_accessor_str(
+    name: &str,
+    ty: &str,
+    offset: &str,
+    operations: &[GetOperation],
+    inner: Option<&str>,
+) -> String {
     let op_strings = generate_accessor_op_str("_self.packet", ty, operations);
 
     let accessor = if let Some(struct_name) = inner {
-        format!("#[inline(always)]
-        #[allow(trivial_numeric_casts)]
+        format!(
+            "#[inline(always)]
+        #[allow(trivial_numeric_casts, unused_parens)]
         #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
         fn get_{name}(_self: &{struct_name}) -> {ty} {{
             let co = {co};
             {operations}
-        }}", struct_name = struct_name, name = name, ty = ty, co = offset, operations = op_strings)
+        }}",
+            struct_name = struct_name,
+            name = name,
+            ty = ty,
+            co = offset,
+            operations = op_strings
+        )
     } else {
         let comment = generate_accessor_or_mutator_comment(name, ty, AccessorMutator::Accessor);
-        format!("{comment}
+        format!(
+            "{comment}
         #[inline]
-        #[allow(trivial_numeric_casts)]
+        #[allow(trivial_numeric_casts, unused_parens)]
         #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
         pub fn get_{name}(&self) -> {ty} {{
             let _self = self;
             let co = {co};
             {operations}
-        }}", comment = comment, name = name, ty = ty, co = offset, operations = op_strings)
+        }}",
+            comment = comment,
+            name = name,
+            ty = ty,
+            co = offset,
+            operations = op_strings
+        )
     };
 
     accessor
@@ -1395,7 +1546,9 @@ fn generate_accessor_str(name: &str,
 fn current_offset(bit_offset: usize, offset_fns: &[String]) -> String {
     let base_offset = bit_offset / 8;
 
-    offset_fns.iter().fold(base_offset.to_string(), |a, b| a + " + " + &b[..])
+    offset_fns
+        .iter()
+        .fold(base_offset.to_string(), |a, b| a + " + " + &b[..])
 }
 
 fn generate_get_fields(packet: &Packet) -> String {
@@ -1403,14 +1556,17 @@ fn generate_get_fields(packet: &Packet) -> String {
 
     for field in &packet.fields {
         if field.is_payload {
-            gets = gets +
-                   &format!("{field} : {{
+            gets = gets
+                + &format!(
+                    "{field} : {{
                                                 let payload = self.payload();
                                                 let mut vec = Vec::with_capacity(payload.len());
                                                 vec.extend_from_slice(payload);
 
                                                 vec
-                                            }},\n", field = field.name)[..]
+                                            }},\n",
+                    field = field.name
+                )[..]
         } else {
             gets = gets + &format!("{field} : _self.get_{field}(),\n", field = field.name)[..]
         }
@@ -1418,7 +1574,6 @@ fn generate_get_fields(packet: &Packet) -> String {
 
     gets
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -1432,13 +1587,17 @@ mod tests {
     fn assert_parse_length_expr(expr: &str, field_names: &[&str], expected: &str) {
         let sess = ParseSess::new();
         let mut dummy_macro_loader = DummyMacroLoader;
-        let mut ecx = ExtCtxt::new(&sess,
-                                   CrateConfig::default(),
-                                   ExpansionConfig::default("parse_length_expr".to_owned()),
-                                   &mut dummy_macro_loader);
+        let mut ecx = ExtCtxt::new(
+            &sess,
+            CrateConfig::default(),
+            ExpansionConfig::default("parse_length_expr".to_owned()),
+            &mut dummy_macro_loader,
+        );
         let expr_tokens = ecx.parse_tts(expr.to_owned());
-        let field_names_vec: Vec<String> =
-            field_names.iter().map(|field_name| (*field_name).to_owned()).collect();
+        let field_names_vec: Vec<String> = field_names
+            .iter()
+            .map(|field_name| (*field_name).to_owned())
+            .collect();
         let parsed = super::parse_length_expr(&mut ecx, &expr_tokens, &field_names_vec);
         let expected_tokens = ecx.parse_tts(expected.to_owned());
         assert_eq!(tts_to_string(&parsed), tts_to_string(&expected_tokens));
@@ -1447,12 +1606,16 @@ mod tests {
     #[test]
     fn test_parse_expr_key() {
         assert_parse_length_expr("key", &["key"], "_self.get_key() as usize");
-        assert_parse_length_expr("another_key",
-                                 &["another_key"],
-                                 "_self.get_another_key() as usize");
-        assert_parse_length_expr("get_something",
-                                 &["get_something"],
-                                 "_self.get_get_something() as usize");
+        assert_parse_length_expr(
+            "another_key",
+            &["another_key"],
+            "_self.get_another_key() as usize",
+        );
+        assert_parse_length_expr(
+            "get_something",
+            &["get_something"],
+            "_self.get_get_something() as usize",
+        );
     }
 
     #[test]
@@ -1471,9 +1634,11 @@ mod tests {
     #[test]
     fn test_parse_expr_key_and_numbers() {
         assert_parse_length_expr("key + 4", &["key"], "_self.get_key() as usize + 4");
-        assert_parse_length_expr("another_key - 7 + 8 * 2 / 1 % 2",
-                                 &["another_key"],
-                                 "_self.get_another_key() as usize - 7 + 8 * 2 / 1 % 2");
+        assert_parse_length_expr(
+            "another_key - 7 + 8 * 2 / 1 % 2",
+            &["another_key"],
+            "_self.get_another_key() as usize - 7 + 8 * 2 / 1 % 2",
+        );
         assert_parse_length_expr("2 * key - 4", &["key"], "2 * _self.get_key() as usize - 4");
     }
 
@@ -1482,10 +1647,12 @@ mod tests {
         assert_parse_length_expr("()", &[], "()");
         assert_parse_length_expr("(key)", &["key"], "(_self.get_key() as usize)");
         assert_parse_length_expr("(key + 5)", &["key"], "(_self.get_key() as usize + 5)");
-        assert_parse_length_expr("key + 5 * (10 - another_key)",
-                                 &["key", "another_key"],
-                                 "_self.get_key() as usize + 5 * (10 - _self.get_another_key() \
-                                  as usize)");
+        assert_parse_length_expr(
+            "key + 5 * (10 - another_key)",
+            &["key", "another_key"],
+            "_self.get_key() as usize + 5 * (10 - _self.get_another_key() \
+                                  as usize)",
+        );
         assert_parse_length_expr("4 + 2 / (3 * (7 - 5))", &[], "4 + 2 / (3 * (7 - 5))");
     }
 
@@ -1493,8 +1660,10 @@ mod tests {
     fn test_parse_expr_constants() {
         assert_parse_length_expr("CONSTANT", &[], "CONSTANT as usize");
         assert_parse_length_expr("std::u32::MIN", &[], "std::u32::MIN as usize");
-        assert_parse_length_expr("key * (4 + std::u32::MIN)",
-                                 &["key"],
-                                 "_self.get_key() as usize * (4 + std::u32::MIN as usize)");
+        assert_parse_length_expr(
+            "key * (4 + std::u32::MIN)",
+            &["key"],
+            "_self.get_key() as usize * (4 + std::u32::MIN as usize)",
+        );
     }
 }

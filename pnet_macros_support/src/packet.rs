@@ -6,54 +6,56 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Packet helpers for `pnet_macros`
+//! Packet helpers for `pnet_macros`.
 
 use pnet_base;
 use std::ops::{Deref, DerefMut, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
 
-/// Represents a generic network packet
+/// Represents a generic network packet.
 pub trait Packet {
-    /// Retrieve the underlying buffer for the packet
+    /// Retrieve the underlying buffer for the packet.
     fn packet(&self) -> &[u8];
 
-    /// Retrieve the payload for the packet
+    /// Retrieve the payload for the packet.
     fn payload(&self) -> &[u8];
 }
 
-/// Represents a generic, mutable, network packet
+/// Represents a generic, mutable, network packet.
 pub trait MutablePacket: Packet {
-    /// Retreive the underlying, mutable, buffer for the packet
+    /// Retreive the underlying, mutable, buffer for the packet.
     fn packet_mut(&mut self) -> &mut [u8];
 
-    /// Retreive the mutable payload for the packet
+    /// Retreive the mutable payload for the packet.
     fn payload_mut(&mut self) -> &mut [u8];
 
-    /// Initialize this packet by cloning another
+    /// Initialize this packet by cloning another.
     fn clone_from<T: Packet>(&mut self, other: &T) {
         use std::ptr;
 
         assert!(self.packet().len() >= other.packet().len());
         unsafe {
-            ptr::copy_nonoverlapping(other.packet().as_ptr(),
-                                     self.packet_mut().as_mut_ptr(),
-                                     other.packet().len());
+            ptr::copy_nonoverlapping(
+                other.packet().as_ptr(),
+                self.packet_mut().as_mut_ptr(),
+                other.packet().len(),
+            );
         }
     }
 }
 
-/// Used to convert on-the-wire packets to their #[packet] equivalent
+/// Used to convert on-the-wire packets to their #[packet] equivalent.
 pub trait FromPacket: Packet {
-    /// The type of the packet to convert from
+    /// The type of the packet to convert from.
     type T;
 
-    /// Converts a wire-format packet to #[packet] struct format
+    /// Converts a wire-format packet to #[packet] struct format.
     fn from_packet(&self) -> Self::T;
 }
 
 /// Used to find the calculated size of the packet. This is used for occasions where the underlying
 /// buffer is not the same length as the packet itself.
 pub trait PacketSize: Packet {
-    /// Get the calculated size of the packet
+    /// Get the calculated size of the packet.
     fn packet_size(&self) -> usize;
 }
 
@@ -79,17 +81,17 @@ macro_rules! impl_index_mut {
     };
 }
 
-/// Packet data
+/// Packet data.
 #[derive(PartialEq)]
 pub enum PacketData<'p> {
-    /// Packet owns its contents
+    /// A packet owns its contents.
     Owned(Vec<u8>),
-    /// Packet borrows its contents
+    /// A packet borrows its contents.
     Borrowed(&'p [u8]),
 }
 
 impl<'p> PacketData<'p> {
-    /// Get a slice of the packet data
+    /// Get a slice of the packet data.
     pub fn as_slice(&self) -> &[u8] {
         match self {
             &PacketData::Owned(ref data) => data.deref(),
@@ -97,12 +99,12 @@ impl<'p> PacketData<'p> {
         }
     }
 
-    /// No-op - returns `self`
+    /// No-op - returns `self`.
     pub fn to_immutable(self) -> PacketData<'p> {
         self
     }
 
-    /// Length of the packet data
+    /// A length of the packet data.
     pub fn len(&self) -> usize {
         self.as_slice().len()
     }
@@ -114,17 +116,17 @@ impl_index!(PacketData, RangeTo<usize>, [u8]);
 impl_index!(PacketData, RangeFrom<usize>, [u8]);
 impl_index!(PacketData, RangeFull, [u8]);
 
-/// Mutable packet data
+/// Mutable packet data.
 #[derive(PartialEq)]
 pub enum MutPacketData<'p> {
-    /// Owned mutable packet data
+    /// Owned mutable packet data.
     Owned(Vec<u8>),
-    /// Borrowed mutable packet data
+    /// Borrowed mutable packet data.
     Borrowed(&'p mut [u8]),
 }
 
 impl<'p> MutPacketData<'p> {
-    /// Get packet data as a slice
+    /// Get packet data as a slice.
     pub fn as_slice(&self) -> &[u8] {
         match self {
             &MutPacketData::Owned(ref data) => data.deref(),
@@ -132,7 +134,7 @@ impl<'p> MutPacketData<'p> {
         }
     }
 
-    /// Get packet data as a mutable slice
+    /// Get packet data as a mutable slice.
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         match self {
             &mut MutPacketData::Owned(ref mut data) => data.deref_mut(),
@@ -140,7 +142,7 @@ impl<'p> MutPacketData<'p> {
         }
     }
 
-    /// Get an immutable version of the packet data
+    /// Get an immutable version of packet data.
     pub fn to_immutable(self) -> PacketData<'p> {
         match self {
             MutPacketData::Owned(data) => PacketData::Owned(data),
@@ -148,7 +150,7 @@ impl<'p> MutPacketData<'p> {
         }
     }
 
-    /// Get the length of data in the packet
+    /// Get a length of data in the packet.
     pub fn len(&self) -> usize {
         self.as_slice().len()
     }
@@ -166,16 +168,14 @@ impl_index_mut!(MutPacketData, RangeTo<usize>, [u8]);
 impl_index_mut!(MutPacketData, RangeFrom<usize>, [u8]);
 impl_index_mut!(MutPacketData, RangeFull, [u8]);
 
-
-/// Used to convert a type to primitive values representing it
+/// Used to convert a type to primitive values representing it.
 pub trait PrimitiveValues {
-    /// A tuple of types, to represent the current value
+    /// A tuple of types, to represent the current value.
     type T;
 
-    /// Convert a value to primitive types representing it
+    /// Convert a value to primitive types representing it.
     fn to_primitive_values(&self) -> Self::T;
 }
-
 
 impl PrimitiveValues for pnet_base::MacAddr {
     type T = (u8, u8, u8, u8, u8, u8);
@@ -198,14 +198,15 @@ impl PrimitiveValues for ::std::net::Ipv6Addr {
     fn to_primitive_values(&self) -> (u16, u16, u16, u16, u16, u16, u16, u16) {
         let segments = self.segments();
 
-        (segments[0],
-         segments[1],
-         segments[2],
-         segments[3],
-         segments[4],
-         segments[5],
-         segments[6],
-         segments[7])
+        (
+            segments[0],
+            segments[1],
+            segments[2],
+            segments[3],
+            segments[4],
+            segments[5],
+            segments[6],
+            segments[7],
+        )
     }
 }
-

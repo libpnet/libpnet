@@ -14,7 +14,7 @@ use pnet_macros_support::types::*;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use util;
 
-/// Represents an UDP Packet
+/// Represents a UDP Packet.
 #[packet]
 pub struct Udp {
     pub source: u16be,
@@ -25,12 +25,12 @@ pub struct Udp {
     pub payload: Vec<u8>,
 }
 
-/// Calculate the checksum for a packet built on IPv4
+/// Calculate a checksum for a packet built on IPv4.
 pub fn ipv4_checksum(packet: &UdpPacket, source: &Ipv4Addr, destination: &Ipv4Addr) -> u16be {
     ipv4_checksum_adv(packet, &[], source, destination)
 }
 
-/// Calculate the checksum for a packet built on IPv4. Advanced version which
+/// Calculate a checksum for a packet built on IPv4. Advanced version which
 /// accepts an extra slice of data that will be included in the checksum
 /// as being part of the data portion of the packet.
 ///
@@ -95,7 +95,7 @@ fn udp_header_ipv4_test() {
 }
 
 
-/// Calculate the checksum for a packet built on IPv6
+/// Calculate a checksum for a packet built on IPv6.
 pub fn ipv6_checksum(packet: &UdpPacket, source: &Ipv6Addr, destination: &Ipv6Addr) -> u16be {
     ipv6_checksum_adv(packet, &[], source, destination)
 }

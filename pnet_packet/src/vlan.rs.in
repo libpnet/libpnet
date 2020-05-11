@@ -2,12 +2,12 @@ use PrimitiveValues;
 use ethernet::EtherType;
 use pnet_macros_support::types::*;
 
-/// Represents an IEEE 802.1p class of service
+/// Represents an IEEE 802.1p class of a service.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ClassOfService(pub u3);
 
 impl ClassOfService {
-    /// Create a new ClassOfService
+    /// Create a new `ClassOfService` instance.
     pub fn new(value: u3) -> ClassOfService {
         ClassOfService(value)
     }
@@ -21,7 +21,7 @@ impl PrimitiveValues for ClassOfService {
 }
 
 /// IEEE 802.1p classes of service as defined in
-/// https://en.wikipedia.org/wiki/IEEE_P802.1p
+/// https://en.wikipedia.org/wiki/IEEE_P802.1p.
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod ClassesOfService {
@@ -52,7 +52,7 @@ pub mod ClassesOfService {
     pub const NC: ClassOfService = ClassOfService(7);
 }
 
-/// Represents a VLAN-tagged packet
+/// Represents a VLAN-tagged packet.
 #[packet]
 pub struct Vlan {
     #[construct_with(u3)]

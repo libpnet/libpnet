@@ -6,6 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! ICMPv6 packet abstraction
+//! An ICMPv6 packet abstraction.
 
 include!(concat!(env!("OUT_DIR"), "/icmpv6.rs"));

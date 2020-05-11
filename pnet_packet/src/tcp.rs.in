@@ -16,7 +16,7 @@ use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
 use util::{self, Octets};
 
-/// TCP flags
+/// The TCP flags.
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod TcpFlags {
@@ -34,23 +34,23 @@ pub mod TcpFlags {
     /// flag set (ECN=11) in IP header received during normal transmission
     /// (added to header by RFC 3168).
     pub const ECE: u9be = 0b001000000;
-    /// URG – indicates that the Urgent pointer field is significant
+    /// URG – indicates that the Urgent pointer field is significant.
     pub const URG: u9be = 0b000100000;
     /// ACK – indicates that the Acknowledgment field is significant.
     /// All packets after the initial SYN packet sent by the client should have this flag set.
     pub const ACK: u9be = 0b000010000;
     /// PSH – Push function. Asks to push the buffered data to the receiving application.
     pub const PSH: u9be = 0b000001000;
-    /// RST – Reset the connection
+    /// RST – Reset the connection.
     pub const RST: u9be = 0b000000100;
     /// SYN – Synchronize sequence numbers. Only the first packet sent from each end
     /// should have this flag set.
     pub const SYN: u9be = 0b000000010;
-    /// FIN – No more data from sender
+    /// FIN – No more data from sender.
     pub const FIN: u9be = 0b000000001;
 }
 
-/// Represents a TCP Packet
+/// Represents a TCP packet.
 #[packet]
 pub struct Tcp {
     pub source: u16be,
@@ -69,39 +69,39 @@ pub struct Tcp {
     pub payload: Vec<u8>,
 }
 
-/// Represents a TCP option
+/// Represents a TCP option.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TcpOptionNumber(pub u8);
 
-/// TCP header options
+/// The TCP header options.
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod TcpOptionNumbers {
     use super::TcpOptionNumber;
 
-    /// End of Options list
+    /// End of Options list.
     pub const EOL: TcpOptionNumber = TcpOptionNumber(0);
 
-    /// No operation
+    /// No operation.
     pub const NOP: TcpOptionNumber = TcpOptionNumber(1);
 
-    /// Maximum segment size
+    /// Maximum segment size.
     pub const MSS: TcpOptionNumber = TcpOptionNumber(2);
 
-    /// Window scale
+    /// Window scale.
     pub const WSCALE: TcpOptionNumber = TcpOptionNumber(3);
 
-    /// Selective acknowledgements permitted
+    /// Selective acknowledgements permitted.
     pub const SACK_PERMITTED: TcpOptionNumber = TcpOptionNumber(4);
 
-    /// Selective acknowledgment
+    /// Selective acknowledgment.
     pub const SACK: TcpOptionNumber = TcpOptionNumber(5);
 
-    /// Timestamps
+    /// Timestamps.
     pub const TIMESTAMPS: TcpOptionNumber = TcpOptionNumber(8);
 }
 
-/// TCP option
+/// A TCP option.
 #[packet]
 pub struct TcpOption {
     #[construct_with(u8)]
@@ -193,7 +193,7 @@ impl TcpOption {
 
 /// This function gets the 'length' of the length field of the IPv4Option packet
 /// Few options (EOL, NOP) are 1 bytes long, and then have a length field equal
-/// to 0
+/// to 0.
 #[inline]
 fn tcp_option_length(option: &TcpOptionPacket) -> usize {
     match option.get_number() {
@@ -211,7 +211,7 @@ fn tcp_option_payload_length(ipv4_option: &TcpOptionPacket) -> usize {
 }
 
 impl TcpOptionNumber {
-    /// Create a new TcpOptionNumber
+    /// Create a new `TcpOptionNumber` instance.
     pub fn new(value: u8) -> TcpOptionNumber {
         TcpOptionNumber(value)
     }
@@ -235,7 +235,7 @@ fn tcp_options_length(tcp: &TcpPacket) -> usize {
     }
 }
 
-/// Calculate the checksum for a packet built on IPv4
+/// Calculate a checksum for a packet built on IPv4.
 pub fn ipv4_checksum(packet: &TcpPacket, source: &Ipv4Addr, destination: &Ipv4Addr) -> u16 {
     ipv4_checksum_adv(packet, &[], source, destination)
 }
@@ -260,7 +260,7 @@ pub fn ipv4_checksum_adv(packet: &TcpPacket,
                         IpNextHeaderProtocols::Tcp)
 }
 
-/// Calculate the checksum for a packet built on IPv6
+/// Calculate a checksum for a packet built on IPv6.
 pub fn ipv6_checksum(packet: &TcpPacket, source: &Ipv6Addr, destination: &Ipv6Addr) -> u16 {
     ipv6_checksum_adv(packet, &[], source, destination)
 }

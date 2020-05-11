@@ -12,10 +12,10 @@ Discussion and support: [#libpnet on freenode](http://webchat.freenode.net/?chan
 
 There are four key components:
 
- * The packet module, allowing safe construction and manipulation of packets
- * The pnet_macros crate, providing infrastructure for the packet module
- * The transport module, which allows implementation of transport protocols
- * The datalink module, which allows sending and receiving data link packets directly
+ * The `packet` module, allowing safe construction and manipulation of packets;
+ * The `pnet_macros` crate, providing infrastructure for the packet module;
+ * The `transport` module, which allows implementation of transport protocols;
+ * The `datalink` module, which allows sending and receiving data link packets directly.
 
 ## Why?
 
@@ -26,8 +26,8 @@ outlined here:
 
 There are usually two ways to go about developing a new transport layer protocol:
 
- * Write it in a scripting language such as Python
- * Write it using C
+ * Write it in a scripting language such as Python;
+ * Write it using C.
 
 The former is great for trying out new ideas and rapid prototyping, however not so great as a
 real-world implementation. While you can usually get reasonable performance out of these
@@ -69,11 +69,11 @@ To use `libpnet` in your project, add the following to your Cargo.toml:
 
 ```
 [dependencies.pnet]
-version = "0.22.0"
+version = "0.26.0"
 ```
 
 `libpnet` should work on any Rust channel (stable, beta, or nightly), starting
-with Rust 1.15. When using a nightly version of Rust, you may wish to use pass
+with Rust 1.34.2. When using a nightly version of Rust, you may wish to use pass
 `--no-default-features --features nightly` to Cargo, to enable faster build
 times.
 

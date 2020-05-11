@@ -6,6 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! IPv4 packet abstraction
+//! An IPv4 packet abstraction.
 
 include!(concat!(env!("OUT_DIR"), "/ipv4.rs"));

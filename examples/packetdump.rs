@@ -234,7 +234,7 @@ fn main() {
         .into_iter()
         .filter(interface_names_match)
         .next()
-        .unwrap();
+        .unwrap_or_else(|| panic!("No such network interface: {}", iface_name));
 
     // Create a channel to receive on
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
@@ -248,25 +248,39 @@ fn main() {
         let mut fake_ethernet_frame = MutableEthernetPacket::new(&mut buf[..]).unwrap();
         match rx.next() {
             Ok(packet) => {
-                if cfg!(target_os = "macos") && interface.is_up() && !interface.is_broadcast()
-                    && !interface.is_loopback() && interface.is_point_to_point()
+                let payload_offset;
+                if cfg!(any(target_os = "macos", target_os = "ios"))
+                    && interface.is_up()
+                    && !interface.is_broadcast()
+                    && ((!interface.is_loopback() && interface.is_point_to_point())
+                        || interface.is_loopback())
                 {
-                    // Maybe is TUN interface
-                    let version = Ipv4Packet::new(&packet).unwrap().get_version();
-                    if version == 4 {
-                        fake_ethernet_frame.set_destination(MacAddr(0, 0, 0, 0, 0, 0));
-                        fake_ethernet_frame.set_source(MacAddr(0, 0, 0, 0, 0, 0));
-                        fake_ethernet_frame.set_ethertype(EtherTypes::Ipv4);
-                        fake_ethernet_frame.set_payload(&packet);
-                        handle_ethernet_frame(&interface, &fake_ethernet_frame.to_immutable());
-                        continue;
-                    } else if version == 6 {
-                        fake_ethernet_frame.set_destination(MacAddr(0, 0, 0, 0, 0, 0));
-                        fake_ethernet_frame.set_source(MacAddr(0, 0, 0, 0, 0, 0));
-                        fake_ethernet_frame.set_ethertype(EtherTypes::Ipv6);
-                        fake_ethernet_frame.set_payload(&packet);
-                        handle_ethernet_frame(&interface, &fake_ethernet_frame.to_immutable());
-                        continue;
+                    if interface.is_loopback() {
+                        // The pnet code for BPF loopback adds a zero'd out Ethernet header
+                        payload_offset = 14;
+                    } else {
+                        // Maybe is TUN interface
+                        payload_offset = 0;
+                    }
+                    if packet.len() > payload_offset {
+                        let version = Ipv4Packet::new(&packet[payload_offset..])
+                            .unwrap()
+                            .get_version();
+                        if version == 4 {
+                            fake_ethernet_frame.set_destination(MacAddr(0, 0, 0, 0, 0, 0));
+                            fake_ethernet_frame.set_source(MacAddr(0, 0, 0, 0, 0, 0));
+                            fake_ethernet_frame.set_ethertype(EtherTypes::Ipv4);
+                            fake_ethernet_frame.set_payload(&packet[payload_offset..]);
+                            handle_ethernet_frame(&interface, &fake_ethernet_frame.to_immutable());
+                            continue;
+                        } else if version == 6 {
+                            fake_ethernet_frame.set_destination(MacAddr(0, 0, 0, 0, 0, 0));
+                            fake_ethernet_frame.set_source(MacAddr(0, 0, 0, 0, 0, 0));
+                            fake_ethernet_frame.set_ethertype(EtherTypes::Ipv6);
+                            fake_ethernet_frame.set_payload(&packet[payload_offset..]);
+                            handle_ethernet_frame(&interface, &fake_ethernet_frame.to_immutable());
+                            continue;
+                        }
                     }
                 }
                 handle_ethernet_frame(&interface, &EthernetPacket::new(packet).unwrap());

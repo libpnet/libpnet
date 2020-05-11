@@ -19,19 +19,18 @@
 #![macro_use]
 
 extern crate libc;
-extern crate pnet_sys;
 extern crate pnet_packet;
+extern crate pnet_sys;
 
-use pnet_packet::Packet;
-use pnet_packet::ip::IpNextHeaderProtocol;
-use pnet_packet::ipv6::Ipv6Packet;
-use pnet_packet::ipv4::Ipv4Packet;
-use pnet_packet::udp::UdpPacket;
-use pnet_packet::icmp::IcmpPacket;
-use pnet_packet::icmpv6::Icmpv6Packet;
-use pnet_packet::tcp::TcpPacket;
 use self::TransportChannelType::{Layer3, Layer4, Ipv6Layer3};
 use self::TransportProtocol::{Ipv4, Ipv6};
+use pnet_packet::icmp::IcmpPacket;
+use pnet_packet::icmpv6::Icmpv6Packet;
+use pnet_packet::ip::IpNextHeaderProtocol;
+use pnet_packet::ipv4::Ipv4Packet;
+use pnet_packet::tcp::TcpPacket;
+use pnet_packet::udp::UdpPacket;
+use pnet_packet::Packet;
 
 use std::io;
 use std::io::Error;
@@ -41,7 +40,7 @@ use std::net::{self, IpAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
-/// Represents a transport layer protocol
+/// Represents a transport layer protocol.
 #[derive(Clone, Copy)]
 pub enum TransportProtocol {
     /// Represents a transport protocol built on top of IPv4
@@ -50,24 +49,24 @@ pub enum TransportProtocol {
     Ipv6(IpNextHeaderProtocol),
 }
 
-/// Type of transport channel to present
+/// Type of transport channel to present.
 #[derive(Clone, Copy)]
 pub enum TransportChannelType {
-    /// The application will send and receive transport layer packets
+    /// The application will send and receive transport layer packets.
     Layer4(TransportProtocol),
-    /// The application will send and receive IPv4 packets, with the specified transport protocol
+    /// The application will send and receive IPv4 packets, with the specified transport protocol.
     Layer3(IpNextHeaderProtocol),
     /// The application will send and receive IPv6 packets, with the specified transport protocol
     Ipv6Layer3(IpNextHeaderProtocol),
 }
 
-/// Structure used for sending at the transport layer. Should be created with transport_channel()
+/// Structure used for sending at the transport layer. Should be created with `transport_channel()`.
 pub struct TransportSender {
     pub socket: Arc<pnet_sys::FileDesc>,
     _channel_type: TransportChannelType,
 }
 
-/// Structure used for receiving at the transport layer. Should be created with transport_channel()
+/// Structure used for receiving at the transport layer. Should be created with `transport_channel()`.
 pub struct TransportReceiver {
     pub socket: Arc<pnet_sys::FileDesc>,
     pub buffer: Vec<u8>,
@@ -78,24 +77,23 @@ pub struct TransportReceiver {
 /// for transport channels.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Config {
-        time_to_live: u8,
+    time_to_live: u8,
 }
 
-/// Create a new (TransportSender, TransportReceiver) pair
+/// Create a new `(TransportSender, TransportReceiver)` pair.
 ///
 /// This allows for sending and receiving packets at the transport layer. The buffer size should be
 /// large enough to handle the largest packet you wish to receive.
 ///
 /// The channel type specifies what layer to send and receive packets at, and the transport
 /// protocol you wish to implement. For example, `Layer4(Ipv4(IpNextHeaderProtocols::Udp))` would
-/// allow sending and receiving UDP packets using IPv4; whereas Layer3(IpNextHeaderProtocols::Udp)
+/// allow sending and receiving UDP packets using IPv4; whereas `Layer3(IpNextHeaderProtocols::Udp)`
 /// would include the IPv4 Header in received values, and require manual construction of an IP
 /// header when sending.
-pub fn transport_channel(buffer_size: usize,
-                         channel_type: TransportChannelType)
-    -> io::Result<(TransportSender, TransportReceiver)> {
-    use std::net;
-
+pub fn transport_channel(
+    buffer_size: usize,
+    channel_type: TransportChannelType,
+) -> io::Result<(TransportSender, TransportReceiver)> {
     // This hack makes sure that winsock is initialised
     let _ = {
         let ip = net::Ipv4Addr::new(255, 255, 255, 255);
@@ -106,8 +104,7 @@ pub fn transport_channel(buffer_size: usize,
 
     let socket = unsafe {
         match channel_type {
-            Layer4(Ipv4(IpNextHeaderProtocol(proto))) |
-            Layer3(IpNextHeaderProtocol(proto)) => {
+            Layer4(Ipv4(IpNextHeaderProtocol(proto))) | Layer3(IpNextHeaderProtocol(proto)) => {
                 pnet_sys::socket(pnet_sys::AF_INET, pnet_sys::SOCK_RAW, proto as libc::c_int)
             }
             Layer4(Ipv6(IpNextHeaderProtocol(proto))) |
@@ -161,22 +158,22 @@ pub fn transport_channel(buffer_size: usize,
     Ok((sender, receiver))
 }
 
-/// Create a new (TransportSender, TransportReceiver) pair using the additional
+/// Create a new `(TransportSender, TransportReceiver)` pair using the additional
 /// options specified.
 ///
 /// For a more exhaustive descriptive, see above.
-pub fn transport_channel_with(buffer_size: usize,
-                              channel_type: TransportChannelType,
-                              configuration: Config)
-    -> io::Result<(TransportSender, TransportReceiver)> {
-
+pub fn transport_channel_with(
+    buffer_size: usize,
+    channel_type: TransportChannelType,
+    configuration: Config,
+) -> io::Result<(TransportSender, TransportReceiver)> {
     let (sender, receiver) = transport_channel(buffer_size, channel_type)?;
 
     set_socket_ttl(sender.socket.clone(), configuration.time_to_live)?;
     Ok((sender, receiver))
 }
 
-/// Sets the time-to-live for all IP packets sent on the specified socket.
+/// Sets a time-to-live for all IP packets sent on the specified socket.
 fn set_socket_ttl(socket: Arc<pnet_sys::FileDesc>, ttl: u8) -> io::Result<()> {
     let ttl = ttl as i32;
     // TODO SOL_IPV6 and IPV6_HOPLIMIT
@@ -186,7 +183,7 @@ fn set_socket_ttl(socket: Arc<pnet_sys::FileDesc>, ttl: u8) -> io::Result<()> {
             pnet_sys::IPPROTO_IP,
             pnet_sys::IP_TTL,
             (&ttl as *const libc::c_int) as pnet_sys::Buf,
-            mem::size_of::<libc::c_int>() as pnet_sys::SockLen
+            mem::size_of::<libc::c_int>() as pnet_sys::SockLen,
         )
     };
 
@@ -197,7 +194,7 @@ fn set_socket_ttl(socket: Arc<pnet_sys::FileDesc>, ttl: u8) -> io::Result<()> {
                 pnet_sys::close(socket.fd);
             }
             Err(err)
-        },
+        }
         _ => Ok(()),
     }
 }
@@ -215,26 +212,26 @@ impl TransportSender {
         pnet_sys::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen)
     }
 
-    /// Send a packet to the provided destination
+    /// Send a packet to the provided destination.
     #[inline]
     pub fn send_to<T: Packet>(&mut self, packet: T, destination: IpAddr) -> io::Result<usize> {
         self.send_to_impl(packet, destination)
     }
 
-    /// Sets the time-to-live on the socket, which then applies for all packets sent.
+    /// Sets a time-to-live on the socket, which then applies for all packets sent.
     pub fn set_ttl(&mut self, time_to_live: u8) -> io::Result<()> {
         set_socket_ttl(self.socket.clone(), time_to_live)
     }
 
-    #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]
+    #[cfg(all(not(target_os = "freebsd"), not(any(target_os = "macos", target_os = "ios"))))]
     fn send_to_impl<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
         self.send(packet, dst)
     }
 
-    #[cfg(any(target_os = "freebsd", target_os = "macos"))]
+    #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "ios"))]
     fn send_to_impl<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
-        use pnet_packet::MutablePacket;
         use pnet_packet::ipv4::MutableIpv4Packet;
+        use pnet_packet::MutablePacket;
 
         // FreeBSD and OS X expect total length and fragment offset fields of IPv4
         // packets to be in host byte order rather than network byte order. Fragment offset is the
@@ -272,11 +269,19 @@ impl TransportSender {
 #[macro_export]
 macro_rules! transport_channel_iterator {
     ($ty:ident, $iter:ident, $func:ident) => (
-        /// An iterator over packets of type $ty
+        transport_channel_iterator!($ty, $iter, $func, stringify!($ty));
+    );
+    ($ty:ident, $iter:ident, $func:ident, $tyname:expr) => (
+        #[doc = "An iterator over packets of type `"]
+        #[doc = $tyname]
+        #[doc = "`."]
         pub struct $iter<'a> {
             tr: &'a mut TransportReceiver
         }
-        /// Return a packet iterator with packets of type $ty for some transport receiver
+
+        #[doc = "Return a packet iterator with packets of type `"]
+        #[doc = $tyname]
+        #[doc = "` for some transport receiver."]
         pub fn $func(tr: &mut TransportReceiver) -> $iter {
             $iter {
                 tr: tr
@@ -284,7 +289,9 @@ macro_rules! transport_channel_iterator {
         }
 
         impl<'a> $iter<'a> {
-            /// Get the next ($ty, IpAddr) pair for the given channel.
+            #[doc = "Get the next (`"]
+            #[doc = $tyname ]
+            #[doc = "`, `IpAddr`) pair for the given channel."]
             pub fn next(&mut self) -> io::Result<($ty, IpAddr)> {
                 let mut caddr: pnet_sys::SockAddrStorage = unsafe { mem::zeroed() };
                 let res = pnet_sys::recv_from(self.tr.socket.fd,
@@ -320,7 +327,7 @@ macro_rules! transport_channel_iterator {
                     Err(e) => Err(e),
                 };
 
-                #[cfg(any(target_os = "freebsd", target_os = "macos"))]
+                #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "ios"))]
                 fn fixup_packet(buffer: &mut [u8]) {
                     use pnet_packet::ipv4::MutableIpv4Packet;
 
@@ -342,7 +349,7 @@ macro_rules! transport_channel_iterator {
                     new_packet.set_fragment_offset(offset);
                 }
 
-                #[cfg(all(not(target_os = "freebsd"), not(target_os = "macos")))]
+                #[cfg(all(not(target_os = "freebsd"), not(any(target_os = "macos", target_os = "ios"))))]
                 fn fixup_packet(_buffer: &mut [u8]) {}
             }
 
@@ -351,7 +358,7 @@ macro_rules! transport_channel_iterator {
             #[cfg(unix)]
             pub fn next_with_timeout(&mut self, t: Duration) -> io::Result<Option<($ty, IpAddr)>> {
                 let socket_fd = self.tr.socket.fd;
-                
+
                 let old_timeout = match pnet_sys::get_socket_receive_timeout(socket_fd) {
                     Err(e) => {
                         eprintln!("Can not get socket timeout before receiving: {}", e);
@@ -367,7 +374,7 @@ macro_rules! transport_channel_iterator {
                     }
                     Ok(_) => {}
                 }
-                    
+
                 let r = match self.next() {
                     Ok(r) => Ok(Some(r)),
                     Err(e) => match e.kind() {
@@ -377,7 +384,7 @@ macro_rules! transport_channel_iterator {
                         }
                     }
                 };
-                
+
                 match pnet_sys::set_socket_receive_timeout(socket_fd, old_timeout) {
                     Err(e) => {
                         eprintln!("Can not reset socket timeout after receiving: {}", e);
@@ -388,7 +395,7 @@ macro_rules! transport_channel_iterator {
                 r
             }
         }
-    )
+    );
 }
 
 transport_channel_iterator!(Ipv4Packet, Ipv4TransportChannelIterator, ipv4_packet_iter);
@@ -397,6 +404,10 @@ transport_channel_iterator!(UdpPacket, UdpTransportChannelIterator, udp_packet_i
 
 transport_channel_iterator!(IcmpPacket, IcmpTransportChannelIterator, icmp_packet_iter);
 
-transport_channel_iterator!(Icmpv6Packet, Icmpv6TransportChannelIterator, icmpv6_packet_iter);
+transport_channel_iterator!(
+    Icmpv6Packet,
+    Icmpv6TransportChannelIterator,
+    icmpv6_packet_iter
+);
 
 transport_channel_iterator!(TcpPacket, TcpTransportChannelIterator, tcp_packet_iter);

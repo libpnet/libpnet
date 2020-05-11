@@ -25,15 +25,15 @@ use pnet_macros_support::types::*;
 ///   Note that it is possible to generate noncompliant packets by setting any of the reserved bits
 ///   (but see 2890).
 ///
-/// - [RFC 2890](https://tools.ietf.org/html/rfc2890) implemented
+/// - [RFC 2890](https://tools.ietf.org/html/rfc2890) implemented.
 ///
 /// - [RFC 7676](https://tools.ietf.org/html/rfc7676) has no packet changes - compliance is up to
-///   the user
+///   the user.
 ///
 /// - [RFC 2637](https://tools.ietf.org/html/rfc2637) not implemented.
 ///
 /// Note that routing information from RFC 1701 is not implemented, packets
-/// with routing_present true will currently cause a panic.
+/// with `routing_present` true will currently cause a panic.
 #[packet]
 pub struct Gre {
     pub checksum_present: u1,
@@ -84,7 +84,7 @@ fn gre_routing_length(gre: &GrePacket) -> usize {
 }
 
 
-/// u16be, but we can't use that directly in a Vec :(
+/// `u16be`, but we can't use that directly in a `Vec` :(
 #[packet]
 pub struct U16BE {
     number: u16be,
@@ -93,7 +93,7 @@ pub struct U16BE {
     unused: Vec<u8>,
 }
 
-/// u32be, but we can't use that directly in a Vec :(
+/// `u32be`, but we can't use that directly in a `Vec` :(
 #[packet]
 pub struct U32BE {
     number: u32be,

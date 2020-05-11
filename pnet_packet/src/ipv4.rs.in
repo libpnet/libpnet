@@ -13,15 +13,15 @@ use pnet_macros_support::types::*;
 
 use std::net::Ipv4Addr;
 
-/// IPv4 header flags
+/// The IPv4 header flags.
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod Ipv4Flags {
     use pnet_macros_support::types::*;
 
-    /// Don't Fragment flag
+    /// Don't Fragment flag.
     pub const DontFragment: u3 = 0b010;
-    /// More Fragments flag
+    /// More Fragments flag.
     pub const MoreFragments: u3 = 0b001;
 }
 
@@ -32,91 +32,91 @@ pub mod Ipv4Flags {
 pub mod Ipv4OptionNumbers {
     use super::Ipv4OptionNumber;
 
-    /// End of Options List
+    /// End of Options List.
     pub const EOL: Ipv4OptionNumber = Ipv4OptionNumber(0);
 
-    /// No Operation
+    /// No Operation.
     pub const NOP: Ipv4OptionNumber = Ipv4OptionNumber(1);
 
-    /// Security
+    /// Security.
     pub const SEC: Ipv4OptionNumber = Ipv4OptionNumber(2);
 
-    /// Loose Source Route
+    /// Loose Source Route.
     pub const LSR: Ipv4OptionNumber = Ipv4OptionNumber(3);
 
-    /// Time Stamp
+    /// Time Stamp.
     pub const TS: Ipv4OptionNumber = Ipv4OptionNumber(4);
 
-    /// Extended Security
+    /// Extended Security.
     pub const ESEC: Ipv4OptionNumber = Ipv4OptionNumber(5);
 
-    /// Commercial Security
+    /// Commercial Security.
     pub const CIPSO: Ipv4OptionNumber = Ipv4OptionNumber(6);
 
-    /// Record Route
+    /// Record Route.
     pub const RR: Ipv4OptionNumber = Ipv4OptionNumber(7);
 
-    /// Stream ID
+    /// Stream ID.
     pub const SID: Ipv4OptionNumber = Ipv4OptionNumber(8);
 
-    /// Strict Source Route
+    /// Strict Source Route.
     pub const SSR: Ipv4OptionNumber = Ipv4OptionNumber(9);
 
-    /// Experimental Measurement
+    /// Experimental Measurement.
     pub const ZSU: Ipv4OptionNumber = Ipv4OptionNumber(10);
 
-    /// MTU Probe
+    /// MTU Probe.
     pub const MTUP: Ipv4OptionNumber = Ipv4OptionNumber(11);
 
-    /// MTU Reply
+    /// MTU Reply.
     pub const MTUR: Ipv4OptionNumber = Ipv4OptionNumber(12);
 
-    /// Experimental Flow Control
+    /// Experimental Flow Control.
     pub const FINN: Ipv4OptionNumber = Ipv4OptionNumber(13);
 
-    /// Experimental Access Control
+    /// Experimental Access Control.
     pub const VISA: Ipv4OptionNumber = Ipv4OptionNumber(14);
 
-    /// ENCODE
+    /// ENCODE.
     pub const ENCODE: Ipv4OptionNumber = Ipv4OptionNumber(15);
 
-    /// IMI Traffic Descriptor
+    /// IMI Traffic Descriptor.
     pub const IMITD: Ipv4OptionNumber = Ipv4OptionNumber(16);
 
-    /// Extended Internet Protocol
+    /// Extended Internet Protocol.
     pub const EIP: Ipv4OptionNumber = Ipv4OptionNumber(17);
 
-    /// Traceroute
+    /// Traceroute.
     pub const TR: Ipv4OptionNumber = Ipv4OptionNumber(18);
 
-    /// Address Extension
+    /// Address Extension.
     pub const ADDEXT: Ipv4OptionNumber = Ipv4OptionNumber(19);
 
-    /// Router Alert
+    /// Router Alert.
     pub const RTRALT: Ipv4OptionNumber = Ipv4OptionNumber(20);
 
-    /// Selective Directed Broadcast
+    /// Selective Directed Broadcast.
     pub const SDB: Ipv4OptionNumber = Ipv4OptionNumber(21);
 
-    /// Dynamic Packet State
+    /// Dynamic Packet State.
     pub const DPS: Ipv4OptionNumber = Ipv4OptionNumber(23);
 
     /// Upstream Multicast Pkt.
     pub const UMP: Ipv4OptionNumber = Ipv4OptionNumber(24);
 
-    /// Quick-Start
+    /// Quick-Start.
     pub const QS: Ipv4OptionNumber = Ipv4OptionNumber(25);
 
-    /// RFC3692-style Experiment
+    /// RFC3692-style Experiment.
     pub const EXP: Ipv4OptionNumber = Ipv4OptionNumber(30);
 }
 
-/// Represents an IPv4 option
+/// Represents an IPv4 option.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Ipv4OptionNumber(pub u8);
 
 impl Ipv4OptionNumber {
-    /// Create a new Ipv4OptionNumber
+    /// Create a new `Ipv4OptionNumber` instance.
     pub fn new(value: u8) -> Ipv4OptionNumber {
         Ipv4OptionNumber(value)
     }
@@ -129,7 +129,7 @@ impl PrimitiveValues for Ipv4OptionNumber {
     }
 }
 
-/// Represents an IPv4 Packet
+/// Represents an IPv4 Packet.
 #[packet]
 pub struct Ipv4 {
     pub version: u4,
@@ -155,8 +155,8 @@ pub struct Ipv4 {
     pub payload: Vec<u8>,
 }
 
-/// Calculates the checksum of an IPv4 packet header.
-/// The checksum field of the packet is regarded as zeros during the calculation
+/// Calculates a checksum of an IPv4 packet header.
+/// The checksum field of the packet is regarded as zeros during the calculation.
 pub fn checksum(packet: &Ipv4Packet) -> u16be {
     use Packet;
     use util;
@@ -233,10 +233,23 @@ fn ipv4_options_length_test() {
 }
 
 fn ipv4_payload_length(ipv4: &Ipv4Packet) -> usize {
-    (ipv4.get_total_length() as usize).saturating_sub(ipv4.get_header_length() as usize)
+    (ipv4.get_total_length() as usize).saturating_sub(ipv4.get_header_length() as usize * 4)
 }
 
-/// Represents the IPv4 Option field
+#[test]
+fn ipv4_payload_length_test() {
+    let mut packet = [0u8; 30];
+    let mut ip_header = MutableIpv4Packet::new(&mut packet[..]).unwrap();
+    ip_header.set_header_length(5);
+    ip_header.set_total_length(20);
+    assert_eq!(ipv4_payload_length(&ip_header.to_immutable()), 0);
+    // just comparing with 0 is prone to false positives in this case.
+    // for instance if one forgets to set total_length, one always gets 0
+    ip_header.set_total_length(30);
+    assert_eq!(ipv4_payload_length(&ip_header.to_immutable()), 10);
+}
+
+/// Represents the IPv4 Option field.
 #[packet]
 pub struct Ipv4Option {
     copied: u1,
@@ -254,7 +267,7 @@ pub struct Ipv4Option {
 
 /// This function gets the 'length' of the length field of the IPv4Option packet
 /// Few options (EOL, NOP) are 1 bytes long, and then have a length field equal
-/// to 0
+/// to 0.
 fn ipv4_option_length(option: &Ipv4OptionPacket) -> usize {
     match option.get_number() {
         Ipv4OptionNumbers::EOL => 0,
@@ -274,6 +287,7 @@ fn ipv4_option_payload_length(ipv4_option: &Ipv4OptionPacket) -> usize {
 fn ipv4_packet_test() {
     use ip::IpNextHeaderProtocols;
     use Packet;
+    use PacketSize;
 
     let mut packet = [0u8; 200];
     {
@@ -292,7 +306,8 @@ fn ipv4_packet_test() {
 
         ip_header.set_total_length(115);
         assert_eq!(ip_header.get_total_length(), 115);
-        assert_eq!(110, ip_header.payload().len());
+        assert_eq!(95, ip_header.payload().len());
+        assert_eq!(ip_header.get_total_length(), ip_header.packet_size() as u16);
 
         ip_header.set_identification(257);
         assert_eq!(ip_header.get_identification(), 257);

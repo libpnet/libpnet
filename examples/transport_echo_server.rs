@@ -15,7 +15,6 @@ use pnet::packet::{MutablePacket, Packet};
 use pnet::transport::TransportChannelType::Layer4;
 use pnet::transport::TransportProtocol::Ipv4;
 use pnet::transport::{transport_channel, udp_packet_iter};
-use std::iter::repeat;
 
 fn main() {
     let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Test1));

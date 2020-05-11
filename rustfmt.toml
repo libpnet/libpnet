@@ -1,3 +1,2 @@
-required_version = "0.6.1"
 reorder_imports = true
-format_strings = false
+edition = "2018"

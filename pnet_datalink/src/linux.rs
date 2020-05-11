@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Support for sending and receiving data link layer packets using Linux's AF_PACKET
+//! Support for sending and receiving data link layer packets using Linux's `AF_PACKET`.
 
 extern crate libc;
 
@@ -40,13 +40,13 @@ fn network_addr_to_sockaddr(
     }
 }
 
-/// Configuration for the Linux datalink backend
+/// Configuration for the Linux datalink backend.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Config {
-    /// The size of buffer to use when writing packets. Defaults to 4096
+    /// The size of buffer to use when writing packets. Defaults to 4096.
     pub write_buffer_size: usize,
 
-    /// The size of buffer to use when reading packets. Defaults to 4096
+    /// The size of buffer to use when reading packets. Defaults to 4096.
     pub read_buffer_size: usize,
 
     /// The read timeout. Defaults to None.
@@ -56,8 +56,8 @@ pub struct Config {
     pub write_timeout: Option<Duration>,
 
     /// Specifies whether to read packets at the datalink layer or network layer.
-    /// NOTE FIXME Currently ignored
-    /// Defaults to Layer2
+    /// NOTE FIXME Currently ignored.
+    /// Defaults to Layer2.
     pub channel_type: super::ChannelType,
 
     /// Specifies packet fanout option, if desired. Defaults to None.
@@ -90,7 +90,7 @@ impl Default for Config {
     }
 }
 
-/// Create a data link channel using the Linux's AF_PACKET socket type
+/// Create a data link channel using the Linux's `AF_PACKET` socket type.
 #[inline]
 pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Result<super::Channel> {
     let eth_p_all = 0x0003;
@@ -127,7 +127,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
             linux::SOL_PACKET,
             linux::PACKET_ADD_MEMBERSHIP,
             (&pmr as *const linux::packet_mreq) as *const libc::c_void,
-            mem::size_of::<linux::packet_mreq>() as u32,
+            mem::size_of::<linux::packet_mreq>() as libc::socklen_t,
         )
     } == -1
     {
@@ -169,7 +169,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
                 linux::SOL_PACKET,
                 linux::PACKET_FANOUT,
                 (&arg as *const libc::c_uint) as *const libc::c_void,
-                mem::size_of::<libc::c_uint>() as u32,
+                mem::size_of::<libc::c_uint>() as libc::socklen_t,
             )
         } == -1
         {
@@ -232,7 +232,7 @@ impl DataLinkSender for DataLinkSenderImpl {
         &mut self,
         num_packets: usize,
         packet_size: usize,
-        func: &mut FnMut(&mut [u8]),
+        func: &mut dyn FnMut(&mut [u8]),
     ) -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
         if len < self.write_buffer.len() {

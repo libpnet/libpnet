@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Provides interfaces for interacting with packets and headers
+//! Provides interfaces for interacting with packets and headers.
 #![allow(missing_docs)]
 #![macro_use]
 
@@ -15,17 +15,16 @@ extern crate pnet_macros_support;
 
 pub use pnet_macros_support::packet::*;
 
+pub mod arp;
 pub mod ethernet;
 pub mod gre;
+pub mod icmp;
+pub mod icmpv6;
 pub mod ip;
 pub mod ipv4;
 pub mod ipv6;
-pub mod udp;
 pub mod tcp;
-pub mod arp;
-pub mod icmp;
-pub mod icmpv6;
+pub mod udp;
 pub mod vlan;
 
 pub mod util;
-

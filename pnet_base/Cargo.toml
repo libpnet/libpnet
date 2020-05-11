@@ -1,11 +1,12 @@
 [package]
 name = "pnet_base"
-version = "0.22.0"
+version = "0.26.0"
 authors = ["Robert Clipsham <robert@octarineparrot.com>", "Linus Färnstrand <faern@faern.net>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
 repository = "https://github.com/libpnet/libpnet"
 description = "Fundamental base types and code used by pnet."
+readme = "../README.md"
 keywords = ["networking", "ethernet"]
 categories = ["network-programming"]
 

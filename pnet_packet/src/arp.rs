@@ -6,6 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! ARP packet abstraction
+//! ARP packet abstraction.
 
 include!(concat!(env!("OUT_DIR"), "/arp.rs"));
