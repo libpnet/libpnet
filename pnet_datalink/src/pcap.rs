@@ -59,8 +59,11 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
     }
     .buffer_size(config.read_buffer_size as i32);
+    // Set pcap timeout (in milliseconds).
+    // For conversion .as_millis() method could be used as well, but might have
+    // a small performance impact as it uses u128 as return type
     let cap = match config.read_timeout {
-        Some(to) => cap.timeout((to.as_secs() * 1000 + (to.subsec_nanos() / 1000) as u64) as i32),
+        Some(to) => cap.timeout((to.as_secs() as u32 * 1000 + to.subsec_millis()) as i32),
         None => cap,
     };
     // Enable promiscuous capture
