@@ -23,6 +23,9 @@ pub struct Config {
 
     /// The read timeout. Defaults to None.
     pub read_timeout: Option<Duration>,
+
+    /// Promiscuous mode.
+    pub promiscuous: bool,
 }
 
 impl<'a> From<&'a super::Config> for Config {
@@ -30,6 +33,7 @@ impl<'a> From<&'a super::Config> for Config {
         let mut c = Config {
             read_buffer_size: config.read_buffer_size,
             read_timeout: config.read_timeout,
+            promiscuous: config.promiscuous,
         };
         // pcap is unique in that the buffer size must be greater or equal to
         // MAXIMUM_SNAPLEN, which is currently hard-coded to 65536
@@ -47,6 +51,7 @@ impl Default for Config {
             // Just let pcap pick the default size
             read_buffer_size: 0,
             read_timeout: None,
+            promiscuous: true,
         }
     }
 }
@@ -67,7 +72,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         None => cap,
     };
     // Enable promiscuous capture
-    let cap = cap.promisc(true);
+    let cap = cap.promisc(config.promiscuous);
     let cap = match cap.open() {
         Ok(cap) => cap,
         Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),

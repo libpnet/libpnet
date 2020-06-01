@@ -144,6 +144,8 @@ pub struct Config {
     pub bpf_fd_attempts: usize,
 
     pub linux_fanout: Option<FanoutOption>,
+
+    pub promiscuous: bool,
 }
 
 impl Default for Config {
@@ -156,6 +158,7 @@ impl Default for Config {
             channel_type: ChannelType::Layer2,
             bpf_fd_attempts: 1000,
             linux_fanout: None,
+            promiscuous: true,
         }
     }
 }

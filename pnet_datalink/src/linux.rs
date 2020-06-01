@@ -62,6 +62,9 @@ pub struct Config {
 
     /// Specifies packet fanout option, if desired. Defaults to None.
     pub fanout: Option<super::FanoutOption>,
+
+    /// Promiscuous mode.
+    pub promiscuous: bool,
 }
 
 impl<'a> From<&'a super::Config> for Config {
@@ -73,6 +76,7 @@ impl<'a> From<&'a super::Config> for Config {
             read_timeout: config.read_timeout,
             write_timeout: config.write_timeout,
             fanout: config.linux_fanout,
+            promiscuous: config.promiscuous,
         }
     }
 }
@@ -86,6 +90,7 @@ impl Default for Config {
             write_timeout: None,
             channel_type: super::ChannelType::Layer2,
             fanout: None,
+            promiscuous: true,
         }
     }
 }
@@ -121,21 +126,23 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
     pmr.mr_type = linux::PACKET_MR_PROMISC as u16;
 
     // Enable promiscuous capture
-    if unsafe {
-        libc::setsockopt(
-            socket,
-            linux::SOL_PACKET,
-            linux::PACKET_ADD_MEMBERSHIP,
-            (&pmr as *const linux::packet_mreq) as *const libc::c_void,
-            mem::size_of::<linux::packet_mreq>() as libc::socklen_t,
-        )
-    } == -1
-    {
-        let err = io::Error::last_os_error();
-        unsafe {
-            pnet_sys::close(socket);
+    if config.promiscuous {
+        if unsafe {
+            libc::setsockopt(
+                socket,
+                linux::SOL_PACKET,
+                linux::PACKET_ADD_MEMBERSHIP,
+                (&pmr as *const linux::packet_mreq) as *const libc::c_void,
+                mem::size_of::<linux::packet_mreq>() as libc::socklen_t,
+            )
+        } == -1
+        {
+            let err = io::Error::last_os_error();
+            unsafe {
+                pnet_sys::close(socket);
+            }
+            return Err(err);
         }
-        return Err(err);
     }
 
     // Enable packet fanout
