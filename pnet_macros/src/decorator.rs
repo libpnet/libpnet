@@ -657,14 +657,10 @@ fn handle_vec_primitive(
         };
 
         let copy_vals = if inner_ty_str == "u8" {
-            // Efficient copy_nonoverlapping (memcpy)
+            // Efficient copy_from_slice (memcpy)
             format!("
-                                    // &mut and & can never overlap
-                                    unsafe {{
-                                        copy_nonoverlapping(vals[..].as_ptr(),
-                                                            _self.packet[current_offset..].as_mut_ptr(),
-                                                            vals.len())
-                                    }}
+                                    _self.packet[current_offset..current_offset + vals.len()]
+                                        .copy_from_slice(vals);
                                 ")
         } else {
             // e.g. Vec<u16> -> Vec<u8>
@@ -689,7 +685,6 @@ fn handle_vec_primitive(
                                 #[allow(trivial_numeric_casts)]
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn set_{name}(&mut self, vals: &[{inner_ty_str}]) {{
-                                    use std::ptr::copy_nonoverlapping;
                                     let mut _self = self;
                                     let current_offset = {co};
 
