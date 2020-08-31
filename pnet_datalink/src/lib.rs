@@ -214,6 +214,8 @@ pub trait DataLinkReceiver: Send {
 pub struct NetworkInterface {
     /// The name of the interface.
     pub name: String,
+    /// A description of the interface.
+    pub description: String,
     /// The interface index (operating system specific).
     pub index: u32,
     /// A MAC address for the interface.
