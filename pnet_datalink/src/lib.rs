@@ -13,6 +13,11 @@ extern crate libc;
 extern crate pnet_base;
 extern crate pnet_sys;
 
+#[cfg(feature = "serde")]
+extern crate serde;
+#[cfg(feature = "serde")]
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+
 use std::io;
 use std::option::Option;
 use std::time::Duration;
@@ -210,6 +215,7 @@ pub trait DataLinkReceiver: Send {
 }
 
 /// Represents a network interface and its associated addresses.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub struct NetworkInterface {
     /// The name of the interface.
