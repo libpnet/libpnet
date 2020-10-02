@@ -300,8 +300,8 @@ mod tests {
     fn create_net() -> (
         Sender<io::Result<Box<[u8]>>>,
         Receiver<Box<[u8]>>,
-        Box<DataLinkSender>,
-        Box<DataLinkReceiver>,
+        Box<dyn DataLinkSender>,
+        Box<dyn DataLinkReceiver>,
     ) {
         let interface = super::dummy_interface(56);
         let mut config = super::Config::default();
