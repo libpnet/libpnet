@@ -327,7 +327,7 @@ impl ::std::fmt::Display for NetworkInterface {
 /// // up, not loopback and has an IP.
 /// let default_interface = all_interfaces
 ///     .iter()
-///     .find(|e| e.is_up() && !e.is_loopback() && !e.ips.is_empty();
+///     .find(|e| e.is_up() && !e.is_loopback() && !e.ips.is_empty());
 ///
 /// match default_interface {
 ///     Some(interface) => println!("Found default interface with [{}].", interface.name),
