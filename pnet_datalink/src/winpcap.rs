@@ -318,8 +318,13 @@ pub fn interfaces() -> Vec<NetworkInterface> {
             let bytes = CStr::from_ptr(name_str_ptr).to_bytes();
             let name_str = from_utf8_unchecked(bytes).to_owned();
 
+            let description_str_ptr = (*cursor).Description.as_ptr() as *const i8;
+            let bytes = CStr::from_ptr(description_str_ptr).to_bytes();
+            let description_str = from_utf8_unchecked(bytes).to_owned();
+
             all_ifaces.push(NetworkInterface {
                 name: name_str,
+                description: description_str,
                 index: (*cursor).Index,
                 mac: Some(mac),
                 ips: ips,

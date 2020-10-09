@@ -167,6 +167,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
 pub fn dummy_interface(i: u8) -> NetworkInterface {
     NetworkInterface {
         name: format!("eth{}", i),
+        description: "".to_string(),
         index: i as u32,
         mac: Some(MacAddr::new(1, 2, 3, 4, 5, i)),
         ips: Vec::new(),
