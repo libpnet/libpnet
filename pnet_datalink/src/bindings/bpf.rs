@@ -91,6 +91,7 @@ pub struct sockaddr_dl {
     all(any(target_os = "macos", target_os = "ios"), target_pointer_width = "32"),
     windows
 ))]
+#[repr(C)]
 pub struct bpf_hdr {
     pub bh_tstamp: libc::timeval,
     pub bh_caplen: u32,
