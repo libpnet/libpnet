@@ -108,6 +108,7 @@ pub struct timeval32 {
     target_os = "openbsd",
     all(any(target_os = "macos", target_os = "ios"), target_pointer_width = "64")
 ))]
+#[repr(C)]
 pub struct bpf_hdr {
     pub bh_tstamp: timeval32,
     pub bh_caplen: u32,
