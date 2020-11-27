@@ -1,6 +1,6 @@
 [package]
 name = "pnet_datalink"
-version = "0.27.1"
+version = "0.27.2"
 authors = ["Robert Clipsham <robert@octarineparrot.com>", "Linus Färnstrand <faern@faern.net>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
@@ -16,8 +16,8 @@ netmap = []
 [dependencies]
 libc = "0.2.42"
 ipnetwork = "0.17.0"
-pnet_base = { path = "../pnet_base", version = "0.27.1" }
-pnet_sys = { path = "../pnet_sys", version = "0.27.1" }
+pnet_base = { path = "../pnet_base", version = "0.27.2" }
+pnet_sys = { path = "../pnet_sys", version = "0.27.2" }
 
 pcap = { version = "0.7", optional = true }
 netmap_sys = { version = "0.1", optional = true, features = ["netmap_with_libs"] }
