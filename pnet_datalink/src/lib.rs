@@ -16,7 +16,7 @@ extern crate pnet_sys;
 #[cfg(feature = "serde")]
 extern crate serde;
 #[cfg(feature = "serde")]
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
 use std::io;
 use std::option::Option;
