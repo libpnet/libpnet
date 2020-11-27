@@ -617,7 +617,7 @@ fn handle_vec_primitive(
             *accessors = format!("{accessors}
                                     /// Get the value of the {name} field (copies contents)
                                     #[inline]
-                                    #[allow(trivial_numeric_casts, unused_parens)]
+                                    #[allow(trivial_numeric_casts, unused_parens, unused_braces)]
                                     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                     pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
                                         use std::cmp::min;
