@@ -378,3 +378,27 @@ fn ipv4_packet_option_test() {
 
     assert_eq!(&ref_packet[..], &packet[..]);
 }
+
+#[test]
+fn ipv4_packet_set_payload_test() {
+    use Packet;
+
+    let mut packet = [0u8; 25]; // allow 20 byte header and 5 byte payload
+    let mut ip_packet = MutableIpv4Packet::new(&mut packet[..]).unwrap();
+    ip_packet.set_total_length(25);
+    ip_packet.set_header_length(5);
+    let payload = b"stuff"; // 5 bytes
+    ip_packet.set_payload(&payload[..]);
+    assert_eq!(ip_packet.payload(), payload);
+}
+
+#[test]
+#[should_panic(expected = "index 25 out of range for slice of length 24")]
+fn ipv4_packet_set_payload_test_panic() {
+    let mut packet = [0u8; 24]; // allow 20 byte header and 4 byte payload
+    let mut ip_packet = MutableIpv4Packet::new(&mut packet[..]).unwrap();
+    ip_packet.set_total_length(25);
+    ip_packet.set_header_length(5);
+    let payload = b"stuff"; // 5 bytes
+    ip_packet.set_payload(&payload[..]); // panic
+}
