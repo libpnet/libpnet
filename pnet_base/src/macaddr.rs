@@ -174,7 +174,9 @@ pub enum ParseMacAddrErr {
     InvalidComponent,
 }
 
-impl Error for ParseMacAddrErr {
+impl Error for ParseMacAddrErr {}
+
+impl ParseMacAddrErr {
     fn description(&self) -> &str {
         match *self {
             ParseMacAddrErr::TooManyComponents => "Too many components in a MAC address string",
