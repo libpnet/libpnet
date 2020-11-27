@@ -53,6 +53,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
             let network = ip.and_then(|ip| IpNetwork::new(ip, prefix).ok());
             let ni = NetworkInterface {
                 name: name.clone(),
+                description: "".to_string(),
                 index: 0,
                 mac: mac,
                 ips: network.into_iter().collect(),

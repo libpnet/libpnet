@@ -189,6 +189,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
             .enumerate()
             .map(|(i, dev)| NetworkInterface {
                 name: dev.name.clone(),
+                description: dev.desc.clone().unwrap_or_else(|| "".to_string()),
                 index: i as u32,
                 mac: None,
                 ips: Vec::new(),
