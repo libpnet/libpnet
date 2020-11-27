@@ -1,6 +1,6 @@
 [package]
 name = "pnet_transport"
-version = "0.26.0"
+version = "0.27.0"
 authors = ["Robert Clipsham <robert@octarineparrot.com>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
@@ -12,6 +12,6 @@ categories = ["network-programming"]
 
 [dependencies]
 libc = "0.2.39"
-pnet_base = "0.26.0"
-pnet_sys = { path = "../pnet_sys", version = "0.26.0" }
-pnet_packet = { path = "../pnet_packet", version = "0.26.0" }
+pnet_base = { path = "../pnet_base", version = "0.27.0" }
+pnet_sys = { path = "../pnet_sys", version = "0.27.0" }
+pnet_packet = { path = "../pnet_packet", version = "0.27.0" }

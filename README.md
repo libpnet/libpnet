@@ -69,7 +69,7 @@ To use `libpnet` in your project, add the following to your Cargo.toml:
 
 ```
 [dependencies.pnet]
-version = "0.26.0"
+version = "0.27.0"
 ```
 
 `libpnet` should work on any Rust channel (stable, beta, or nightly), starting
