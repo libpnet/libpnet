@@ -41,6 +41,9 @@ pub mod public {
     pub const IP_HDRINCL: ctypes::c_int = ws2ipdef::IP_HDRINCL;
     pub const IP_TTL: ctypes::c_int = ws2ipdef::IP_TTL;
 
+    pub const IPPROTO_IPV6: ctypes::c_int = ws2def::IPPROTO_IPV6 as ctypes::c_int;
+    pub const IPV6_UNICAST_HOPS: ctypes::c_int = ws2ipdef::IPV6_UNICAST_HOPS;
+
     pub const IFF_UP: ctypes::c_int = 0x00000001;
     pub const IFF_BROADCAST: ctypes::c_int = 0x00000002;
     pub const IFF_LOOPBACK: ctypes::c_int = 0x00000004;

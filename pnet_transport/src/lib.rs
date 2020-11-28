@@ -61,7 +61,7 @@ pub enum TransportChannelType {
 /// Structure used for sending at the transport layer. Should be created with `transport_channel()`.
 pub struct TransportSender {
     pub socket: Arc<pnet_sys::FileDesc>,
-    _channel_type: TransportChannelType,
+    channel_type: TransportChannelType,
 }
 
 /// Structure used for receiving at the transport layer. Should be created with `transport_channel()`.
@@ -143,7 +143,7 @@ pub fn transport_channel(
     let sock = Arc::new(pnet_sys::FileDesc { fd: socket });
     let sender = TransportSender {
         socket: sock.clone(),
-        _channel_type: channel_type,
+        channel_type: channel_type,
     };
     let receiver = TransportReceiver {
         socket: sock,
@@ -163,20 +163,25 @@ pub fn transport_channel_with(
     channel_type: TransportChannelType,
     configuration: Config,
 ) -> io::Result<(TransportSender, TransportReceiver)> {
-    let (sender, receiver) = transport_channel(buffer_size, channel_type)?;
+    let (mut sender, receiver) = transport_channel(buffer_size, channel_type)?;
 
-    set_socket_ttl(sender.socket.clone(), configuration.time_to_live)?;
+    sender.set_ttl(configuration.time_to_live)?;
     Ok((sender, receiver))
 }
 
 /// Sets a time-to-live for all IP packets sent on the specified socket.
-fn set_socket_ttl(socket: Arc<pnet_sys::FileDesc>, ttl: u8) -> io::Result<()> {
+fn set_socket_ttl(
+    socket: Arc<pnet_sys::FileDesc>,
+    level: libc::c_int,
+    name: libc::c_int,
+    ttl: u8,
+) -> io::Result<()> {
     let ttl = ttl as i32;
     let res = unsafe {
         pnet_sys::setsockopt(
             socket.fd,
-            pnet_sys::IPPROTO_IP,
-            pnet_sys::IP_TTL,
+            level,
+            name,
             (&ttl as *const libc::c_int) as pnet_sys::Buf,
             mem::size_of::<libc::c_int>() as pnet_sys::SockLen,
         )
@@ -215,7 +220,11 @@ impl TransportSender {
 
     /// Sets a time-to-live on the socket, which then applies for all packets sent.
     pub fn set_ttl(&mut self, time_to_live: u8) -> io::Result<()> {
-        set_socket_ttl(self.socket.clone(), time_to_live)
+        let (level, name) = match self.channel_type {
+            Layer4(Ipv4(_)) | Layer3(_) => (pnet_sys::IPPROTO_IP, pnet_sys::IP_TTL),
+            Layer4(Ipv6(_)) => (pnet_sys::IPPROTO_IPV6, pnet_sys::IPV6_UNICAST_HOPS),
+        };
+        set_socket_ttl(self.socket.clone(), level, name, time_to_live)
     }
 
     #[cfg(all(not(target_os = "freebsd"), not(any(target_os = "macos", target_os = "ios"))))]
@@ -232,7 +241,7 @@ impl TransportSender {
         // packets to be in host byte order rather than network byte order. Fragment offset is the
         // ip_off field in the ip struct and contains both the offset and the three flag bits.
         // See `man 4 ip`/Raw IP Sockets)
-        if let Layer3(_) = self._channel_type {
+        if let Layer3(_) = self.channel_type {
             let mut mut_slice: Vec<u8> = vec![0; packet.packet().len()];
 
             let mut new_packet = MutableIpv4Packet::new(&mut mut_slice[..]).unwrap();
