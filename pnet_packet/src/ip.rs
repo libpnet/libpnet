@@ -24,31 +24,31 @@ use PrimitiveValues;
 pub mod IpNextHeaderProtocols {
     use super::IpNextHeaderProtocol;
 
-    /// IPv6 Hop-by-Hop Option [RFC2460]
+    /// IPv6 Hop-by-Hop Option \[RFC2460\]
     pub const Hopopt: IpNextHeaderProtocol = IpNextHeaderProtocol(0);
 
-    /// Internet Control Message [RFC792]
+    /// Internet Control Message \[RFC792\]
     pub const Icmp: IpNextHeaderProtocol = IpNextHeaderProtocol(1);
 
-    /// Internet Group Management [RFC1112]
+    /// Internet Group Management \[RFC1112\]
     pub const Igmp: IpNextHeaderProtocol = IpNextHeaderProtocol(2);
 
-    /// Gateway-to-Gateway [RFC823]
+    /// Gateway-to-Gateway \[RFC823\]
     pub const Ggp: IpNextHeaderProtocol = IpNextHeaderProtocol(3);
 
-    /// IPv4 encapsulation [RFC2003]
+    /// IPv4 encapsulation \[RFC2003\]
     pub const Ipv4: IpNextHeaderProtocol = IpNextHeaderProtocol(4);
 
-    /// Stream [RFC1190][RFC1819]
+    /// Stream \[RFC1190\]\[RFC1819\]
     pub const St: IpNextHeaderProtocol = IpNextHeaderProtocol(5);
 
-    /// Transmission Control [RFC793]
+    /// Transmission Control \[RFC793\]
     pub const Tcp: IpNextHeaderProtocol = IpNextHeaderProtocol(6);
 
     /// CBT
     pub const Cbt: IpNextHeaderProtocol = IpNextHeaderProtocol(7);
 
-    /// Exterior Gateway Protocol [RFC888]
+    /// Exterior Gateway Protocol \[RFC888\]
     pub const Egp: IpNextHeaderProtocol = IpNextHeaderProtocol(8);
 
     /// any private interior gateway (used by Cisco for their IGRP)
@@ -57,7 +57,7 @@ pub mod IpNextHeaderProtocols {
     /// BBN RCC Monitoring
     pub const BbnRccMon: IpNextHeaderProtocol = IpNextHeaderProtocol(10);
 
-    /// Network Voice Protocol [RFC741]
+    /// Network Voice Protocol \[RFC741\]
     pub const NvpII: IpNextHeaderProtocol = IpNextHeaderProtocol(11);
 
     /// PUP
@@ -75,7 +75,7 @@ pub mod IpNextHeaderProtocols {
     /// Chaos
     pub const Chaos: IpNextHeaderProtocol = IpNextHeaderProtocol(16);
 
-    /// User Datagram [RFC768]
+    /// User Datagram \[RFC768\]
     pub const Udp: IpNextHeaderProtocol = IpNextHeaderProtocol(17);
 
     /// Multiplexing
@@ -84,7 +84,7 @@ pub mod IpNextHeaderProtocols {
     /// DCN Measurement Subsystems
     pub const DcnMeas: IpNextHeaderProtocol = IpNextHeaderProtocol(19);
 
-    /// Host Monitoring [RFC869]
+    /// Host Monitoring \[RFC869\]
     pub const Hmp: IpNextHeaderProtocol = IpNextHeaderProtocol(20);
 
     /// Packet Radio Measurement
@@ -105,16 +105,16 @@ pub mod IpNextHeaderProtocols {
     /// Leaf-2
     pub const Leaf2: IpNextHeaderProtocol = IpNextHeaderProtocol(26);
 
-    /// Reliable Data Protocol [RFC908]
+    /// Reliable Data Protocol \[RFC908\]
     pub const Rdp: IpNextHeaderProtocol = IpNextHeaderProtocol(27);
 
-    /// Internet Reliable Transaction [RFC938]
+    /// Internet Reliable Transaction \[RFC938\]
     pub const Irtp: IpNextHeaderProtocol = IpNextHeaderProtocol(28);
 
-    /// ISO Transport Protocol Class 4 [RFC905]
+    /// ISO Transport Protocol Class 4 \[RFC905\]
     pub const IsoTp4: IpNextHeaderProtocol = IpNextHeaderProtocol(29);
 
-    /// Bulk Data Transfer Protocol [RFC969]
+    /// Bulk Data Transfer Protocol \[RFC969\]
     pub const Netblt: IpNextHeaderProtocol = IpNextHeaderProtocol(30);
 
     /// MFE Network Services Protocol
@@ -123,7 +123,7 @@ pub mod IpNextHeaderProtocols {
     /// MERIT Internodal Protocol
     pub const MeritInp: IpNextHeaderProtocol = IpNextHeaderProtocol(32);
 
-    /// Datagram Congestion Control Protocol [RFC4340]
+    /// Datagram Congestion Control Protocol \[RFC4340\]
     pub const Dccp: IpNextHeaderProtocol = IpNextHeaderProtocol(33);
 
     /// Third Party Connect Protocol
@@ -147,7 +147,7 @@ pub mod IpNextHeaderProtocols {
     /// IL Transport Protocol
     pub const Il: IpNextHeaderProtocol = IpNextHeaderProtocol(40);
 
-    /// IPv6 encapsulation [RFC2473]
+    /// IPv6 encapsulation \[RFC2473\]
     pub const Ipv6: IpNextHeaderProtocol = IpNextHeaderProtocol(41);
 
     /// Source Demand Routing Protocol
@@ -162,22 +162,22 @@ pub mod IpNextHeaderProtocols {
     /// Inter-Domain Routing Protocol
     pub const Idrp: IpNextHeaderProtocol = IpNextHeaderProtocol(45);
 
-    /// Reservation Protocol [RFC2205][RFC3209]
+    /// Reservation Protocol \[RFC2205\]\[RFC3209\]
     pub const Rsvp: IpNextHeaderProtocol = IpNextHeaderProtocol(46);
 
-    /// Generic Routing Encapsulation [RFC1701]
+    /// Generic Routing Encapsulation \[RFC1701\]
     pub const Gre: IpNextHeaderProtocol = IpNextHeaderProtocol(47);
 
-    /// Dynamic Source Routing Protocol [RFC4728]
+    /// Dynamic Source Routing Protocol \[RFC4728\]
     pub const Dsr: IpNextHeaderProtocol = IpNextHeaderProtocol(48);
 
     /// BNA
     pub const Bna: IpNextHeaderProtocol = IpNextHeaderProtocol(49);
 
-    /// Encap Security Payload [RFC4303]
+    /// Encap Security Payload \[RFC4303\]
     pub const Esp: IpNextHeaderProtocol = IpNextHeaderProtocol(50);
 
-    /// Authentication Header [RFC4302]
+    /// Authentication Header \[RFC4302\]
     pub const Ah: IpNextHeaderProtocol = IpNextHeaderProtocol(51);
 
     /// Integrated Net Layer Security TUBA
@@ -186,7 +186,7 @@ pub mod IpNextHeaderProtocols {
     /// IP with Encryption
     pub const Swipe: IpNextHeaderProtocol = IpNextHeaderProtocol(53);
 
-    /// NBMA Address Resolution Protocol [RFC1735]
+    /// NBMA Address Resolution Protocol \[RFC1735\]
     pub const Narp: IpNextHeaderProtocol = IpNextHeaderProtocol(54);
 
     /// IP Mobility
@@ -201,13 +201,13 @@ pub mod IpNextHeaderProtocols {
     #[deprecated(note = "Please use `IpNextHeaderProtocols::Icmpv6` instead")]
     pub const Ipv6Icmp: IpNextHeaderProtocol = IpNextHeaderProtocol(58);
 
-    /// ICMPv6 [RFC4443]
+    /// ICMPv6 \[RFC4443\]
     pub const Icmpv6: IpNextHeaderProtocol = IpNextHeaderProtocol(58);
 
-    /// No Next Header for IPv6 [RFC2460]
+    /// No Next Header for IPv6 \[RFC2460\]
     pub const Ipv6NoNxt: IpNextHeaderProtocol = IpNextHeaderProtocol(59);
 
-    /// Destination Options for IPv6 [RFC2460]
+    /// Destination Options for IPv6 \[RFC2460\]
     pub const Ipv6Opts: IpNextHeaderProtocol = IpNextHeaderProtocol(60);
 
     /// any host internal protocol
@@ -294,7 +294,7 @@ pub mod IpNextHeaderProtocols {
     /// EIGRP
     pub const Eigrp: IpNextHeaderProtocol = IpNextHeaderProtocol(88);
 
-    /// OSPFIGP [RFC1583][RFC2328][RFC5340]
+    /// OSPFIGP \[RFC1583\]\[RFC2328\]\[RFC5340\]
     pub const OspfigP: IpNextHeaderProtocol = IpNextHeaderProtocol(89);
 
     /// Sprite RPC Protocol
@@ -318,10 +318,10 @@ pub mod IpNextHeaderProtocols {
     /// Semaphore Communications Sec. Pro.
     pub const SccSp: IpNextHeaderProtocol = IpNextHeaderProtocol(96);
 
-    /// Ethernet-within-IP Encapsulation [RFC3378]
+    /// Ethernet-within-IP Encapsulation \[RFC3378\]
     pub const Etherip: IpNextHeaderProtocol = IpNextHeaderProtocol(97);
 
-    /// Encapsulation Header [RFC1241]
+    /// Encapsulation Header \[RFC1241\]
     pub const Encap: IpNextHeaderProtocol = IpNextHeaderProtocol(98);
 
     /// any private encryption scheme
@@ -336,7 +336,7 @@ pub mod IpNextHeaderProtocols {
     /// PNNI over IP
     pub const Pnni: IpNextHeaderProtocol = IpNextHeaderProtocol(102);
 
-    /// Protocol Independent Multicast [RFC4601]
+    /// Protocol Independent Multicast \[RFC4601\]
     pub const Pim: IpNextHeaderProtocol = IpNextHeaderProtocol(103);
 
     /// ARIS
@@ -351,7 +351,7 @@ pub mod IpNextHeaderProtocols {
     /// Active Networks
     pub const AN: IpNextHeaderProtocol = IpNextHeaderProtocol(107);
 
-    /// IP Payload Compression Protocol [RFC2393]
+    /// IP Payload Compression Protocol \[RFC2393\]
     pub const IpComp: IpNextHeaderProtocol = IpNextHeaderProtocol(108);
 
     /// Sitara Networks Protocol
@@ -363,7 +363,7 @@ pub mod IpNextHeaderProtocols {
     /// IPX in IP
     pub const IpxInIp: IpNextHeaderProtocol = IpNextHeaderProtocol(111);
 
-    /// Virtual Router Redundancy Protocol [RFC5798]
+    /// Virtual Router Redundancy Protocol \[RFC5798\]
     pub const Vrrp: IpNextHeaderProtocol = IpNextHeaderProtocol(112);
 
     /// PGM Reliable Transport Protocol
@@ -372,7 +372,7 @@ pub mod IpNextHeaderProtocols {
     /// any 0-hop protocol
     pub const ZeroHop: IpNextHeaderProtocol = IpNextHeaderProtocol(114);
 
-    /// Layer Two Tunneling Protocol [RFC3931]
+    /// Layer Two Tunneling Protocol \[RFC3931\]
     pub const L2tp: IpNextHeaderProtocol = IpNextHeaderProtocol(115);
 
     /// D-II Data Exchange (DDX)
@@ -426,40 +426,40 @@ pub mod IpNextHeaderProtocols {
     /// Stream Control Transmission Protocol
     pub const Sctp: IpNextHeaderProtocol = IpNextHeaderProtocol(132);
 
-    /// Fibre Channel [RFC6172]
+    /// Fibre Channel \[RFC6172\]
     pub const Fc: IpNextHeaderProtocol = IpNextHeaderProtocol(133);
 
-    /// [RFC3175]
+    /// \[RFC3175\]
     pub const RsvpE2eIgnore: IpNextHeaderProtocol = IpNextHeaderProtocol(134);
 
-    /// [RFC6275]
+    /// \[RFC6275\]
     pub const MobilityHeader: IpNextHeaderProtocol = IpNextHeaderProtocol(135);
 
-    /// [RFC3828]
+    /// \[RFC3828\]
     pub const UdpLite: IpNextHeaderProtocol = IpNextHeaderProtocol(136);
 
-    /// [RFC4023]
+    /// \[RFC4023\]
     pub const MplsInIp: IpNextHeaderProtocol = IpNextHeaderProtocol(137);
 
-    /// MANET Protocols [RFC5498]
+    /// MANET Protocols \[RFC5498\]
     pub const Manet: IpNextHeaderProtocol = IpNextHeaderProtocol(138);
 
-    /// Host Identity Protocol [RFC5201]
+    /// Host Identity Protocol \[RFC5201\]
     pub const Hip: IpNextHeaderProtocol = IpNextHeaderProtocol(139);
 
-    /// Shim6 Protocol [RFC5533]
+    /// Shim6 Protocol \[RFC5533\]
     pub const Shim6: IpNextHeaderProtocol = IpNextHeaderProtocol(140);
 
-    /// Wrapped Encapsulating Security Payload [RFC5840]
+    /// Wrapped Encapsulating Security Payload \[RFC5840\]
     pub const Wesp: IpNextHeaderProtocol = IpNextHeaderProtocol(141);
 
-    /// Robust Header Compression [RFC5858]
+    /// Robust Header Compression \[RFC5858\]
     pub const Rohc: IpNextHeaderProtocol = IpNextHeaderProtocol(142);
 
-    /// Use for experimentation and testing [RFC3692]
+    /// Use for experimentation and testing \[RFC3692\]
     pub const Test1: IpNextHeaderProtocol = IpNextHeaderProtocol(253);
 
-    /// Use for experimentation and testing [RFC3692]
+    /// Use for experimentation and testing \[RFC3692\]
     pub const Test2: IpNextHeaderProtocol = IpNextHeaderProtocol(254);
 
     ///
