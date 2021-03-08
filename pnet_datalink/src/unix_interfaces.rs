@@ -75,8 +75,8 @@ pub fn interfaces() -> Vec<NetworkInterface> {
         libc::freeifaddrs(addrs);
 
         for iface in &mut ifaces {
-            let name = CString::new(iface.name.as_bytes());
-            iface.index = libc::if_nametoindex(name.unwrap().as_ptr());
+            let name = CString::new(iface.name.as_bytes()).unwrap();
+            iface.index = libc::if_nametoindex(name.as_ptr());
         }
 
         ifaces
