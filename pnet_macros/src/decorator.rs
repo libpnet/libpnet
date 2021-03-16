@@ -387,41 +387,9 @@ fn parse_length_expr(
             TokenTree::Literal(_) => {
                 acc_packet.push(tt_token.clone());
             }
-            // Token(_, token::ModSep) => {
-            //     acc_packet.push(tt_token.clone());
-            // }
-            // Token(span, token::BinOp(binop)) => {
-            //     match binop {
-            //         token::Plus | token::Minus | token::Star | token::Slash | token::Percent => {
-            //             acc_packet.push(tt_token.clone());
-            //         }
-            //         _ => {
-            //             ecx.span_err(span, error_msg);
-            //         }
-            //     };
-            // }
-            // Token(_, token::Literal(token::Integer(_), None)) => {
-            //     acc_packet.push(tt_token.clone());
-            // }
-            // Token(span, _) => {
-            //     ecx.span_err(span, error_msg);
-            // }
             TokenTree::Group(ref _group) => {
-                //
                 unimplemented!();
-            } // TokenTree::Delimited(span, ref delimited) => {
-              //     let tts = parse_length_expr(ecx, &delimited.tts, &field_names);
-              //     let tt_delimited = Delimited {
-              //         delim: delimited.delim,
-              //         open_span: delimited.open_span,
-              //         tts: tts,
-              //         close_span: delimited.close_span,
-              //     };
-              //     acc_packet.push(TokenTree::Delimited(span, Rc::new(tt_delimited)));
-              // }
-              // Sequence(span, _) => {
-              //     ecx.span_err(span, error_msg);
-              // }
+            }
         };
         acc_packet
     });
@@ -486,14 +454,6 @@ fn generate_packet_impl(
                 } else {
                     Endianness::Big
                 };
-                // let target_endianness = if env::var("CARGO_CFG_TARGET_ENDIAN")
-                //     .expect("Missing CARGO_CFG_TARGET_ENDIAN")
-                //     == "little"
-                // {
-                //     Endianness::Little
-                // } else {
-                //     Endianness::Big
-                // };
 
                 if endianness == Endianness::Little
                     || (target_endianness == Endianness::Little && endianness == Endianness::Host)
@@ -923,14 +883,6 @@ fn handle_misc_field(
             } else {
                 Endianness::Big
             };
-            // let target_endianness = if env::var("CARGO_CFG_TARGET_ENDIAN")
-            //     .expect("Missing CARGO_CFG_TARGET_ENDIAN")
-            //     == "little"
-            // {
-            //     Endianness::Little
-            // } else {
-            //     Endianness::Big
-            // };
 
             if endianness == Endianness::Little
                 || (target_endianness == Endianness::Little && endianness == Endianness::Host)
