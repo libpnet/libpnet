@@ -1,4 +1,5 @@
 // Copyright (c) 2015 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2021 Pierre Chifflier <chifflier@wzdftpd.net>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license

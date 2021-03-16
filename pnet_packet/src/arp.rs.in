@@ -11,6 +11,7 @@ use ethernet::EtherType;
 
 use std::net::Ipv4Addr;
 use pnet_base::MacAddr;
+use pnet_macros::packet;
 
 /// Represents an ARP operation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

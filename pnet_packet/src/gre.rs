@@ -9,4 +9,4 @@
 //! Minimal GRE Packet implementation: suitable for inspection not generation (e.g. checksum not
 //! implemented).
 
-include!(concat!(env!("OUT_DIR"), "/gre.rs"));
+include!("gre.rs.in");

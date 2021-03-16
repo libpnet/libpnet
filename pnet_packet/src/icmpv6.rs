@@ -8,4 +8,4 @@
 
 //! An ICMPv6 packet abstraction.
 
-include!(concat!(env!("OUT_DIR"), "/icmpv6.rs"));
+include!("icmpv6.rs.in");
