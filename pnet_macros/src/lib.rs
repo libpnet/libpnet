@@ -11,10 +11,9 @@
 //! specify the format of on-the-wire packets, and automatically generate zero-copy accessors and
 //! mutators for the fields. It is used as follows:
 //!
-//! ```ignore
-//!
-//! extern crate pnet_macros_support;
-//!
+//! ```
+//! /// Import the #[packet] custom attribute
+//! use pnet_macros::packet;
 //! /// This module contains a list of type aliases which may be used
 //! use pnet_macros_support::types::{u4, u12be};
 //!
@@ -41,8 +40,6 @@
 //!     #[payload]
 //!     payload: Vec<u8>
 //! }
-//!
-//! # fn main(){}
 //! ```
 //! A number of things will then be generated. You can see this in action in the documentation and
 //! source of each of the packet types in the `pnet::packet` module. Things generated include
