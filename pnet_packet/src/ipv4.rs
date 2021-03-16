@@ -8,4 +8,4 @@
 
 //! An IPv4 packet abstraction.
 
-include!(concat!(env!("OUT_DIR"), "/ipv4.rs"));
+include!("ipv4.rs.in");

@@ -8,4 +8,4 @@
 
 //! An TCP packet abstraction.
 
-include!(concat!(env!("OUT_DIR"), "/tcp.rs"));
+include!("tcp.rs.in");

@@ -1,5 +1,6 @@
 use PrimitiveValues;
 use ethernet::EtherType;
+use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
 /// Represents an IEEE 802.1p class of a service.

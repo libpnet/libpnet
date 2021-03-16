@@ -8,4 +8,4 @@
 
 //! ARP packet abstraction.
 
-include!(concat!(env!("OUT_DIR"), "/arp.rs"));
+include!("arp.rs.in");

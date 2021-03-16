@@ -8,4 +8,4 @@
 
 //! An ethernet packet abstraction.
 
-include!(concat!(env!("OUT_DIR"), "/ethernet.rs"));
+include!("ethernet.rs.in");

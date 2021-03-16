@@ -6,12 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(custom_attribute, plugin, slice_bytes, vec_push_all)]
-#![plugin(pnet_macros_plugin)]
-
-extern crate pnet;
+extern crate pnet_macros;
 extern crate pnet_macros_support;
-
+use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
 #[packet]

@@ -10,6 +10,7 @@ use Packet;
 use PrimitiveValues;
 use ip::IpNextHeaderProtocols;
 
+use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
 use std::net::Ipv4Addr;
