@@ -8,4 +8,4 @@
 
 //! A UDP packet abstraction.
 
-include!(concat!(env!("OUT_DIR"), "/udp.rs"));
+include!("udp.rs.in");

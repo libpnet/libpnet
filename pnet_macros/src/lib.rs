@@ -1,4 +1,5 @@
 // Copyright (c) 2015 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2021 Pierre Chifflier <chifflier@wzdftpd.net>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -138,139 +139,48 @@
 //!        `#[construct_with(...)]` attribute, and in the `new` method.
 
 #![deny(missing_docs)]
-#![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "clippy", plugin(clippy))]
-#![cfg_attr(feature = "clippy", allow(let_and_return))]
+// #![cfg_attr(feature = "clippy", feature(plugin))]
+// #![cfg_attr(feature = "clippy", plugin(clippy))]
+// #![cfg_attr(feature = "clippy", allow(let_and_return))]
 
-extern crate syntex;
-extern crate syntex_syntax as syntax;
-
-extern crate regex;
-
-use syntax::ast;
-use syntax::codemap::Span;
-use syntax::ext::base::{Annotatable, ExtCtxt};
-
-use syntax::ext::build::AstBuilder;
-use syntax::parse::token;
-use syntax::ptr::P;
+use proc_macro::TokenStream;
+use quote::quote;
+use syn::{parse_macro_input, DeriveInput, Visibility};
 
 mod decorator;
 mod util;
 
-/// Helper for creating meta words
-fn mw(ecx: &mut ExtCtxt, span: Span, word: &'static str) -> P<ast::MetaItem> {
-    ecx.meta_word(span, token::InternedString::new(word))
-}
-
-/// Replace the #[packet] attribute with internal attributes
-///
-/// The #[packet] attribute is consumed, so we replace it with two internal attributes,
-/// #[packet_generator], which is used to generate the packet implementations, and
-fn packet_modifier(
-    ecx: &mut ExtCtxt,
-    span: Span,
-    _meta_item: &ast::MetaItem,
-    item: Annotatable,
-) -> Annotatable {
-    let item = item.expect_item();
-    let mut new_item = (*item).clone();
-
-    let packet_generator = mw(ecx, span, "packet_generator");
-    let clone = mw(ecx, span, "Clone");
-    let debug = mw(ecx, span, "Debug");
-    let unused_attrs = mw(ecx, span, "unused_attributes");
-
-    let a1 = ecx.attribute(span, packet_generator);
-    let a2 = ecx.attribute(
-        span,
-        ecx.meta_list(
-            span,
-            token::InternedString::new("derive"),
-            vec![clone, debug],
-        ),
-    );
-    let a3 = ecx.attribute(
-        span,
-        ecx.meta_list(
-            span,
-            token::InternedString::new("allow"),
-            vec![unused_attrs],
-        ),
-    );
-
-    new_item.attrs.push(a1);
-    new_item.attrs.push(a2);
-    new_item.attrs.push(a3);
-
-    Annotatable::Item(P(new_item))
-}
-
-/// Helper function to get mutable access to the fields in a struct/enum
-fn variant_data_fields(vd: &mut ast::VariantData) -> &mut [ast::StructField] {
-    match *vd {
-        ast::VariantData::Struct(ref mut fields, _) => fields,
-        ast::VariantData::Tuple(ref mut fields, _) => fields,
-        _ => &mut [],
+/// The entry point for the `derive(Packet)` custom derive
+#[proc_macro_derive(Packet, attributes(construct_with, length, length_fn, payload))]
+pub fn derive_packet(input: TokenStream) -> TokenStream {
+    let ast = parse_macro_input!(input as DeriveInput);
+    // ensure struct is public
+    match ast.vis {
+        Visibility::Public(_) => (),
+        _ => {
+            let ts = syn::Error::new(ast.ident.span(), "#[packet] structs must be public")
+                .to_compile_error();
+            return ts.into();
+        }
     }
+    let name = &ast.ident;
+    let s = match &ast.data {
+        syn::Data::Struct(ref s) => decorator::generate_packet(s, name.to_string()),
+        _ => panic!("Only structs are supported"),
+    };
+    s.into()
 }
 
-/// Removes the attributes we've introduced from a particular struct/enum
-fn remove_attributes_struct(vd: &mut ast::VariantData) {
-    for field in variant_data_fields(vd) {
-        let attrs = &mut field.attrs;
-        attrs.retain(|attr| match attr.node.value.node {
-            ast::MetaItemKind::Word(ref s) => *s != "payload",
-            ast::MetaItemKind::List(ref s, _) => *s != "construct_with",
-            ast::MetaItemKind::NameValue(ref s, _) => !(*s == "length_fn" || *s == "length"),
-        });
-    }
-}
-
-fn remove_attributes_mod(module: &mut ast::Mod) {
-    let mut new_items = Vec::with_capacity(module.items.len());
-    for item in &module.items {
-        let new_item = item.clone().map(|mut item| {
-            match item.node {
-                ast::ItemKind::Enum(ref mut ed, ref _gs) => {
-                    let mut new_variants = Vec::with_capacity(ed.variants.len());
-                    for variant in &ed.variants {
-                        let mut new_variant = variant.clone();
-                        if new_variant.node.data.is_struct() {
-                            remove_attributes_struct(&mut new_variant.node.data);
-                        }
-                        new_variants.push(new_variant);
-                    }
-                    ed.variants = new_variants;
-                }
-                ast::ItemKind::Struct(ref mut sd, ref _gs) => {
-                    remove_attributes_struct(sd);
-                }
-                ast::ItemKind::Mod(ref mut m) => {
-                    remove_attributes_mod(m);
-                }
-                _ => {}
-            }
-
-            item
-        });
-        new_items.push(new_item);
-    }
-
-    module.items = new_items;
-}
-
-/// This iterates through a crate and removes any references to attributes
-/// which we introduce but aren't already consumed
-fn remove_attributes(mut krate: ast::Crate) -> ast::Crate {
-    remove_attributes_mod(&mut krate.module);
-
-    krate
-}
-
-/// The entry point for the plugin when using syntex
-pub fn register(registry: &mut syntex::Registry) {
-    registry.add_modifier("packet", packet_modifier);
-    registry.add_decorator("packet_generator", decorator::generate_packet);
-    registry.add_post_expansion_pass(remove_attributes);
+/// The entry point for the `packet` proc_macro_attribute
+#[proc_macro_attribute]
+pub fn packet(_attrs: TokenStream, code: TokenStream) -> TokenStream {
+    // let _attrs = parse_macro_input!(attrs as AttributeArgs);
+    let input = parse_macro_input!(code as DeriveInput);
+    // enhancement: if input already has Clone and/or Debug, do not add them
+    let s = quote! {
+        #[derive(::pnet_macros::Packet, Clone, Debug)]
+        #[allow(unused_attributes)]
+        #input
+    };
+    s.into()
 }

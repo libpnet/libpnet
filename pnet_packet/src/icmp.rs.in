@@ -7,6 +7,7 @@
 // except according to those terms.
 
 use PrimitiveValues;
+use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
 /// Represents the "ICMP type" header field.
@@ -158,6 +159,7 @@ pub mod echo_reply {
 
     use PrimitiveValues;
     use icmp::{IcmpCode, IcmpType};
+    use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
     /// Represent the "identifier" field of the ICMP echo replay header.
@@ -236,6 +238,7 @@ pub mod echo_request {
 
     use PrimitiveValues;
     use icmp::{IcmpCode, IcmpType};
+    use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
     /// Represents the identifier field.
@@ -313,6 +316,7 @@ pub mod destination_unreachable {
     //! ```
 
     use icmp::{IcmpCode, IcmpType};
+    use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
     /// Enumeration of the recognized ICMP codes for "destination unreachable" ICMP packets.
@@ -383,6 +387,7 @@ pub mod time_exceeded {
     //! ```
 
     use icmp::{IcmpCode, IcmpType};
+    use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
     /// Enumeration of the recognized ICMP codes for "time exceeded" ICMP packets.

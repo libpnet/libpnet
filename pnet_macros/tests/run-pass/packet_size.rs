@@ -6,10 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(custom_attribute, plugin, slice_bytes, vec_push_all)]
-#![plugin(pnet_macros_plugin)]
-
-extern crate pnet;
+extern crate pnet_macros;
+extern crate pnet_macros_support;
+use pnet_macros::packet;
 
 #[packet]
 pub struct Key {
@@ -33,7 +32,6 @@ pub struct NoLength {
     #[payload]
     payload: Vec<u8>,
 }
-
 
 fn main() {
     let key_payload = vec![1, 2, 3, 4];

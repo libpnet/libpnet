@@ -8,6 +8,7 @@
 
 use ip::IpNextHeaderProtocols;
 use PrimitiveValues;
+use pnet_macros::packet;
 use pnet_macros_support::types::*;
 use std::net::Ipv6Addr;
 
@@ -149,6 +150,7 @@ pub mod ndp {
     use icmpv6::{Icmpv6Code, Icmpv6Type};
     use PrimitiveValues;
     use Packet;
+    use pnet_macros::packet;
     use pnet_macros_support::types::*;
     use std::net::Ipv6Addr;
 

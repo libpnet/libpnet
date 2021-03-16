@@ -6,14 +6,20 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros_plugin)]
+extern crate pnet_macros;
+extern crate pnet_macros_support;
+use pnet_macros::packet;
 
-extern crate pnet;
-
-// ~ ERROR all fields in a packet must be named
 #[packet]
-pub struct Foo(#[payload]
-               pub u8);
+pub struct PacketWithPayload2 {
+    banana: u8,
+    #[payload(length_fn = "length_of_payload")]
+    payload: Vec<u8>, // ~ ERROR: unknown attribute: payload
+}
+
+fn length_of_payload(_: &PacketWithPayload2Packet) -> usize {
+    // FIXME
+    unimplemented!()
+}
 
 fn main() {}

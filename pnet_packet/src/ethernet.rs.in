@@ -10,6 +10,7 @@ use PrimitiveValues;
 
 use std::fmt;
 use pnet_base::MacAddr;
+use pnet_macros::packet;
 
 /// Represents an Ethernet packet.
 #[packet]

@@ -8,4 +8,4 @@
 
 //! An ICMP packet abstraction.
 
-include!(concat!(env!("OUT_DIR"), "/icmp.rs"));
+include!("icmp.rs.in");

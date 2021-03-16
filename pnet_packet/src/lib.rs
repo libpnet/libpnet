@@ -12,6 +12,7 @@
 
 extern crate pnet_base;
 extern crate pnet_macros_support;
+extern crate pnet_macros;
 
 pub use pnet_macros_support::packet::*;
 

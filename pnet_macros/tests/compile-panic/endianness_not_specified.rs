@@ -6,18 +6,15 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-// error-pattern: Only field names, constants, integers, basic arithmetic expressions (+ - * / %) and parentheses are allowed in the "length" attribute
+// error-pattern: endianness must be specified for types of size >= 8
 
-#![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros_plugin)]
+extern crate pnet_macros;
+extern crate pnet_macros_support;
+use pnet_macros::packet;
 
-extern crate pnet;
-
-#[packet]
-pub struct PacketWithPayload {
-    banana: u8,
-    #[length = "banana + 7.5"]
-    var_length: Vec<u8>,
+#[packet] //~ PANIC endianness must be specified for types of size >= 8
+pub struct PacketU16 {
+    banana: u16,
     #[payload]
     payload: Vec<u8>,
 }
