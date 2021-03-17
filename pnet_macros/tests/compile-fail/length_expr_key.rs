@@ -11,15 +11,12 @@ extern crate pnet_macros_support;
 use pnet_macros::packet;
 
 #[packet]
-pub struct PacketWithPayload2 {
+pub struct PacketWithPayload {
     banana: u8,
-    #[payload(length_fn = "length_of_payload")]
-    payload: Vec<u8>, // ~ ERROR: unknown attribute: payload
-}
-
-fn length_of_payload(_: &PacketWithPayload2Packet) -> usize {
-    // FIXME
-    unimplemented!()
+    #[length = "tomato"] //~ ERROR Field name must be a member of the struct and not the field itself
+    var_length: Vec<u8>,
+    #[payload]
+    payload: Vec<u8>,
 }
 
 fn main() {}
