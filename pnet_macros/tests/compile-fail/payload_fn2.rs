@@ -6,20 +6,20 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-// error-pattern: error: this file contains an un-closed delimiter
-
-#![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros_plugin)]
-
-extern crate pnet;
+extern crate pnet_macros;
+extern crate pnet_macros_support;
+use pnet_macros::packet;
 
 #[packet]
-pub struct PacketWithPayload {
+pub struct PacketWithPayload2 {
     banana: u8,
-    #[length = "banana * (7 + 3"]
-    var_length: Vec<u8>,
-    #[payload]
+    #[payload(length_fn = "length_of_payload")] //~ ERROR: unknown attribute: payload
     payload: Vec<u8>,
+}
+
+fn length_of_payload(_: &PacketWithPayload2Packet) -> usize { //~ ERROR cannot find type `PacketWithPayload2Packet` in this scope
+    // FIXME
+    unimplemented!()
 }
 
 fn main() {}

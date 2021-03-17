@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2021 Pierre Chifflier <chifflier@wzdftpd.net>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -6,17 +6,18 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-// error-pattern: Only field names, constants, integers, basic arithmetic expressions (+ - * / %) and parentheses are allowed in the "length" attribute
-
 extern crate pnet_macros;
 extern crate pnet_macros_support;
 use pnet_macros::packet;
 
+#[derive(Clone, Debug)]
+pub struct Toto{
+    dummy: u16,
+}
+
 #[packet]
-pub struct PacketWithPayload {
-    banana: u8,
-    #[length = "banana + 7.5"]
-    var_length: Vec<u8>,
+pub struct PacketU16 {
+    banana: Toto,  //~ ERROR non-primitive field types must specify #[construct_with]
     #[payload]
     payload: Vec<u8>,
 }

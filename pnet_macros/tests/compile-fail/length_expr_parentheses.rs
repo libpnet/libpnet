@@ -6,16 +6,19 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros_plugin)]
+// error-pattern: error: this file contains an unclosed delimiter
 
-extern crate pnet;
+extern crate pnet_macros;
+extern crate pnet_macros_support;
+use pnet_macros::packet;
 
 #[packet]
-pub struct InvalidType {
-    pub field: String, // ~ ERROR: non-primitive field types must specify #[construct_with]
+pub struct PacketWithPayload {
+    banana: u8,
+    #[length = "banana * (7 + 3"]
+    var_length: Vec<u8>,
     #[payload]
-    pub payload: Vec<u8>,
+    payload: Vec<u8>,
 }
 
 fn main() {}

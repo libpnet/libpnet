@@ -6,20 +6,12 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-// error-pattern: error: Field name must be a member of the struct and not the field itself
-
-#![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros_plugin)]
-
-extern crate pnet;
+extern crate pnet_macros;
+extern crate pnet_macros_support;
+use pnet_macros::packet;
 
 #[packet]
-pub struct PacketWithPayload {
-    banana: u8,
-    #[length = "tomato"]
-    var_length: Vec<u8>,
-    #[payload]
-    payload: Vec<u8>,
-}
+pub struct Foo(#[payload]
+               pub u8); //~ ERROR all fields in a packet must be named
 
 fn main() {}

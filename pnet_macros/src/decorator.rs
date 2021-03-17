@@ -12,11 +12,11 @@
 use crate::util::{
     operations, to_little_endian, to_mutator, Endianness, GetOperation, SetOperation,
 };
-use proc_macro2::Span;
+use proc_macro2::{Group, Span};
 use quote::{quote, ToTokens};
 use regex::Regex;
-// use std::env;
-use syn::spanned::Spanned;
+use std::iter::FromIterator;
+use syn::{spanned::Spanned, Error};
 
 #[derive(Debug, PartialEq, Eq)]
 enum EndiannessSpecified {
@@ -67,33 +67,28 @@ impl Packet {
     }
 }
 
-pub fn generate_packet(s: &syn::DataStruct, name: String) -> proc_macro2::TokenStream {
-    if let Some(packet) = make_packet(s, name) {
-        let structs = generate_packet_struct(&packet);
-        if let Some((ts_packet_impls, payload_bounds, packet_size)) = generate_packet_impls(&packet)
-        {
-            let ts_size_impls = generate_packet_size_impls(&packet, &packet_size);
-            let ts_trait_impls = generate_packet_trait_impls(&packet, &payload_bounds);
-            let ts_iterables = generate_iterables(&packet);
-            let ts_converters = generate_converters(&packet);
-            let ts_debug_impls = generate_debug_impls(&packet);
-            let tts = quote! {
-                #structs
-                #ts_packet_impls
-                #ts_size_impls
-                #ts_trait_impls
-                #ts_iterables
-                #ts_converters
-                #ts_debug_impls
-            };
-            tts
-        } else {
-            let tts = quote! { #structs };
-            tts
-        }
-    } else {
-        panic!("Could not generate code for Packet derive");
-    }
+pub fn generate_packet(
+    s: &syn::DataStruct,
+    name: String,
+) -> Result<proc_macro2::TokenStream, Error> {
+    let packet = make_packet(s, name)?;
+    let structs = generate_packet_struct(&packet);
+    let (ts_packet_impls, payload_bounds, packet_size) = generate_packet_impls(&packet)?;
+    let ts_size_impls = generate_packet_size_impls(&packet, &packet_size)?;
+    let ts_trait_impls = generate_packet_trait_impls(&packet, &payload_bounds)?;
+    let ts_iterables = generate_iterables(&packet)?;
+    let ts_converters = generate_converters(&packet)?;
+    let ts_debug_impls = generate_debug_impls(&packet)?;
+    let tts = quote! {
+        #structs
+        #ts_packet_impls
+        #ts_size_impls
+        #ts_trait_impls
+        #ts_iterables
+        #ts_converters
+        #ts_debug_impls
+    };
+    Ok(tts)
 }
 
 fn generate_packet_struct(packet: &Packet) -> proc_macro2::TokenStream {
@@ -143,7 +138,7 @@ fn make_type(ty_str: String, endianness_important: bool) -> Result<Type, String>
     }
 }
 
-fn make_packet(s: &syn::DataStruct, name: String) -> Option<Packet> {
+fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
     let mut fields = Vec::new();
     let mut payload_span = None;
     let sfields = &s.fields;
@@ -151,21 +146,27 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Option<Packet> {
         let field_name = match &field.ident {
             Some(name) => name.to_string(),
             None => {
-                panic!("all fields in a packet must be named");
+                return Err(Error::new(
+                    field.ty.span(),
+                    "all fields in a packet must be named",
+                ));
             }
         };
         let mut construct_with = Vec::new();
         let mut is_payload = false;
-        let mut packet_length: Option<String> = None;
+        let mut packet_length = None;
         let mut struct_length = None;
         for attr in &field.attrs {
-            let node = attr.parse_meta().unwrap();
+            let node = attr.parse_meta()?;
             match node {
                 syn::Meta::Path(p) => {
                     if let Some(ident) = p.get_ident() {
                         if ident == "payload" {
                             if payload_span.is_some() {
-                                panic!("packet may not have multiple payloads");
+                                return Err(Error::new(
+                                    p.span(),
+                                    "packet may not have multiple payloads",
+                                ));
                             }
                             is_payload = true;
                             payload_span = Some(field.span());
@@ -178,16 +179,11 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Option<Packet> {
                             if let syn::Lit::Str(ref s) = name_value.lit {
                                 packet_length = Some(s.value() + "(&_self.to_immutable())");
                             } else {
-                                panic!(
+                                return Err(Error::new(
+                                    name_value.path.span(),
                                     "#[length_fn] should be used as #[length_fn = \
-                                               \"name_of_function\"]"
-                                );
-                                // ecx.span_err(
-                                //     field.span,
-                                //     "#[length_fn] should be used as #[length_fn = \
-                                //               \"name_of_function\"]",
-                                // );
-                                // return None;
+                                               \"name_of_function\"]",
+                                ));
                             }
                         } else if ident == "length" {
                             // get literal
@@ -207,27 +203,25 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Option<Packet> {
                                     })
                                     .collect();
                                 // Convert to tokens
-                                let expr = s.parse::<syn::Expr>().unwrap();
+                                let expr = s.parse::<syn::Expr>()?;
                                 let tts = expr.to_token_stream();
                                 let tt_tokens: Vec<_> = tts.into_iter().collect();
                                 // Parse and replace fields
-                                let tokens_packet = parse_length_expr(&tt_tokens, &field_names);
+                                let tokens_packet = parse_length_expr(&tt_tokens, &field_names)?;
                                 let parsed = quote! { #(#tokens_packet)* };
                                 packet_length = Some(parsed.to_string());
                             } else {
-                                panic!(
+                                return Err(Error::new(
+                                    name_value.lit.span(),
                                     "#[length] should be used as #[length = \
-                                                  \"field_name and/or arithmetic expression\"]"
-                                );
-                                // ecx.span_err(
-                                //     field.span,
-                                //     "#[length] should be used as #[length = \
-                                //               \"field_name and/or arithmetic expression\"]",
-                                // );
-                                // return None;
+                                                \"field_name and/or arithmetic expression\"]",
+                                ));
                             }
                         } else {
-                            panic!(format!("Unknown meta/namevalue option '{}'", ident))
+                            return Err(Error::new(
+                                ident.span(),
+                                &format!("Unknown meta/namevalue option '{}'", ident),
+                            ));
                         }
                     }
                 }
@@ -235,12 +229,10 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Option<Packet> {
                     if let Some(ident) = l.path.get_ident() {
                         if ident == "construct_with" {
                             if l.nested.is_empty() {
-                                panic!("#[construct_with] must have at least one argument");
-                                // ecx.span_err(
-                                //     field.span,
-                                //     "#[construct_with] must have at least one argument",
-                                // );
-                                // return None;
+                                return Err(Error::new(
+                                    l.path.span(),
+                                    "#[construct_with] must have at least one argument",
+                                ));
                             }
 
                             for item in &l.nested {
@@ -249,33 +241,32 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Option<Packet> {
                                     match make_type(ty_str, false) {
                                         Ok(ty) => construct_with.push(ty),
                                         Err(e) => {
-                                            panic!("{}", e);
-                                            // ecx.span_err(field.span, &e);
-                                            // return None;
+                                            return Err(Error::new(
+                                                field.ty.span(),
+                                                &format!("{}", e),
+                                            ));
                                         }
                                     }
-                                    //
                                 } else {
                                     // literal
-                                    panic!(
+                                    return Err(Error::new(
+                                        l.nested.span(),
                                         "#[construct_with] should be of the form \
-                                                #[construct_with(<types>)]"
-                                    );
-                                    // ecx.span_err(
-                                    //     field.span,
-                                    //     "#[construct_with] should be of the form \
-                                    //               #[construct_with(<types>)]",
-                                    // );
-                                    // return None;
+                                                #[construct_with(<types>)]",
+                                    ));
                                 }
                             }
                         } else {
-                            panic!("unknown attribute: {}", ident);
-                            // ecx.span_err(field.span, &format!("unknown attribute: {}", s)[..]);
-                            // return None;
+                            return Err(Error::new(
+                                ident.span(),
+                                &format!("unknown attribute: {}", ident),
+                            ));
                         }
                     } else {
-                        panic!("meta-list attribute has unexpected type (not an ident)");
+                        return Err(Error::new(
+                            l.path.span(),
+                            "meta-list attribute has unexpected type (not an ident)",
+                        ));
                     }
                 }
             }
@@ -284,9 +275,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Option<Packet> {
         let ty = match make_type(ty_to_string(&field.ty), true) {
             Ok(ty) => ty,
             Err(e) => {
-                // XXX ecx.span_err(field.span, &e);
-                // XXX return None;
-                panic!("{}", e);
+                return Err(Error::new(field.ty.span(), &format!("{}", e)));
             }
         };
 
@@ -294,26 +283,19 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Option<Packet> {
             Type::Vector(_) => {
                 struct_length = Some(format!("_packet.{}.len()", field_name).to_owned());
                 if !is_payload && packet_length.is_none() {
-                    panic!(
+                    return Err(Error::new(
+                        field.ty.span(),
                         "variable length field must have #[length = \"\"] or \
-                                  #[length_fn = \"\"] attribute"
-                    );
-                    // ecx.span_err(
-                    //     field.span,
-                    //     "variable length field must have #[length = \"\"] or \
-                    //               #[length_fn = \"\"] attribute",
-                    // );
-                    // return None;
+                                  #[length_fn = \"\"] attribute",
+                    ));
                 }
             }
             Type::Misc(_) => {
                 if construct_with.is_empty() {
-                    panic!("non-primitive field types must specify #[construct_with]");
-                    // ecx.span_err(
-                    //     field.span,
-                    //     "non-primitive field types must specify #[construct_with]",
-                    // );
-                    // return None;
+                    return Err(Error::new(
+                        field.ty.span(),
+                        "non-primitive field types must specify #[construct_with]",
+                    ));
                 }
             }
             _ => {}
@@ -331,12 +313,13 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Option<Packet> {
     }
 
     if payload_span.is_none() {
-        panic!("#[packet]'s must contain a payload");
-        // ecx.span_err(span, "#[packet]'s must contain a payload");
-        // return None;
+        return Err(Error::new(
+            Span::call_site(),
+            "#[packet]'s must contain a payload",
+        ));
     }
 
-    Some(Packet {
+    Ok(Packet {
         base_name: name,
         fields,
     })
@@ -346,80 +329,87 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Option<Packet> {
 fn parse_length_expr(
     tts: &[proc_macro2::TokenTree],
     field_names: &[String],
-) -> Vec<proc_macro2::TokenTree> {
+) -> Result<Vec<proc_macro2::TokenTree>, Error> {
     use proc_macro2::TokenTree;
     let error_msg = "Only field names, constants, integers, basic arithmetic expressions \
                      (+ - * / %) and parentheses are allowed in the \"length\" attribute";
     let mut needs_constant: Option<Span> = None;
     let mut has_constant = false;
-    let tokens_packet = tts.iter().fold(Vec::new(), |mut acc_packet, tt_token| {
+    let mut tokens_packet = Vec::new();
+    for tt_token in tts {
         match tt_token {
-            // Token(span, token::Ident(name)) => {
             TokenTree::Ident(name) => {
                 if name.to_string().chars().any(|c| c.is_lowercase()) {
                     if field_names.contains(&name.to_string()) {
                         let tts: syn::Expr =
-                            syn::parse_str(&format!("_self.get_{}() as usize", name)).unwrap();
+                            syn::parse_str(&format!("_self.get_{}() as usize", name))?;
                         let mut modified_packet_tokens: Vec<_> =
                             tts.to_token_stream().into_iter().collect();
-                        acc_packet.append(&mut modified_packet_tokens);
+                        tokens_packet.append(&mut modified_packet_tokens);
                     } else {
                         if let None = needs_constant {
                             needs_constant = Some(tt_token.span());
                         }
-                        acc_packet.push(tt_token.clone());
+                        tokens_packet.push(tt_token.clone());
                     }
                 }
-                // Constants are only recongized if they are all uppercase
+                // Constants are only recognized if they are all uppercase
                 else {
-                    let tts: syn::Expr = syn::parse_str(&format!("{} as usize", name)).unwrap();
+                    let tts: syn::Expr = syn::parse_str(&format!("{} as usize", name))?;
                     let mut modified_packet_tokens: Vec<_> =
                         tts.to_token_stream().into_iter().collect();
-                    // let mut modified_packet_tokens =
-                    //     ecx.parse_tts(format!("{} as usize", name).to_owned());
-                    acc_packet.append(&mut modified_packet_tokens);
+                    tokens_packet.append(&mut modified_packet_tokens);
                     has_constant = true;
                 }
             }
             TokenTree::Punct(_) => {
-                acc_packet.push(tt_token.clone());
+                tokens_packet.push(tt_token.clone());
             }
-            TokenTree::Literal(_) => {
-                acc_packet.push(tt_token.clone());
+            TokenTree::Literal(lit) => {
+                // must be an integer
+                if syn::parse_str::<syn::LitInt>(&lit.to_string()).is_err() {
+                    return Err(Error::new(lit.span(), error_msg));
+                }
+                tokens_packet.push(tt_token.clone());
             }
-            TokenTree::Group(ref _group) => {
-                unimplemented!();
+            TokenTree::Group(ref group) => {
+                let ts: Vec<_> = group.stream().into_iter().collect();
+                let tts = parse_length_expr(&ts, field_names)?;
+                let mut new_group = Group::new(
+                    group.delimiter(),
+                    proc_macro2::TokenStream::from_iter(tts.into_iter()),
+                );
+                new_group.set_span(group.span());
+                let tt = TokenTree::Group(new_group);
+                tokens_packet.push(tt);
             }
         };
-        acc_packet
-    });
+    }
 
-    if let Some(_span) = needs_constant {
+    if let Some(span) = needs_constant {
         if !has_constant {
-            panic!("Field name must be a member of the struct and not the field itself");
-            // ecx.span_err(
-            //     span,
-            //     "Field name must be a member of the struct and not the field itself",
-            // );
+            return Err(Error::new(
+                span,
+                "Field name must be a member of the struct and not the field itself",
+            ));
         }
     }
 
-    tokens_packet
+    Ok(tokens_packet)
 }
 
 fn generate_packet_impl(
     packet: &Packet,
     mutable: bool,
     name: String,
-) -> Option<(proc_macro2::TokenStream, PayloadBounds, String)> {
+) -> Result<(proc_macro2::TokenStream, PayloadBounds, String), Error> {
     let mut bit_offset = 0;
     let mut offset_fns_packet = Vec::new();
     let mut offset_fns_struct = Vec::new();
     let mut accessors = "".to_owned();
     let mut mutators = "".to_owned();
     let mut payload_bounds = None;
-    let mut error = false;
-    for (idx, ref field) in packet.fields.iter().enumerate() {
+    for (idx, field) in packet.fields.iter().enumerate() {
         let mut co = current_offset(bit_offset, &offset_fns_packet[..]);
 
         if field.is_payload {
@@ -429,16 +419,11 @@ fn generate_packet_impl(
                     format!("{} + {}", co.clone(), field.packet_length.as_ref().unwrap());
             } else {
                 if idx != packet.fields.len() - 1 {
-                    panic!(
+                    return Err(Error::new(
+                        field.span,
                         "#[payload] must specify a #[length_fn], unless it is the \
-                                        last field of a packet"
-                    );
-                    // cx.ecx.span_err(
-                    //     field.span,
-                    //     "#[payload] must specify a #[length_fn], unless it is the \
-                    //                  last field of a packet",
-                    // );
-                    // error = true;
+                                        last field of a packet",
+                    ));
                 }
             }
             payload_bounds = Some(PayloadBounds {
@@ -474,16 +459,10 @@ fn generate_packet_impl(
                         [..];
                 bit_offset += size;
             }
-            Type::Vector(ref inner_ty) => handle_vector_field(
-                &mut error,
-                &field,
-                &mut accessors,
-                &mut mutators,
-                inner_ty,
-                &mut co,
-            ),
+            Type::Vector(ref inner_ty) => {
+                handle_vector_field(&field, &mut accessors, &mut mutators, inner_ty, &mut co)?
+            }
             Type::Misc(ref ty_str) => handle_misc_field(
-                &mut error,
                 &field,
                 &mut bit_offset,
                 &offset_fns_packet[..],
@@ -492,7 +471,7 @@ fn generate_packet_impl(
                 &mut mutators,
                 &mut accessors,
                 &ty_str,
-            ),
+            )?,
         }
         if field.packet_length.is_some() {
             offset_fns_packet.push(field.packet_length.as_ref().unwrap().clone());
@@ -626,7 +605,7 @@ fn generate_packet_impl(
         #stmt
     };
 
-    Some((
+    Ok((
         ts,
         payload_bounds.unwrap(),
         current_offset(bit_offset, &offset_fns_packet[..]),
@@ -635,27 +614,28 @@ fn generate_packet_impl(
 
 fn generate_packet_impls(
     packet: &Packet,
-) -> Option<(proc_macro2::TokenStream, PayloadBounds, String)> {
+) -> Result<(proc_macro2::TokenStream, PayloadBounds, String), Error> {
     let mut ret = None;
     let mut tts = Vec::new();
     for (mutable, name) in vec![
         (false, packet.packet_name()),
         (true, packet.packet_name_mut()),
     ] {
-        if let Some((tokens, bounds, size)) = generate_packet_impl(packet, mutable, name) {
-            tts.push(tokens);
-            ret = Some((bounds, size));
-        }
+        let (tokens, bounds, size) = generate_packet_impl(packet, mutable, name)?;
+        tts.push(tokens);
+        ret = Some((bounds, size));
     }
-    let tokens = quote! {
-        #(#tts)*
-    };
+    let tokens = quote! { #(#tts)* };
 
     ret.map(|(bounds, size)| (tokens, bounds, size))
+        .ok_or_else(|| Error::new(Span::call_site(), "generate_packet_impls failed"))
 }
 
-fn generate_packet_size_impls(packet: &Packet, size: &str) -> proc_macro2::TokenStream {
-    let tts: Vec<_> = [packet.packet_name(), packet.packet_name_mut()]
+fn generate_packet_size_impls(
+    packet: &Packet,
+    size: &str,
+) -> Result<proc_macro2::TokenStream, Error> {
+    let tts: Result<Vec<_>, _> = [packet.packet_name(), packet.packet_name_mut()]
         .iter()
         .map(|name| {
             let s = format!(
@@ -671,24 +651,23 @@ fn generate_packet_size_impls(packet: &Packet, size: &str) -> proc_macro2::Token
                 name = name,
                 size = size
             );
-            syn::parse_str::<syn::Stmt>(&s).expect("parse generate_packet_size_impls failed")
+            syn::parse_str::<syn::Stmt>(&s)
         })
         .collect();
-    quote! {
-        #(#tts)*
-    }
+    let tts = tts?;
+    Ok(quote! { #(#tts)* })
 }
 
 fn generate_packet_trait_impls(
     packet: &Packet,
     payload_bounds: &PayloadBounds,
-) -> proc_macro2::TokenStream {
+) -> Result<proc_macro2::TokenStream, Error> {
     let items = [
         (packet.packet_name_mut(), "Mutable", "_mut", "mut"),
         (packet.packet_name_mut(), "", "", ""),
         (packet.packet_name(), "", "", ""),
     ];
-    let tts: Vec<_> = items
+    let tts: Result<Vec<_>, _> = items
         .iter()
         .map(|(name, mutable, u_mut, mut_)| {
             let mut pre = "".to_owned();
@@ -730,15 +709,14 @@ fn generate_packet_trait_impls(
                 u_mut = u_mut,
                 mut_ = mut_
             );
-            syn::parse_str::<syn::Stmt>(&s).expect("parse generate_packet_trait_impls failed")
+            syn::parse_str::<syn::Stmt>(&s)
         })
         .collect();
-    quote! {
-        #(#tts)*
-    }
+    let tts = tts?;
+    Ok(quote! { #(#tts)* })
 }
 
-fn generate_iterables(packet: &Packet) -> proc_macro2::TokenStream {
+fn generate_iterables(packet: &Packet) -> Result<proc_macro2::TokenStream, Error> {
     let name = &packet.base_name;
 
     let ts1 = format!(
@@ -777,18 +755,18 @@ fn generate_iterables(packet: &Packet) -> proc_macro2::TokenStream {
     ",
         name = name
     );
-    let ts1: syn::Stmt = syn::parse_str(&ts1).expect("parse generate_iterables failed");
-    let ts2: syn::Stmt = syn::parse_str(&ts2).expect("parse generate_iterables failed");
-    quote! {
+    let ts1: syn::Stmt = syn::parse_str(&ts1)?;
+    let ts2: syn::Stmt = syn::parse_str(&ts2)?;
+    Ok(quote! {
         #ts1
         #ts2
-    }
+    })
 }
 
-fn generate_converters(packet: &Packet) -> proc_macro2::TokenStream {
+fn generate_converters(packet: &Packet) -> Result<proc_macro2::TokenStream, Error> {
     let get_fields = generate_get_fields(packet);
 
-    let tts: Vec<_> = [packet.packet_name(), packet.packet_name_mut()]
+    let tts: Result<Vec<_>, _> = [packet.packet_name(), packet.packet_name_mut()]
         .iter()
         .map(|name| {
             let s = format!(
@@ -808,15 +786,14 @@ fn generate_converters(packet: &Packet) -> proc_macro2::TokenStream {
                 name = packet.base_name,
                 get_fields = get_fields
             );
-            syn::parse_str::<syn::Stmt>(&s).expect("parse generate_iterables failed")
+            syn::parse_str::<syn::Stmt>(&s)
         })
         .collect();
-    quote! {
-        #(#tts)*
-    }
+    let tts = tts?;
+    Ok(quote! { #(#tts)* })
 }
 
-fn generate_debug_impls(packet: &Packet) -> proc_macro2::TokenStream {
+fn generate_debug_impls(packet: &Packet) -> Result<proc_macro2::TokenStream, Error> {
     let mut field_fmt_str = String::new();
     let mut get_fields = String::new();
 
@@ -827,7 +804,7 @@ fn generate_debug_impls(packet: &Packet) -> proc_macro2::TokenStream {
         }
     }
 
-    let tts: Vec<_> = [packet.packet_name(), packet.packet_name_mut()]
+    let tts: Result<Vec<_>, _> = [packet.packet_name(), packet.packet_name_mut()]
         .iter()
         .map(|packet| {
             let s = format!(
@@ -846,16 +823,14 @@ fn generate_debug_impls(packet: &Packet) -> proc_macro2::TokenStream {
                 field_fmt_str = field_fmt_str,
                 get_fields = get_fields
             );
-            syn::parse_str::<syn::Stmt>(&s).expect("parse generate_debug_impls failed")
+            syn::parse_str::<syn::Stmt>(&s)
         })
         .collect();
-    quote! {
-        #(#tts)*
-    }
+    let tts = tts?;
+    Ok(quote! { #(#tts)* })
 }
 
 fn handle_misc_field(
-    error: &mut bool,
     field: &Field,
     bit_offset: &mut usize,
     offset_fns: &[String],
@@ -864,7 +839,7 @@ fn handle_misc_field(
     mutators: &mut String,
     accessors: &mut String,
     ty_str: &str,
-) {
+) -> Result<(), Error> {
     let mut inner_accessors = String::new();
     let mut inner_mutators = String::new();
     let mut get_args = String::new();
@@ -913,12 +888,10 @@ fn handle_misc_field(
             // Current offset needs to be recalculated for each arg
             *co = current_offset(*bit_offset, offset_fns);
         } else {
-            panic!("arguments to #[construct_with] must be primitives");
-            // cx.ecx.span_err(
-            //     field.span,
-            //     "arguments to #[construct_with] must be primitives",
-            // );
-            // *error = true;
+            return Err(Error::new(
+                field.span,
+                "arguments to #[construct_with] must be primitives",
+            ));
         }
     }
     *mutators = format!(
@@ -972,17 +945,17 @@ fn handle_misc_field(
         ty_str = ty_str,
         ctor = ctor
     );
+    Ok(())
 }
 
 fn handle_vec_primitive(
-    error: &mut bool,
     inner_ty_str: &str,
     size: usize,
     field: &Field,
     accessors: &mut String,
     mutators: &mut String,
     co: &mut String,
-) {
+) -> Result<(), Error> {
     if inner_ty_str == "u8" || (size % 8) == 0 {
         let ops = operations(0, size).unwrap();
         if !field.is_payload {
@@ -1074,29 +1047,27 @@ fn handle_vec_primitive(
             inner_ty_str = inner_ty_str,
             copy_vals = copy_vals
         );
+        Ok(())
     } else {
-        panic!("unimplemented variable length field");
-        // cx.ecx
-        //     .span_err(field.span, "unimplemented variable length field");
-        // *error = true;
+        Err(Error::new(
+            field.span,
+            "unimplemented variable length field",
+        ))
     }
 }
 
 fn handle_vector_field(
-    error: &mut bool,
     field: &Field,
     accessors: &mut String,
     mutators: &mut String,
     inner_ty: &Box<Type>,
     co: &mut String,
-) {
+) -> Result<(), Error> {
     if !field.is_payload && !field.packet_length.is_some() {
-        panic!("variable length field must have #[length_fn = \"\"] attribute");
-        // cx.ecx.span_err(
-        //     field.span,
-        //     "variable length field must have #[length_fn = \"\"] attribute",
-        // );
-        // *error = true;
+        return Err(Error::new(
+            field.span,
+            "variable length field must have #[length_fn = \"\"] attribute",
+        ));
     }
     if !field.is_payload {
         *accessors = format!("{accessors}
@@ -1138,13 +1109,13 @@ fn handle_vector_field(
     }
     match **inner_ty {
         Type::Primitive(ref inner_ty_str, _size, _endianness) => {
-            handle_vec_primitive(error, inner_ty_str, _size, field, accessors, mutators, co)
+            handle_vec_primitive(inner_ty_str, _size, field, accessors, mutators, co)
         }
         Type::Vector(_) => {
-            panic!("variable length fields may not contain vectors");
-            // cx.ecx
-            //     .span_err(field.span, "variable length fields may not contain vectors");
-            // *error = true;
+            return Err(Error::new(
+                field.span,
+                "variable length fields may not contain vectors",
+            ));
         }
         Type::Misc(ref inner_ty_str) => {
             *accessors = format!("{accessors}
@@ -1208,6 +1179,7 @@ fn handle_vector_field(
                                 co = co,
                                 packet_length = field.packet_length.as_ref().unwrap(),
                                 inner_ty_str = inner_ty_str);
+            Ok(())
         }
     }
 }
