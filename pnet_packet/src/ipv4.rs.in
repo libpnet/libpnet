@@ -278,7 +278,7 @@ fn ipv4_option_length(option: &Ipv4OptionPacket) -> usize {
 
 fn ipv4_option_payload_length(ipv4_option: &Ipv4OptionPacket) -> usize {
     match ipv4_option.get_length().first() {
-        Some(len) => *len as usize - 2,
+        Some(len) => (*len as usize).saturating_sub(2),
         None => 0,
     }
 }
