@@ -9,7 +9,6 @@ description = "Cross-platform, binary packet parsing and manipulation"
 readme = "../README.md"
 keywords = ["networking", "packet", "parsing", "raw"]
 categories = ["network-programming", "parser-implementations"]
-# build = "build.rs"
 
 [dependencies]
 pnet_base = { path = "../pnet_base", version = "0.27.2" }
