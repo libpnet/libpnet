@@ -10,9 +10,11 @@ extern crate pnet_macros;
 extern crate pnet_macros_support;
 use pnet_macros::packet;
 
-// ~ ERROR all fields in a packet must be named
 #[packet]
-pub struct Foo(#[payload]
-               pub u8);
+pub struct InvalidType {
+    pub field: String, //~ ERROR: non-primitive field types must specify #[construct_with]
+    #[payload]
+    pub payload: Vec<u8>,
+}
 
 fn main() {}

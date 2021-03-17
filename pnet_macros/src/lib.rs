@@ -165,7 +165,10 @@ pub fn derive_packet(input: TokenStream) -> TokenStream {
         syn::Data::Struct(ref s) => decorator::generate_packet(s, name.to_string()),
         _ => panic!("Only structs are supported"),
     };
-    s.into()
+    match s {
+        Ok(ts) => ts.into(),
+        Err(e) => e.to_compile_error().into(),
+    }
 }
 
 /// The entry point for the `packet` proc_macro_attribute

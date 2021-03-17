@@ -6,16 +6,17 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros_plugin)]
-
-extern crate pnet;
+extern crate pnet_macros;
+extern crate pnet_macros_support;
+use pnet_macros::packet;
 
 #[packet]
 pub struct PacketWithPayload {
     #[length_fn = ""]
     #[payload]
-    payload1: Vec<u8>, // ~ NOTE first payload defined here
-    #[payload]
-    payload2: Vec<u8>, // ~ ERROR packet may not have multiple payloads
+    payload1: Vec<u8>,
+    #[payload]  //~ ERROR packet may not have multiple payloads
+    payload2: Vec<u8>,
 }
+
+fn main() {}
