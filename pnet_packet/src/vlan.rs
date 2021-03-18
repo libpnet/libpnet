@@ -1,3 +1,5 @@
+//! A VLAN packet abstraction.
+
 use PrimitiveValues;
 use ethernet::EtherType;
 use pnet_macros::packet;

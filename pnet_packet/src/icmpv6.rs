@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+//! An ICMPv6 packet abstraction.
+
 use ip::IpNextHeaderProtocols;
 use PrimitiveValues;
 use pnet_macros::packet;
