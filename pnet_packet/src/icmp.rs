@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+//! An ICMP packet abstraction.
+
 use PrimitiveValues;
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
