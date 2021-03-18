@@ -12,14 +12,14 @@
 //! mutators for the fields. It is used as follows:
 //!
 //! ```
-//! /// Import the #[packet] custom attribute
-//! use pnet_macros::packet;
+//! /// Import the `Packet` custom derive attribute
+//! use pnet_macros::Packet;
 //! /// This module contains a list of type aliases which may be used
 //! use pnet_macros_support::types::{u4, u12be};
 //!
 //! /// Packets are specified in the same way as normal Rust structs, but with a `#[packet]`
 //! /// attribute.
-//! #[packet]
+//! #[derive(Packet)]
 //! pub struct Example {
 //!     // This is a simple field which contains a 4-bit, unsigned integer.
 //!     // Note that `u4` is simply an alias for `u8` - the name is a hint
@@ -95,7 +95,7 @@
 //!    value should be a number of bytes that the field uses.
 //!
 //!    The type contained in the vector may either be one of the primitive types specified in
-//!    `pnet_macros::types`, or another structure marked with #[packet], for example
+//!    `pnet_macros::types`, or another structure marked with #[derive(Packet)], for example
 //!    `Vec<Example>`.
 //!
 //!  * \#[length = "arithmetic expression"]
@@ -107,7 +107,7 @@
 //!    in the expression. An example would be `#[length = "field_name + CONSTANT - 4]`.
 //!
 //!    The type contained in the vector may either be one of the primitive types specified in
-//!    `pnet_macros::types`, or another structure marked with #[packet], for example
+//!    `pnet_macros::types`, or another structure marked with #[derive(Packet)], for example
 //!    `Vec<Example>`.
 //!
 //!  * \#[payload]
