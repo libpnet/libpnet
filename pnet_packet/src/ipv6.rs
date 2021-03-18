@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+//! An IPv6 packet abstraction.
+
 use ip::IpNextHeaderProtocol;
 
 use pnet_macros::packet;

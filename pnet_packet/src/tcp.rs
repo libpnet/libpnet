@@ -6,6 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+//! A TCP packet abstraction.
+
 use Packet;
 use PrimitiveValues;
 use ip::IpNextHeaderProtocols;
