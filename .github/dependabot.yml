@@ -1,0 +1,14 @@
+version: 2
+updates:
+- package-ecosystem: cargo
+  directory: "/"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: syntex
+    versions:
+    - "> 0.42"
+  - dependency-name: syntex_syntax
+    versions:
+    - "> 0.42"
