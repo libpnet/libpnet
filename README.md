@@ -5,8 +5,6 @@ Linux ∪ OS X Build Status: [![Linux ∪ OS X Build Status](https://travis-ci.o
 Windows Build Status: [![Windows Build Status](https://ci.appveyor.com/api/projects/status/9gq1dekigj03u1ym/branch/master?svg=true)](https://ci.appveyor.com/project/mrmonday/libpnet)
 
 Discussion and support: [#libpnet on freenode](http://webchat.freenode.net/?channels=%23libpnet) /
-[#rust-networking on irc.mozilla.org](http://chat.mibbit.com/?server=irc.mozilla.org&channel=%23rust-networking) /
-[#rust on irc.mozilla.org](http://chat.mibbit.com/?server=irc.mozilla.org&channel=%23rust).
 
 `libpnet` provides a cross-platform API for low level networking using Rust.
 
