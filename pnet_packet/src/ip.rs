@@ -26,8 +26,8 @@ impl PrimitiveValues for IpNextHeaderProtocol {
     }
 }
 
-/// Build Const and implements Display and FromStr from this list of protocols
-/// Protocol numbers as defined at:
+/// Build Const and implements Display and FromStr from a list of protocols
+/// Protocol numbers are defined at:
 /// http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
 /// Above protocol numbers last updated: 2014-01-16
 /// These values should be used in either the IPv4 Next Level Protocol field
