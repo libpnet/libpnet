@@ -1,7 +1,7 @@
 [package]
 name = "pnet_macros"
 version = "0.27.2"
-authors = ["Robert Clipsham <robert@octarineparrot.com>"]
+authors = ["Robert Clipsham <robert@octarineparrot.com>", "Pierre Chifflier <chifflier@wzdftpd.net>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
 repository = "https://github.com/libpnet/libpnet"
@@ -9,16 +9,21 @@ description = "Automatic bit manipulation for binary data formats"
 readme = "../README.md"
 keywords = ["networking", "bitfields", "packet", "protocol"]
 categories = ["network-programming", "parsing"]
+edition = "2018"
+
+[lib]
+proc-macro = true
 
 [features]
 default = []
 travis = []
 
 [dev-dependencies]
-pnet_base = "0.27.2"
+compiletest_rs = "0.6"
 pnet_macros_support = { path = "../pnet_macros_support", version = "0.27.2" }
 
 [dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "1.0", features = ["full"] }
 regex = "1.3"
-syntex = "0.42"
-syntex_syntax = "0.42"

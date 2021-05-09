@@ -1,25 +1,40 @@
-Using `#[packet]` in Your Own Project
-=====================================
+Using `#[derive(Packet)]` in Your Own Project
+=============================================
 
 The libpnet library provides a few macros to reduce the boilerplate involved in
-implementing new protocols. Unfortunately, with the current state of Rust macro
-support, these aren't as easy to use in your own project as the rest of the
-library is.
+implementing new protocols. It is based on a Rust proc-macro,
+implementing the custom derive `Packet` attribute.
 
-This document is a brief guide to getting a Rust package set up to use the
-`syntex`-based `pnet_macros` crate in your own crates. It's currently only been
-tested in the context of building an executable rather than a library, but it
-should be fairly easily adaptable.
+This document is a brief guide to implement a new structure and use the
+`#[derive(Packet)]` attribute to derive the implementation.
+
+Upgrading from `syntex`
+-----------------------
+
+Previous `pnet` versions used the `syntex` crate to derive the required trait
+implementations.
+
+To upgrade from a previous version (`<= 0.27`), use the following steps:
+- edit `Cargo.toml` and remove build-dependencies on `syntex`, and `build =
+  "build.rs"`
+- remove the `build.rs` script (unless used for more than `syntex`)
+- The content of included files can be directly in injected to usual source
+  files. For example, move the content of `myprotocol.rs.in` to `myprotocol.rs`
+
+Use the `Packet` custom derive. For compatibility, the `packet` custom attribute
+is also implemented for an easy transition.
+
+Do one of the following:
+- Add a `use pnet_macros::Packet` statement, and replace `#[packet]` with
+  `#[derive(Packet)]`
+- Or, add `use pnet_macros::packet` and keep the previous declarations
 
 Setting Up `Cargo.toml`
 -----------------------
 
-In order to use `syntex`, you need to set up your package to use a non-standard
-build script. You will provide a build script that invokes the `syntex`
-pre-processor to do macro expansion on the protocol implementation source files.
+In order to use `Packet`, you need to add a dependency on the `pnet_macros` crate.
 
-Here's an example `Cargo.toml` file that describes the necessary build script
-and dependencies:
+Here's an example `Cargo.toml` file:
 
 ```toml
 
@@ -27,37 +42,22 @@ and dependencies:
 name = "my_pnet_package"
 version = "0.1.0"
 authors = ["My Name <my.email@mydomain.com>"]
-build = "build.rs"
-[build-dependencies]
-glob = "0.2.*"
-syntex = "X" # where X is the version of syntex used in pnet_macros/Cargo.toml
-pnet_macros = "*"
+edition = "2018"
 [dependencies]
 pnet = "*"
 pnet_macros_support = "*"
+pnet_macros = "*"
 
 ```
 
-First, note the `build = "build.rs"` line in the `[package]` section. This gives
-the filename of the custom build script that `cargo` will invoke for you when
-you run `cargo build`. The filename is relative to the package root directory,
-so if you follow the example, you'll need to create a `build.rs` file in the
-same directory as your `Cargo.toml` file.
-
-Next, you'll notice the `[build-dependencies]` section. This describes the
-crates that are required at compile-time to run whatever code is in the build
-script described by the `build` option in the `[package]` section. Here you need
-to use the same major and minor version of `syntex` that is used by the version
-of `pnet_macros` you're depending on. And, of course, `pnet_macros` itself.
-
-Finally, you'll need a couple of entries in `[dependencies]` for `pnet` itself
-and `pnet_macros_support`, which provides the network types used in the
-`#[packet]` macro expansion.
+You need to add a couple of entries in `[dependencies]` for `pnet` itself,
+the `pnet_macros` crate, and `pnet_macros_support`, which provides the network types
+used in the `#[packet]` macro expansion.
 
 Setting up Your Directory Tree
 ------------------------------
 
-The basic directory structure will look something like this:
+The basic directory structure can look something like this:
 
 ```
 
@@ -68,7 +68,6 @@ src/
     packet/
         mod.rs
         my_protocol.rs
-        my_protocol.rs.in
         
 ```
 
@@ -90,7 +89,6 @@ and it can use the `packet` module to get at the new packet types you've
 created. This will look something like:
 
 ```rust
-
 extern crate pnet;
 extern crate pnet_macros_support;
 
@@ -106,37 +104,26 @@ fn main() {
 ```
 
 
-Creating Packet Source Files
+Implementing a Packet struct
 ----------------------------
 
-Because `syntex` is a pre-processor that isn't directly plugged into the
-compiler framework, you need some way of telling `rustc` to compile the *output*
-of `syntex` rather than its input. This is managed by giving the *input* file a
-`.in` extension and making a stub source file that simply includes the `syntex`
-output.
+Declare your structure and add the `#[derive(Packet)]` attribute. The
+implementation of all required traits will be derived automatically from the
+fields declarations and types.
 
-The stub source file, `src/packet/my_protocol.rs`, will contain the following:
+For some fields, you may have to add annotations, for example if the length of a
+field cannot be inferred, or to indicate which field contains the payload.
+See [pnet_macros documentation](https://docs.rs/pnet_macros/) for a complete
+reference.
 
-```rust
-
-include!(concat!(env!("OUT_DIR"), "/my_protocol.rs"));
-
-```
-
-The `OUT_DIR` environment variable is set by `cargo` during the execution of the
-build script, and it points to the directory within the package source tree
-where build output is placed. The `include!` directives and the build script use
-this variable to agree on a location for where `syntex`-processed source files
-will go.
-
-Finally, there's the actual source file that will be fed to the pre-processor.
-This is a very simple example; see the `packet` subdirectory of the `libpnet`
+Finally, there's the actual source file of a protocol definition.
+This is a very simple example; see the `pnet_packet/src` subdirectory of the `libpnet`
 source for many more examples.
 
 ```rust
-
-use pnet::packet::PrimitiveValues;
+use pnet_macros::packet;
 use pnet_macros_support::types::*;
+use pnet_packet::PrimitiveValues;
 
 /// Documentation for MyProtocolField
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
@@ -158,9 +145,9 @@ impl PrimitiveValues for MyProtocolField {
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod MyProtocolFieldValues {
-    use packet::my_protocol::MyProtocolField;
-    
-    /// Documentation for VAULE_FOO
+    use super::MyProtocolField;
+
+    /// Documentation for VALUE_FOO
     pub const VALUE_FOO: MyProtocolField = MyProtocolField(0);
     /// Documentation for VALUE_BAR
     pub const VALUE_BAR: MyProtocolField = MyProtocolField(1);
@@ -173,39 +160,7 @@ pub struct MyProtocol {
     field: MyProtocolField,
     checksum: u16be,
     #[payload]
-    payload: Vec<u8>
-}
-
-```
-
-Invoking Syntex From Your Build Script
---------------------------------------
-
-To pull everything together, we need to invoke `syntex` within the build script.
-This is an example `build.rs` script which uses a glob "pattern" to specify that all `.rs.in` files under `./src/` should be pre-processed by `syntex`.
-
-```rust
-fn main() {
-    extern crate pnet_macros;
-    extern crate syntex;
-    extern crate glob;
-    
-    use std::env;
-    use std::path::Path;
-    
-    // globbing for files to pre-process:
-    let pattern = "./src/packet/**/*.rs.in";
-    for entry in glob::glob( pattern ).expect("Failed to read glob pattern") {
-        if let Ok(path) = entry {
-            let src     = Path::new( path.to_str().expect("Invalid src Specified.") );
-            let out_dir = env::var_os( "OUT_DIR" ).expect("Invalid OUT_DIR.");
-            let file    = Path::new( path.file_stem().expect("Invalid file_stem.") );
-            let dst     = Path::new( &out_dir ).join(file);
-            let mut registry = syntex::Registry::new();
-            pnet_macros::register(&mut registry);
-            registry.expand("", &src, &dst).unwrap();
-        }
-    }
+    payload: Vec<u8>,
 }
 ```
 
@@ -216,23 +171,7 @@ If the packet modules you've built implement packet types that are generally
 useful, please consider contributing them to the `libpnet` project! The method
 described here for using `#[packet]` is based on the packet definitions in
 `libpnet`, so any packet modules you create should be fairly easy to move over
-into the `src/packet` directory of a fork of `libpnet`.
-
-You'll need to modify the stub source file to use `syntex` conditionally based
-on the `with-syntex` feature of the `libpnet` crate. It should look like this:
-
-```rust
-
-#[cfg(feature = "with-syntex")]
-include!(concat!(env!("OUT_DIR"), "/my_protocol.rs"));
-
-#[cfg(not(feature = "with-syntex"))]
-include!("my_protocol.rs.in");
-
-```
-
-And you'll need to update the `build.rs` file to include the base name of your
-protocol stub soure file(s) in the static `FILES` array.
+into the `pnet_packet` directory of a fork of `libpnet`.
 
 Once you've got your new packet type building and tested in the `libpnet` tree,
 just push them to your fork on github and open a pull request!

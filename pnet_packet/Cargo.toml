@@ -9,13 +9,11 @@ description = "Cross-platform, binary packet parsing and manipulation"
 readme = "../README.md"
 keywords = ["networking", "packet", "parsing", "raw"]
 categories = ["network-programming", "parser-implementations"]
-build = "build.rs"
 
 [dependencies]
 pnet_base = { path = "../pnet_base", version = "0.27.2" }
 pnet_macros_support = { path = "../pnet_macros_support", version = "0.27.2" }
+pnet_macros = { path = "../pnet_macros", version = "0.27.2" }
 
 [build-dependencies]
 glob = "0.2"
-syntex = "0.42"
-pnet_macros = { path = "../pnet_macros", version = "0.27.2" }
