@@ -1,0 +1,71 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+  PNET_FEATURES: travis pcap serde
+  PNET_MACROS_FEATURES: travis
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpcap-dev
+
+    - name: Build and test
+      run: make travis_script
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Build and test
+      run: make travis_script
+
+  build-win:
+    runs-on: windows-latest
+    env:
+        RUST_TEST_THREADS: 1
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install dependencies
+      run: |
+              Invoke-WebRequest -UseBasicParsing https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip -OutFile "${Env:TEMP}\wpd.zip"
+              Expand-Archive -LiteralPath "${Env:TEMP}\wpd.zip" -DestinationPath "${Env:TEMP}\wpd"
+              Move-Item -LiteralPath "${Env:TEMP}\wpd\WpdPack\Lib" -Destination lib
+
+    - name: Build and test
+      run: cargo test --verbose --features "appveyor serde"
