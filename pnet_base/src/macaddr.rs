@@ -71,6 +71,11 @@ impl MacAddr {
     pub fn is_broadcast(&self) -> bool {
         *self == Self::broadcast()
     }
+
+    /// Returns the six eight-bit integers that make up this address
+    pub fn octets(&self) -> [u8; 6] {
+        [self.0, self.1, self.2, self.3, self.4, self.5]
+    }
 }
 
 impl From<EtherAddr> for MacAddr {
@@ -276,6 +281,14 @@ mod tests {
         assert_eq!(
             format!("{}", MacAddr(0x12, 0x34, 0x56, 0x78, 0x09, 0xAB)),
             "12:34:56:78:09:ab"
+        );
+    }
+
+    #[test]
+    fn fixed_size_slice_from_mac_addr() {
+        assert_eq!(
+            MacAddr(0x00, 0x01, 0x02, 0x03, 0x04, 0x05).octets(),
+            [0x00, 0x01, 0x02, 0x03, 0x04, 0x05]
         );
     }
 
