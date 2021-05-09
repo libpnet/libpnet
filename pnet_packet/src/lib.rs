@@ -7,6 +7,7 @@
 // except according to those terms.
 
 //! Provides interfaces for interacting with packets and headers.
+#![recursion_limit="256"]
 #![allow(missing_docs)]
 #![macro_use]
 
