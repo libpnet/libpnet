@@ -1,0 +1,5 @@
+error: endianness must be specified for types of size >= 8
+  --> $DIR/endianness_not_specified.rs:15:13
+   |
+15 |     banana: u16,  //~ ERROR endianness must be specified for types of size >= 8
+   |             ^^^
