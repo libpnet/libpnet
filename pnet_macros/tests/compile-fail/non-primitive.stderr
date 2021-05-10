@@ -1,0 +1,5 @@
+error: non-primitive field types must specify #[construct_with]
+  --> $DIR/non-primitive.rs:20:13
+   |
+20 |     banana: Toto,  //~ ERROR non-primitive field types must specify #[construct_with]
+   |             ^^^^

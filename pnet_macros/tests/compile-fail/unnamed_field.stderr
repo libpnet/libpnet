@@ -1,0 +1,5 @@
+error: all fields in a packet must be named
+  --> $DIR/unnamed_field.rs:15:20
+   |
+15 |                pub u8); //~ ERROR all fields in a packet must be named
+   |                    ^^
