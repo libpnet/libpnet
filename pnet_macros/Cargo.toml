@@ -19,8 +19,8 @@ default = []
 travis = []
 
 [dev-dependencies]
-compiletest_rs = "0.6"
 pnet_macros_support = { path = "../pnet_macros_support", version = "0.27.2" }
+trybuild = "1.0"
 
 [dependencies]
 proc-macro2 = "1.0"

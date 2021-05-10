@@ -1,0 +1,5 @@
+error: Field name must be a member of the struct and not the field itself
+  --> $DIR/length_expr_key.rs:16:16
+   |
+16 |     #[length = "tomato"] //~ ERROR Field name must be a member of the struct and not the field itself
+   |                ^^^^^^^^
