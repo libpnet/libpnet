@@ -26,6 +26,7 @@ pub mod ipv4;
 pub mod ipv6;
 pub mod tcp;
 pub mod udp;
+pub mod usbpcap;
 pub mod vlan;
 
 pub mod util;
