@@ -73,7 +73,7 @@ pub mod EtherTypes {
     /// DECnet Phase IV.
     pub const DECnet: EtherType = EtherType(0x6003);
     /// Reverse Address Resolution Protocol (RARP) \[RFC903\].
-    pub const Rarp: EtherType = EtherType(0x8035); 
+    pub const Rarp: EtherType = EtherType(0x8035);
     /// AppleTalk - EtherTalk \[Apple\].
     pub const AppleTalk: EtherType = EtherType(0x809B);
     /// AppleTalk Address Resolution Protocol (AARP) \[Apple\].
