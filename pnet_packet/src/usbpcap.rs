@@ -1,3 +1,4 @@
+//! A USB PCAP packet abstraction.
 use pnet_macros::Packet;
 use pnet_macros_support::types::{u1, u3, u4, u7, u16le, u32le, u64le};
 use pnet_macros_support::packet::PrimitiveValues;
