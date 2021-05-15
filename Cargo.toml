@@ -29,4 +29,4 @@ pnet_transport = { path = "pnet_transport", version = "0.27.2" }
 pnet_packet = { path = "pnet_packet", version = "0.27.2" }
 
 [dev-dependencies]
-time = ">=0.1"
+time = "0.2.26"

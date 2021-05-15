@@ -11,10 +11,10 @@ keywords = ["networking", "ethernet"]
 categories = ["network-programming"]
 
 [dependencies]
-serde = { version = "~1", optional = true, default-features = false }
+serde = { version = "1.0.126", optional = true, default-features = false }
 
 [dev-dependencies]
-serde_test = "~1"
+serde_test = "1.0.126"
 
 [package.metadata.docs.rs]
 # Enable the serde feature when generating docs on docs.rs, so the traits are visible
