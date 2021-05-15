@@ -65,13 +65,10 @@ To use `libpnet` in your project, add the following to your Cargo.toml:
 
 ```
 [dependencies.pnet]
-version = "0.27.2"
+version = "0.28.0"
 ```
 
-`libpnet` should work on any Rust channel (stable, beta, or nightly), starting
-with Rust 1.34.2. When using a nightly version of Rust, you may wish to use pass
-`--no-default-features --features nightly` to Cargo, to enable faster build
-times.
+`libpnet` should work with the latest stable version of Rust.
 
 When running the test suite, there are a number of networking tests which will
 likely fail - the easiest way to workaround this is to run `cargo test` as a
