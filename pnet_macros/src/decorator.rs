@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Implements the #[packet] decorator.
+//! Implements the #\[packet\] decorator.
 
 use crate::util::{
     operations, to_little_endian, to_mutator, Endianness, GetOperation, SetOperation,

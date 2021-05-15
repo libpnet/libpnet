@@ -86,7 +86,7 @@
 //!  * \#[length_fn = "function_name"]
 //!
 //!    This attribute is used to enable variable length fields. To specify a variable length field,
-//!    it should have the type `Vec<T>`. It must have the `#[length_fn]` (or #[length]) attribute,
+//!    it should have the type `Vec<T>`. It must have the `#[length_fn]` (or #\[length\]) attribute,
 //!    which specifies a function name to calculate the length of the field. The signature for the
 //!    length function should be
 //!    `fn {function_name}<'a>(example_packet: &ExamplePacket<'a>) -> usize`, substituting
@@ -101,7 +101,7 @@
 //!  * \#[length = "arithmetic expression"]
 //!
 //!    This attribute is used to enable variable length fields. To specify a variable length field,
-//!    it should have the type `Vec<T>`. It must have the `#[length]` (or #[length_fn]) attribute,
+//!    it should have the type `Vec<T>`. It must have the `#[length]` (or #\[length_fn\]) attribute,
 //!    which specifies an arithmetic expression to calculate the length of the field. Only field
 //!    names, constants, integers, basic arithmetic expressions (+ - * / %) and parentheses are
 //!    in the expression. An example would be `#[length = "field_name + CONSTANT - 4]`.
@@ -110,7 +110,7 @@
 //!    `pnet_macros::types`, or another structure marked with #[derive(Packet)], for example
 //!    `Vec<Example>`.
 //!
-//!  * \#[payload]
+//!  * \#\[payload\]
 //!
 //!    This attribute specifies the payload associated with the packet. This should specify the
 //!    data associated with the packet. It may be used in two places:
