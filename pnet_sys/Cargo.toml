@@ -11,7 +11,7 @@ keywords = ["networking", "datalink", "ethernet", "raw"]
 categories = ["network-programming"]
 
 [dependencies]
-libc = "0.2.39"
+libc = "0.2.94"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3.8", features = [ "winsock2", "ws2ipdef" ] }
+winapi = { version = "0.3.9", features = [ "winsock2", "ws2ipdef" ] }
