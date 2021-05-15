@@ -1,6 +1,6 @@
 [package]
 name = "pnet"
-version = "0.27.2"
+version = "0.28.0"
 authors = [ "Robert Clipsham <robert@octarineparrot.com>" ]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
@@ -22,11 +22,11 @@ serde = ["pnet_base/serde", "pnet_datalink/serde"]
 [dependencies]
 ipnetwork = "0.18.0"
 
-pnet_base = { path = "pnet_base", version = "0.27.2" }
-pnet_sys = { path = "pnet_sys", version = "0.27.2" }
-pnet_datalink = { path = "pnet_datalink", version = "0.27.2" }
-pnet_transport = { path = "pnet_transport", version = "0.27.2" }
-pnet_packet = { path = "pnet_packet", version = "0.27.2" }
+pnet_base = { path = "pnet_base", version = "0.28.0" }
+pnet_sys = { path = "pnet_sys", version = "0.28.0" }
+pnet_datalink = { path = "pnet_datalink", version = "0.28.0" }
+pnet_transport = { path = "pnet_transport", version = "0.28.0" }
+pnet_packet = { path = "pnet_packet", version = "0.28.0" }
 
 [dev-dependencies]
 time = "0.2.26"
