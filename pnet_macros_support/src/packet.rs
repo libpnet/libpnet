@@ -43,12 +43,12 @@ pub trait MutablePacket: Packet {
     }
 }
 
-/// Used to convert on-the-wire packets to their #[packet] equivalent.
+/// Used to convert on-the-wire packets to their #\[packet\] equivalent.
 pub trait FromPacket: Packet {
     /// The type of the packet to convert from.
     type T;
 
-    /// Converts a wire-format packet to #[packet] struct format.
+    /// Converts a wire-format packet to #\[packet\] struct format.
     fn from_packet(&self) -> Self::T;
 }
 
