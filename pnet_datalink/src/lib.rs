@@ -326,7 +326,7 @@ impl ::std::fmt::Display for NetworkInterface {
 /// work on each system but should work for basic packet sniffing:
 ///
 /// ```
-/// use pnet_datalink::interfaces;
+/// use pnet::datalink::interfaces;
 ///
 /// // Get a vector with all network interfaces found
 /// let all_interfaces = interfaces();
