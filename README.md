@@ -2,7 +2,10 @@
 
 Build Status: [![Build Status](https://github.com/libpnet/libpnet/actions/workflows/ci.yml/badge.svg)](https://github.com/libpnet/libpnet/actions/workflows/ci.yml)
 
-Discussion and support: [#libpnet on freenode](http://webchat.freenode.net/?channels=%23libpnet)
+Discussion and support:
+
+ * Live chat on IRC - [#libpnet on irc.libera.chat](https://kiwiirc.com/nextclient/irc.libera.chat/libpnet?nick=pnet-user42)
+ * [GitHub Discussions](https://github.com/libpnet/libpnet/discussions)
 
 `libpnet` provides a cross-platform API for low level networking using Rust.
 
