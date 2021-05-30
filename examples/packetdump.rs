@@ -282,8 +282,9 @@ fn main() {
                             continue;
                         }
                     }
+                } else {
+                    handle_ethernet_frame(&interface, &EthernetPacket::new(packet).unwrap());
                 }
-                handle_ethernet_frame(&interface, &EthernetPacket::new(packet).unwrap());
             }
             Err(e) => panic!("packetdump: unable to receive packet: {}", e),
         }
