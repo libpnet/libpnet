@@ -24,6 +24,7 @@ use std::mem;
 use std::slice;
 use std::str::from_utf8_unchecked;
 use std::sync::Arc;
+use self::winapi::ctypes::c_char;
 
 struct WinPcapAdapter {
     adapter: winpcap::LPADAPTER,
@@ -242,8 +243,8 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
                 0 => return Err(io::Error::last_os_error()),
                 _ => unsafe { (*self.packet.packet).ulBytesReceived as isize },
             };
-            let mut ptr = unsafe { (*self.packet.packet).Buffer };
-            let end = unsafe { (*self.packet.packet).Buffer.offset(buflen) };
+            let mut ptr = unsafe { (*self.packet.packet).Buffer  as *mut c_char};
+            let end = unsafe { ((*self.packet.packet).Buffer as *mut c_char).offset(buflen) };
             while ptr < end {
                 unsafe {
                     let packet: *const bpf::bpf_hdr = mem::transmute(ptr);
