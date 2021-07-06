@@ -14,7 +14,7 @@ categories = ["network-programming"]
 netmap = []
 
 [dependencies]
-libc = "0.2.94"
+libc = "0.2.97"
 ipnetwork = "0.18.0"
 pnet_base = { path = "../pnet_base", version = "0.28.0" }
 pnet_sys = { path = "../pnet_sys", version = "0.28.0" }
