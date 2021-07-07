@@ -114,10 +114,7 @@ pub fn transport_channel(
         return Err(Error::last_os_error());
     }
 
-    if match channel_type {
-        Layer3(_) | Layer4(Ipv4(_)) => true,
-        _ => false,
-    } {
+    if matches!(channel_type, Layer3(_) | Layer4(Ipv4(_))) {
         let hincl: libc::c_int = match channel_type {
             Layer4(..) => 0,
             _ => 1,
@@ -143,12 +140,12 @@ pub fn transport_channel(
     let sock = Arc::new(pnet_sys::FileDesc { fd: socket });
     let sender = TransportSender {
         socket: sock.clone(),
-        channel_type: channel_type,
+        channel_type,
     };
     let receiver = TransportReceiver {
         socket: sock,
         buffer: vec![0; buffer_size],
-        channel_type: channel_type,
+        channel_type,
     };
 
     Ok((sender, receiver))
@@ -227,7 +224,10 @@ impl TransportSender {
         set_socket_ttl(self.socket.clone(), level, name, time_to_live)
     }
 
-    #[cfg(all(not(target_os = "freebsd"), not(any(target_os = "macos", target_os = "ios"))))]
+    #[cfg(all(
+        not(target_os = "freebsd"),
+        not(any(target_os = "macos", target_os = "ios"))
+    ))]
     fn send_to_impl<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
         self.send(packet, dst)
     }
@@ -272,24 +272,22 @@ impl TransportSender {
 /// ```
 #[macro_export]
 macro_rules! transport_channel_iterator {
-    ($ty:ident, $iter:ident, $func:ident) => (
+    ($ty:ident, $iter:ident, $func:ident) => {
         transport_channel_iterator!($ty, $iter, $func, stringify!($ty));
-    );
-    ($ty:ident, $iter:ident, $func:ident, $tyname:expr) => (
+    };
+    ($ty:ident, $iter:ident, $func:ident, $tyname:expr) => {
         #[doc = "An iterator over packets of type `"]
         #[doc = $tyname]
         #[doc = "`."]
         pub struct $iter<'a> {
-            tr: &'a mut TransportReceiver
+            tr: &'a mut TransportReceiver,
         }
 
         #[doc = "Return a packet iterator with packets of type `"]
         #[doc = $tyname]
         #[doc = "` for some transport receiver."]
         pub fn $func(tr: &mut TransportReceiver) -> $iter {
-            $iter {
-                tr: tr
-            }
+            $iter { tr: tr }
         }
 
         impl<'a> $iter<'a> {
@@ -298,36 +296,35 @@ macro_rules! transport_channel_iterator {
             #[doc = "`, `IpAddr`) pair for the given channel."]
             pub fn next(&mut self) -> io::Result<($ty, IpAddr)> {
                 let mut caddr: pnet_sys::SockAddrStorage = unsafe { mem::zeroed() };
-                let res = pnet_sys::recv_from(self.tr.socket.fd,
-                                              &mut self.tr.buffer[..],
-                                              &mut caddr);
+                let res =
+                    pnet_sys::recv_from(self.tr.socket.fd, &mut self.tr.buffer[..], &mut caddr);
 
                 let offset = match self.tr.channel_type {
                     Layer4(Ipv4(_)) => {
                         let ip_header = Ipv4Packet::new(&self.tr.buffer[..]).unwrap();
 
                         ip_header.get_header_length() as usize * 4usize
-                    },
+                    }
                     Layer3(_) => {
                         fixup_packet(&mut self.tr.buffer[..]);
 
                         0
-                    },
-                    _ => 0
+                    }
+                    _ => 0,
                 };
                 return match res {
                     Ok(len) => {
                         let packet = $ty::new(&self.tr.buffer[offset..len]).unwrap();
                         let addr = pnet_sys::sockaddr_to_addr(
                             &caddr,
-                            mem::size_of::<pnet_sys::SockAddrStorage>()
+                            mem::size_of::<pnet_sys::SockAddrStorage>(),
                         );
                         let ip = match addr.unwrap() {
                             net::SocketAddr::V4(sa) => IpAddr::V4(*sa.ip()),
                             net::SocketAddr::V6(sa) => IpAddr::V6(*sa.ip()),
                         };
                         Ok((packet, ip))
-                    },
+                    }
                     Err(e) => Err(e),
                 };
 
@@ -343,8 +340,8 @@ macro_rules! transport_channel_iterator {
 
                     // OS X does this awesome thing where it removes the header length
                     // from the total length sometimes.
-                    let length = new_packet.get_total_length() as usize +
-                                 (new_packet.get_header_length() as usize * 4usize);
+                    let length = new_packet.get_total_length() as usize
+                        + (new_packet.get_header_length() as usize * 4usize);
                     if length == buflen {
                         new_packet.set_total_length(length as u16)
                     }
@@ -353,7 +350,10 @@ macro_rules! transport_channel_iterator {
                     new_packet.set_fragment_offset(offset);
                 }
 
-                #[cfg(all(not(target_os = "freebsd"), not(any(target_os = "macos", target_os = "ios"))))]
+                #[cfg(all(
+                    not(target_os = "freebsd"),
+                    not(any(target_os = "macos", target_os = "ios"))
+                ))]
                 fn fixup_packet(_buffer: &mut [u8]) {}
             }
 
@@ -366,15 +366,15 @@ macro_rules! transport_channel_iterator {
                 let old_timeout = match pnet_sys::get_socket_receive_timeout(socket_fd) {
                     Err(e) => {
                         eprintln!("Can not get socket timeout before receiving: {}", e);
-                        return Err(e)
+                        return Err(e);
                     }
-                    Ok(t) => t
+                    Ok(t) => t,
                 };
 
                 match pnet_sys::set_socket_receive_timeout(socket_fd, t) {
                     Err(e) => {
                         eprintln!("Can not set socket timeout for receiving: {}", e);
-                        return Err(e)
+                        return Err(e);
                     }
                     Ok(_) => {}
                 }
@@ -383,23 +383,21 @@ macro_rules! transport_channel_iterator {
                     Ok(r) => Ok(Some(r)),
                     Err(e) => match e.kind() {
                         ErrorKind::WouldBlock => Ok(None),
-                        _ => {
-                            Err(e)
-                        }
-                    }
+                        _ => Err(e),
+                    },
                 };
 
                 match pnet_sys::set_socket_receive_timeout(socket_fd, old_timeout) {
                     Err(e) => {
                         eprintln!("Can not reset socket timeout after receiving: {}", e);
-                    },
+                    }
                     _ => {}
                 };
 
                 r
             }
         }
-    );
+    };
 }
 
 transport_channel_iterator!(Ipv4Packet, Ipv4TransportChannelIterator, ipv4_packet_iter);
