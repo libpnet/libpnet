@@ -242,7 +242,7 @@ impl DataLinkSender for DataLinkSenderImpl {
         func: &mut dyn FnMut(&mut [u8]),
     ) -> Option<io::Result<()>> {
         let len = num_packets * packet_size;
-        if len < self.write_buffer.len() {
+        if len <= self.write_buffer.len() {
             let min = cmp::min(self.write_buffer[..].len(), len);
             let mut_slice = &mut self.write_buffer;
             for chunk in mut_slice[..min].chunks_mut(packet_size) {
