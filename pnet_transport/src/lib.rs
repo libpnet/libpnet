@@ -164,7 +164,7 @@ pub fn transport_channel_with(
     configuration: Config,
     port: u16,
 ) -> io::Result<(TransportSender, TransportReceiver)> {
-    let (mut sender, receiver) = transport_channel(buffer_size, channel_type)?;
+    let (mut sender, receiver) = transport_channel(buffer_size, channel_type, port)?;
 
     sender.set_ttl(configuration.time_to_live)?;
     Ok((sender, receiver))
