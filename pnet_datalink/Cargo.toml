@@ -1,11 +1,12 @@
 [package]
 name = "pnet_datalink"
-version = "0.25.0"
+version = "0.28.0"
 authors = ["Robert Clipsham <robert@octarineparrot.com>", "Linus Färnstrand <faern@faern.net>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
 repository = "https://github.com/libpnet/libpnet"
 description = "Cross-platform, datalink layer networking."
+readme = "../README.md"
 keywords = ["networking", "datalink", "ethernet", "raw"]
 categories = ["network-programming"]
 
@@ -13,13 +14,18 @@ categories = ["network-programming"]
 netmap = []
 
 [dependencies]
-libc = "0.2.42"
-ipnetwork = "0.15.0"
-pnet_base = "0.22.0"
-pnet_sys = { path = "../pnet_sys", version = ">=0.25.0" }
+libc = "0.2.97"
+ipnetwork = "0.18.0"
+pnet_base = { path = "../pnet_base", version = "0.28.0" }
+pnet_sys = { path = "../pnet_sys", version = "0.28.0" }
 
-pcap = { version = "0.7", optional = true }
-netmap_sys = { version = ">=0.0", optional = true, features = ["netmap_with_libs"] }
+pcap = { version = "0.8.1", optional = true }
+netmap_sys = { version = "0.1.4", optional = true, features = ["netmap_with_libs"] }
+serde = { version = "1.0.126", optional = true, default-features = false, features = [ "derive" ] }
 
 [target.'cfg(windows)'.dependencies]
-winapi = "0.2"
+winapi = "0.3.9"
+
+[package.metadata.docs.rs]
+# Enable the serde feature when generating docs on docs.rs, so the traits are visible
+features = ["serde"]

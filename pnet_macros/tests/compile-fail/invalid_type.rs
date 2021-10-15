@@ -6,14 +6,13 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros_plugin)]
-
-extern crate pnet;
+extern crate pnet_macros;
+extern crate pnet_macros_support;
+use pnet_macros::packet;
 
 #[packet]
 pub struct InvalidType {
-    pub field: String, // ~ ERROR: non-primitive field types must specify #[construct_with]
+    pub field: String, //~ ERROR: non-primitive field types must specify #[construct_with]
     #[payload]
     pub payload: Vec<u8>,
 }

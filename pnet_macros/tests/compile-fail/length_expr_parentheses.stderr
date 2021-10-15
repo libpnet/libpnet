@@ -1,0 +1,7 @@
+error: this file contains an unclosed delimiter
+  --> $DIR/length_expr_parentheses.rs:15:1
+   |
+15 | #[packet]
+   | ^^^^^^^^^ unclosed delimiter
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)

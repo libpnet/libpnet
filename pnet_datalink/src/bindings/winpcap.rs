@@ -10,8 +10,11 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
-extern crate libc;
-extern crate winapi as win;
+extern crate winapi;
+
+use self::winapi::ctypes;
+use self::winapi::shared::{guiddef, minwindef};
+use self::winapi::um::{minwinbase, winnt};
 
 use pnet_sys;
 
@@ -22,24 +25,24 @@ pub type LPADAPTER = *mut _ADAPTER;
 
 #[repr(C)]
 pub struct _PACKET {
-    pub hEvent: win::HANDLE,
-    pub OverLapped: win::OVERLAPPED,
+    pub hEvent: winnt::HANDLE,
+    pub OverLapped: minwinbase::OVERLAPPED,
     pub Buffer: PVOID,
     pub Length: UINT,
-    pub ulBytesReceived: win::DWORD,
-    pub bIoComplete: win::BOOLEAN,
+    pub ulBytesReceived: minwindef::DWORD,
+    pub bIoComplete: winnt::BOOLEAN,
 }
 pub type PACKET = _PACKET;
 pub type LPPACKET = *mut _PACKET;
 
-pub type TCHAR = libc::c_char;
+pub type TCHAR = ctypes::c_char;
 pub type PTSTR = *mut TCHAR;
 
-pub type PVOID = *mut libc::c_void;
-pub type PCHAR = *mut win::CHAR;
-pub type PWCHAR = *mut win::WCHAR;
-pub type UINT = libc::c_uint;
-pub type ULONG = libc::c_ulong;
+pub type PVOID = *mut ctypes::c_void;
+pub type PCHAR = *mut winnt::CHAR;
+pub type PWCHAR = *mut winnt::WCHAR;
+pub type UINT = ctypes::c_uint;
+pub type ULONG = ctypes::c_ulong;
 pub type PULONG = *mut ULONG;
 pub type ULONG64 = u64;
 pub type UINT32 = u32;
@@ -56,7 +59,7 @@ pub const NDIS_PACKET_TYPE_PROMISCUOUS: ULONG = 0x00000020;
 // from IPTypes.h
 #[repr(C)]
 pub struct _IP_ADDRESS_STRING {
-    pub String: [libc::c_char; 4 * 4],
+    pub String: [ctypes::c_char; 4 * 4],
 }
 
 pub type IP_ADDRESS_STRING = _IP_ADDRESS_STRING;
@@ -64,13 +67,12 @@ pub type PIP_ADDRESS_STRING = *mut _IP_ADDRESS_STRING;
 pub type IP_MASK_STRING = _IP_ADDRESS_STRING;
 pub type PIP_MASK_STRING = *mut _IP_ADDRESS_STRING;
 
-
 #[repr(C)]
 pub struct _IP_ADDR_STRING {
     pub Next: *mut _IP_ADDR_STRING,
     pub IpAddress: IP_ADDRESS_STRING,
     pub IpMask: IP_MASK_STRING,
-    pub Context: win::DWORD,
+    pub Context: minwindef::DWORD,
 }
 
 pub type IP_ADDR_STRING = _IP_ADDR_STRING;
@@ -79,19 +81,19 @@ pub type PIP_ADDR_STRING = *mut _IP_ADDR_STRING;
 #[repr(C)]
 pub struct _IP_ADAPTER_INFO {
     pub Next: *mut _IP_ADAPTER_INFO,
-    pub ComboIndex: win::DWORD,
-    pub AdapterName: [libc::c_char; MAX_ADAPTER_NAME_LENGTH + 4],
-    pub Description: [libc::c_char; MAX_ADAPTER_DESCRIPTION_LENGTH + 4],
+    pub ComboIndex: minwindef::DWORD,
+    pub AdapterName: [ctypes::c_char; MAX_ADAPTER_NAME_LENGTH + 4],
+    pub Description: [ctypes::c_char; MAX_ADAPTER_DESCRIPTION_LENGTH + 4],
     pub AddressLength: UINT,
-    pub Address: [win::BYTE; MAX_ADAPTER_ADDRESS_LENGTH],
-    pub Index: win::DWORD,
+    pub Address: [minwindef::BYTE; MAX_ADAPTER_ADDRESS_LENGTH],
+    pub Index: minwindef::DWORD,
     pub Type: UINT,
     pub DhcpEnabled: UINT,
     pub CurrentIpAddress: PIP_ADDR_STRING,
     pub IpAddressList: IP_ADDR_STRING,
     pub GatewayList: IP_ADDR_STRING,
     pub DhcpServer: IP_ADDR_STRING,
-    pub HaveWins: win::BOOL,
+    pub HaveWins: minwindef::BOOL,
     pub PrimaryWinsServer: IP_ADDR_STRING,
     pub SecondaryWinsServer: IP_ADDR_STRING,
     pub LeaseObtained: libc::time_t,
@@ -159,7 +161,7 @@ pub enum IF_OPER_STATUS {
 #[repr(C)]
 pub struct _IP_ADAPTER_UNICAST_ADDRESS {
     pub Length: ULONG,
-    pub Flags: win::DWORD,
+    pub Flags: minwindef::DWORD,
     pub Next: *mut _IP_ADAPTER_UNICAST_ADDRESS,
     pub Address: SOCKET_ADDRESS,
     pub PrefixOrigin: IP_PREFIX_ORIGIN,
@@ -177,7 +179,7 @@ pub type PIP_ADAPTER_UNICAST_ADDRESS = *mut _IP_ADAPTER_UNICAST_ADDRESS;
 #[repr(C)]
 pub struct _IP_ADAPTER_ANYCAST_ADDRESS {
     pub Length: ULONG,
-    pub Flags: win::DWORD,
+    pub Flags: minwindef::DWORD,
     pub Next: *mut _IP_ADAPTER_ANYCAST_ADDRESS,
     pub Address: SOCKET_ADDRESS,
 }
@@ -188,7 +190,7 @@ pub type PIP_ADAPTER_ANYCAST_ADDRESS = *mut _IP_ADAPTER_ANYCAST_ADDRESS;
 #[repr(C)]
 pub struct _IP_ADAPTER_MULTICAST_ADDRESS {
     pub Length: ULONG,
-    pub Flags: win::DWORD,
+    pub Flags: minwindef::DWORD,
     pub Next: *mut _IP_ADAPTER_MULTICAST_ADDRESS,
     pub Address: SOCKET_ADDRESS,
 }
@@ -199,7 +201,7 @@ pub type PIP_ADAPTER_MULTICAST_ADDRESS = *mut _IP_ADAPTER_MULTICAST_ADDRESS;
 #[repr(C)]
 pub struct _IP_ADAPTER_DNS_SERVER_ADDRESS {
     pub Length: ULONG,
-    pub Flags: win::DWORD,
+    pub Flags: minwindef::DWORD,
     pub Next: *mut _IP_ADAPTER_DNS_SERVER_ADDRESS,
     pub Address: SOCKET_ADDRESS,
 }
@@ -210,7 +212,7 @@ pub type PIP_ADAPTER_DNS_SERVER_ADDRESS = *mut _IP_ADAPTER_DNS_SERVER_ADDRESS;
 #[repr(C)]
 pub struct _IP_ADAPTER_PREFIX {
     pub Length: ULONG,
-    pub Flags: win::DWORD,
+    pub Flags: minwindef::DWORD,
     pub Next: *mut _IP_ADAPTER_PREFIX,
     pub Address: SOCKET_ADDRESS,
     pub PrefixLength: ULONG,
@@ -222,7 +224,7 @@ pub type PIP_ADAPTER_PREFIX = *mut _IP_ADAPTER_PREFIX;
 #[repr(C)]
 pub struct _IP_ADAPTER_WINS_SERVER_ADDRESS_LH {
     pub Length: ULONG,
-    pub Reserved: win::DWORD,
+    pub Reserved: minwindef::DWORD,
     pub Next: *mut _IP_ADAPTER_WINS_SERVER_ADDRESS_LH,
     pub Address: SOCKET_ADDRESS,
 }
@@ -235,7 +237,7 @@ pub type PIP_ADAPTER_WINS_SERVER_ADDRESS = *mut _IP_ADAPTER_WINS_SERVER_ADDRESS_
 #[repr(C)]
 pub struct _IP_ADAPTER_GATEWAY_ADDRESS_LH {
     pub Length: ULONG,
-    pub Reserved: win::DWORD,
+    pub Reserved: minwindef::DWORD,
     pub Next: *mut _IP_ADAPTER_GATEWAY_ADDRESS_LH,
     pub Address: SOCKET_ADDRESS,
 }
@@ -247,8 +249,8 @@ pub type PIP_ADAPTER_GATEWAY_ADDRESS = *mut _IP_ADAPTER_GATEWAY_ADDRESS_LH;
 
 pub type NET_IF_COMPARTMENT_ID = UINT32;
 pub type PNET_IF_COMPARTMENT_ID = *mut UINT32;
-pub type NET_IF_NETWORK_GUID = win::GUID;
-pub type PNET_IF_NETWORK_GUID = *mut win::GUID;
+pub type NET_IF_NETWORK_GUID = guiddef::GUID;
+pub type PNET_IF_NETWORK_GUID = *mut guiddef::GUID;
 
 #[repr(C)]
 pub enum _NET_IF_CONNECTION_TYPE {
@@ -288,7 +290,7 @@ pub type PTUNNEL_TYPE = *mut TUNNEL_TYPE;
 #[repr(C)]
 pub struct _IP_ADAPTER_DNS_SUFFIX {
     pub Next: *mut _IP_ADAPTER_DNS_SUFFIX,
-    pub String: [win::WCHAR; MAX_DNS_SUFFIX_STRING_LENGTH],
+    pub String: [winnt::WCHAR; MAX_DNS_SUFFIX_STRING_LENGTH],
 }
 
 pub type IP_ADAPTER_DNS_SUFFIX = _IP_ADAPTER_DNS_SUFFIX;
@@ -297,7 +299,7 @@ pub type PIP_ADAPTER_DNS_SUFFIX = *mut _IP_ADAPTER_DNS_SUFFIX;
 #[repr(C)]
 pub struct _IP_ADAPTER_ADDRESSES {
     pub Length: ULONG,
-    pub IfIndex: win::DWORD,
+    pub IfIndex: minwindef::DWORD,
     pub Next: *mut _IP_ADAPTER_ADDRESSES,
     pub AdapterName: PCHAR,
     pub FirstUnicastAddress: PIP_ADAPTER_UNICAST_ADDRESS,
@@ -307,14 +309,14 @@ pub struct _IP_ADAPTER_ADDRESSES {
     pub DnsSuffix: PWCHAR,
     pub Description: PWCHAR,
     pub FriendlyName: PWCHAR,
-    pub PhysicalAddress: [win::BYTE; MAX_ADAPTER_ADDRESS_LENGTH],
-    pub PhysicalAddressLength: win::DWORD,
-    pub Flags: win::DWORD,
-    pub Mtu: win::DWORD,
-    pub IfType: win::DWORD,
+    pub PhysicalAddress: [minwindef::BYTE; MAX_ADAPTER_ADDRESS_LENGTH],
+    pub PhysicalAddressLength: minwindef::DWORD,
+    pub Flags: minwindef::DWORD,
+    pub Mtu: minwindef::DWORD,
+    pub IfType: minwindef::DWORD,
     pub OperStatus: IF_OPER_STATUS,
-    pub Ipv6IfIndex: win::DWORD,
-    pub ZoneIndices: [win::DWORD; 16],
+    pub Ipv6IfIndex: minwindef::DWORD,
+    pub ZoneIndices: [minwindef::DWORD; 16],
     pub FirstPrefix: PIP_ADAPTER_PREFIX,
     pub TransmitLinkSpeed: ULONG64,
     pub ReceiveLinkSpeed: ULONG64,
@@ -329,7 +331,7 @@ pub struct _IP_ADAPTER_ADDRESSES {
     pub ConnectionType: NET_IF_CONNECTION_TYPE,
     pub TunnelType: TUNNEL_TYPE,
     pub Dhcpv6Server: SOCKET_ADDRESS,
-    pub Dhcpv6ClientDuid: [win::BYTE; MAX_DHCPV6_DUID_LENGTH],
+    pub Dhcpv6ClientDuid: [minwindef::BYTE; MAX_DHCPV6_DUID_LENGTH],
     pub Dhcpv6ClientDuidLength: ULONG,
     pub Dhcpv6Iaid: ULONG,
     pub FirstDnsSuffix: PIP_ADAPTER_DNS_SUFFIX,
@@ -342,35 +344,39 @@ pub type PIP_ADAPTER_ADDRESSES = *mut _IP_ADAPTER_ADDRESSES;
 extern "system" {
 
     // from IPHlpApi.h
-    pub fn GetAdaptersInfo(pAdapterInfo: PIP_ADAPTER_INFO, pOutBufLen: PULONG) -> win::DWORD;
-    pub fn GetAdaptersAddresses(Family: ULONG,
-                                Flags: ULONG,
-                                Reserved: PVOID,
-                                AdapterAddresses: PIP_ADAPTER_ADDRESSES,
-                                SizePointer: PULONG)
-        -> win::DWORD;
+    pub fn GetAdaptersInfo(pAdapterInfo: PIP_ADAPTER_INFO, pOutBufLen: PULONG) -> minwindef::DWORD;
+    pub fn GetAdaptersAddresses(
+        Family: ULONG,
+        Flags: ULONG,
+        Reserved: PVOID,
+        AdapterAddresses: PIP_ADAPTER_ADDRESSES,
+        SizePointer: PULONG,
+    ) -> minwindef::DWORD;
 }
 
 #[link(name = "Packet")]
 #[allow(improper_ctypes)]
 extern "C" {
     // from Packet32.h
-    pub fn PacketSendPacket(AdapterObject: LPADAPTER,
-                            pPacket: LPPACKET,
-                            Sync: win::BOOLEAN)
-        -> win::BOOLEAN;
-    pub fn PacketReceivePacket(AdapterObject: LPADAPTER,
-                               lpPacket: LPPACKET,
-                               Sync: win::BOOLEAN)
-        -> win::BOOLEAN;
+    pub fn PacketSendPacket(
+        AdapterObject: LPADAPTER,
+        pPacket: LPPACKET,
+        Sync: winnt::BOOLEAN,
+    ) -> winnt::BOOLEAN;
+    pub fn PacketReceivePacket(
+        AdapterObject: LPADAPTER,
+        lpPacket: LPPACKET,
+        Sync: winnt::BOOLEAN,
+    ) -> winnt::BOOLEAN;
     pub fn PacketAllocatePacket() -> LPPACKET;
     pub fn PacketInitPacket(lpPacket: LPPACKET, Buffer: PVOID, Length: UINT);
     pub fn PacketFreePacket(lpPacket: LPPACKET);
     pub fn PacketOpenAdapter(AdapterName: PCHAR) -> LPADAPTER;
     pub fn PacketCloseAdapter(lpAdapter: LPADAPTER);
-    pub fn PacketGetAdapterNames(pStr: PTSTR, BufferSize: PULONG) -> win::BOOLEAN;
-    pub fn PacketSetHwFilter(AdapterObject: LPADAPTER, Filter: ULONG) -> win::BOOLEAN;
-    pub fn PacketSetMinToCopy(AdapterObject: LPADAPTER, nbytes: libc::c_int) -> win::BOOLEAN;
-    pub fn PacketSetBuff(AdapterObject: LPADAPTER, dim: libc::c_int) -> win::BOOLEAN;
-    pub fn PacketSetReadTimeout(AdapterObject: LPADAPTER, timeout: libc::c_int) -> win::BOOLEAN;
+    pub fn PacketGetAdapterNames(pStr: PTSTR, BufferSize: PULONG) -> winnt::BOOLEAN;
+    pub fn PacketSetHwFilter(AdapterObject: LPADAPTER, Filter: ULONG) -> winnt::BOOLEAN;
+    pub fn PacketSetMinToCopy(AdapterObject: LPADAPTER, nbytes: ctypes::c_int) -> winnt::BOOLEAN;
+    pub fn PacketSetBuff(AdapterObject: LPADAPTER, dim: ctypes::c_int) -> winnt::BOOLEAN;
+    pub fn PacketSetReadTimeout(AdapterObject: LPADAPTER, timeout: ctypes::c_int)
+        -> winnt::BOOLEAN;
 }

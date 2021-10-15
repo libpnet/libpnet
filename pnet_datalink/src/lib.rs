@@ -13,6 +13,11 @@ extern crate libc;
 extern crate pnet_base;
 extern crate pnet_sys;
 
+#[cfg(feature = "serde")]
+extern crate serde;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use std::io;
 use std::option::Option;
 use std::time::Duration;
@@ -30,28 +35,24 @@ mod backend;
 #[cfg(windows)]
 pub mod winpcap;
 
-#[cfg(all(not(feature = "netmap"),
-          any(target_os = "linux",
-              target_os = "android"
-             )
-         )
-      )]
+#[cfg(all(
+    not(feature = "netmap"),
+    any(target_os = "linux", target_os = "android")
+))]
 #[path = "linux.rs"]
 mod backend;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod linux;
 
-#[cfg(all(not(feature = "netmap"),
-          any(target_os = "freebsd",
-              target_os = "openbsd",
-              target_os = "macos")
-             )
-     )]
+#[cfg(all(
+    not(feature = "netmap"),
+    any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "macos", target_os = "ios")
+))]
 #[path = "bpf.rs"]
 mod backend;
 
-#[cfg(any(target_os = "freebsd", target_os = "macos"))]
+#[cfg(any(target_os = "freebsd", target_os = "netbsd", target_os = "macos", target_os = "ios"))]
 pub mod bpf;
 
 #[cfg(feature = "netmap")]
@@ -148,6 +149,8 @@ pub struct Config {
     pub bpf_fd_attempts: usize,
 
     pub linux_fanout: Option<FanoutOption>,
+
+    pub promiscuous: bool,
 }
 
 impl Default for Config {
@@ -160,6 +163,7 @@ impl Default for Config {
             channel_type: ChannelType::Layer2,
             bpf_fd_attempts: 1000,
             linux_fanout: None,
+            promiscuous: true,
         }
     }
 }
@@ -188,7 +192,6 @@ pub trait DataLinkSender: Send {
     /// mutable packet to manipulate, which will then be sent. This allows packets to be
     /// built in-place, avoiding the copy required for `send`. If there is not sufficient
     /// capacity in the buffer, None will be returned.
-    #[inline]
     fn build_and_send(
         &mut self,
         num_packets: usize,
@@ -201,23 +204,24 @@ pub trait DataLinkSender: Send {
     /// This may require an additional copy compared to `build_and_send`, depending on the
     /// operating system being used. The second parameter is currently ignored, however
     /// `None` should be passed.
-    #[inline]
     fn send_to(&mut self, packet: &[u8], dst: Option<NetworkInterface>) -> Option<io::Result<()>>;
 }
 
 /// Structure for receiving packets at the data link layer. Should be constructed using
 /// `datalink_channel()`.
 pub trait DataLinkReceiver: Send {
-    #[inline]
     /// Get the next ethernet frame in the channel.
     fn next(&mut self) -> io::Result<&[u8]>;
 }
 
 /// Represents a network interface and its associated addresses.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub struct NetworkInterface {
     /// The name of the interface.
     pub name: String,
+    /// A description of the interface.
+    pub description: String,
     /// The interface index (operating system specific).
     pub index: u32,
     /// A MAC address for the interface.
@@ -230,10 +234,14 @@ pub struct NetworkInterface {
 
 impl NetworkInterface {
     /// Retrieve the MAC address associated with the interface.
+    #[deprecated(
+        since = "0.26.0",
+        note = "Please use NetworkInterface's field 'mac' instead."
+    )]
     pub fn mac_address(&self) -> MacAddr {
         self.mac.unwrap()
     }
-    
+
     pub fn is_up(&self) -> bool {
         self.flags & (pnet_sys::IFF_UP as u32) != 0
     }
@@ -268,7 +276,7 @@ impl ::std::fmt::Display for NetworkInterface {
                 "{:X}<{}>",
                 self.flags,
                 rets.iter()
-                    .zip(FLAGS.iter()) 
+                    .zip(FLAGS.iter())
                     .filter(|&(ret, _)| ret == &true)
                     .map(|(_, name)| name.to_string())
                     .collect::<Vec<String>>()
@@ -278,7 +286,8 @@ impl ::std::fmt::Display for NetworkInterface {
             format!("{:X}", self.flags)
         };
 
-        let mac = self.mac
+        let mac = self
+            .mac
             .map(|mac| mac.to_string())
             .unwrap_or("N/A".to_owned());
         let ips = if self.ips.len() > 0 {
@@ -311,6 +320,30 @@ impl ::std::fmt::Display for NetworkInterface {
 }
 
 /// Get a list of available network interfaces for the current machine.
+///
+/// If you need the default network interface, you can choose the first
+/// one that is up, not loopback and has an IP. This is not guaranteed to
+/// work on each system but should work for basic packet sniffing:
+///
+/// ```
+/// use pnet_datalink::interfaces;
+///
+/// // Get a vector with all network interfaces found
+/// let all_interfaces = interfaces();
+///
+/// // Search for the default interface - the one that is
+/// // up, not loopback and has an IP.
+/// let default_interface = all_interfaces
+///     .iter()
+///     .find(|e| e.is_up() && !e.is_loopback() && !e.ips.is_empty());
+///
+/// match default_interface {
+///     Some(interface) => println!("Found default interface with [{}].", interface.name),
+///     None => println!("Error while finding the default interface."),
+/// }
+///
+/// ```
+///
 pub fn interfaces() -> Vec<NetworkInterface> {
     backend::interfaces()
 }

@@ -6,19 +6,18 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros_plugin)]
-
-extern crate pnet;
+extern crate pnet_macros;
+extern crate pnet_macros_support;
+use pnet_macros::packet;
 
 #[packet]
 pub struct PacketWithPayload2 {
     banana: u8,
-    #[payload(length_fn = "length_of_payload")]
-    payload: Vec<u8>, // ~ ERROR: unknown attribute: payload
+    #[payload(length_fn = "length_of_payload")] //~ ERROR: unknown attribute: payload
+    payload: Vec<u8>,
 }
 
-fn length_of_payload(_: &PacketWithPayload2Packet) -> usize {
+fn length_of_payload(_: &PacketWithPayload2Packet) -> usize { //~ ERROR cannot find type `PacketWithPayload2Packet` in this scope
     // FIXME
     unimplemented!()
 }

@@ -76,7 +76,7 @@ fn main() {
         None => {
             writeln!(
                 io::stderr(),
-                "USAGE: packetdump <NETWORK INTERFACE> <TARGET IP>"
+                "USAGE: arp_packet <NETWORK INTERFACE> <TARGET IP>"
             )
             .unwrap();
             process::exit(1);
@@ -88,7 +88,7 @@ fn main() {
         None => {
             writeln!(
                 io::stderr(),
-                "USAGE: packetdump <NETWORK INTERFACE> <TARGET IP>"
+                "USAGE: arp_packet <NETWORK INTERFACE> <TARGET IP>"
             )
             .unwrap();
             process::exit(1);
@@ -106,4 +106,3 @@ fn main() {
 
     println!("Target MAC address: {}", target_mac);
 }
-

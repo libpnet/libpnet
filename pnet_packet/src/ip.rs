@@ -9,8 +9,8 @@
 //! Defines the type and constants for IP next header/next level protocol
 //! fields.
 
-use PrimitiveValues;
 use std::fmt;
+use PrimitiveValues;
 
 /// Protocol numbers as defined at:
 /// http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
@@ -24,31 +24,31 @@ use std::fmt;
 pub mod IpNextHeaderProtocols {
     use super::IpNextHeaderProtocol;
 
-    /// IPv6 Hop-by-Hop Option [RFC2460]
+    /// IPv6 Hop-by-Hop Option \[RFC2460\]
     pub const Hopopt: IpNextHeaderProtocol = IpNextHeaderProtocol(0);
 
-    /// Internet Control Message [RFC792]
+    /// Internet Control Message \[RFC792\]
     pub const Icmp: IpNextHeaderProtocol = IpNextHeaderProtocol(1);
 
-    /// Internet Group Management [RFC1112]
+    /// Internet Group Management \[RFC1112\]
     pub const Igmp: IpNextHeaderProtocol = IpNextHeaderProtocol(2);
 
-    /// Gateway-to-Gateway [RFC823]
+    /// Gateway-to-Gateway \[RFC823\]
     pub const Ggp: IpNextHeaderProtocol = IpNextHeaderProtocol(3);
 
-    /// IPv4 encapsulation [RFC2003]
+    /// IPv4 encapsulation \[RFC2003\]
     pub const Ipv4: IpNextHeaderProtocol = IpNextHeaderProtocol(4);
 
-    /// Stream [RFC1190][RFC1819]
+    /// Stream \[RFC1190\]\[RFC1819\]
     pub const St: IpNextHeaderProtocol = IpNextHeaderProtocol(5);
 
-    /// Transmission Control [RFC793]
+    /// Transmission Control \[RFC793\]
     pub const Tcp: IpNextHeaderProtocol = IpNextHeaderProtocol(6);
 
     /// CBT
     pub const Cbt: IpNextHeaderProtocol = IpNextHeaderProtocol(7);
 
-    /// Exterior Gateway Protocol [RFC888]
+    /// Exterior Gateway Protocol \[RFC888\]
     pub const Egp: IpNextHeaderProtocol = IpNextHeaderProtocol(8);
 
     /// any private interior gateway (used by Cisco for their IGRP)
@@ -57,7 +57,7 @@ pub mod IpNextHeaderProtocols {
     /// BBN RCC Monitoring
     pub const BbnRccMon: IpNextHeaderProtocol = IpNextHeaderProtocol(10);
 
-    /// Network Voice Protocol [RFC741]
+    /// Network Voice Protocol \[RFC741\]
     pub const NvpII: IpNextHeaderProtocol = IpNextHeaderProtocol(11);
 
     /// PUP
@@ -75,7 +75,7 @@ pub mod IpNextHeaderProtocols {
     /// Chaos
     pub const Chaos: IpNextHeaderProtocol = IpNextHeaderProtocol(16);
 
-    /// User Datagram [RFC768]
+    /// User Datagram \[RFC768\]
     pub const Udp: IpNextHeaderProtocol = IpNextHeaderProtocol(17);
 
     /// Multiplexing
@@ -84,7 +84,7 @@ pub mod IpNextHeaderProtocols {
     /// DCN Measurement Subsystems
     pub const DcnMeas: IpNextHeaderProtocol = IpNextHeaderProtocol(19);
 
-    /// Host Monitoring [RFC869]
+    /// Host Monitoring \[RFC869\]
     pub const Hmp: IpNextHeaderProtocol = IpNextHeaderProtocol(20);
 
     /// Packet Radio Measurement
@@ -105,16 +105,16 @@ pub mod IpNextHeaderProtocols {
     /// Leaf-2
     pub const Leaf2: IpNextHeaderProtocol = IpNextHeaderProtocol(26);
 
-    /// Reliable Data Protocol [RFC908]
+    /// Reliable Data Protocol \[RFC908\]
     pub const Rdp: IpNextHeaderProtocol = IpNextHeaderProtocol(27);
 
-    /// Internet Reliable Transaction [RFC938]
+    /// Internet Reliable Transaction \[RFC938\]
     pub const Irtp: IpNextHeaderProtocol = IpNextHeaderProtocol(28);
 
-    /// ISO Transport Protocol Class 4 [RFC905]
+    /// ISO Transport Protocol Class 4 \[RFC905\]
     pub const IsoTp4: IpNextHeaderProtocol = IpNextHeaderProtocol(29);
 
-    /// Bulk Data Transfer Protocol [RFC969]
+    /// Bulk Data Transfer Protocol \[RFC969\]
     pub const Netblt: IpNextHeaderProtocol = IpNextHeaderProtocol(30);
 
     /// MFE Network Services Protocol
@@ -123,7 +123,7 @@ pub mod IpNextHeaderProtocols {
     /// MERIT Internodal Protocol
     pub const MeritInp: IpNextHeaderProtocol = IpNextHeaderProtocol(32);
 
-    /// Datagram Congestion Control Protocol [RFC4340]
+    /// Datagram Congestion Control Protocol \[RFC4340\]
     pub const Dccp: IpNextHeaderProtocol = IpNextHeaderProtocol(33);
 
     /// Third Party Connect Protocol
@@ -147,7 +147,7 @@ pub mod IpNextHeaderProtocols {
     /// IL Transport Protocol
     pub const Il: IpNextHeaderProtocol = IpNextHeaderProtocol(40);
 
-    /// IPv6 encapsulation [RFC2473]
+    /// IPv6 encapsulation \[RFC2473\]
     pub const Ipv6: IpNextHeaderProtocol = IpNextHeaderProtocol(41);
 
     /// Source Demand Routing Protocol
@@ -162,22 +162,22 @@ pub mod IpNextHeaderProtocols {
     /// Inter-Domain Routing Protocol
     pub const Idrp: IpNextHeaderProtocol = IpNextHeaderProtocol(45);
 
-    /// Reservation Protocol [RFC2205][RFC3209]
+    /// Reservation Protocol \[RFC2205\]\[RFC3209\]
     pub const Rsvp: IpNextHeaderProtocol = IpNextHeaderProtocol(46);
 
-    /// Generic Routing Encapsulation [RFC1701]
+    /// Generic Routing Encapsulation \[RFC1701\]
     pub const Gre: IpNextHeaderProtocol = IpNextHeaderProtocol(47);
 
-    /// Dynamic Source Routing Protocol [RFC4728]
+    /// Dynamic Source Routing Protocol \[RFC4728\]
     pub const Dsr: IpNextHeaderProtocol = IpNextHeaderProtocol(48);
 
     /// BNA
     pub const Bna: IpNextHeaderProtocol = IpNextHeaderProtocol(49);
 
-    /// Encap Security Payload [RFC4303]
+    /// Encap Security Payload \[RFC4303\]
     pub const Esp: IpNextHeaderProtocol = IpNextHeaderProtocol(50);
 
-    /// Authentication Header [RFC4302]
+    /// Authentication Header \[RFC4302\]
     pub const Ah: IpNextHeaderProtocol = IpNextHeaderProtocol(51);
 
     /// Integrated Net Layer Security TUBA
@@ -186,7 +186,7 @@ pub mod IpNextHeaderProtocols {
     /// IP with Encryption
     pub const Swipe: IpNextHeaderProtocol = IpNextHeaderProtocol(53);
 
-    /// NBMA Address Resolution Protocol [RFC1735]
+    /// NBMA Address Resolution Protocol \[RFC1735\]
     pub const Narp: IpNextHeaderProtocol = IpNextHeaderProtocol(54);
 
     /// IP Mobility
@@ -198,16 +198,16 @@ pub mod IpNextHeaderProtocols {
     /// SKIP
     pub const Skip: IpNextHeaderProtocol = IpNextHeaderProtocol(57);
 
-    #[deprecated(note="Please use `IpNextHeaderProtocols::Icmpv6` instead")]
+    #[deprecated(note = "Please use `IpNextHeaderProtocols::Icmpv6` instead")]
     pub const Ipv6Icmp: IpNextHeaderProtocol = IpNextHeaderProtocol(58);
 
-    /// ICMPv6 [RFC4443]
+    /// ICMPv6 \[RFC4443\]
     pub const Icmpv6: IpNextHeaderProtocol = IpNextHeaderProtocol(58);
 
-    /// No Next Header for IPv6 [RFC2460]
+    /// No Next Header for IPv6 \[RFC2460\]
     pub const Ipv6NoNxt: IpNextHeaderProtocol = IpNextHeaderProtocol(59);
 
-    /// Destination Options for IPv6 [RFC2460]
+    /// Destination Options for IPv6 \[RFC2460\]
     pub const Ipv6Opts: IpNextHeaderProtocol = IpNextHeaderProtocol(60);
 
     /// any host internal protocol
@@ -294,7 +294,7 @@ pub mod IpNextHeaderProtocols {
     /// EIGRP
     pub const Eigrp: IpNextHeaderProtocol = IpNextHeaderProtocol(88);
 
-    /// OSPFIGP [RFC1583][RFC2328][RFC5340]
+    /// OSPFIGP \[RFC1583\]\[RFC2328\]\[RFC5340\]
     pub const OspfigP: IpNextHeaderProtocol = IpNextHeaderProtocol(89);
 
     /// Sprite RPC Protocol
@@ -318,10 +318,10 @@ pub mod IpNextHeaderProtocols {
     /// Semaphore Communications Sec. Pro.
     pub const SccSp: IpNextHeaderProtocol = IpNextHeaderProtocol(96);
 
-    /// Ethernet-within-IP Encapsulation [RFC3378]
+    /// Ethernet-within-IP Encapsulation \[RFC3378\]
     pub const Etherip: IpNextHeaderProtocol = IpNextHeaderProtocol(97);
 
-    /// Encapsulation Header [RFC1241]
+    /// Encapsulation Header \[RFC1241\]
     pub const Encap: IpNextHeaderProtocol = IpNextHeaderProtocol(98);
 
     /// any private encryption scheme
@@ -336,7 +336,7 @@ pub mod IpNextHeaderProtocols {
     /// PNNI over IP
     pub const Pnni: IpNextHeaderProtocol = IpNextHeaderProtocol(102);
 
-    /// Protocol Independent Multicast [RFC4601]
+    /// Protocol Independent Multicast \[RFC4601\]
     pub const Pim: IpNextHeaderProtocol = IpNextHeaderProtocol(103);
 
     /// ARIS
@@ -351,7 +351,7 @@ pub mod IpNextHeaderProtocols {
     /// Active Networks
     pub const AN: IpNextHeaderProtocol = IpNextHeaderProtocol(107);
 
-    /// IP Payload Compression Protocol [RFC2393]
+    /// IP Payload Compression Protocol \[RFC2393\]
     pub const IpComp: IpNextHeaderProtocol = IpNextHeaderProtocol(108);
 
     /// Sitara Networks Protocol
@@ -363,7 +363,7 @@ pub mod IpNextHeaderProtocols {
     /// IPX in IP
     pub const IpxInIp: IpNextHeaderProtocol = IpNextHeaderProtocol(111);
 
-    /// Virtual Router Redundancy Protocol [RFC5798]
+    /// Virtual Router Redundancy Protocol \[RFC5798\]
     pub const Vrrp: IpNextHeaderProtocol = IpNextHeaderProtocol(112);
 
     /// PGM Reliable Transport Protocol
@@ -372,7 +372,7 @@ pub mod IpNextHeaderProtocols {
     /// any 0-hop protocol
     pub const ZeroHop: IpNextHeaderProtocol = IpNextHeaderProtocol(114);
 
-    /// Layer Two Tunneling Protocol [RFC3931]
+    /// Layer Two Tunneling Protocol \[RFC3931\]
     pub const L2tp: IpNextHeaderProtocol = IpNextHeaderProtocol(115);
 
     /// D-II Data Exchange (DDX)
@@ -426,45 +426,44 @@ pub mod IpNextHeaderProtocols {
     /// Stream Control Transmission Protocol
     pub const Sctp: IpNextHeaderProtocol = IpNextHeaderProtocol(132);
 
-    /// Fibre Channel [RFC6172]
+    /// Fibre Channel \[RFC6172\]
     pub const Fc: IpNextHeaderProtocol = IpNextHeaderProtocol(133);
 
-    /// [RFC3175]
+    /// \[RFC3175\]
     pub const RsvpE2eIgnore: IpNextHeaderProtocol = IpNextHeaderProtocol(134);
 
-    /// [RFC6275]
+    /// \[RFC6275\]
     pub const MobilityHeader: IpNextHeaderProtocol = IpNextHeaderProtocol(135);
 
-    /// [RFC3828]
+    /// \[RFC3828\]
     pub const UdpLite: IpNextHeaderProtocol = IpNextHeaderProtocol(136);
 
-    /// [RFC4023]
+    /// \[RFC4023\]
     pub const MplsInIp: IpNextHeaderProtocol = IpNextHeaderProtocol(137);
 
-    /// MANET Protocols [RFC5498]
+    /// MANET Protocols \[RFC5498\]
     pub const Manet: IpNextHeaderProtocol = IpNextHeaderProtocol(138);
 
-    /// Host Identity Protocol [RFC5201]
+    /// Host Identity Protocol \[RFC5201\]
     pub const Hip: IpNextHeaderProtocol = IpNextHeaderProtocol(139);
 
-    /// Shim6 Protocol [RFC5533]
+    /// Shim6 Protocol \[RFC5533\]
     pub const Shim6: IpNextHeaderProtocol = IpNextHeaderProtocol(140);
 
-    /// Wrapped Encapsulating Security Payload [RFC5840]
+    /// Wrapped Encapsulating Security Payload \[RFC5840\]
     pub const Wesp: IpNextHeaderProtocol = IpNextHeaderProtocol(141);
 
-    /// Robust Header Compression [RFC5858]
+    /// Robust Header Compression \[RFC5858\]
     pub const Rohc: IpNextHeaderProtocol = IpNextHeaderProtocol(142);
 
-    /// Use for experimentation and testing [RFC3692]
+    /// Use for experimentation and testing \[RFC3692\]
     pub const Test1: IpNextHeaderProtocol = IpNextHeaderProtocol(253);
 
-    /// Use for experimentation and testing [RFC3692]
+    /// Use for experimentation and testing \[RFC3692\]
     pub const Test2: IpNextHeaderProtocol = IpNextHeaderProtocol(254);
 
     ///
     pub const Reserved: IpNextHeaderProtocol = IpNextHeaderProtocol(255);
-
 }
 
 /// Represents an IPv4 next level protocol, or an IPv6 next header protocol,
@@ -488,157 +487,159 @@ impl PrimitiveValues for IpNextHeaderProtocol {
 
 impl fmt::Display for IpNextHeaderProtocol {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,
-               "{}",
-               match self {
-                   &IpNextHeaderProtocols::Hopopt => "Hopopt", // 0
-                   &IpNextHeaderProtocols::Icmp => "Icmp", // 1
-                   &IpNextHeaderProtocols::Igmp => "Igmp", // 2
-                   &IpNextHeaderProtocols::Ggp => "Ggp", // 3
-                   &IpNextHeaderProtocols::Ipv4 => "Ipv4", // 4
-                   &IpNextHeaderProtocols::St => "St", // 5
-                   &IpNextHeaderProtocols::Tcp => "Tcp", // 6
-                   &IpNextHeaderProtocols::Cbt => "Cbt", // 7
-                   &IpNextHeaderProtocols::Egp => "Egp", // 8
-                   &IpNextHeaderProtocols::Igp => "Igp", // 9
-                   &IpNextHeaderProtocols::BbnRccMon => "BbnRccMon", // 10
-                   &IpNextHeaderProtocols::NvpII => "NvpII", // 11
-                   &IpNextHeaderProtocols::Pup => "Pup", // 12
-                   &IpNextHeaderProtocols::Argus => "Argus", // 13
-                   &IpNextHeaderProtocols::Emcon => "Emcon", // 14
-                   &IpNextHeaderProtocols::Xnet => "Xnet", // 15
-                   &IpNextHeaderProtocols::Chaos => "Chaos", // 16
-                   &IpNextHeaderProtocols::Udp => "Udp", // 17
-                   &IpNextHeaderProtocols::Mux => "Mux", // 18
-                   &IpNextHeaderProtocols::DcnMeas => "DcnMeas", // 19
-                   &IpNextHeaderProtocols::Hmp => "Hmp", // 20
-                   &IpNextHeaderProtocols::Prm => "Prm", // 21
-                   &IpNextHeaderProtocols::XnsIdp => "XnsIdp", // 22
-                   &IpNextHeaderProtocols::Trunk1 => "Trunk1", // 23
-                   &IpNextHeaderProtocols::Trunk2 => "Trunk2", // 24
-                   &IpNextHeaderProtocols::Leaf1 => "Leaf1", // 25
-                   &IpNextHeaderProtocols::Leaf2 => "Leaf2", // 26
-                   &IpNextHeaderProtocols::Rdp => "Rdp", // 27
-                   &IpNextHeaderProtocols::Irtp => "Irtp", // 28
-                   &IpNextHeaderProtocols::IsoTp4 => "IsoTp4", // 29
-                   &IpNextHeaderProtocols::Netblt => "Netblt", // 30
-                   &IpNextHeaderProtocols::MfeNsp => "MfeNsp", // 31
-                   &IpNextHeaderProtocols::MeritInp => "MeritInp", // 32
-                   &IpNextHeaderProtocols::Dccp => "Dccp", // 33
-                   &IpNextHeaderProtocols::ThreePc => "ThreePc", // 34
-                   &IpNextHeaderProtocols::Idpr => "Idpr", // 35
-                   &IpNextHeaderProtocols::Xtp => "Xtp", // 36
-                   &IpNextHeaderProtocols::Ddp => "Ddp", // 37
-                   &IpNextHeaderProtocols::IdprCmtp => "IdprCmtp", // 38
-                   &IpNextHeaderProtocols::TpPlusPlus => "TpPlusPlus", // 39
-                   &IpNextHeaderProtocols::Il => "Il", // 40
-                   &IpNextHeaderProtocols::Ipv6 => "Ipv6", // 41
-                   &IpNextHeaderProtocols::Sdrp => "Sdrp", // 42
-                   &IpNextHeaderProtocols::Ipv6Route => "Ipv6Route", // 43
-                   &IpNextHeaderProtocols::Ipv6Frag => "Ipv6Frag", // 44
-                   &IpNextHeaderProtocols::Idrp => "Idrp", // 45
-                   &IpNextHeaderProtocols::Rsvp => "Rsvp", // 46
-                   &IpNextHeaderProtocols::Gre => "Gre", // 47
-                   &IpNextHeaderProtocols::Dsr => "Dsr", // 48
-                   &IpNextHeaderProtocols::Bna => "Bna", // 49
-                   &IpNextHeaderProtocols::Esp => "Esp", // 50
-                   &IpNextHeaderProtocols::Ah => "Ah", // 51
-                   &IpNextHeaderProtocols::INlsp => "INlsp", // 52
-                   &IpNextHeaderProtocols::Swipe => "Swipe", // 53
-                   &IpNextHeaderProtocols::Narp => "Narp", // 54
-                   &IpNextHeaderProtocols::Mobile => "Mobile", // 55
-                   &IpNextHeaderProtocols::Tlsp => "Tlsp", // 56
-                   &IpNextHeaderProtocols::Skip => "Skip", // 57
-                   &IpNextHeaderProtocols::Icmpv6 => "Icmpv6", // 58
-                   &IpNextHeaderProtocols::Ipv6NoNxt => "Ipv6NoNxt", // 59
-                   &IpNextHeaderProtocols::Ipv6Opts => "Ipv6Opts", // 60
-                   &IpNextHeaderProtocols::HostInternal => "HostInternal", // 61
-                   &IpNextHeaderProtocols::Cftp => "Cftp", // 62
-                   &IpNextHeaderProtocols::LocalNetwork => "LocalNetwork", // 63
-                   &IpNextHeaderProtocols::SatExpak => "SatExpak", // 64
-                   &IpNextHeaderProtocols::Kryptolan => "Kryptolan", // 65
-                   &IpNextHeaderProtocols::Rvd => "Rvd", // 66
-                   &IpNextHeaderProtocols::Ippc => "Ippc", // 67
-                   &IpNextHeaderProtocols::DistributedFs => "DistributedFs", // 68
-                   &IpNextHeaderProtocols::SatMon => "SatMon", // 69
-                   &IpNextHeaderProtocols::Visa => "Visa", // 70
-                   &IpNextHeaderProtocols::Ipcv => "Ipcv", // 71
-                   &IpNextHeaderProtocols::Cpnx => "Cpnx", // 72
-                   &IpNextHeaderProtocols::Cphb => "Cphb", // 73
-                   &IpNextHeaderProtocols::Wsn => "Wsn", // 74
-                   &IpNextHeaderProtocols::Pvp => "Pvp", // 75
-                   &IpNextHeaderProtocols::BrSatMon => "BrSatMon", // 76
-                   &IpNextHeaderProtocols::SunNd => "SunNd", // 77
-                   &IpNextHeaderProtocols::WbMon => "WbMon", // 78
-                   &IpNextHeaderProtocols::WbExpak => "WbExpak", // 79
-                   &IpNextHeaderProtocols::IsoIp => "IsoIp", // 80
-                   &IpNextHeaderProtocols::Vmtp => "Vmtp", // 81
-                   &IpNextHeaderProtocols::SecureVmtp => "SecureVmtp", // 82
-                   &IpNextHeaderProtocols::Vines => "Vines", // 83
-                   &IpNextHeaderProtocols::TtpOrIptm => "TtpOrIptm", // 84
-                   &IpNextHeaderProtocols::NsfnetIgp => "NsfnetIgp", // 85
-                   &IpNextHeaderProtocols::Dgp => "Dgp", // 86
-                   &IpNextHeaderProtocols::Tcf => "Tcf", // 87
-                   &IpNextHeaderProtocols::Eigrp => "Eigrp", // 88
-                   &IpNextHeaderProtocols::OspfigP => "OspfigP", // 89
-                   &IpNextHeaderProtocols::SpriteRpc => "SpriteRpc", // 90
-                   &IpNextHeaderProtocols::Larp => "Larp", // 91
-                   &IpNextHeaderProtocols::Mtp => "Mtp", // 92
-                   &IpNextHeaderProtocols::Ax25 => "Ax25", // 93
-                   &IpNextHeaderProtocols::IpIp => "IpIp", // 94
-                   &IpNextHeaderProtocols::Micp => "Micp", // 95
-                   &IpNextHeaderProtocols::SccSp => "SccSp", // 96
-                   &IpNextHeaderProtocols::Etherip => "Etherip", // 97
-                   &IpNextHeaderProtocols::Encap => "Encap", // 98
-                   &IpNextHeaderProtocols::PrivEncryption => "PrivEncryption", // 99
-                   &IpNextHeaderProtocols::Gmtp => "Gmtp", // 100
-                   &IpNextHeaderProtocols::Ifmp => "Ifmp", // 101
-                   &IpNextHeaderProtocols::Pnni => "Pnni", // 102
-                   &IpNextHeaderProtocols::Pim => "Pim", // 103
-                   &IpNextHeaderProtocols::Aris => "Aris", // 104
-                   &IpNextHeaderProtocols::Scps => "Scps", // 105
-                   &IpNextHeaderProtocols::Qnx => "Qnx", // 106
-                   &IpNextHeaderProtocols::AN => "AN", // 107
-                   &IpNextHeaderProtocols::IpComp => "IpComp", // 108
-                   &IpNextHeaderProtocols::Snp => "Snp", // 109
-                   &IpNextHeaderProtocols::CompaqPeer => "CompaqPeer", // 110
-                   &IpNextHeaderProtocols::IpxInIp => "IpxInIp", // 111
-                   &IpNextHeaderProtocols::Vrrp => "Vrrp", // 112
-                   &IpNextHeaderProtocols::Pgm => "Pgm", // 113
-                   &IpNextHeaderProtocols::ZeroHop => "ZeroHop", // 114
-                   &IpNextHeaderProtocols::L2tp => "L2tp", // 115
-                   &IpNextHeaderProtocols::Ddx => "Ddx", // 116
-                   &IpNextHeaderProtocols::Iatp => "Iatp", // 117
-                   &IpNextHeaderProtocols::Stp => "Stp", // 118
-                   &IpNextHeaderProtocols::Srp => "Srp", // 119
-                   &IpNextHeaderProtocols::Uti => "Uti", // 120
-                   &IpNextHeaderProtocols::Smp => "Smp", // 121
-                   &IpNextHeaderProtocols::Sm => "Sm", // 122
-                   &IpNextHeaderProtocols::Ptp => "Ptp", // 123
-                   &IpNextHeaderProtocols::IsisOverIpv4 => "IsisOverIpv4", // 124
-                   &IpNextHeaderProtocols::Fire => "Fire", // 125
-                   &IpNextHeaderProtocols::Crtp => "Crtp", // 126
-                   &IpNextHeaderProtocols::Crudp => "Crudp", // 127
-                   &IpNextHeaderProtocols::Sscopmce => "Sscopmce", // 128
-                   &IpNextHeaderProtocols::Iplt => "Iplt", // 129
-                   &IpNextHeaderProtocols::Sps => "Sps", // 130
-                   &IpNextHeaderProtocols::Pipe => "Pipe", // 131
-                   &IpNextHeaderProtocols::Sctp => "Sctp", // 132
-                   &IpNextHeaderProtocols::Fc => "Fc", // 133
-                   &IpNextHeaderProtocols::RsvpE2eIgnore => "RsvpE2eIgnore", // 134
-                   &IpNextHeaderProtocols::MobilityHeader => "MobilityHeader", // 135
-                   &IpNextHeaderProtocols::UdpLite => "UdpLite", // 136
-                   &IpNextHeaderProtocols::MplsInIp => "MplsInIp", // 137
-                   &IpNextHeaderProtocols::Manet => "Manet", // 138
-                   &IpNextHeaderProtocols::Hip => "Hip", // 139
-                   &IpNextHeaderProtocols::Shim6 => "Shim6", // 140
-                   &IpNextHeaderProtocols::Wesp => "Wesp", // 141
-                   &IpNextHeaderProtocols::Rohc => "Rohc", // 142
-                   &IpNextHeaderProtocols::Test1 => "Test1", // 253
-                   &IpNextHeaderProtocols::Test2 => "Test2", // 254*/
-                   &IpNextHeaderProtocols::Reserved => "Reserved", // 255
-                   _ => "unknown",
-               })
+        write!(
+            f,
+            "{}",
+            match self {
+                &IpNextHeaderProtocols::Hopopt => "Hopopt",         // 0
+                &IpNextHeaderProtocols::Icmp => "Icmp",             // 1
+                &IpNextHeaderProtocols::Igmp => "Igmp",             // 2
+                &IpNextHeaderProtocols::Ggp => "Ggp",               // 3
+                &IpNextHeaderProtocols::Ipv4 => "Ipv4",             // 4
+                &IpNextHeaderProtocols::St => "St",                 // 5
+                &IpNextHeaderProtocols::Tcp => "Tcp",               // 6
+                &IpNextHeaderProtocols::Cbt => "Cbt",               // 7
+                &IpNextHeaderProtocols::Egp => "Egp",               // 8
+                &IpNextHeaderProtocols::Igp => "Igp",               // 9
+                &IpNextHeaderProtocols::BbnRccMon => "BbnRccMon",   // 10
+                &IpNextHeaderProtocols::NvpII => "NvpII",           // 11
+                &IpNextHeaderProtocols::Pup => "Pup",               // 12
+                &IpNextHeaderProtocols::Argus => "Argus",           // 13
+                &IpNextHeaderProtocols::Emcon => "Emcon",           // 14
+                &IpNextHeaderProtocols::Xnet => "Xnet",             // 15
+                &IpNextHeaderProtocols::Chaos => "Chaos",           // 16
+                &IpNextHeaderProtocols::Udp => "Udp",               // 17
+                &IpNextHeaderProtocols::Mux => "Mux",               // 18
+                &IpNextHeaderProtocols::DcnMeas => "DcnMeas",       // 19
+                &IpNextHeaderProtocols::Hmp => "Hmp",               // 20
+                &IpNextHeaderProtocols::Prm => "Prm",               // 21
+                &IpNextHeaderProtocols::XnsIdp => "XnsIdp",         // 22
+                &IpNextHeaderProtocols::Trunk1 => "Trunk1",         // 23
+                &IpNextHeaderProtocols::Trunk2 => "Trunk2",         // 24
+                &IpNextHeaderProtocols::Leaf1 => "Leaf1",           // 25
+                &IpNextHeaderProtocols::Leaf2 => "Leaf2",           // 26
+                &IpNextHeaderProtocols::Rdp => "Rdp",               // 27
+                &IpNextHeaderProtocols::Irtp => "Irtp",             // 28
+                &IpNextHeaderProtocols::IsoTp4 => "IsoTp4",         // 29
+                &IpNextHeaderProtocols::Netblt => "Netblt",         // 30
+                &IpNextHeaderProtocols::MfeNsp => "MfeNsp",         // 31
+                &IpNextHeaderProtocols::MeritInp => "MeritInp",     // 32
+                &IpNextHeaderProtocols::Dccp => "Dccp",             // 33
+                &IpNextHeaderProtocols::ThreePc => "ThreePc",       // 34
+                &IpNextHeaderProtocols::Idpr => "Idpr",             // 35
+                &IpNextHeaderProtocols::Xtp => "Xtp",               // 36
+                &IpNextHeaderProtocols::Ddp => "Ddp",               // 37
+                &IpNextHeaderProtocols::IdprCmtp => "IdprCmtp",     // 38
+                &IpNextHeaderProtocols::TpPlusPlus => "TpPlusPlus", // 39
+                &IpNextHeaderProtocols::Il => "Il",                 // 40
+                &IpNextHeaderProtocols::Ipv6 => "Ipv6",             // 41
+                &IpNextHeaderProtocols::Sdrp => "Sdrp",             // 42
+                &IpNextHeaderProtocols::Ipv6Route => "Ipv6Route",   // 43
+                &IpNextHeaderProtocols::Ipv6Frag => "Ipv6Frag",     // 44
+                &IpNextHeaderProtocols::Idrp => "Idrp",             // 45
+                &IpNextHeaderProtocols::Rsvp => "Rsvp",             // 46
+                &IpNextHeaderProtocols::Gre => "Gre",               // 47
+                &IpNextHeaderProtocols::Dsr => "Dsr",               // 48
+                &IpNextHeaderProtocols::Bna => "Bna",               // 49
+                &IpNextHeaderProtocols::Esp => "Esp",               // 50
+                &IpNextHeaderProtocols::Ah => "Ah",                 // 51
+                &IpNextHeaderProtocols::INlsp => "INlsp",           // 52
+                &IpNextHeaderProtocols::Swipe => "Swipe",           // 53
+                &IpNextHeaderProtocols::Narp => "Narp",             // 54
+                &IpNextHeaderProtocols::Mobile => "Mobile",         // 55
+                &IpNextHeaderProtocols::Tlsp => "Tlsp",             // 56
+                &IpNextHeaderProtocols::Skip => "Skip",             // 57
+                &IpNextHeaderProtocols::Icmpv6 => "Icmpv6",         // 58
+                &IpNextHeaderProtocols::Ipv6NoNxt => "Ipv6NoNxt",   // 59
+                &IpNextHeaderProtocols::Ipv6Opts => "Ipv6Opts",     // 60
+                &IpNextHeaderProtocols::HostInternal => "HostInternal", // 61
+                &IpNextHeaderProtocols::Cftp => "Cftp",             // 62
+                &IpNextHeaderProtocols::LocalNetwork => "LocalNetwork", // 63
+                &IpNextHeaderProtocols::SatExpak => "SatExpak",     // 64
+                &IpNextHeaderProtocols::Kryptolan => "Kryptolan",   // 65
+                &IpNextHeaderProtocols::Rvd => "Rvd",               // 66
+                &IpNextHeaderProtocols::Ippc => "Ippc",             // 67
+                &IpNextHeaderProtocols::DistributedFs => "DistributedFs", // 68
+                &IpNextHeaderProtocols::SatMon => "SatMon",         // 69
+                &IpNextHeaderProtocols::Visa => "Visa",             // 70
+                &IpNextHeaderProtocols::Ipcv => "Ipcv",             // 71
+                &IpNextHeaderProtocols::Cpnx => "Cpnx",             // 72
+                &IpNextHeaderProtocols::Cphb => "Cphb",             // 73
+                &IpNextHeaderProtocols::Wsn => "Wsn",               // 74
+                &IpNextHeaderProtocols::Pvp => "Pvp",               // 75
+                &IpNextHeaderProtocols::BrSatMon => "BrSatMon",     // 76
+                &IpNextHeaderProtocols::SunNd => "SunNd",           // 77
+                &IpNextHeaderProtocols::WbMon => "WbMon",           // 78
+                &IpNextHeaderProtocols::WbExpak => "WbExpak",       // 79
+                &IpNextHeaderProtocols::IsoIp => "IsoIp",           // 80
+                &IpNextHeaderProtocols::Vmtp => "Vmtp",             // 81
+                &IpNextHeaderProtocols::SecureVmtp => "SecureVmtp", // 82
+                &IpNextHeaderProtocols::Vines => "Vines",           // 83
+                &IpNextHeaderProtocols::TtpOrIptm => "TtpOrIptm",   // 84
+                &IpNextHeaderProtocols::NsfnetIgp => "NsfnetIgp",   // 85
+                &IpNextHeaderProtocols::Dgp => "Dgp",               // 86
+                &IpNextHeaderProtocols::Tcf => "Tcf",               // 87
+                &IpNextHeaderProtocols::Eigrp => "Eigrp",           // 88
+                &IpNextHeaderProtocols::OspfigP => "OspfigP",       // 89
+                &IpNextHeaderProtocols::SpriteRpc => "SpriteRpc",   // 90
+                &IpNextHeaderProtocols::Larp => "Larp",             // 91
+                &IpNextHeaderProtocols::Mtp => "Mtp",               // 92
+                &IpNextHeaderProtocols::Ax25 => "Ax25",             // 93
+                &IpNextHeaderProtocols::IpIp => "IpIp",             // 94
+                &IpNextHeaderProtocols::Micp => "Micp",             // 95
+                &IpNextHeaderProtocols::SccSp => "SccSp",           // 96
+                &IpNextHeaderProtocols::Etherip => "Etherip",       // 97
+                &IpNextHeaderProtocols::Encap => "Encap",           // 98
+                &IpNextHeaderProtocols::PrivEncryption => "PrivEncryption", // 99
+                &IpNextHeaderProtocols::Gmtp => "Gmtp",             // 100
+                &IpNextHeaderProtocols::Ifmp => "Ifmp",             // 101
+                &IpNextHeaderProtocols::Pnni => "Pnni",             // 102
+                &IpNextHeaderProtocols::Pim => "Pim",               // 103
+                &IpNextHeaderProtocols::Aris => "Aris",             // 104
+                &IpNextHeaderProtocols::Scps => "Scps",             // 105
+                &IpNextHeaderProtocols::Qnx => "Qnx",               // 106
+                &IpNextHeaderProtocols::AN => "AN",                 // 107
+                &IpNextHeaderProtocols::IpComp => "IpComp",         // 108
+                &IpNextHeaderProtocols::Snp => "Snp",               // 109
+                &IpNextHeaderProtocols::CompaqPeer => "CompaqPeer", // 110
+                &IpNextHeaderProtocols::IpxInIp => "IpxInIp",       // 111
+                &IpNextHeaderProtocols::Vrrp => "Vrrp",             // 112
+                &IpNextHeaderProtocols::Pgm => "Pgm",               // 113
+                &IpNextHeaderProtocols::ZeroHop => "ZeroHop",       // 114
+                &IpNextHeaderProtocols::L2tp => "L2tp",             // 115
+                &IpNextHeaderProtocols::Ddx => "Ddx",               // 116
+                &IpNextHeaderProtocols::Iatp => "Iatp",             // 117
+                &IpNextHeaderProtocols::Stp => "Stp",               // 118
+                &IpNextHeaderProtocols::Srp => "Srp",               // 119
+                &IpNextHeaderProtocols::Uti => "Uti",               // 120
+                &IpNextHeaderProtocols::Smp => "Smp",               // 121
+                &IpNextHeaderProtocols::Sm => "Sm",                 // 122
+                &IpNextHeaderProtocols::Ptp => "Ptp",               // 123
+                &IpNextHeaderProtocols::IsisOverIpv4 => "IsisOverIpv4", // 124
+                &IpNextHeaderProtocols::Fire => "Fire",             // 125
+                &IpNextHeaderProtocols::Crtp => "Crtp",             // 126
+                &IpNextHeaderProtocols::Crudp => "Crudp",           // 127
+                &IpNextHeaderProtocols::Sscopmce => "Sscopmce",     // 128
+                &IpNextHeaderProtocols::Iplt => "Iplt",             // 129
+                &IpNextHeaderProtocols::Sps => "Sps",               // 130
+                &IpNextHeaderProtocols::Pipe => "Pipe",             // 131
+                &IpNextHeaderProtocols::Sctp => "Sctp",             // 132
+                &IpNextHeaderProtocols::Fc => "Fc",                 // 133
+                &IpNextHeaderProtocols::RsvpE2eIgnore => "RsvpE2eIgnore", // 134
+                &IpNextHeaderProtocols::MobilityHeader => "MobilityHeader", // 135
+                &IpNextHeaderProtocols::UdpLite => "UdpLite",       // 136
+                &IpNextHeaderProtocols::MplsInIp => "MplsInIp",     // 137
+                &IpNextHeaderProtocols::Manet => "Manet",           // 138
+                &IpNextHeaderProtocols::Hip => "Hip",               // 139
+                &IpNextHeaderProtocols::Shim6 => "Shim6",           // 140
+                &IpNextHeaderProtocols::Wesp => "Wesp",             // 141
+                &IpNextHeaderProtocols::Rohc => "Rohc",             // 142
+                &IpNextHeaderProtocols::Test1 => "Test1",           // 253
+                &IpNextHeaderProtocols::Test2 => "Test2",           // 254*/
+                &IpNextHeaderProtocols::Reserved => "Reserved",     // 255
+                _ => "unknown",
+            }
+        )
     }
 }
 

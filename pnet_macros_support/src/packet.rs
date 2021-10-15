@@ -34,19 +34,21 @@ pub trait MutablePacket: Packet {
 
         assert!(self.packet().len() >= other.packet().len());
         unsafe {
-            ptr::copy_nonoverlapping(other.packet().as_ptr(),
-                                     self.packet_mut().as_mut_ptr(),
-                                     other.packet().len());
+            ptr::copy_nonoverlapping(
+                other.packet().as_ptr(),
+                self.packet_mut().as_mut_ptr(),
+                other.packet().len(),
+            );
         }
     }
 }
 
-/// Used to convert on-the-wire packets to their #[packet] equivalent.
+/// Used to convert on-the-wire packets to their #\[packet\] equivalent.
 pub trait FromPacket: Packet {
     /// The type of the packet to convert from.
     type T;
 
-    /// Converts a wire-format packet to #[packet] struct format.
+    /// Converts a wire-format packet to #\[packet\] struct format.
     fn from_packet(&self) -> Self::T;
 }
 
@@ -166,7 +168,6 @@ impl_index_mut!(MutPacketData, RangeTo<usize>, [u8]);
 impl_index_mut!(MutPacketData, RangeFrom<usize>, [u8]);
 impl_index_mut!(MutPacketData, RangeFull, [u8]);
 
-
 /// Used to convert a type to primitive values representing it.
 pub trait PrimitiveValues {
     /// A tuple of types, to represent the current value.
@@ -175,7 +176,6 @@ pub trait PrimitiveValues {
     /// Convert a value to primitive types representing it.
     fn to_primitive_values(&self) -> Self::T;
 }
-
 
 impl PrimitiveValues for pnet_base::MacAddr {
     type T = (u8, u8, u8, u8, u8, u8);
@@ -198,14 +198,15 @@ impl PrimitiveValues for ::std::net::Ipv6Addr {
     fn to_primitive_values(&self) -> (u16, u16, u16, u16, u16, u16, u16, u16) {
         let segments = self.segments();
 
-        (segments[0],
-         segments[1],
-         segments[2],
-         segments[3],
-         segments[4],
-         segments[5],
-         segments[6],
-         segments[7])
+        (
+            segments[0],
+            segments[1],
+            segments[2],
+            segments[3],
+            segments[4],
+            segments[5],
+            segments[6],
+            segments[7],
+        )
     }
 }
-

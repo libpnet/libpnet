@@ -1,17 +1,17 @@
 [package]
 name = "pnet_sys"
-version = "0.25.0"
+version = "0.28.0"
 authors = ["Robert Clipsham <robert@octarineparrot.com>", "Linus Färnstrand <faern@faern.net>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
 repository = "https://github.com/libpnet/libpnet"
 description = "Access to network related system function and calls."
+readme = "../README.md"
 keywords = ["networking", "datalink", "ethernet", "raw"]
 categories = ["network-programming"]
 
 [dependencies]
-libc = "0.2.39"
+libc = "0.2.94"
 
 [target.'cfg(windows)'.dependencies]
-winapi = "0.2"
-ws2_32-sys = "0.2"
+winapi = { version = "0.3.9", features = [ "winsock2", "ws2ipdef" ] }

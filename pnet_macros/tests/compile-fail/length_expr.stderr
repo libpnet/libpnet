@@ -1,0 +1,5 @@
+error: Only field names, constants, integers, basic arithmetic expressions (+ - * / %) and parentheses are allowed in the "length" attribute
+  --> $DIR/length_expr.rs:16:16
+   |
+16 |     #[length = "banana + 7.5"] //~ ERROR Only field names, constants, integers, basic arithmetic expressions (+ - * / %) and parentheses ...
+   |                ^^^^^^^^^^^^^^

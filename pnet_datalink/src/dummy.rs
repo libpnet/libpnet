@@ -86,26 +86,28 @@ impl Default for Config {
 /// Create a data link channel backed by FIFO queues. Useful for debugging and testing.
 /// See `Config` for how to inject and read packets on this fake network.
 pub fn channel(_: &NetworkInterface, config: Config) -> io::Result<super::Channel> {
-    let sender = Box::new(MockDataLinkSender { sender: config.sender });
+    let sender = Box::new(MockDataLinkSender {
+        sender: config.sender,
+    });
     let receiver = Box::new(MockDataLinkReceiver {
         receiver: config.receiver,
-        used_packets: Vec::new()
+        used_packets: Vec::new(),
     });
 
     Ok(super::Channel::Ethernet(sender, receiver))
 }
-
 
 struct MockDataLinkSender {
     sender: Sender<Box<[u8]>>,
 }
 
 impl DataLinkSender for MockDataLinkSender {
-    fn build_and_send(&mut self,
-                      num_packets: usize,
-                      packet_size: usize,
-                      func: &mut dyn FnMut(&mut [u8]))
-        -> Option<io::Result<()>> {
+    fn build_and_send(
+        &mut self,
+        num_packets: usize,
+        packet_size: usize,
+        func: &mut dyn FnMut(&mut [u8]),
+    ) -> Option<io::Result<()>> {
         for _ in 0..num_packets {
             let mut buffer = vec![0; packet_size];
             func(&mut buffer);
@@ -115,10 +117,7 @@ impl DataLinkSender for MockDataLinkSender {
         Some(Ok(()))
     }
 
-    fn send_to(&mut self,
-               packet: &[u8],
-               _dst: Option<NetworkInterface>)
-        -> Option<io::Result<()>> {
+    fn send_to(&mut self, packet: &[u8], _dst: Option<NetworkInterface>) -> Option<io::Result<()>> {
         let buffer = packet.to_vec();
         self.sender.send(buffer.into_boxed_slice()).unwrap_or(());
         Some(Ok(()))
@@ -168,6 +167,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
 pub fn dummy_interface(i: u8) -> NetworkInterface {
     NetworkInterface {
         name: format!("eth{}", i),
+        description: "".to_string(),
         index: i as u32,
         mac: Some(MacAddr::new(1, 2, 3, 4, 5, i)),
         ips: Vec::new(),
@@ -205,7 +205,9 @@ mod tests {
             pkg[19] = 201;
         };
         tx.build_and_send(1, 20, &mut builder).unwrap().unwrap();
-        let pkg = read_handle.try_recv().expect("Expected one packet to be sent");
+        let pkg = read_handle
+            .try_recv()
+            .expect("Expected one packet to be sent");
         assert!(read_handle.try_recv().is_err());
         assert_eq!(pkg.len(), 20);
         assert_eq!(pkg[0], 9);
@@ -237,7 +239,9 @@ mod tests {
         buffer[18] = 76;
 
         tx.send_to(&buffer, None).unwrap().unwrap();
-        let pkg = read_handle.try_recv().expect("Expected one packet to be sent");
+        let pkg = read_handle
+            .try_recv()
+            .expect("Expected one packet to be sent");
         assert!(read_handle.try_recv().is_err());
         assert_eq!(pkg.len(), 20);
         assert_eq!(pkg[1], 34);
@@ -294,11 +298,12 @@ mod tests {
         }
     }
 
-    fn create_net()
-        -> (Sender<io::Result<Box<[u8]>>>,
-            Receiver<Box<[u8]>>,
-            Box<DataLinkSender>,
-            Box<DataLinkReceiver>) {
+    fn create_net() -> (
+        Sender<io::Result<Box<[u8]>>>,
+        Receiver<Box<[u8]>>,
+        Box<dyn DataLinkSender>,
+        Box<dyn DataLinkReceiver>,
+    ) {
         let interface = super::dummy_interface(56);
         let mut config = super::Config::default();
         let inject_handle = config.inject_handle().unwrap();

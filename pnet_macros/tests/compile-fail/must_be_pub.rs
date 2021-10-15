@@ -6,14 +6,12 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros_plugin)]
+extern crate pnet_macros;
+extern crate pnet_macros_support;
+use pnet_macros::packet;
 
-extern crate pnet;
-
-// ~ ERROR #[packet] structs must be public
 #[packet]
-struct MustBePub {
+struct MustBePub { //~ ERROR #[packet] structs must be public
     banana: u8,
     #[payload]
     payload: Vec<u8>,

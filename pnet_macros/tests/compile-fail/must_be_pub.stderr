@@ -1,0 +1,5 @@
+error: #[packet] structs must be public
+  --> $DIR/must_be_pub.rs:14:8
+   |
+14 | struct MustBePub { //~ ERROR #[packet] structs must be public
+   |        ^^^^^^^^^

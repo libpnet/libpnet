@@ -86,8 +86,6 @@ build_test() {
     fi
 }
 
-# macros tests are only run on nightly, since they depend on compiletest_rs,
-# which needs a nightly Rust
 run_macro_tests() {
     cd pnet_macros &&
     sh -c "$CARGO test $PNET_MACROS_CARGO_FLAGS" &&
@@ -106,17 +104,17 @@ run_test() {
     export RUST_TEST_THREADS=1 &&
     case "$SYSTEM" in
         Linux)
-            "$SUDO" -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH sh -c "cargo build $PNET_CARGO_FLAGS --release && \
-                                                             cargo test $PNET_CARGO_FLAGS && \
-                                                             cargo bench --no-run $PNET_CARGO_FLAGS && \
-                                                             cargo doc $PNET_CARGO_FLAGS"
+            "$SUDO" -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH sh -c "$CARGO build $PNET_CARGO_FLAGS --release && \
+                                                             $CARGO test $PNET_CARGO_FLAGS && \
+                                                             $CARGO bench --no-run $PNET_CARGO_FLAGS && \
+                                                             $CARGO doc $PNET_CARGO_FLAGS"
         ;;
         FreeBSD|Darwin)
             export PNET_TEST_IFACE
-            "$SUDO" -E DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH bash -c "cargo build $PNET_CARGO_FLAGS && \
-                                                                   cargo test $PNET_CARGO_FLAGS && \
-                                                                   cargo bench --no-run $PNET_CARGO_FLAGS && \
-                                                                   cargo doc $PNET_CARGO_FLAGS"
+            "$SUDO" -E DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH bash -c "$CARGO build $PNET_CARGO_FLAGS && \
+                                                                   $CARGO test $PNET_CARGO_FLAGS && \
+                                                                   $CARGO bench --no-run $PNET_CARGO_FLAGS && \
+                                                                   $CARGO doc $PNET_CARGO_FLAGS"
         ;;
         MINGW*|MSYS*)
             PNET_TEST_IFACE=$PNET_TEST_IFACE RUST_TEST_THREADS=1 $TESTER

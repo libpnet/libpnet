@@ -1,12 +1,11 @@
 # libpnet [![Crates.io](https://img.shields.io/crates/v/pnet.svg)](https://crates.io/crates/pnet) ![License](https://img.shields.io/crates/l/pnet.svg) [![Documentation](https://docs.rs/pnet/badge.svg)](https://docs.rs/pnet/)
 
-Linux ∪ OS X Build Status: [![Linux ∪ OS X Build Status](https://travis-ci.org/libpnet/libpnet.svg?branch=master)](https://travis-ci.org/libpnet/libpnet)
+Build Status: [![Build Status](https://github.com/libpnet/libpnet/actions/workflows/ci.yml/badge.svg)](https://github.com/libpnet/libpnet/actions/workflows/ci.yml)
 
-Windows Build Status: [![Windows Build Status](https://ci.appveyor.com/api/projects/status/9gq1dekigj03u1ym/branch/master?svg=true)](https://ci.appveyor.com/project/mrmonday/libpnet)
+Discussion and support:
 
-Discussion and support: [#libpnet on freenode](http://webchat.freenode.net/?channels=%23libpnet) /
-[#rust-networking on irc.mozilla.org](http://chat.mibbit.com/?server=irc.mozilla.org&channel=%23rust-networking) /
-[#rust on irc.mozilla.org](http://chat.mibbit.com/?server=irc.mozilla.org&channel=%23rust).
+ * Live chat on IRC - [#libpnet on irc.libera.chat](https://kiwiirc.com/nextclient/irc.libera.chat/libpnet?nick=pnet-user42)
+ * [GitHub Discussions](https://github.com/libpnet/libpnet/discussions)
 
 `libpnet` provides a cross-platform API for low level networking using Rust.
 
@@ -69,13 +68,10 @@ To use `libpnet` in your project, add the following to your Cargo.toml:
 
 ```
 [dependencies.pnet]
-version = "0.25.0"
+version = "0.28.0"
 ```
 
-`libpnet` should work on any Rust channel (stable, beta, or nightly), starting
-with Rust 1.15. When using a nightly version of Rust, you may wish to use pass
-`--no-default-features --features nightly` to Cargo, to enable faster build
-times.
+`libpnet` should work with the latest stable version of Rust.
 
 When running the test suite, there are a number of networking tests which will
 likely fail - the easiest way to workaround this is to run `cargo test` as a

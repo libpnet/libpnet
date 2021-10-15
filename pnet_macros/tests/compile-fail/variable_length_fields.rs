@@ -6,15 +6,14 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros_plugin)]
-
-extern crate pnet;
+extern crate pnet_macros;
+extern crate pnet_macros_support;
+use pnet_macros::packet;
 
 #[packet]
 pub struct PacketWithPayload {
     banana: u8,
-    var_length: Vec<u8>, /* ~ ERROR: variable length field must have #[length = ""] or #[length_fn = ""] attribute */
+    var_length: Vec<u8>, //~ ERROR: variable length field must have #[length = ""] or #[length_fn = ""] attribute
     #[payload]
     payload: Vec<u8>,
 }

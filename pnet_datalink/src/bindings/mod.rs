@@ -6,7 +6,14 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "macos", windows))]
+#[cfg(any(
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "macos",
+    target_os = "ios",
+    windows
+))]
 pub mod bpf;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]

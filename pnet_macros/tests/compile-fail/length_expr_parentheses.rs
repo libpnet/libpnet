@@ -6,12 +6,11 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-// error-pattern: error: this file contains an un-closed delimiter
+// error-pattern: error: this file contains an unclosed delimiter
 
-#![feature(custom_attribute, plugin)]
-#![plugin(pnet_macros_plugin)]
-
-extern crate pnet;
+extern crate pnet_macros;
+extern crate pnet_macros_support;
+use pnet_macros::packet;
 
 #[packet]
 pub struct PacketWithPayload {

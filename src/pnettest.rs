@@ -111,7 +111,8 @@ fn build_udp4_packet(
     packet[data_start + 3] = msg[3];
 
     let (source, dest) = if let Some(ni) = ni {
-        let ipmask = ni.ips
+        let ipmask = ni
+            .ips
             .iter()
             .filter(|addr| is_ipv4(&addr.ip()))
             .next()
@@ -238,7 +239,10 @@ fn layer4_ipv4() {
 
 // travis does not currently support IPv6
 #[test]
-#[cfg(all(not(feature = "appveyor"), not(all(target_os = "linux", feature = "travis"))))]
+#[cfg(all(
+    not(feature = "appveyor"),
+    not(all(target_os = "linux", feature = "travis"))
+))]
 fn layer4_ipv6() {
     layer4(IpAddr::V6(ipv6_source()), IPV6_HEADER_LEN);
 }
@@ -274,7 +278,8 @@ fn layer3_ipv4() {
                     check_ipv4_header(&packet[..], &header);
                     let udp_header = UdpPacket::new(
                         &header.packet()[(header.get_header_length() as usize * 4usize)..],
-                    ).unwrap();
+                    )
+                    .unwrap();
                     assert_eq!(
                         udp_header,
                         UdpPacket::new(&packet[IPV4_HEADER_LEN..]).unwrap()
