@@ -245,6 +245,11 @@ impl NetworkInterface {
     pub fn is_up(&self) -> bool {
         self.flags & (pnet_sys::IFF_UP as u32) != 0
     }
+
+    pub fn is_running(&self) -> bool {
+        self.flags & (pnet_sys::IFF_RUNNING as u32) != 0
+    }
+
     pub fn is_broadcast(&self) -> bool {
         self.flags & (pnet_sys::IFF_BROADCAST as u32) != 0
     }
@@ -262,13 +267,14 @@ impl NetworkInterface {
 
 impl ::std::fmt::Display for NetworkInterface {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        const FLAGS: [&'static str; 5] =
-            ["UP", "BROADCAST", "LOOPBACK", "POINTOPOINT", "MULTICAST"];
+        const FLAGS: [&'static str; 6] =
+            ["UP", "BROADCAST", "LOOPBACK", "RUNNING", "POINTOPOINT", "MULTICAST"];
         let flags = if self.flags > 0 {
             let rets = [
                 self.is_up(),
                 self.is_broadcast(),
                 self.is_loopback(),
+                self.is_running(),
                 self.is_point_to_point(),
                 self.is_multicast(),
             ];
