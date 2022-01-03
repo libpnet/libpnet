@@ -90,14 +90,10 @@ pub enum ChannelType {
 ///     _ => panic!("Unhandled channel type")
 /// }
 /// ```
+#[non_exhaustive]
 pub enum Channel {
     /// A datalink channel which sends and receives Ethernet packets.
     Ethernet(Box<dyn DataLinkSender>, Box<dyn DataLinkReceiver>),
-
-    /// This variant should never be used.
-    ///
-    /// Including it allows new variants to be added to `Channel` without breaking existing code.
-    PleaseIncludeACatchAllVariantWhenMatchingOnThisEnum,
 }
 
 /// Socket fanout type (Linux only).
