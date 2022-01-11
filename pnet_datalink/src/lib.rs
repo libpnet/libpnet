@@ -231,7 +231,16 @@ impl NetworkInterface {
     pub fn is_up(&self) -> bool {
         self.flags & (pnet_sys::IFF_UP as u32) != 0
     }
-
+    /// Triggered when the driver has signated netif_carrier_on
+    /// Check https://www.kernel.org/doc/html/latest/networking/operstates.html for more information
+    pub fn is_lower_up(&self) -> bool {
+        self.flags & (pnet_sys::IFF_LOWER_UP as u32) != 0
+    }
+    /// Triggered when the driver has signated netif_dormant_on
+    /// Check https://www.kernel.org/doc/html/latest/networking/operstates.html for more information
+    pub fn is_dormant(&self) -> bool {
+        self.flags & (pnet_sys::IFF_DORMANT as u32) != 0
+    }
     pub fn is_running(&self) -> bool {
         self.flags & (pnet_sys::IFF_RUNNING as u32) != 0
     }
