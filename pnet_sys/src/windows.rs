@@ -50,6 +50,7 @@ pub mod public {
     pub const IFF_POINTTOPOINT: ctypes::c_int = 0x00000008;
     pub const IFF_POINTOPOINT: ctypes::c_int = IFF_POINTTOPOINT;
     pub const IFF_MULTICAST: ctypes::c_int = 0x00000010;
+    pub const IFF_RUNNING: ctypes::c_int = 0x00000020;
 
     pub const INVALID_SOCKET: CSocket = winsock2::INVALID_SOCKET;
 
