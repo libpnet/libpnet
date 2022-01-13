@@ -80,24 +80,10 @@ pub enum ChannelType {
 }
 
 /// A channel for sending and receiving at the data link layer.
-///
-/// NOTE: It is important to always include a catch-all variant in match statements using this
-/// enum, since new variants may be added. For example:
-///
-/// ```ignore
-/// match some_channel {
-///     Ethernet(tx, rx) => { /* Handle Ethernet packets */ },
-///     _ => panic!("Unhandled channel type")
-/// }
-/// ```
+#[non_exhaustive]
 pub enum Channel {
     /// A datalink channel which sends and receives Ethernet packets.
     Ethernet(Box<dyn DataLinkSender>, Box<dyn DataLinkReceiver>),
-
-    /// This variant should never be used.
-    ///
-    /// Including it allows new variants to be added to `Channel` without breaking existing code.
-    PleaseIncludeACatchAllVariantWhenMatchingOnThisEnum,
 }
 
 /// Socket fanout type (Linux only).
