@@ -155,13 +155,13 @@ fn ntohs(u: u16) -> u16 {
 
 #[cfg(test)]
 mod tests {
-    use get_socket_receive_timeout;
-    use recv_from;
-    use set_socket_receive_timeout;
+    use crate::get_socket_receive_timeout;
+    use crate::recv_from;
+    use crate::set_socket_receive_timeout;
     use std::mem;
     use std::time::{Duration, Instant};
-    use CSocket;
-    use SockAddrStorage;
+    use crate::CSocket;
+    use crate::SockAddrStorage;
 
     fn test_timeout(socket: CSocket) -> Duration {
         let mut buffer = [0u8; 1024];
