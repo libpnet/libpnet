@@ -47,12 +47,23 @@ pub mod linux;
 
 #[cfg(all(
     not(feature = "netmap"),
-    any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd", target_os = "macos", target_os = "ios")
+    any(
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "macos",
+        target_os = "ios"
+    )
 ))]
 #[path = "bpf.rs"]
 mod backend;
 
-#[cfg(any(target_os = "freebsd", target_os = "netbsd", target_os = "macos", target_os = "ios"))]
+#[cfg(any(
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "macos",
+    target_os = "ios"
+))]
 pub mod bpf;
 
 #[cfg(feature = "netmap")]
@@ -219,60 +230,94 @@ pub struct NetworkInterface {
 }
 
 impl NetworkInterface {
-    /// Retrieve the MAC address associated with the interface.
-    #[deprecated(
-        since = "0.26.0",
-        note = "Please use NetworkInterface's field 'mac' instead."
-    )]
-    pub fn mac_address(&self) -> MacAddr {
-        self.mac.unwrap()
-    }
-
     pub fn is_up(&self) -> bool {
         self.flags & (pnet_sys::IFF_UP as u32) != 0
-    }
-    /// Triggered when the driver has signated netif_carrier_on
-    /// Check https://www.kernel.org/doc/html/latest/networking/operstates.html for more information
-    pub fn is_lower_up(&self) -> bool {
-        self.flags & (pnet_sys::IFF_LOWER_UP as u32) != 0
-    }
-    /// Triggered when the driver has signated netif_dormant_on
-    /// Check https://www.kernel.org/doc/html/latest/networking/operstates.html for more information
-    pub fn is_dormant(&self) -> bool {
-        self.flags & (pnet_sys::IFF_DORMANT as u32) != 0
-    }
-    pub fn is_running(&self) -> bool {
-        self.flags & (pnet_sys::IFF_RUNNING as u32) != 0
     }
 
     pub fn is_broadcast(&self) -> bool {
         self.flags & (pnet_sys::IFF_BROADCAST as u32) != 0
     }
+
     /// Is the interface a loopback interface?
     pub fn is_loopback(&self) -> bool {
         self.flags & (pnet_sys::IFF_LOOPBACK as u32) != 0
     }
+
     pub fn is_point_to_point(&self) -> bool {
         self.flags & (pnet_sys::IFF_POINTOPOINT as u32) != 0
     }
+
     pub fn is_multicast(&self) -> bool {
         self.flags & (pnet_sys::IFF_MULTICAST as u32) != 0
+    }
+
+    /// Triggered when the driver has signated netif_carrier_on
+    /// Check https://www.kernel.org/doc/html/latest/networking/operstates.html for more information
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    pub fn is_lower_up(&self) -> bool {
+        self.flags & (pnet_sys::IFF_LOWER_UP as u32) != 0
+    }
+
+    /// Triggered when the driver has signated netif_dormant_on
+    /// Check https://www.kernel.org/doc/html/latest/networking/operstates.html for more information
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    pub fn is_dormant(&self) -> bool {
+        self.flags & (pnet_sys::IFF_DORMANT as u32) != 0
+    }
+
+    #[cfg(unix)]
+    pub fn is_running(&self) -> bool {
+        self.flags & (pnet_sys::IFF_RUNNING as u32) != 0
     }
 }
 
 impl ::std::fmt::Display for NetworkInterface {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        const FLAGS: [&'static str; 6] =
-            ["UP", "BROADCAST", "LOOPBACK", "RUNNING", "POINTOPOINT", "MULTICAST"];
+        const FLAGS: [&'static str; 8] = [
+            "UP",
+            "BROADCAST",
+            "LOOPBACK",
+            "POINTOPOINT",
+            "MULTICAST",
+            "RUNNING",
+            "DORMANT",
+            "LOWERUP",
+        ];
         let flags = if self.flags > 0 {
+            #[cfg(any(target_os = "linux", target_os = "android"))]
             let rets = [
                 self.is_up(),
                 self.is_broadcast(),
                 self.is_loopback(),
-                self.is_running(),
                 self.is_point_to_point(),
                 self.is_multicast(),
+                self.is_running(),
+                self.is_dormant(),
+                self.is_lower_up(),
             ];
+            #[cfg(all(unix, not(any(target_os = "linux", target_os = "android"))))]
+            let rets = [
+                self.is_up(),
+                self.is_broadcast(),
+                self.is_loopback(),
+                self.is_point_to_point(),
+                self.is_multicast(),
+                self.is_running(),
+                false,
+                false,
+            ];
+            #[cfg(not(unix))]
+            let rets = [
+                self.is_up(),
+                self.is_broadcast(),
+                self.is_loopback(),
+                self.is_point_to_point(),
+                self.is_multicast(),
+                false,
+                false,
+                false,
+            ];
+
             format!(
                 "{:X}<{}>",
                 self.flags,

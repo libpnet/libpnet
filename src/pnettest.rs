@@ -356,8 +356,8 @@ fn layer2() {
 
     {
         let mut ethernet_header = MutableEthernetPacket::new(&mut packet[..]).unwrap();
-        ethernet_header.set_source(interface.mac_address());
-        ethernet_header.set_destination(interface.mac_address());
+        ethernet_header.set_source(interface.mac.unwrap());
+        ethernet_header.set_destination(interface.mac.unwrap());
         ethernet_header.set_ethertype(EtherTypes::Ipv4);
     }
 
@@ -435,8 +435,8 @@ fn layer2_timeouts() {
 
     {
         let mut ethernet_header = MutableEthernetPacket::new(&mut packet[..]).unwrap();
-        ethernet_header.set_source(interface.mac_address());
-        ethernet_header.set_destination(interface.mac_address());
+        ethernet_header.set_source(interface.mac.unwrap());
+        ethernet_header.set_destination(interface.mac.unwrap());
         ethernet_header.set_ethertype(EtherTypes::Ipv4);
     }
 
