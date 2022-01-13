@@ -8,14 +8,11 @@
 
 //! Support for sending and receiving data link layer packets using the WinPcap library.
 
-extern crate winapi;
-
 use super::bindings::{bpf, winpcap};
 use super::{DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
 
-use self::winapi::ctypes;
 use std::cmp;
 use std::collections::VecDeque;
 use std::ffi::{CStr, CString};
@@ -24,7 +21,9 @@ use std::mem;
 use std::slice;
 use std::str::from_utf8_unchecked;
 use std::sync::Arc;
-use self::winapi::ctypes::c_char;
+use winapi::ctypes::c_char;
+
+use winapi::ctypes;
 
 struct WinPcapAdapter {
     adapter: winpcap::LPADAPTER,

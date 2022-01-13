@@ -9,7 +9,7 @@
 //! Support for sending and receiving data link layer packets on a fake network managed
 //! by in memory FIFO queues. Useful for writing tests.
 
-use {DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
+use crate::{DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
 
 use std::io;
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -177,7 +177,7 @@ pub fn dummy_interface(i: u8) -> NetworkInterface {
 
 #[cfg(test)]
 mod tests {
-    use {DataLinkReceiver, DataLinkSender};
+    use crate::{DataLinkReceiver, DataLinkSender};
 
     use std::io;
     use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};

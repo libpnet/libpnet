@@ -8,7 +8,7 @@
 
 //! Interface listing implementation for all non-Windows platforms.
 
-use {MacAddr, NetworkInterface};
+use crate::{MacAddr, NetworkInterface};
 
 use ipnetwork::{ip_mask_to_prefix, IpNetwork};
 use pnet_sys;
@@ -146,7 +146,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
     target_os = "ios"
 ))]
 fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
-    use bindings::bpf;
+    use crate::bindings::bpf;
     use std::net::SocketAddr;
 
     unsafe {

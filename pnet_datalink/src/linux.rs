@@ -10,8 +10,8 @@
 
 extern crate libc;
 
-use bindings::linux;
-use {DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
+use crate::bindings::linux;
+use crate::{DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
 
 use pnet_sys;
 
