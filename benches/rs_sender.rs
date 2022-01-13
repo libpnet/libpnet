@@ -1,4 +1,4 @@
-// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015, 2022 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -95,7 +95,7 @@ fn main() {
     {
         let mut mut_ethernet_header = MutableEthernetPacket::new(&mut buffer[..]).unwrap();
         mut_ethernet_header.set_destination(destination);
-        mut_ethernet_header.set_source(interface.mac_address());
+        mut_ethernet_header.set_source(interface.mac.unwrap());
         mut_ethernet_header.set_ethertype(EtherTypes::Ipv4);
         build_udp4_packet(mut_ethernet_header.payload_mut(), "rmesg");
     }
