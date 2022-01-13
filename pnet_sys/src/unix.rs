@@ -48,6 +48,9 @@ pub mod public {
 
     pub use libc::{IFF_BROADCAST, IFF_LOOPBACK, IFF_RUNNING, IFF_MULTICAST, IFF_POINTOPOINT, IFF_UP};
 
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    pub use libc::{IFF_LOWER_UP, IFF_DORMANT};
+
     pub const INVALID_SOCKET: CSocket = -1;
 
     pub unsafe fn close(sock: CSocket) {
