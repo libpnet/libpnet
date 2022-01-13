@@ -17,6 +17,7 @@ use libc;
 
 use std::ffi::{CStr, CString};
 use std::mem;
+use std::mem::MaybeUninit;
 use std::net::IpAddr;
 use std::os::raw::c_char;
 use std::str::from_utf8_unchecked;
@@ -33,54 +34,74 @@ pub fn interfaces() -> Vec<NetworkInterface> {
     }
 
     let mut ifaces: Vec<NetworkInterface> = Vec::new();
-    unsafe {
-        #[allow(deprecated)]
-        let mut addrs: *mut libc::ifaddrs = mem::uninitialized();
-        if libc::getifaddrs(&mut addrs) != 0 {
-            return ifaces;
-        }
-        let mut addr = addrs;
-        while !addr.is_null() {
-            let c_str = (*addr).ifa_name as *const c_char;
-            let bytes = CStr::from_ptr(c_str).to_bytes();
-            let name = from_utf8_unchecked(bytes).to_owned();
-            let (mac, ip) = sockaddr_to_network_addr((*addr).ifa_addr as *const libc::sockaddr);
-            let (_, netmask) =
-                sockaddr_to_network_addr((*addr).ifa_netmask as *const libc::sockaddr);
-            let prefix = netmask
-                .and_then(|netmask| ip_mask_to_prefix(netmask).ok())
-                .unwrap_or(0);
-            let network = ip.and_then(|ip| IpNetwork::new(ip, prefix).ok());
-            let ni = NetworkInterface {
-                name: name.clone(),
-                description: "".to_string(),
-                index: 0,
-                mac: mac,
-                ips: network.into_iter().collect(),
-                flags: (*addr).ifa_flags,
-            };
-            let mut found: bool = false;
-            for iface in &mut ifaces {
-                if name == iface.name {
-                    merge(iface, &ni);
-                    found = true;
-                }
-            }
-            if !found {
-                ifaces.push(ni);
-            }
+    let mut addrs: MaybeUninit<*mut libc::ifaddrs> = MaybeUninit::uninit();
 
-            addr = (*addr).ifa_next;
-        }
-        libc::freeifaddrs(addrs);
+    // Safety: addrs.as_mut_ptr() is valid, it points to addrs.
+    if unsafe { libc::getifaddrs(addrs.as_mut_ptr()) } != 0 {
+        return ifaces;
+    }
 
+    // Safety: If there was an error, we would have already returned.
+    // Therefore, getifaddrs has initialized `addrs`.
+    let addrs = unsafe { addrs.assume_init() };
+
+    let mut addr = addrs;
+    while !addr.is_null() {
+        // Safety: We assume that addr is valid for the lifetime of this loop
+        // body, and is not mutated.
+        let addr_ref: &libc::ifaddrs = unsafe {&*addr};
+
+        let c_str = addr_ref.ifa_name as *const c_char;
+
+        // Safety: ifa_name is a null terminated interface name
+        let bytes = unsafe { CStr::from_ptr(c_str).to_bytes() };
+
+        // Safety: Interfaces on unix must be valid UTF-8
+        // TODO: Really? They *must* be UTF-8?
+        let name = unsafe {from_utf8_unchecked(bytes).to_owned() };
+        let (mac, ip) = sockaddr_to_network_addr(addr_ref.ifa_addr as *const libc::sockaddr);
+        let (_, netmask) = sockaddr_to_network_addr(addr_ref.ifa_netmask as *const libc::sockaddr);
+        let prefix = netmask
+            .and_then(|netmask| ip_mask_to_prefix(netmask).ok())
+            .unwrap_or(0);
+        let network = ip.and_then(|ip| IpNetwork::new(ip, prefix).ok());
+        let ni = NetworkInterface {
+            name: name.clone(),
+            description: "".to_string(),
+            index: 0,
+            mac: mac,
+            ips: network.into_iter().collect(),
+            flags: addr_ref.ifa_flags,
+        };
+        let mut found: bool = false;
         for iface in &mut ifaces {
-            let name = CString::new(iface.name.as_bytes()).unwrap();
+            if name == iface.name {
+                merge(iface, &ni);
+                found = true;
+            }
+        }
+        if !found {
+            ifaces.push(ni);
+        }
+
+        addr = addr_ref.ifa_next;
+    }
+
+    // Safety: addrs has been previously allocated through getifaddrs
+    unsafe {
+        libc::freeifaddrs(addrs);
+    }
+
+    for iface in &mut ifaces {
+        let name = CString::new(iface.name.as_bytes()).unwrap();
+
+        // Safety: name.as_ptr() is a valid pointer
+        unsafe {
             iface.index = libc::if_nametoindex(name.as_ptr());
         }
-
-        ifaces
     }
+
+    ifaces
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -117,7 +138,13 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
     }
 }
 
-#[cfg(any(target_os = "openbsd", target_os = "freebsd", target_os = "netbsd", target_os = "macos", target_os = "ios"))]
+#[cfg(any(
+    target_os = "openbsd",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "macos",
+    target_os = "ios"
+))]
 fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
     use bindings::bpf;
     use std::net::SocketAddr;

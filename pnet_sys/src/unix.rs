@@ -107,10 +107,10 @@ pub mod public {
     }
 
     fn make_in6_addr(segments: [u16; 8]) -> In6Addr {
-        #[allow(deprecated)]
-        let mut val: In6Addr = unsafe { mem::uninitialized() };
-        val.s6_addr = unsafe {
-            mem::transmute([
+        // Safety: We're transmuting an array of ints to an array of ints.
+        // There is no padding involved, and they must be the same size.
+        let s6_addr = unsafe {
+            mem::transmute::<[u16; 8], [u8; 16]>([
                 htons(segments[0]),
                 htons(segments[1]),
                 htons(segments[2]),
@@ -121,7 +121,8 @@ pub mod public {
                 htons(segments[7]),
             ])
         };
-        val
+
+        In6Addr { s6_addr }
     }
 
     pub fn addr_to_sockaddr(addr: SocketAddr, storage: &mut SockAddrStorage) -> SockLen {
