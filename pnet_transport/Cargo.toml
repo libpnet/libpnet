@@ -9,6 +9,7 @@ description = "Cross-platform, transport layer networking."
 readme = "../README.md"
 keywords = ["networking", "transport", "raw", "socket"]
 categories = ["network-programming"]
+edition = "2018"
 
 [dependencies]
 libc = "0.2.94"
