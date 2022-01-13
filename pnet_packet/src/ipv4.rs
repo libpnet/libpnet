@@ -8,8 +8,8 @@
 
 //! An IPv4 packet abstraction.
 
-use PrimitiveValues;
-use ip::IpNextHeaderProtocol;
+use crate::PrimitiveValues;
+use crate::ip::IpNextHeaderProtocol;
 
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
@@ -161,8 +161,8 @@ pub struct Ipv4 {
 /// Calculates a checksum of an IPv4 packet header.
 /// The checksum field of the packet is regarded as zeros during the calculation.
 pub fn checksum(packet: &Ipv4Packet) -> u16be {
-    use Packet;
-    use util;
+    use crate::Packet;
+    use crate::util;
 
     let min = Ipv4Packet::minimum_packet_size();
     let max = packet.packet().len();
@@ -288,9 +288,9 @@ fn ipv4_option_payload_length(ipv4_option: &Ipv4OptionPacket) -> usize {
 
 #[test]
 fn ipv4_packet_test() {
-    use ip::IpNextHeaderProtocols;
-    use Packet;
-    use PacketSize;
+    use crate::ip::IpNextHeaderProtocols;
+    use crate::Packet;
+    use crate::PacketSize;
 
     let mut packet = [0u8; 200];
     {
@@ -384,7 +384,7 @@ fn ipv4_packet_option_test() {
 
 #[test]
 fn ipv4_packet_set_payload_test() {
-    use Packet;
+    use crate::Packet;
 
     let mut packet = [0u8; 25]; // allow 20 byte header and 5 byte payload
     let mut ip_packet = MutableIpv4Packet::new(&mut packet[..]).unwrap();

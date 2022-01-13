@@ -8,7 +8,7 @@
 
 //! Utilities for working with packets, eg. checksumming.
 
-use ip::IpNextHeaderProtocol;
+use crate::ip::IpNextHeaderProtocol;
 use pnet_macros_support::types::u16be;
 
 use std::convert::TryInto;

@@ -8,7 +8,7 @@
 
 //! An ethernet packet abstraction.
 
-use PrimitiveValues;
+use crate::PrimitiveValues;
 
 use std::fmt;
 use pnet_base::MacAddr;
@@ -60,7 +60,7 @@ fn ethernet_header_test() {
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod EtherTypes {
-    use ethernet::EtherType;
+    use crate::ethernet::EtherType;
 
     /// Internet Protocol version 4 (IPv4) \[RFC7042\].
     pub const Ipv4: EtherType = EtherType(0x0800);

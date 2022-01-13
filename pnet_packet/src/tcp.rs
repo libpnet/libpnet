@@ -8,16 +8,16 @@
 
 //! A TCP packet abstraction.
 
-use Packet;
-use PrimitiveValues;
-use ip::IpNextHeaderProtocols;
+use crate::Packet;
+use crate::PrimitiveValues;
+use crate::ip::IpNextHeaderProtocols;
 
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
-use util::{self, Octets};
+use crate::util::{self, Octets};
 
 /// The TCP flags.
 #[allow(non_snake_case)]
@@ -290,8 +290,8 @@ pub fn ipv6_checksum_adv(packet: &TcpPacket,
 
 #[test]
 fn tcp_header_ipv4_test() {
-    use ip::IpNextHeaderProtocols;
-    use ipv4::MutableIpv4Packet;
+    use crate::ip::IpNextHeaderProtocols;
+    use crate::ipv4::MutableIpv4Packet;
 
     const IPV4_HEADER_LEN: usize = 20;
     const TCP_HEADER_LEN: usize = 32;

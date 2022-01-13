@@ -8,8 +8,8 @@
 
 //! An ICMPv6 packet abstraction.
 
-use ip::IpNextHeaderProtocols;
-use PrimitiveValues;
+use crate::ip::IpNextHeaderProtocols;
+use crate::PrimitiveValues;
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 use std::net::Ipv6Addr;
@@ -75,8 +75,8 @@ pub struct Icmpv6 {
 
 /// Calculates a checksum of an ICMPv6 packet.
 pub fn checksum(packet: &Icmpv6Packet, source: &Ipv6Addr, destination: &Ipv6Addr) -> u16be {
-    use Packet;
-    use util;
+    use crate::Packet;
+    use crate::util;
 
     util::ipv6_checksum(packet.packet(), 1, &[], source, destination, IpNextHeaderProtocols::Icmpv6)
 }
@@ -118,7 +118,7 @@ mod checksum_tests {
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod Icmpv6Types {
-    use icmpv6::Icmpv6Type;
+    use crate::icmpv6::Icmpv6Type;
     /// ICMPv6 type for "destination unreachable".
     pub const DestinationUnreachable: Icmpv6Type = Icmpv6Type(1);
     /// ICMPv6 type for "packet too big".
@@ -149,9 +149,9 @@ pub mod ndp {
     //!
     //! [RFC 4861]: https://tools.ietf.org/html/rfc4861
 
-    use icmpv6::{Icmpv6Code, Icmpv6Type};
-    use PrimitiveValues;
-    use Packet;
+    use crate::icmpv6::{Icmpv6Code, Icmpv6Type};
+    use crate::PrimitiveValues;
+    use crate::Packet;
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
     use std::net::Ipv6Addr;
@@ -159,7 +159,7 @@ pub mod ndp {
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
     pub mod Icmpv6Codes {
-        use icmpv6::Icmpv6Code;
+        use crate::icmpv6::Icmpv6Code;
         /// 0 is the only available ICMPv6 Code for the NDP.
         pub const NoCode: Icmpv6Code = Icmpv6Code(0);
     }
@@ -561,7 +561,7 @@ pub mod ndp {
 
     #[cfg(test)]
     mod ndp_tests {
-        use icmpv6::{Icmpv6Types, Icmpv6Code};
+        use crate::icmpv6::{Icmpv6Types, Icmpv6Code};
         use super::*;
 
         #[test]
@@ -839,8 +839,8 @@ pub mod echo_reply {
     //! +-+-+-+-+-
     //! ```
 
-    use PrimitiveValues;
-    use icmpv6::{Icmpv6Code, Icmpv6Type};
+    use crate::PrimitiveValues;
+    use crate::icmpv6::{Icmpv6Code, Icmpv6Type};
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
@@ -885,7 +885,7 @@ pub mod echo_reply {
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
     pub mod Icmpv6Codes {
-        use icmpv6::Icmpv6Code;
+        use crate::icmpv6::Icmpv6Code;
         /// 0 is the only available ICMPv6 code for "echo reply" ICMPv6 packets.
         pub const NoCode: Icmpv6Code = Icmpv6Code(0);
     }
@@ -918,8 +918,8 @@ pub mod echo_request {
     //! +-+-+-+-+-
     //! ```
 
-    use PrimitiveValues;
-    use icmpv6::{Icmpv6Code, Icmpv6Type};
+    use crate::PrimitiveValues;
+    use crate::icmpv6::{Icmpv6Code, Icmpv6Type};
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
@@ -964,7 +964,7 @@ pub mod echo_request {
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
     pub mod Icmpv6Codes {
-        use icmpv6::Icmpv6Code;
+        use crate::icmpv6::Icmpv6Code;
         /// 0 is the only available ICMPv6 code for "echo reply" ICMPv6 packets.
         pub const NoCode: Icmpv6Code = Icmpv6Code(0);
     }

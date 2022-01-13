@@ -8,7 +8,7 @@
 
 //! An ICMP packet abstraction.
 
-use PrimitiveValues;
+use crate::PrimitiveValues;
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
@@ -65,8 +65,8 @@ pub struct Icmp {
 
 /// Calculates a checksum of an ICMP packet.
 pub fn checksum(packet: &IcmpPacket) -> u16be {
-    use Packet;
-    use util;
+    use crate::Packet;
+    use crate::util;
 
     util::checksum(packet.packet(), 1)
 }
@@ -110,7 +110,7 @@ mod checksum_tests {
 #[allow(non_upper_case_globals)]
 pub mod IcmpTypes {
 
-    use icmp::IcmpType;
+    use crate::icmp::IcmpType;
     /// ICMP type for "echo reply" packet.
     pub const EchoReply: IcmpType = IcmpType(0);
     /// ICMP type for "destination unreachable" packet.
@@ -159,8 +159,8 @@ pub mod echo_reply {
     //! +-+-+-+-+-
     //! ```
 
-    use PrimitiveValues;
-    use icmp::{IcmpCode, IcmpType};
+    use crate::PrimitiveValues;
+    use crate::icmp::{IcmpCode, IcmpType};
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
@@ -205,7 +205,7 @@ pub mod echo_reply {
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
     pub mod IcmpCodes {
-        use icmp::IcmpCode;
+        use crate::icmp::IcmpCode;
         /// 0 is the only available ICMP code for "echo reply" ICMP packets.
         pub const NoCode: IcmpCode = IcmpCode(0);
     }
@@ -238,8 +238,8 @@ pub mod echo_request {
     //! +-+-+-+-+-
     //! ```
 
-    use PrimitiveValues;
-    use icmp::{IcmpCode, IcmpType};
+    use crate::PrimitiveValues;
+    use crate::icmp::{IcmpCode, IcmpType};
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
@@ -284,7 +284,7 @@ pub mod echo_request {
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
     pub mod IcmpCodes {
-        use icmp::IcmpCode;
+        use crate::icmp::IcmpCode;
         /// 0 is the only available ICMP code for "echo reply" ICMP packets.
         pub const NoCode: IcmpCode = IcmpCode(0);
     }
@@ -317,7 +317,7 @@ pub mod destination_unreachable {
     //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     //! ```
 
-    use icmp::{IcmpCode, IcmpType};
+    use crate::icmp::{IcmpCode, IcmpType};
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
@@ -325,7 +325,7 @@ pub mod destination_unreachable {
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
     pub mod IcmpCodes {
-        use icmp::IcmpCode;
+        use crate::icmp::IcmpCode;
         /// ICMP code for "destination network unreachable" packet.
         pub const DestinationNetworkUnreachable: IcmpCode = IcmpCode(0);
         /// ICMP code for "destination host unreachable" packet.
@@ -388,7 +388,7 @@ pub mod time_exceeded {
     //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     //! ```
 
-    use icmp::{IcmpCode, IcmpType};
+    use crate::icmp::{IcmpCode, IcmpType};
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
@@ -396,7 +396,7 @@ pub mod time_exceeded {
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
     pub mod IcmpCodes {
-        use icmp::IcmpCode;
+        use crate::icmp::IcmpCode;
         /// ICMP code for "time to live exceeded in transit" packet.
         pub const TimeToLiveExceededInTransit: IcmpCode = IcmpCode(0);
         /// ICMP code for "fragment reassembly time exceeded" packet.
