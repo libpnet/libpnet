@@ -1,15 +1,13 @@
 extern crate pnet;
-extern crate pnet_datalink;
 
 use std::env;
 use std::io::{self, Write};
 use std::net::{AddrParseError, IpAddr, Ipv4Addr};
 use std::process;
 
-use pnet_datalink::{Channel, MacAddr, NetworkInterface};
+use pnet::datalink::{Channel, MacAddr, NetworkInterface};
 
-use pnet::packet::arp::{ArpHardwareTypes, ArpOperations};
-use pnet::packet::arp::{ArpPacket, MutableArpPacket};
+use pnet::packet::arp::{ArpHardwareTypes, ArpOperations, ArpPacket, MutableArpPacket};
 use pnet::packet::ethernet::EtherTypes;
 use pnet::packet::ethernet::MutableEthernetPacket;
 use pnet::packet::{MutablePacket, Packet};
@@ -25,7 +23,7 @@ fn get_mac_through_arp(interface: NetworkInterface, target_ip: Ipv4Addr) -> MacA
         })
         .unwrap();
 
-    let (mut sender, mut receiver) = match pnet_datalink::channel(&interface, Default::default()) {
+    let (mut sender, mut receiver) = match pnet::datalink::channel(&interface, Default::default()) {
         Ok(Channel::Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => panic!("Unknown channel type"),
         Err(e) => panic!("Error happened {}", e),
@@ -35,7 +33,7 @@ fn get_mac_through_arp(interface: NetworkInterface, target_ip: Ipv4Addr) -> MacA
     let mut ethernet_packet = MutableEthernetPacket::new(&mut ethernet_buffer).unwrap();
 
     ethernet_packet.set_destination(MacAddr::broadcast());
-    ethernet_packet.set_source(interface.mac_address());
+    ethernet_packet.set_source(interface.mac.unwrap());
     ethernet_packet.set_ethertype(EtherTypes::Arp);
 
     let mut arp_buffer = [0u8; 28];
@@ -46,7 +44,7 @@ fn get_mac_through_arp(interface: NetworkInterface, target_ip: Ipv4Addr) -> MacA
     arp_packet.set_hw_addr_len(6);
     arp_packet.set_proto_addr_len(4);
     arp_packet.set_operation(ArpOperations::Request);
-    arp_packet.set_sender_hw_addr(interface.mac_address());
+    arp_packet.set_sender_hw_addr(interface.mac.unwrap());
     arp_packet.set_sender_proto_addr(source_ip);
     arp_packet.set_target_hw_addr(MacAddr::zero());
     arp_packet.set_target_proto_addr(target_ip);
@@ -95,12 +93,12 @@ fn main() {
         }
     };
 
-    let interfaces = pnet_datalink::interfaces();
+    let interfaces = pnet::datalink::interfaces();
     let interface = interfaces
         .into_iter()
         .find(|iface| iface.name == iface_name)
         .unwrap();
-    let _source_mac = interface.mac_address();
+    let _source_mac = interface.mac.unwrap();
 
     let target_mac = get_mac_through_arp(interface, target_ip.unwrap());
 
