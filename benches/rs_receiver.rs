@@ -1,4 +1,4 @@
-// Copyright (c) 2014, 2015 Robert Clipsham <robert@octarineparrot.com>
+// Copyright (c) 2014, 2015, 2022 Robert Clipsham <robert@octarineparrot.com>
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -10,6 +10,7 @@ extern crate pnet_datalink;
 extern crate time;
 
 use std::env;
+use time::OffsetDateTime;
 
 fn main() {
     use pnet_datalink::Channel::Ethernet;
@@ -33,14 +34,14 @@ fn main() {
 
     let mut i = 0usize;
     let mut timestamps = Vec::with_capacity(201);
-    timestamps.push(time::precise_time_ns() / 1_000);
+    timestamps.push(OffsetDateTime::now_utc().unix_timestamp());
 
     loop {
         match rx.next() {
             Ok(_) => {
                 i += 1;
                 if i == 1_000_000 {
-                    timestamps.push(time::precise_time_ns() / 1_000);
+                    timestamps.push(OffsetDateTime::now_utc().unix_timestamp());
                     if timestamps.len() == 201 {
                         break;
                     }
