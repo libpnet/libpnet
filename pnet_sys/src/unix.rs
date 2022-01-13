@@ -1,11 +1,9 @@
-extern crate libc;
-
 use super::{htons, ntohs};
 use std::io;
 
 pub mod public {
 
-    use super::libc;
+    use libc;
     use super::{htons, ntohs};
     use std::io;
     use std::mem;
@@ -48,7 +46,7 @@ pub mod public {
     pub const IPPROTO_IPV6: libc::c_int = libc::IPPROTO_IPV6;
     pub const IPV6_UNICAST_HOPS: libc::c_int = libc::IPV6_UNICAST_HOPS;
 
-    pub use super::libc::{IFF_BROADCAST, IFF_LOOPBACK, IFF_RUNNING, IFF_MULTICAST, IFF_POINTOPOINT, IFF_UP};
+    pub use libc::{IFF_BROADCAST, IFF_LOOPBACK, IFF_RUNNING, IFF_MULTICAST, IFF_POINTOPOINT, IFF_UP};
 
     pub const INVALID_SOCKET: CSocket = -1;
 
@@ -255,9 +253,9 @@ fn errno() -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use duration_to_timespec;
+    use crate::duration_to_timespec;
     use std::time::Duration;
-    use timespec_to_duration;
+    use crate::timespec_to_duration;
 
     #[test]
     fn test_duration_to_timespec() {

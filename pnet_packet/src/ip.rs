@@ -10,7 +10,7 @@
 //! fields.
 
 use std::fmt;
-use PrimitiveValues;
+use crate::PrimitiveValues;
 
 /// Protocol numbers as defined at:
 /// http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml

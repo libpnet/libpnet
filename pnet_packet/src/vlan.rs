@@ -1,7 +1,7 @@
 //! A VLAN packet abstraction.
 
-use PrimitiveValues;
-use ethernet::EtherType;
+use crate::PrimitiveValues;
+use crate::ethernet::EtherType;
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
@@ -70,7 +70,7 @@ pub struct Vlan {
 
 #[cfg(test)]
 mod tests {
-    use ethernet::EtherTypes;
+    use crate::ethernet::EtherTypes;
     use super::*;
 
     #[test]

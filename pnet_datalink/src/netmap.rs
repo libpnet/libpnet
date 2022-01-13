@@ -10,16 +10,13 @@
 
 #![allow(bad_style)]
 
-extern crate libc;
-extern crate netmap_sys;
-
 use self::netmap_sys::netmap::{netmap_slot, nm_ring_empty};
 use self::netmap_sys::netmap_user::{
     nm_close, nm_desc, nm_nextpkt, nm_open, nm_pkthdr, nm_ring_next, NETMAP_BUF, NETMAP_FD,
     NETMAP_TXRING,
 };
 use Channel::Ethernet;
-use {DataLinkReceiver, DataLinkSender, NetworkInterface};
+use crate::{DataLinkReceiver, DataLinkSender, NetworkInterface};
 
 use std::ffi::CString;
 use std::fs::File;

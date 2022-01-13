@@ -8,10 +8,8 @@
 
 //! Support for sending and receiving data link layer packets using the /dev/bpf device.
 
-extern crate libc;
-
-use bindings::bpf;
-use {DataLinkReceiver, DataLinkSender, NetworkInterface};
+use crate::bindings::bpf;
+use crate::{DataLinkReceiver, DataLinkSender, NetworkInterface};
 
 use pnet_sys;
 

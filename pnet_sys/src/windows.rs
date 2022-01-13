@@ -1,17 +1,15 @@
-extern crate winapi;
-
-use self::winapi::ctypes;
-use self::winapi::shared::minwindef;
-use self::winapi::um::winsock2;
+use winapi::ctypes;
+use winapi::shared::minwindef;
+use winapi::um::winsock2;
 use std::io;
 
 use super::{htons, ntohs};
 
 pub mod public {
 
-    use super::winapi::ctypes;
-    use super::winapi::shared::{in6addr, inaddr, ws2def, ws2ipdef};
-    use super::winapi::um::winsock2;
+    use winapi::ctypes;
+    use winapi::shared::{in6addr, inaddr, ws2def, ws2ipdef};
+    use winapi::um::winsock2;
     use super::{htons, ntohs};
     use std::io;
     use std::mem;

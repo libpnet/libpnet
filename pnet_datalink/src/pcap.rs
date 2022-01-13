@@ -1,18 +1,16 @@
 //! Support for sending and receiving data link layer packets using libpcap.
 //! Also has support for reading pcap files.
 
-extern crate pcap;
-
 use std::io;
 use std::marker::{Send, Sync};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use self::pcap::{Activated, Active};
+use pcap::{Activated, Active};
 
-use Channel::Ethernet;
-use {DataLinkReceiver, DataLinkSender, NetworkInterface};
+use crate::Channel::Ethernet;
+use crate::{DataLinkReceiver, DataLinkSender, NetworkInterface};
 
 /// Configuration for the pcap datalink backend.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

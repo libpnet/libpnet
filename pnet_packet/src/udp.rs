@@ -8,14 +8,14 @@
 
 //! A UDP packet abstraction.
 
-use Packet;
-use ip::IpNextHeaderProtocols;
+use crate::Packet;
+use crate::ip::IpNextHeaderProtocols;
 
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
 use std::net::{Ipv4Addr, Ipv6Addr};
-use util;
+use crate::util;
 
 /// Represents a UDP Packet.
 #[packet]
@@ -55,8 +55,8 @@ pub fn ipv4_checksum_adv(packet: &UdpPacket,
 
 #[test]
 fn udp_header_ipv4_test() {
-    use ip::IpNextHeaderProtocols;
-    use ipv4::MutableIpv4Packet;
+    use crate::ip::IpNextHeaderProtocols;
+    use crate::ipv4::MutableIpv4Packet;
 
     let mut packet = [0u8; 20 + 8 + 4];
     let ipv4_source = Ipv4Addr::new(192, 168, 0, 1);
@@ -125,8 +125,8 @@ pub fn ipv6_checksum_adv(packet: &UdpPacket,
 
 #[test]
 fn udp_header_ipv6_test() {
-    use ip::IpNextHeaderProtocols;
-    use ipv6::MutableIpv6Packet;
+    use crate::ip::IpNextHeaderProtocols;
+    use crate::ipv6::MutableIpv6Packet;
 
     let mut packet = [0u8; 40 + 8 + 4];
     let ipv6_source = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);

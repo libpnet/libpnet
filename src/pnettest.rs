@@ -8,21 +8,21 @@
 
 #![allow(warnings)]
 
-use datalink;
+use crate::datalink;
 
-use packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
-use packet::ipv4;
-use packet::ipv4::{Ipv4Packet, MutableIpv4Packet};
-use packet::ipv6::MutableIpv6Packet;
-use packet::udp;
-use packet::udp::{MutableUdpPacket, UdpPacket};
-use packet::Packet;
+use crate::packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
+use crate::packet::ipv4;
+use crate::packet::ipv4::{Ipv4Packet, MutableIpv4Packet};
+use crate::packet::ipv6::MutableIpv6Packet;
+use crate::packet::udp;
+use crate::packet::udp::{MutableUdpPacket, UdpPacket};
+use crate::packet::Packet;
 use std::iter::Iterator;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::mpsc::channel;
 use std::thread;
-use transport::TransportProtocol::{Ipv4, Ipv6};
-use transport::{
+use crate::transport::TransportProtocol::{Ipv4, Ipv6};
+use crate::transport::{
     ipv4_packet_iter, transport_channel, udp_packet_iter, TransportChannelType, TransportProtocol,
 };
 
@@ -344,9 +344,9 @@ fn get_test_interface() -> datalink::NetworkInterface {
 #[cfg(all(not(feature = "appveyor"), not(feature = "netmap")))]
 #[test]
 fn layer2() {
-    use datalink;
-    use datalink::Channel::Ethernet;
-    use packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
+    use crate::datalink;
+    use crate::datalink::Channel::Ethernet;
+    use crate::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
 
     const ETHERNET_HEADER_LEN: usize = 14;
 
@@ -421,9 +421,9 @@ fn layer2() {
 #[test]
 #[cfg(target_os = "linux")]
 fn layer2_timeouts() {
-    use datalink;
-    use datalink::Channel::Ethernet;
-    use packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
+    use crate::datalink;
+    use crate::datalink::Channel::Ethernet;
+    use crate::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
     use std::io::ErrorKind;
     use std::time::Duration;
 

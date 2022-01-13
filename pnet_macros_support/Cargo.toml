@@ -9,6 +9,7 @@ repository = "https://github.com/libpnet/libpnet"
 description = "Support library for libpnet_macros"
 readme = "../README.md"
 keywords = ["networking", "bitfields", "packet", "protocol"]
+edition = "2021"
 
 [dependencies]
 pnet_base = { path = "../pnet_base", version = "0.28.0" }

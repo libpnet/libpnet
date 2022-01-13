@@ -9,6 +9,7 @@ description = "Fundamental base types and code used by pnet."
 readme = "../README.md"
 keywords = ["networking", "ethernet"]
 categories = ["network-programming"]
+edition = "2021"
 
 [dependencies]
 serde = { version = "1.0.126", optional = true, default-features = false }
