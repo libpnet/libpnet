@@ -825,3 +825,161 @@ pub mod ndp {
         }
     }
 }
+
+pub mod echo_reply {
+    //! abstraction for "echo reply" ICMPv6 packets.
+    //!
+    //! ```text
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |     Type      |     Code      |          Checksum             |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |           Identifier          |        Sequence Number        |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |     Data ...
+    //! +-+-+-+-+-
+    //! ```
+
+    use PrimitiveValues;
+    use icmpv6::{Icmpv6Code, Icmpv6Type};
+    use pnet_macros::packet;
+    use pnet_macros_support::types::*;
+
+    /// Represents the identifier field.
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct Identifier(pub u16);
+
+    impl Identifier {
+        /// Create a new `Identifier` instance.
+        pub fn new(val: u16) -> Identifier {
+            Identifier(val)
+        }
+    }
+
+    impl PrimitiveValues for Identifier {
+        type T = (u16,);
+        fn to_primitive_values(&self) -> (u16,) {
+            (self.0,)
+        }
+    }
+
+    /// Represents the sequence number field.
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct SequenceNumber(pub u16);
+
+    impl SequenceNumber {
+        /// Create a new `SequenceNumber` instance.
+        pub fn new(val: u16) -> SequenceNumber {
+            SequenceNumber(val)
+        }
+    }
+
+    impl PrimitiveValues for SequenceNumber {
+        type T = (u16,);
+        fn to_primitive_values(&self) -> (u16,) {
+            (self.0,)
+        }
+    }
+
+    /// Enumeration of available ICMPv6 codes for "echo reply" ICMPv6 packets. There is actually only
+    /// one, since the only valid ICMPv6 code is 0.
+    #[allow(non_snake_case)]
+    #[allow(non_upper_case_globals)]
+    pub mod Icmpv6Codes {
+        use icmpv6::Icmpv6Code;
+        /// 0 is the only available ICMPv6 code for "echo reply" ICMPv6 packets.
+        pub const NoCode: Icmpv6Code = Icmpv6Code(0);
+    }
+
+    /// Represents an "echo reply" ICMPv6 packet.
+    #[packet]
+    pub struct EchoReply {
+        #[construct_with(u8)]
+        pub icmpv6_type: Icmpv6Type,
+        #[construct_with(u8)]
+        pub icmpv6_code: Icmpv6Code,
+        pub checksum: u16be,
+        pub identifier: u16be,
+        pub sequence_number: u16be,
+        #[payload]
+        pub payload: Vec<u8>,
+    }
+}
+
+pub mod echo_request {
+    //! abstraction for "echo request" ICMPv6 packets.
+    //!
+    //! ```text
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |     Type      |     Code      |          Checksum             |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |           Identifier          |        Sequence Number        |
+    //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    //! |     Data ...
+    //! +-+-+-+-+-
+    //! ```
+
+    use PrimitiveValues;
+    use icmpv6::{Icmpv6Code, Icmpv6Type};
+    use pnet_macros::packet;
+    use pnet_macros_support::types::*;
+
+    /// Represents the identifier field.
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct Identifier(pub u16);
+
+    impl Identifier {
+        /// Create a new `Identifier` instance.
+        pub fn new(val: u16) -> Identifier {
+            Identifier(val)
+        }
+    }
+
+    impl PrimitiveValues for Identifier {
+        type T = (u16,);
+        fn to_primitive_values(&self) -> (u16,) {
+            (self.0,)
+        }
+    }
+
+    /// Represents the sequence number field.
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct SequenceNumber(pub u16);
+
+    impl SequenceNumber {
+        /// Create a new `SequenceNumber` instance.
+        pub fn new(val: u16) -> SequenceNumber {
+            SequenceNumber(val)
+        }
+    }
+
+    impl PrimitiveValues for SequenceNumber {
+        type T = (u16,);
+        fn to_primitive_values(&self) -> (u16,) {
+            (self.0,)
+        }
+    }
+
+    /// Enumeration of available ICMPv6 codes for "echo reply" ICMPv6 packets. There is actually only
+    /// one, since the only valid ICMPv6 code is 0.
+    #[allow(non_snake_case)]
+    #[allow(non_upper_case_globals)]
+    pub mod Icmpv6Codes {
+        use icmpv6::Icmpv6Code;
+        /// 0 is the only available ICMPv6 code for "echo reply" ICMPv6 packets.
+        pub const NoCode: Icmpv6Code = Icmpv6Code(0);
+    }
+
+    /// Represents an "echo request" ICMPv6 packet.
+    #[packet]
+    pub struct EchoRequest {
+        #[construct_with(u8)]
+        pub icmpv6_type: Icmpv6Type,
+        #[construct_with(u8)]
+        pub icmpv6_code: Icmpv6Code,
+        pub checksum: u16be,
+        pub identifier: u16be,
+        pub sequence_number: u16be,
+        #[payload]
+        pub payload: Vec<u8>,
+    }
+}
