@@ -1,7 +1,7 @@
 error: #[packet]'s must contain a payload
-  --> $DIR/no_payload.rs:13:1
+  --> tests/compile-fail/no_payload.rs:13:1
    |
 13 | #[packet] //~ ERROR: #[packet]'s must contain a payload
    | ^^^^^^^^^
    |
-   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `::pnet_macros::Packet` (in Nightly builds, run with -Z macro-backtrace for more info)
