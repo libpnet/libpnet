@@ -9,7 +9,7 @@ description = "Access to network related system function and calls."
 readme = "../README.md"
 keywords = ["networking", "datalink", "ethernet", "raw"]
 categories = ["network-programming"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 libc = "0.2.94"
