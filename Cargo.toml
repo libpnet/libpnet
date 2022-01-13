@@ -10,7 +10,7 @@ readme = "README.md"
 keywords = ["networking", "transport", "datalink", "packet", "protocol"]
 categories = ["network-programming", "parser-implementations"]
 build = "build.rs"
-edition = "2018"
+edition = "2021"
 
 [features]
 benchmark = []
