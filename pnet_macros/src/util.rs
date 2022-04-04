@@ -625,6 +625,22 @@ fn operations_test() {
             }
         ]
     );
+
+    assert_eq!(
+        operations(6, 6).unwrap(),
+        vec![
+            Op {
+                mask: 3,
+                shiftl: 4,
+                shiftr: 0,
+            },
+            Op {
+                mask: 240,
+                shiftl: 0,
+                shiftr: 4,
+            }
+        ]
+    );
 }
 
 /// Mask `bits` bits of a byte. eg. mask_high_bits(2) == 0b00000011
