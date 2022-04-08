@@ -12,11 +12,8 @@
 extern crate pnet;
 extern crate pnet_datalink;
 
-use pnet::datalink::{self, Config, FanoutOption, FanoutType, NetworkInterface};
-use std::env;
 use std::io::{self, Write};
 use std::process;
-use std::thread;
 
 #[cfg(not(target_os = "linux"))]
 fn main() {
@@ -27,6 +24,9 @@ fn main() {
 #[cfg(target_os = "linux")]
 fn main() {
     use pnet::datalink::Channel::Ethernet;
+    use pnet::datalink::{self, Config, FanoutOption, FanoutType, NetworkInterface};
+    use std::env;
+    use std::thread;
 
     let iface_name = match env::args().nth(1) {
         Some(n) => n,

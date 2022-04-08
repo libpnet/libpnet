@@ -52,7 +52,7 @@ fn ethernet_header_test() {
 }
 
 /// `EtherTypes` are defined at:
-/// http://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.xhtml.
+/// <http://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.xhtml>.
 /// These values should be used in the `Ethernet` `EtherType` field.
 ///
 /// FIXME Should include all

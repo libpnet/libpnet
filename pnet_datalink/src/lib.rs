@@ -252,14 +252,14 @@ impl NetworkInterface {
     }
 
     /// Triggered when the driver has signated netif_carrier_on
-    /// Check https://www.kernel.org/doc/html/latest/networking/operstates.html for more information
+    /// Check <https://www.kernel.org/doc/html/latest/networking/operstates.html> for more information
     #[cfg(any(target_os = "linux", target_os = "android"))]
     pub fn is_lower_up(&self) -> bool {
         self.flags & (pnet_sys::IFF_LOWER_UP as u32) != 0
     }
 
     /// Triggered when the driver has signated netif_dormant_on
-    /// Check https://www.kernel.org/doc/html/latest/networking/operstates.html for more information
+    /// Check <https://www.kernel.org/doc/html/latest/networking/operstates.html> for more information
     #[cfg(any(target_os = "linux", target_os = "android"))]
     pub fn is_dormant(&self) -> bool {
         self.flags & (pnet_sys::IFF_DORMANT as u32) != 0

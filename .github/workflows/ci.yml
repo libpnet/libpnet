@@ -10,6 +10,7 @@ env:
   CARGO_TERM_COLOR: always
   PNET_FEATURES: travis pcap serde
   PNET_MACROS_FEATURES: travis
+  VERBOSE: 1
 
 jobs:
   build-ubuntu:

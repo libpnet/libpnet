@@ -13,7 +13,7 @@ use std::fmt;
 use crate::PrimitiveValues;
 
 /// Protocol numbers as defined at:
-/// http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
+/// <http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>
 /// Above protocol numbers last updated: 2014-01-16
 /// These values should be used in either the IPv4 Next Level Protocol field
 /// or the IPv6 Next Header field.

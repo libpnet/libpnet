@@ -24,7 +24,7 @@ impl PrimitiveValues for ClassOfService {
 }
 
 /// IEEE 802.1p classes of service as defined in
-/// https://en.wikipedia.org/wiki/IEEE_P802.1p.
+/// <https://en.wikipedia.org/wiki/IEEE_P802.1p>.
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod ClassesOfService {

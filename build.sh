@@ -23,13 +23,13 @@ MACROS_WITH_SYNTEX=0
 if [[ -n "$PNET_FEATURES" ]]; then
     PNET_CARGO_FLAGS="--no-default-features --features \"$PNET_FEATURES\""
 else
-    PNET_CARGO_FLAGS=
+    PNET_CARGO_FLAGS=""
 fi
 
 if [[ -n "$PNET_MACROS_FEATURES" ]]; then
     PNET_MACROS_CARGO_FLAGS="--no-default-features --features \"$PNET_MACROS_FEATURES\""
 else
-    PNET_MACROS_CARGO_FLAGS=
+    PNET_MACROS_CARGO_FLAGS=""
 fi
 
 # FIXME Need to get interface differently on Windows
@@ -37,6 +37,8 @@ IFCONFIG=$(which ifconfig)
 IPROUTE2=$(which ip)
 
 echo $PNET_MACROS_FEATURES | grep -q with-syntex && MACROS_WITH_SYNTEX=1
+
+PNET_TEST_IFACE=""
 
 if [[ -x "$IFCONFIG" ]]; then
     PNET_TEST_IFACE=$($IFCONFIG | egrep 'UP| active' | \
@@ -59,6 +61,8 @@ if [[ -z "$PNET_TEST_IFACE" && "$SYSTEM" = "Linux" ]]; then
         fi
     done
 fi
+
+set -euo pipefail
 
 # FIXME Need to link libraries properly on Windows
 build() {
@@ -104,17 +108,17 @@ run_test() {
     export RUST_TEST_THREADS=1 &&
     case "$SYSTEM" in
         Linux)
-            "$SUDO" -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH sh -c "$CARGO build $PNET_CARGO_FLAGS --release && \
-                                                             $CARGO test $PNET_CARGO_FLAGS && \
-                                                             $CARGO bench --no-run $PNET_CARGO_FLAGS && \
-                                                             $CARGO doc $PNET_CARGO_FLAGS"
+            "$SUDO" -E sh -c "$CARGO build $PNET_CARGO_FLAGS --release && \
+                              $CARGO test $PNET_CARGO_FLAGS && \
+                              $CARGO bench --no-run $PNET_CARGO_FLAGS && \
+                              $CARGO doc $PNET_CARGO_FLAGS"
         ;;
         FreeBSD|Darwin)
             export PNET_TEST_IFACE
-            "$SUDO" -E DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH bash -c "$CARGO build $PNET_CARGO_FLAGS && \
-                                                                   $CARGO test $PNET_CARGO_FLAGS && \
-                                                                   $CARGO bench --no-run $PNET_CARGO_FLAGS && \
-                                                                   $CARGO doc $PNET_CARGO_FLAGS"
+            "$SUDO" -E bash -c "$CARGO build $PNET_CARGO_FLAGS && \
+                                $CARGO test $PNET_CARGO_FLAGS && \
+                                $CARGO bench --no-run $PNET_CARGO_FLAGS && \
+                                $CARGO doc $PNET_CARGO_FLAGS"
         ;;
         MINGW*|MSYS*)
             PNET_TEST_IFACE=$PNET_TEST_IFACE RUST_TEST_THREADS=1 $TESTER
