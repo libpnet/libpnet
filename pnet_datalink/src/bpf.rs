@@ -91,8 +91,9 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         for i in 0..attempts {
             let fd = unsafe {
                 let file_name = format!("/dev/bpf{}", i);
+                let c_file_name = CString::new(file_name.as_bytes()).unwrap();
                 libc::open(
-                    CString::new(file_name.as_bytes()).unwrap().as_ptr(),
+                    c_file_name.as_ptr(),
                     libc::O_RDWR,
                     0,
                 )
