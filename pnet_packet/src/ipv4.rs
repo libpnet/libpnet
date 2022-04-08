@@ -29,7 +29,7 @@ pub mod Ipv4Flags {
 }
 
 /// IPv4 header options numbers as defined in
-/// http://www.iana.org/assignments/ip-parameters/ip-parameters.xhtml
+/// <http://www.iana.org/assignments/ip-parameters/ip-parameters.xhtml>
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod Ipv4OptionNumbers {
