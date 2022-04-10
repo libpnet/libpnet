@@ -82,9 +82,10 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         target_os = "solaris"
     ))]
     fn get_fd(_attempts: usize) -> libc::c_int {
+        let c_file_name = CString::new(&b"/dev/bpf"[..]).unwrap();
         unsafe {
             libc::open(
-                CString::new(&b"/dev/bpf"[..]).unwrap().as_ptr(),
+                c_file_name.as_ptr(),
                 libc::O_RDWR,
                 0,
             )
