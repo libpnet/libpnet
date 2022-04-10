@@ -51,6 +51,8 @@ pub mod linux;
         target_os = "freebsd",
         target_os = "openbsd",
         target_os = "netbsd",
+        target_os = "illumos",
+        target_os = "solaris",
         target_os = "macos",
         target_os = "ios"
     )
@@ -61,6 +63,8 @@ mod backend;
 #[cfg(any(
     target_os = "freebsd",
     target_os = "netbsd",
+    target_os = "illumos",
+    target_os = "solaris",
     target_os = "macos",
     target_os = "ios"
 ))]
