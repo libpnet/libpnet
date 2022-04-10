@@ -230,48 +230,57 @@ pub struct NetworkInterface {
     /// IP addresses and netmasks for the interface.
     pub ips: Vec<IpNetwork>,
     /// Operating system specific flags for the interface.
+    #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
     pub flags: u32,
+    #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+    pub flags: u64,
 }
+
+/// Type alias for an `InterfaceType`.
+#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+pub type InterfaceType = u32;
+#[cfg(any(target_os = "illumos", target_os = "solaris"))]
+pub type InterfaceType = u64;
 
 impl NetworkInterface {
     pub fn is_up(&self) -> bool {
-        self.flags & (pnet_sys::IFF_UP as u32) != 0
+        self.flags & (pnet_sys::IFF_UP as InterfaceType) != 0
     }
 
     pub fn is_broadcast(&self) -> bool {
-        self.flags & (pnet_sys::IFF_BROADCAST as u32) != 0
+        self.flags & (pnet_sys::IFF_BROADCAST as InterfaceType) != 0
     }
 
     /// Is the interface a loopback interface?
     pub fn is_loopback(&self) -> bool {
-        self.flags & (pnet_sys::IFF_LOOPBACK as u32) != 0
+        self.flags & (pnet_sys::IFF_LOOPBACK as InterfaceType) != 0
     }
 
     pub fn is_point_to_point(&self) -> bool {
-        self.flags & (pnet_sys::IFF_POINTOPOINT as u32) != 0
+        self.flags & (pnet_sys::IFF_POINTOPOINT as InterfaceType) != 0
     }
 
     pub fn is_multicast(&self) -> bool {
-        self.flags & (pnet_sys::IFF_MULTICAST as u32) != 0
+        self.flags & (pnet_sys::IFF_MULTICAST as InterfaceType) != 0
     }
 
     /// Triggered when the driver has signated netif_carrier_on
     /// Check <https://www.kernel.org/doc/html/latest/networking/operstates.html> for more information
     #[cfg(any(target_os = "linux", target_os = "android"))]
     pub fn is_lower_up(&self) -> bool {
-        self.flags & (pnet_sys::IFF_LOWER_UP as u32) != 0
+        self.flags & (pnet_sys::IFF_LOWER_UP as InterfaceType) != 0
     }
 
     /// Triggered when the driver has signated netif_dormant_on
     /// Check <https://www.kernel.org/doc/html/latest/networking/operstates.html> for more information
     #[cfg(any(target_os = "linux", target_os = "android"))]
     pub fn is_dormant(&self) -> bool {
-        self.flags & (pnet_sys::IFF_DORMANT as u32) != 0
+        self.flags & (pnet_sys::IFF_DORMANT as InterfaceType) != 0
     }
 
     #[cfg(unix)]
     pub fn is_running(&self) -> bool {
-        self.flags & (pnet_sys::IFF_RUNNING as u32) != 0
+        self.flags & (pnet_sys::IFF_RUNNING as InterfaceType) != 0
     }
 }
 
