@@ -157,6 +157,7 @@ travis_script() {
         ;;
         *)
             echo "Unsupported travis platform"
+            exit 1
         ;;
     esac
 

@@ -51,7 +51,7 @@ fn ipv6_destination() -> Ipv6Addr {
 const TEST_PROTO: IpNextHeaderProtocol = IpNextHeaderProtocols::Test1;
 
 fn build_ipv4_header(packet: &mut [u8], offset: usize) {
-    let mut ip_header = MutableIpv4Packet::new(&mut packet[offset..]).unwrap();
+    let mut ip_header = MutableIpv4Packet::new(&mut packet[offset..]).expect("could not create MutableIpv4Packet");
 
     let total_len = (IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN) as u16;
 
@@ -67,7 +67,7 @@ fn build_ipv4_header(packet: &mut [u8], offset: usize) {
 }
 
 fn build_ipv6_header(packet: &mut [u8], offset: usize) {
-    let mut ip_header = MutableIpv6Packet::new(&mut packet[offset..]).unwrap();
+    let mut ip_header = MutableIpv6Packet::new(&mut packet[offset..]).expect("could not create MutableIpv6Packet");
 
     ip_header.set_version(6);
     ip_header.set_payload_length((UDP_HEADER_LEN + TEST_DATA_LEN) as u16);
@@ -78,7 +78,7 @@ fn build_ipv6_header(packet: &mut [u8], offset: usize) {
 }
 
 fn build_udp_header(packet: &mut [u8], offset: usize) {
-    let mut udp_header = MutableUdpPacket::new(&mut packet[offset..]).unwrap();
+    let mut udp_header = MutableUdpPacket::new(&mut packet[offset..]).expect("could not create MutableUdpPacket");
 
     udp_header.set_source(1234); // Arbitary port number
     udp_header.set_destination(1234);
@@ -116,7 +116,7 @@ fn build_udp4_packet(
             .iter()
             .filter(|addr| is_ipv4(&addr.ip()))
             .next()
-            .unwrap();
+            .expect("could not find network interface with ipv4 addresses");
         match (ipmask.ip()).clone() {
             IpAddr::V4(v4) => (v4, v4),
             IpAddr::V6(_) => panic!("found ipv6 addresses when expecting ipv4 addresses"),
@@ -126,8 +126,8 @@ fn build_udp4_packet(
     };
 
     let slice = &mut packet[(start + IPV4_HEADER_LEN as usize)..];
-    let checksum = udp::ipv4_checksum(&UdpPacket::new(slice).unwrap(), &source, &dest);
-    MutableUdpPacket::new(slice).unwrap().set_checksum(checksum);
+    let checksum = udp::ipv4_checksum(&UdpPacket::new(slice).expect("could not create UdpPacket"), &source, &dest);
+    MutableUdpPacket::new(slice).expect("could not create MutableUdpPacket").set_checksum(checksum);
 }
 
 fn build_udp6_packet(packet: &mut [u8], start: usize, msg: &str) {
@@ -144,17 +144,17 @@ fn build_udp6_packet(packet: &mut [u8], start: usize, msg: &str) {
 
     let slice = &mut packet[(start + IPV6_HEADER_LEN as usize)..];
     let checksum = udp::ipv6_checksum(
-        &UdpPacket::new(slice).unwrap(),
+        &UdpPacket::new(slice).expect("could not create UdpPacket"),
         &ipv6_source(),
         &ipv6_destination(),
     );
-    MutableUdpPacket::new(slice).unwrap().set_checksum(checksum);
+    MutableUdpPacket::new(slice).expect("could not create MutableUdpPacket").set_checksum(checksum);
 }
 
 // OSes have a nasty habit of tweaking IP fields, so we only check
 // the less volatile fields (identification, checksum)
 fn check_ipv4_header(packet: &[u8], header: &Ipv4Packet) {
-    let ipv4_header = Ipv4Packet::new(packet).unwrap();
+    let ipv4_header = Ipv4Packet::new(packet).expect("could not create Ipv4Packet");
 
     assert_eq!(header.get_version(), ipv4_header.get_version());
     assert_eq!(header.get_header_length(), ipv4_header.get_header_length());
@@ -184,7 +184,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
         IpAddr::V6(..) => build_udp6_packet(&mut packet[..], 0, "l4i6"),
     };
 
-    let udp = UdpPacket::new(&packet[header_len..packet_len]).unwrap();
+    let udp = UdpPacket::new(&packet[header_len..packet_len]).expect("could not create UdpPacket");
 
     let (tx, rx) = channel();
 
@@ -195,7 +195,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
     };
 
     let res = thread::spawn(move || {
-        tx.send(()).unwrap();
+        tx.send(()).expect("could not send message through channel");
         let mut iter = udp_packet_iter(&mut trx);
         loop {
             let next = iter.next();
@@ -204,7 +204,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
                     assert_eq!(addr, ip);
                     assert_eq!(
                         header,
-                        UdpPacket::new(&packet[header_len..packet_len]).unwrap()
+                        UdpPacket::new(&packet[header_len..packet_len]).expect("could not create UdpPacket")
                     );
                     break;
                 }
@@ -215,7 +215,7 @@ fn layer4(ip: IpAddr, header_len: usize) {
         }
     });
 
-    rx.recv().unwrap();
+    rx.recv().expect("failed to receive message through channel");
     match ttx.send_to(udp, ip) {
         Ok(res) => assert_eq!(res as usize, UDP_HEADER_LEN + TEST_DATA_LEN),
         Err(e) => panic!("layer4_test failed: {}", e),
@@ -267,7 +267,7 @@ fn layer3_ipv4() {
     };
 
     let res = thread::spawn(move || {
-        tx.send(()).unwrap();
+        tx.send(()).expect("could not send message through channel");
         let mut iter = ipv4_packet_iter(&mut trx);
         loop {
             let next = iter.next();
@@ -278,10 +278,10 @@ fn layer3_ipv4() {
                     let udp_header = UdpPacket::new(
                         &header.packet()[(header.get_header_length() as usize * 4usize)..],
                     )
-                    .unwrap();
+                    .expect("could not create UdpPacket");
                     assert_eq!(
                         udp_header,
-                        UdpPacket::new(&packet[IPV4_HEADER_LEN..]).unwrap()
+                        UdpPacket::new(&packet[IPV4_HEADER_LEN..]).expect("could not create UdpPacket")
                     );
 
                     assert_eq!(
@@ -297,8 +297,8 @@ fn layer3_ipv4() {
         }
     });
 
-    rx.recv().unwrap();
-    match ttx.send_to(Ipv4Packet::new(&packet[..]).unwrap(), send_addr) {
+    rx.recv().expect("unable to receive message through channel");
+    match ttx.send_to(Ipv4Packet::new(&packet[..]).expect("could not create Ipv4Packet"), send_addr) {
         Ok(res) => assert_eq!(res as usize, packet.len()),
         Err(e) => panic!("layer3_ipv4_test failed: {}", e),
     }
@@ -319,7 +319,7 @@ fn get_test_interface() -> datalink::NetworkInterface {
             Err(_) => true,
         })
         .next()
-        .unwrap()
+        .expect("failed to get test interface")
         .clone()
 }
 
@@ -336,7 +336,7 @@ fn get_test_interface() -> datalink::NetworkInterface {
             Err(_) => x.is_loopback(),
         })
         .next()
-        .unwrap()
+        .expect("failed to get test interface")
         .clone()
 }
 
@@ -355,9 +355,9 @@ fn layer2() {
     let mut packet = [0u8; ETHERNET_HEADER_LEN + IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN];
 
     {
-        let mut ethernet_header = MutableEthernetPacket::new(&mut packet[..]).unwrap();
-        ethernet_header.set_source(interface.mac.unwrap());
-        ethernet_header.set_destination(interface.mac.unwrap());
+        let mut ethernet_header = MutableEthernetPacket::new(&mut packet[..]).expect("could not create MutableEthernetPacket");
+        ethernet_header.set_source(interface.mac.expect("could not find mac address for test interface"));
+        ethernet_header.set_destination(interface.mac.expect("could not find mac address for test interface"));
         ethernet_header.set_ethertype(EtherTypes::Ipv4);
     }
 
@@ -385,7 +385,7 @@ fn layer2() {
     };
 
     let res = thread::spawn(move || {
-        tx.send(()).unwrap();
+        tx.send(()).expect("could not send message through channel");
         let mut i = 0usize;
         loop {
             let next = dlrx.next();
@@ -394,8 +394,8 @@ fn layer2() {
                     if i == 10_000 {
                         panic!("layer2: did not find matching packet after 10_000 iterations");
                     }
-                    if EthernetPacket::new(&packet[..]).unwrap().payload()
-                        == EthernetPacket::new(eh).unwrap().payload()
+                    if EthernetPacket::new(&packet[..]).expect("failed to create EthernetPacket").payload()
+                        == EthernetPacket::new(eh).expect("failed to create EthernetPacket").payload()
                     {
                         return;
                     }
@@ -408,7 +408,7 @@ fn layer2() {
         }
     });
 
-    rx.recv().unwrap();
+    rx.recv().expect("failed to receive message through channel");
     match dltx.send_to(&packet[..], None) {
         Some(Ok(())) => (),
         Some(Err(e)) => panic!("layer2_test failed: {}", e),
@@ -434,9 +434,9 @@ fn layer2_timeouts() {
     let mut packet = [0u8; ETHERNET_HEADER_LEN + IPV4_HEADER_LEN + UDP_HEADER_LEN + TEST_DATA_LEN];
 
     {
-        let mut ethernet_header = MutableEthernetPacket::new(&mut packet[..]).unwrap();
-        ethernet_header.set_source(interface.mac.unwrap());
-        ethernet_header.set_destination(interface.mac.unwrap());
+        let mut ethernet_header = MutableEthernetPacket::new(&mut packet[..]).expect("failed to create MutableEthernetPacket");
+        ethernet_header.set_source(interface.mac.expect("missing mac address for test interface"));
+        ethernet_header.set_destination(interface.mac.expect("missing mac address for test interface"));
         ethernet_header.set_ethertype(EtherTypes::Ipv4);
     }
 
@@ -470,7 +470,7 @@ fn layer2_timeouts() {
 
     let packet_len = packet.len();
     let res = thread::spawn(move || {
-        tx.send(()).unwrap();
+        tx.send(()).expect("failed to send message through channel");
         loop {
             match dlrx.next() {
                 Ok(eh) => {
@@ -487,7 +487,8 @@ fn layer2_timeouts() {
             }
         }
     });
-    rx.recv().unwrap();
+    rx.recv().expect("failed to receive message through channel");
+
     // Wait a while
     thread::sleep(Duration::from_millis(1000));
     match dltx.send_to(&packet[..], None) {
@@ -502,7 +503,7 @@ fn layer2_timeouts() {
 fn check_test_environment() {
     use std::env;
     let tasks = env::var("RUST_TEST_THREADS");
-    if !tasks.is_ok() || &tasks.unwrap()[..] != "1" {
+    if !tasks.is_ok() || &tasks.expect("failed to read RUST_TEST_THREADS env variable")[..] != "1" {
         panic!("Tests must be run with environment variable RUST_TEST_THREADS=1");
     }
 
