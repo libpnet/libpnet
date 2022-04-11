@@ -152,7 +152,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
                 ));
             }
         };
-        let mut construct_with = Vec::new();
+        let mut construct_with = None;
         let mut is_payload = false;
         let mut packet_length = None;
         let mut struct_length = None;
@@ -228,6 +228,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
                 syn::Meta::List(ref l) => {
                     if let Some(ident) = l.path.get_ident() {
                         if ident == "construct_with" {
+                            let mut some_construct_with = Vec::new();
                             if l.nested.is_empty() {
                                 return Err(Error::new(
                                     l.path.span(),
@@ -239,7 +240,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
                                 if let syn::NestedMeta::Meta(ref meta) = item {
                                     let ty_str = meta.to_token_stream().to_string();
                                     match make_type(ty_str, false) {
-                                        Ok(ty) => construct_with.push(ty),
+                                        Ok(ty) => some_construct_with.push(ty),
                                         Err(e) => {
                                             return Err(Error::new(
                                                 field.ty.span(),
@@ -256,6 +257,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
                                     ));
                                 }
                             }
+                            construct_with = Some(some_construct_with);
                         } else {
                             return Err(Error::new(
                                 ident.span(),
@@ -281,7 +283,30 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
 
         match ty {
             Type::Vector(_) => {
-                struct_length = Some(format!("_packet.{}.len()", field_name).to_owned());
+                struct_length = if let Some(construct_with) = construct_with.as_ref() {
+                    let mut inner_size = 0;
+                    for arg in construct_with.iter() {
+                        if let Type::Primitive(ref _ty_str, size, _endianness) = *arg {
+                            inner_size += size;
+                        } else {
+                            return Err(Error::new(
+                                    field.span(),
+                                    "arguments to #[construct_with] must be primitives",
+                                    ));
+                        }
+                    }
+                    if inner_size % 8 != 0 {
+                        return Err(Error::new(
+                                field.span(),
+                                "types in #[construct_with] for vec must be add up to a multiple of 8 bits",
+                                ));
+                    }
+                    inner_size /= 8; // bytes not bits
+
+                    Some(format!("_packet.{}.len() * {}", field_name, inner_size).to_owned())
+                } else {
+                    Some(format!("_packet.{}.len()", field_name).to_owned())
+                };
                 if !is_payload && packet_length.is_none() {
                     return Err(Error::new(
                         field.ty.span(),
@@ -291,7 +316,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
                 }
             }
             Type::Misc(_) => {
-                if construct_with.is_empty() {
+                if construct_with.is_none() {
                     return Err(Error::new(
                         field.ty.span(),
                         "non-primitive field types must specify #[construct_with]",
@@ -308,7 +333,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
             packet_length,
             struct_length,
             is_payload,
-            construct_with: Some(construct_with),
+            construct_with,
         });
     }
 
@@ -463,11 +488,11 @@ fn generate_packet_impl(
                 &field,
                 &mut bit_offset,
                 &offset_fns_packet[..],
-                &mut accessors,
-                &mut mutators,
-                inner_ty,
                 &mut co,
                 &name,
+                &mut mutators,
+                &mut accessors,
+                inner_ty,
             )?,
             Type::Misc(ref ty_str) => handle_misc_field(
                 &field,
@@ -1067,11 +1092,11 @@ fn handle_vector_field(
     field: &Field,
     bit_offset: &mut usize,
     offset_fns: &[String],
-    accessors: &mut String,
-    mutators: &mut String,
-    inner_ty: &Box<Type>,
     co: &mut String,
     name: &str,
+    mutators: &mut String,
+    accessors: &mut String,
+    inner_ty: &Box<Type>,
 ) -> Result<(), Error> {
     if !field.is_payload && !field.packet_length.is_some() {
         return Err(Error::new(
@@ -1153,7 +1178,7 @@ fn handle_vector_field(
                         inner_size += size;
                         let arg_name = format!("arg{}", i);
                         inner_accessors = inner_accessors
-                            + &generate_accessor_with_offest_str(
+                            + &generate_accessor_with_offset_str(
                                 &arg_name[..],
                                 &ty_str[..],
                                 &co[..],
@@ -1168,13 +1193,11 @@ fn handle_vector_field(
                                 &to_mutator(&ops[..])[..],
                                 &name[..],
                             )[..];
-                        get_args = format!(
-                            "{}get_{}(&self, vec_offset * {}), ",
-                            get_args, arg_name, inner_size
-                        );
+                        get_args =
+                            format!("{}get_{}(&self, additional_offset), ", get_args, arg_name);
                         set_args = format!(
-                            "{}set_{}(_self, vals.{}, vec_offset * {});\n",
-                            set_args, arg_name, i, inner_size
+                            "{}set_{}(_self, vals.{}, additional_offset);\n",
+                            set_args, arg_name, i
                         );
                         *bit_offset += size;
                         // Current offset needs to be recalculated for each arg
@@ -1186,144 +1209,138 @@ fn handle_vector_field(
                         ));
                     }
                 }
-                if inner_size == 0 {
+                if inner_size % 8 != 0 {
                     return Err(Error::new(
                         field.span,
-                        "arguments to #[construct_with] give zero size value",
+                        "types in #[construct_with] for vec must be add up to a multiple of 8 bits",
                     ));
                 }
-                *accessors = format!("{accessors}
-                                    /// Get the value of the {name} field (copies contents)
-                                    #[inline]
-                                    #[allow(trivial_numeric_casts)]
-                                    #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
-                                    pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
-                                        use std::cmp::min;
-                                        let _self = self;
-                                        let mut current_offset = {co};
-                                        let length = {packet_length};
-                                        let vec_length = length.saturating_div({inner_size});
-                                        let end = current_offset + length;
-                                        let mut vec = Vec::with_capacity(vec_length);
+                inner_size /= 8; // bytes not bits
+                *mutators = format!(
+                    "{mutators}
+                /// Set the value of the {name} field.
+                #[inline]
+                #[allow(trivial_numeric_casts)]
+                #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
+                pub fn set_{name}(&mut self, vals: &Vec<{inner_ty_str}>) {{
+                    use pnet_macros_support::packet::PrimitiveValues;
+                    let _self = self;
+                    {inner_mutators}
+                    let mut additional_offset = 0;
 
-                                        {inner_accessors}
+                    for val in vals.into_iter() {{
+                        let vals = val.to_primitive_values();
 
-                                        for vec_offset in 0..vec_length {{
-                                            let inner = {inner_ty_str}::new({get_args});
-                                            vec.push(inner);
-                                        }}
+                        {set_args}
 
-                                        vec
-                                    }}
-                                    ",
-                                        accessors = accessors,
-                                        name = field.name,
-                                        inner_ty_str = inner_ty_str,
-                                        inner_accessors = inner_accessors,
-                                        packet_length = field.packet_length.as_ref().unwrap(),
-                                        inner_size = inner_size,
-                                        get_args = &get_args[..get_args.len() - 2]
+                        additional_offset += {inner_size};
+                    }}
+                }}
+                ",
+                    mutators = &mutators[..],
+                    name = field.name,
+                    inner_ty_str = inner_ty_str,
+                    inner_mutators = inner_mutators,
+                    //packet_length = field.packet_length.as_ref().unwrap(),
+                    inner_size = inner_size,
+                    set_args = set_args
                 );
-                *mutators = format!("{mutators}\
-                                    /// Set the value of the {name} field.\
-                                    #[inline]\
-                                    #[allow(trivial_numeric_casts)]\
-                                    #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
-                                    pub fn set_{name}(&mut self, vals: &Vec<{inner_ty_str}>) {{
-                                        use pnet_macros_support::packet::PacketSize;
-                                        use pnet_macros_support::packet::PrimitiveValues;
-                                        let _self = self;
-                                        let mut current_offset = {co};
-                                        let mut vec_offset = 0;
-                                        let end = current_offset + {packet_length};
+                *accessors = format!(
+                    "{accessors}
+                    /// Get the value of the {name} field
+                    #[inline]
+                    #[allow(trivial_numeric_casts)]
+                    #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
+                    pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
+                        let _self = self;
+                        let length = {packet_length};
+                        let vec_length = length.saturating_div({inner_size});
+                        let mut vec = Vec::with_capacity(vec_length);
 
-                                        {inner_mutators}
+                        {inner_accessors}
 
-                                        for val in vals.into_iter() {{
-                                            let vals = val.to_primitive_values();
+                        let mut additional_offset = 0;
 
-                                            {set_args}
+                        for vec_offset in 0..vec_length {{
+                            vec.push({inner_ty_str}::new({get_args}));
+                            additional_offset += {inner_size};
+                        }}
 
-                                            vec_offset += 1;
-                                            current_offset += {packet_size};
-                                            assert!(current_offset <= end);
-                                        }}
-                                    }}
-                                    ",
-                                    mutators = mutators,
-                                    name = field.name,
-                                    packet_length = field.packet_length.as_ref().unwrap(),
-                                    co = co,
-                                    inner_ty_str = inner_ty_str,
-                                    inner_mutators = inner_mutators,
-                                    set_args = set_args,
-                                    packet_size = inner_size
+                        vec
+                    }}
+                    ",
+                    accessors = accessors,
+                    name = field.name,
+                    inner_ty_str = inner_ty_str,
+                    inner_accessors = inner_accessors,
+                    packet_length = field.packet_length.as_ref().unwrap(),
+                    inner_size = inner_size,
+                    get_args = &get_args[..get_args.len() - 2]
                 );
-                Ok(())
-            } else {
-                *accessors = format!("{accessors}
-                                    /// Get the value of the {name} field (copies contents)
-                                    #[inline]
-                                    #[allow(trivial_numeric_casts)]
-                                    #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
-                                    pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
-                                        use pnet_macros_support::packet::FromPacket;
-                                        use std::cmp::min;
-                                        let _self = self;
-                                        let current_offset = {co};
-                                        let end = min(current_offset + {packet_length}, _self.packet.len());
-
-                                        {inner_ty_str}Iterable {{
-                                            buf: &_self.packet[current_offset..end]
-                                        }}.map(|packet| packet.from_packet())
-                                          .collect::<Vec<_>>()
-                                    }}
-
-                                    /// Get the value of the {name} field as iterator
-                                    #[inline]
-                                    #[allow(trivial_numeric_casts)]
-                                    #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
-                                    pub fn get_{name}_iter(&self) -> {inner_ty_str}Iterable {{
-                                        use std::cmp::min;
-                                        let _self = self;
-                                        let current_offset = {co};
-                                        let end = min(current_offset + {packet_length}, _self.packet.len());
-
-                                        {inner_ty_str}Iterable {{
-                                            buf: &_self.packet[current_offset..end]
-                                        }}
-                                    }}
-                                    ",
-                                     accessors = accessors,
-                                     name = field.name,
-                                     co = co,
-                                     packet_length = field.packet_length.as_ref().unwrap(),
-                                     inner_ty_str = inner_ty_str);
-                *mutators = format!("{mutators}
-                                    /// Set the value of the {name} field (copies contents)
-                                    #[inline]
-                                    #[allow(trivial_numeric_casts)]
-                                    #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
-                                    pub fn set_{name}(&mut self, vals: &[{inner_ty_str}]) {{
-                                        use pnet_macros_support::packet::PacketSize;
-                                        let _self = self;
-                                        let mut current_offset = {co};
-                                        let end = current_offset + {packet_length};
-                                        for val in vals.into_iter() {{
-                                            let mut packet = Mutable{inner_ty_str}Packet::new(&mut _self.packet[current_offset..]).unwrap();
-                                            packet.populate(val);
-                                            current_offset += packet.packet_size();
-                                            assert!(current_offset <= end);
-                                        }}
-                                    }}
-                                    ",
-                                    mutators = mutators,
-                                    name = field.name,
-                                    co = co,
-                                    packet_length = field.packet_length.as_ref().unwrap(),
-                                    inner_ty_str = inner_ty_str);
-                Ok(())
+                return Ok(());
             }
+            *accessors = format!("{accessors}
+                                /// Get the value of the {name} field (copies contents)
+                                #[inline]
+                                #[allow(trivial_numeric_casts)]
+                                #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
+                                pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
+                                    use pnet_macros_support::packet::FromPacket;
+                                    use std::cmp::min;
+                                    let _self = self;
+                                    let current_offset = {co};
+                                    let end = min(current_offset + {packet_length}, _self.packet.len());
+
+                                    {inner_ty_str}Iterable {{
+                                        buf: &_self.packet[current_offset..end]
+                                    }}.map(|packet| packet.from_packet())
+                                      .collect::<Vec<_>>()
+                                }}
+
+                                /// Get the value of the {name} field as iterator
+                                #[inline]
+                                #[allow(trivial_numeric_casts)]
+                                #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
+                                pub fn get_{name}_iter(&self) -> {inner_ty_str}Iterable {{
+                                    use std::cmp::min;
+                                    let _self = self;
+                                    let current_offset = {co};
+                                    let end = min(current_offset + {packet_length}, _self.packet.len());
+
+                                    {inner_ty_str}Iterable {{
+                                        buf: &_self.packet[current_offset..end]
+                                    }}
+                                }}
+                                ",
+                                 accessors = accessors,
+                                 name = field.name,
+                                 co = co,
+                                 packet_length = field.packet_length.as_ref().unwrap(),
+                                 inner_ty_str = inner_ty_str);
+            *mutators = format!("{mutators}
+                                /// Set the value of the {name} field (copies contents)
+                                #[inline]
+                                #[allow(trivial_numeric_casts)]
+                                #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
+                                pub fn set_{name}(&mut self, vals: &[{inner_ty_str}]) {{
+                                    use pnet_macros_support::packet::PacketSize;
+                                    let _self = self;
+                                    let mut current_offset = {co};
+                                    let end = current_offset + {packet_length};
+                                    for val in vals.into_iter() {{
+                                        let mut packet = Mutable{inner_ty_str}Packet::new(&mut _self.packet[current_offset..]).unwrap();
+                                        packet.populate(val);
+                                        current_offset += packet.packet_size();
+                                        assert!(current_offset <= end);
+                                    }}
+                                }}
+                                ",
+                                mutators = mutators,
+                                name = field.name,
+                                co = co,
+                                packet_length = field.packet_length.as_ref().unwrap(),
+                                inner_ty_str = inner_ty_str);
+            Ok(())
         }
     }
 }
@@ -1502,8 +1519,6 @@ fn generate_mutator_str(
     mutator
 }
 
-/// Given the name of a field, and a set of operations required to set that field, return
-/// the Rust code required to set the field
 fn generate_mutator_with_offset_str(
     name: &str,
     ty: &str,
@@ -1513,7 +1528,7 @@ fn generate_mutator_with_offset_str(
 ) -> String {
     let op_strings = generate_sop_strings(operations);
 
-    let mutator = format!(
+    format!(
         "#[inline]
     #[allow(trivial_numeric_casts)]
     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
@@ -1526,9 +1541,7 @@ fn generate_mutator_with_offset_str(
         ty = ty,
         co = offset,
         operations = op_strings
-    );
-
-    mutator
+    )
 }
 
 /// Used to turn something like a u16be into
@@ -1648,9 +1661,7 @@ fn generate_accessor_str(
     accessor
 }
 
-/// Given the name of a field, and a set of operations required to get the value of that field,
-/// return the Rust code required to get the field.
-fn generate_accessor_with_offest_str(
+fn generate_accessor_with_offset_str(
     name: &str,
     ty: &str,
     offset: &str,
@@ -1659,22 +1670,20 @@ fn generate_accessor_with_offest_str(
 ) -> String {
     let op_strings = generate_accessor_op_str("_self.packet", ty, operations);
 
-    let accessor = format!(
+    format!(
         "#[inline(always)]
-        #[allow(trivial_numeric_casts, unused_parens)]
-        #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
-        fn get_{name}(_self: &{struct_name}, offset: usize) -> {ty} {{
-            let co = {co} + offset;
-            {operations}
-        }}",
+    #[allow(trivial_numeric_casts, unused_parens)]
+    #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
+    fn get_{name}(_self: &{struct_name}, offset: usize) -> {ty} {{
+        let co = {co} + offset;
+        {operations}
+    }}",
         struct_name = inner,
         name = name,
         ty = ty,
         co = offset,
         operations = op_strings
-    );
-
-    accessor
+    )
 }
 
 fn current_offset(bit_offset: usize, offset_fns: &[String]) -> String {

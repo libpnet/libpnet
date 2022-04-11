@@ -2,7 +2,6 @@ extern crate pnet_macros;
 extern crate pnet_macros_support;
 use pnet_macros::packet;
 use pnet_macros_support::packet::PrimitiveValues;
-use pnet_macros_support::types::u1;
 
 #[packet]
 pub struct PacketWithVecConstruct {
@@ -10,15 +9,12 @@ pub struct PacketWithVecConstruct {
     #[length_fn = "length_fn"]
     #[construct_with(u64, u64)]
     tomatoes: Vec<Identity>,
-    #[length_fn = "length_fn"]
-    #[construct_with(u1)]
-    apples: Vec<bool>,
     #[payload]
     payload: Vec<u8>,
 }
 
 fn length_fn(_: &PacketWithVecConstructPacket) -> usize {
-    unimplemented!()
+    48
 }
 
 #[derive(PartialEq, PartialOrd, Eq, Ord, Clone, Copy, Debug)]
@@ -45,17 +41,20 @@ impl PrimitiveValues for Identity {
     }
 }
 
-pub trait BoolExt {
-    fn new(b: u1) -> Self;
-    fn to_primitive_values(&self) -> (u1,);
-}
-impl BoolExt for bool {
-    fn new(b: u1) -> Self {
-        b != 0
-    }
-    fn to_primitive_values(&self) -> (u1,) {
-        ((*self).into(),)
-    }
-}
+fn main() {
+    let test = PacketWithVecConstruct {
+        banana: 1,
+        tomatoes: vec![
+            Identity([2u8; 16]),
+            Identity([3u8; 16]),
+            Identity([4u8; 16])
+        ],
+        payload: vec![],
+    };
 
-fn main() {}
+    let mut buf = vec![0; PacketWithVecConstructPacket::packet_size(&test)];
+    let mut packet = MutablePacketWithVecConstructPacket::new(&mut buf).unwrap();
+    packet.populate(&test);
+    assert_eq!(packet.get_banana(), test.banana);
+    assert_eq!(packet.get_tomatoes(), test.tomatoes);
+}
