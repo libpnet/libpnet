@@ -67,6 +67,7 @@ impl Packet {
     }
 }
 
+#[inline]
 pub fn generate_packet(
     s: &syn::DataStruct,
     name: String,
@@ -91,6 +92,7 @@ pub fn generate_packet(
     Ok(tts)
 }
 
+#[inline]
 fn generate_packet_struct(packet: &Packet) -> proc_macro2::TokenStream {
     let items = &[
         (packet.packet_name(), "PacketData"),
@@ -115,6 +117,7 @@ fn generate_packet_struct(packet: &Packet) -> proc_macro2::TokenStream {
     }
 }
 
+#[inline]
 fn make_type(ty_str: String, endianness_important: bool) -> Result<Type, String> {
     if let Some((size, endianness, spec)) = parse_ty(&ty_str[..]) {
         if !endianness_important || size <= 8 || spec == EndiannessSpecified::Yes {
@@ -138,6 +141,7 @@ fn make_type(ty_str: String, endianness_important: bool) -> Result<Type, String>
     }
 }
 
+#[inline]
 fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
     let mut fields = Vec::new();
     let mut payload_span = None;
@@ -351,6 +355,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
 }
 
 /// Return the processed length expression for a packet.
+#[inline]
 fn parse_length_expr(
     tts: &[proc_macro2::TokenTree],
     field_names: &[String],
@@ -423,6 +428,7 @@ fn parse_length_expr(
     Ok(tokens_packet)
 }
 
+#[inline]
 fn generate_packet_impl(
     packet: &Packet,
     mutable: bool,
@@ -644,6 +650,7 @@ fn generate_packet_impl(
     ))
 }
 
+#[inline]
 fn generate_packet_impls(
     packet: &Packet,
 ) -> Result<(proc_macro2::TokenStream, PayloadBounds, String), Error> {
@@ -663,6 +670,7 @@ fn generate_packet_impls(
         .ok_or_else(|| Error::new(Span::call_site(), "generate_packet_impls failed"))
 }
 
+#[inline]
 fn generate_packet_size_impls(
     packet: &Packet,
     size: &str,
@@ -690,6 +698,7 @@ fn generate_packet_size_impls(
     Ok(quote! { #(#tts)* })
 }
 
+#[inline]
 fn generate_packet_trait_impls(
     packet: &Packet,
     payload_bounds: &PayloadBounds,
@@ -748,6 +757,7 @@ fn generate_packet_trait_impls(
     Ok(quote! { #(#tts)* })
 }
 
+#[inline]
 fn generate_iterables(packet: &Packet) -> Result<proc_macro2::TokenStream, Error> {
     let name = &packet.base_name;
 
@@ -795,6 +805,7 @@ fn generate_iterables(packet: &Packet) -> Result<proc_macro2::TokenStream, Error
     })
 }
 
+#[inline]
 fn generate_converters(packet: &Packet) -> Result<proc_macro2::TokenStream, Error> {
     let get_fields = generate_get_fields(packet);
 
@@ -825,6 +836,7 @@ fn generate_converters(packet: &Packet) -> Result<proc_macro2::TokenStream, Erro
     Ok(quote! { #(#tts)* })
 }
 
+#[inline]
 fn generate_debug_impls(packet: &Packet) -> Result<proc_macro2::TokenStream, Error> {
     let mut field_fmt_str = String::new();
     let mut get_fields = String::new();
@@ -862,6 +874,7 @@ fn generate_debug_impls(packet: &Packet) -> Result<proc_macro2::TokenStream, Err
     Ok(quote! { #(#tts)* })
 }
 
+#[inline]
 fn handle_misc_field(
     field: &Field,
     bit_offset: &mut usize,
@@ -980,6 +993,7 @@ fn handle_misc_field(
     Ok(())
 }
 
+#[inline]
 fn handle_vec_primitive(
     inner_ty_str: &str,
     size: usize,
@@ -1088,6 +1102,7 @@ fn handle_vec_primitive(
     }
 }
 
+#[inline]
 fn handle_vector_field(
     field: &Field,
     bit_offset: &mut usize,
@@ -1614,6 +1629,7 @@ fn test_generate_accessor_op_str() {
 
 /// Given the name of a field, and a set of operations required to get the value of that field,
 /// return the Rust code required to get the field.
+#[inline]
 fn generate_accessor_str(
     name: &str,
     ty: &str,
@@ -1661,6 +1677,7 @@ fn generate_accessor_str(
     accessor
 }
 
+#[inline]
 fn generate_accessor_with_offset_str(
     name: &str,
     ty: &str,
@@ -1686,6 +1703,7 @@ fn generate_accessor_with_offset_str(
     )
 }
 
+#[inline]
 fn current_offset(bit_offset: usize, offset_fns: &[String]) -> String {
     let base_offset = bit_offset / 8;
 
@@ -1694,6 +1712,7 @@ fn current_offset(bit_offset: usize, offset_fns: &[String]) -> String {
         .fold(base_offset.to_string(), |a, b| a + " + " + &b[..])
 }
 
+#[inline]
 fn generate_get_fields(packet: &Packet) -> String {
     let mut gets = String::new();
 
