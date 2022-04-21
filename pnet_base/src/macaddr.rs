@@ -28,11 +28,13 @@ pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
 
 impl MacAddr {
     /// Construct a new `MacAddr` instance.
+    #[inline]
     pub fn new(a: u8, b: u8, c: u8, d: u8, e: u8, f: u8) -> MacAddr {
         MacAddr(a, b, c, d, e, f)
     }
 
     /// Construct an all-zero `MacAddr` instance.
+    #[inline]
     pub fn zero() -> MacAddr {
         Default::default()
     }
@@ -76,21 +78,25 @@ impl MacAddr {
     pub fn octets(&self) -> [u8; 6] {
         [self.0, self.1, self.2, self.3, self.4, self.5]
     }
+    
 }
 
 impl From<EtherAddr> for MacAddr {
+    #[inline(always)]
     fn from(addr: EtherAddr) -> MacAddr {
         MacAddr(addr[0], addr[1], addr[2], addr[3], addr[4], addr[5])
     }
 }
 
 impl From<MacAddr> for EtherAddr {
+    #[inline(always)]
     fn from(addr: MacAddr) -> Self {
         [addr.0, addr.1, addr.2, addr.3, addr.4, addr.5]
     }
 }
 
 impl PartialEq<EtherAddr> for MacAddr {
+    #[inline]
     fn eq(&self, other: &EtherAddr) -> bool {
         *self == MacAddr::from(*other)
     }
@@ -112,6 +118,7 @@ impl Serialize for MacAddr {
     ///
     /// It serializes either to a string or its binary representation, depending on what the format
     /// prefers.
+    #[inline]
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         if serializer.is_human_readable() {
             serializer.serialize_str(&format!("{}", self))
@@ -128,15 +135,18 @@ impl<'de> Deserialize<'de> for MacAddr {
     /// It deserializes it from either a byte array (of size 6) or a string. If the format is
     /// self-descriptive (like JSON or MessagePack), it auto-detects it. If not, it obeys the
     /// human-readable property of the deserializer.
+    #[inline]
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct MacAddrVisitor;
         impl<'de> de::Visitor<'de> for MacAddrVisitor {
             type Value = MacAddr;
 
+            #[inline]
             fn visit_str<E: de::Error>(self, value: &str) -> Result<MacAddr, E> {
                 value.parse().map_err(|err| E::custom(&format!("{}", err)))
             }
 
+            #[inline]
             fn visit_bytes<E: de::Error>(self, v: &[u8]) -> Result<MacAddr, E> {
                 if v.len() == 6 {
                     Ok(MacAddr::new(v[0], v[1], v[2], v[3], v[4], v[5]))
@@ -145,6 +155,7 @@ impl<'de> Deserialize<'de> for MacAddr {
                 }
             }
 
+            #[inline]
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 write!(
                     formatter,
@@ -199,6 +210,7 @@ impl fmt::Display for ParseMacAddrErr {
 
 impl FromStr for MacAddr {
     type Err = ParseMacAddrErr;
+    #[inline]
     fn from_str(s: &str) -> Result<MacAddr, ParseMacAddrErr> {
         let mut parts = [0u8; 6];
         let splits = s.split(':');

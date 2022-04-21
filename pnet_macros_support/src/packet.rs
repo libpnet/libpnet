@@ -9,7 +9,7 @@
 //! Packet helpers for `pnet_macros`.
 
 use pnet_base;
-use std::ops::{Deref, DerefMut, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
+use core::ops::{Deref, DerefMut, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
 
 /// Represents a generic network packet.
 pub trait Packet {
@@ -18,6 +18,7 @@ pub trait Packet {
 
     /// Retrieve the payload for the packet.
     fn payload(&self) -> &[u8];
+
 }
 
 /// Represents a generic, mutable, network packet.
@@ -30,7 +31,7 @@ pub trait MutablePacket: Packet {
 
     /// Initialize this packet by cloning another.
     fn clone_from<T: Packet>(&mut self, other: &T) {
-        use std::ptr;
+        use core::ptr;
 
         assert!(self.packet().len() >= other.packet().len());
         unsafe {
@@ -85,6 +86,17 @@ macro_rules! impl_index_mut {
 
 /// Packet data.
 #[derive(PartialEq)]
+#[cfg(std)]
+pub enum PacketData<'p> {
+    /// A packet owns its contents.
+    Owned(Vec<u8>),
+    /// A packet borrows its contents.
+    Borrowed(&'p [u8]),
+}
+
+/// Packet data.
+#[derive(PartialEq)]
+#[cfg(not(std))]
 pub enum PacketData<'p> {
     /// A packet owns its contents.
     Owned(Vec<u8>),
@@ -93,6 +105,7 @@ pub enum PacketData<'p> {
 }
 
 impl<'p> PacketData<'p> {
+
     /// Get a slice of the packet data.
     #[inline]
     pub fn as_slice(&self) -> &[u8] {
@@ -113,6 +126,7 @@ impl<'p> PacketData<'p> {
     pub fn len(&self) -> usize {
         self.as_slice().len()
     }
+
 }
 
 impl_index!(PacketData, usize, u8);
@@ -186,6 +200,7 @@ pub trait PrimitiveValues {
     fn to_primitive_values(&self) -> Self::T;
 }
 
+
 impl PrimitiveValues for pnet_base::MacAddr {
     type T = (u8, u8, u8, u8, u8, u8);
     #[inline]
@@ -194,6 +209,8 @@ impl PrimitiveValues for pnet_base::MacAddr {
     }
 }
 
+
+#[cfg(std)]
 impl PrimitiveValues for ::std::net::Ipv4Addr {
     type T = (u8, u8, u8, u8);
     #[inline]
@@ -204,6 +221,7 @@ impl PrimitiveValues for ::std::net::Ipv4Addr {
     }
 }
 
+#[cfg(std)]
 impl PrimitiveValues for ::std::net::Ipv6Addr {
     type T = (u16, u16, u16, u16, u16, u16, u16, u16);
     #[inline]

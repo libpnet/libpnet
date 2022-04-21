@@ -19,6 +19,7 @@ pnet_macros = { path = "../pnet_macros", version = "0.29.0" }
 [dev-dependencies]
 hex = "0.4.3"
 criterion = {version = "0.3.5", features = ["html_reports"]} #added HTML feature becuase of the annoying warnings when running the tests
+pprof = { version = "0.7", features = ["flamegraph"] }
 
 [build-dependencies]
 glob = "0.3.0"

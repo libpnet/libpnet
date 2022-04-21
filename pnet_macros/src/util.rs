@@ -111,6 +111,7 @@ pub struct SetOperation {
 
 macro_rules! radix_fn {
     ($name:ident, $ty:ty) => {
+        #[inline]
         fn $name(mut val: $ty) -> String {
             let mut ret = String::new();
             let vals = "0123456789abcdef".as_bytes();
@@ -232,7 +233,10 @@ fn test_display_set_operation() {
 
 /// Gets a mask to get bits_remaining bits from offset bits into a byte
 /// If bits_remaining is > 8, it will be truncated as necessary
+#[inline]
 fn get_mask(offset: usize, bits_remaining: usize) -> (usize, u8) {
+
+    #[inline]
     fn bits_remaining_in_byte(offset: usize, bits_remaining: usize) -> usize {
         fn round_down(max_val: usize, val: usize) -> usize {
             if val > max_val {
@@ -294,6 +298,8 @@ fn test_get_mask() {
     assert_eq!(get_mask(5, 100), (3, 0b00000111));
 }
 
+
+#[inline]
 fn get_shiftl(offset: usize, size: usize, byte_number: usize, num_bytes: usize) -> u8 {
     if num_bytes == 1 || byte_number + 1 == num_bytes {
         0
@@ -334,6 +340,7 @@ fn test_get_shiftl() {
     assert_eq!(get_shiftl(0, 35, 4, 5), 0);
 }
 
+#[inline]
 fn get_shiftr(offset: usize, size: usize, byte_number: usize, num_bytes: usize) -> u8 {
     if byte_number + 1 == num_bytes {
         ((num_bytes * 8) - offset - size) as u8
@@ -377,6 +384,7 @@ fn test_get_shiftr() {
 ///
 /// Assumes big endian, and that each byte will be masked, then cast to the next power of two
 /// greater than or equal to size bits before shifting. offset should be in the range [0, 7]
+#[inline]
 pub fn operations(offset: usize, size: usize) -> Option<Vec<GetOperation>> {
     if offset > 7 || size == 0 || size > 64 {
         return None;
@@ -658,6 +666,7 @@ fn mask_high_bits(mut bits: u64) -> u64 {
 /// the field
 ///
 /// In the form of (bits to get, bits to set)
+#[inline]
 pub fn to_mutator(ops: &[GetOperation]) -> Vec<SetOperation> {
     fn num_bits_set(n: u8) -> u64 {
         let mut count = 0;
@@ -1063,6 +1072,7 @@ fn test_to_mutator() {
 
 /// Takes a set of operations to get a field in big endian, and converts them to get the field in
 /// little endian.
+#[inline]
 pub fn to_little_endian(_ops: Vec<GetOperation>) -> Vec<GetOperation> {
     let mut ops = _ops.clone();
     for (op, be_op) in ops.iter_mut().zip(_ops.iter().rev()) {
