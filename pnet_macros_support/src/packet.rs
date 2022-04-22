@@ -86,17 +86,6 @@ macro_rules! impl_index_mut {
 
 /// Packet data.
 #[derive(PartialEq)]
-#[cfg(std)]
-pub enum PacketData<'p> {
-    /// A packet owns its contents.
-    Owned(Vec<u8>),
-    /// A packet borrows its contents.
-    Borrowed(&'p [u8]),
-}
-
-/// Packet data.
-#[derive(PartialEq)]
-#[cfg(not(std))]
 pub enum PacketData<'p> {
     /// A packet owns its contents.
     Owned(Vec<u8>),
@@ -210,7 +199,6 @@ impl PrimitiveValues for pnet_base::MacAddr {
 }
 
 
-#[cfg(std)]
 impl PrimitiveValues for ::std::net::Ipv4Addr {
     type T = (u8, u8, u8, u8);
     #[inline]
@@ -221,7 +209,6 @@ impl PrimitiveValues for ::std::net::Ipv4Addr {
     }
 }
 
-#[cfg(std)]
 impl PrimitiveValues for ::std::net::Ipv6Addr {
     type T = (u16, u16, u16, u16, u16, u16, u16, u16);
     #[inline]
