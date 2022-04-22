@@ -147,4 +147,4 @@ mod pnettest;
 
 
 #[cfg(test)]
-mod issue_487;
+mod gh_issue_487;
