@@ -1291,7 +1291,7 @@ fn handle_vector_field(
                             additional_offset += {inner_size};
                         }}
 
-                        vec;
+                        vec
                     }}
                     ",
                     accessors = accessors,
