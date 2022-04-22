@@ -1,8 +1,8 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: ''
-labels: ''
+title: "[BUG]"
+labels: Bug
 assignees: ''
 
 ---
@@ -11,28 +11,22 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+Steps of Code to reproduce the behavior:
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+**Error Snippet**
+If applicable, add screenshots or snippets to help explain your problem.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+**Environment (please complete the following information):**
+ - OS: [e.g. Windows, Mac, Linux]
+ - Version [e.g. 10, 12.3.1, Buster]
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+**Rust Environment (please complete the following information):**
+ - Version: [e.g. 1.60.0]
+ - Toolchain: [e.g. stable-x86_64-unknown-linux-gnu, nightly-x86_64-apple-darwin]
+ - Version of Libpnet [e.g. 0.27.1, 0.29.0]
 
 **Additional context**
 Add any other context about the problem here.
