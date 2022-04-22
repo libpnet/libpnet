@@ -11,7 +11,6 @@
 //! This exists to remove the need for the plugin_as_library feature, and allow for static linking.
 
 #![deny(missing_docs)]
-#![no_std]
 
 extern crate pnet_base;
 

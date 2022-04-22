@@ -144,3 +144,7 @@ pub mod util;
 //      allow custom --cfg flags
 #[cfg(test)]
 mod pnettest;
+
+
+#[cfg(test)]
+mod issue_487;
