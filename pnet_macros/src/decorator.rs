@@ -1277,9 +1277,7 @@ fn handle_vector_field(
                     #[allow(trivial_numeric_casts)]
                     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                     pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
-                        use pnet_macros_support::packet::FromPacket;
                         let _self = self;
-                        /*
                         let length = {packet_length};
                         let vec_length = length.saturating_div({inner_size});
                         let mut vec = Vec::with_capacity(vec_length);
@@ -1294,9 +1292,6 @@ fn handle_vector_field(
                         }}
 
                         vec;
-                        */
-
-                        &self.from_packet().{name}
                     }}
                     ",
                     accessors = accessors,
