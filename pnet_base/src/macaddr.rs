@@ -82,14 +82,14 @@ impl MacAddr {
 }
 
 impl From<EtherAddr> for MacAddr {
-    #[inline(always)]
+    #[inline]
     fn from(addr: EtherAddr) -> MacAddr {
         MacAddr(addr[0], addr[1], addr[2], addr[3], addr[4], addr[5])
     }
 }
 
 impl From<MacAddr> for EtherAddr {
-    #[inline(always)]
+    #[inline]
     fn from(addr: MacAddr) -> Self {
         [addr.0, addr.1, addr.2, addr.3, addr.4, addr.5]
     }

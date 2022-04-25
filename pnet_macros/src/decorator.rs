@@ -1021,7 +1021,6 @@ fn handle_vec_primitive(
                                     #[allow(trivial_numeric_casts, unused_parens, unused_braces)]
                                     #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                     pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
-                                        //use crate::pnet_macros_support::packet::FromPacket;
                                         use std::cmp::min;
                                         let _self = self;
                                         let current_offset = {co};
@@ -1290,7 +1289,6 @@ fn handle_vector_field(
                             vec.push({inner_ty_str}::new({get_args}));
                             additional_offset += {inner_size};
                         }}
-
                         vec
                     }}
                     ",
@@ -1320,10 +1318,7 @@ fn handle_vector_field(
                                     {inner_ty_str}Iterable {{
                                         buf: &_self.packet[current_offset..end]
                                     }}.map(|packet| packet.from_packet())
-                                      .collect::<Vec<_>>()
-                                    
-
-                                    
+                                      .collect::<Vec<_>>()   
                                 }}
 
                                 /// Get the value of the {name} field as iterator

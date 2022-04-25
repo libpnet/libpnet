@@ -20,7 +20,3 @@ serde_test = "1.0.126"
 [package.metadata.docs.rs]
 # Enable the serde feature when generating docs on docs.rs, so the traits are visible
 features = ["serde"]
-
-
-[profile.release]
-lto = true

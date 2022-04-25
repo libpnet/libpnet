@@ -14,9 +14,6 @@ edition = "2021"
 [lib]
 proc-macro = true
 
-[profile.release]
-
-
 [features]
 default = []
 travis = []
