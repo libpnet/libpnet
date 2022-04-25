@@ -27,7 +27,12 @@ const IOCPARM_MASK: libc::c_ulong = (1 << (IOCPARM_SHIFT as usize)) - 1;
 const SIZEOF_TIMEVAL: libc::c_ulong = 16;
 const SIZEOF_IFREQ: libc::c_ulong = 32;
 const SIZEOF_C_UINT: libc::c_ulong = 4;
-#[cfg(any(target_os = "freebsd", target_os = "netbsd"))]
+#[cfg(any(
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "illumos",
+    target_os = "solaris"
+))]
 const SIZEOF_C_LONG: libc::c_int = 8;
 
 pub const BIOCSETIF: libc::c_ulong =
@@ -46,7 +51,7 @@ pub const BIOCSHDRCMPLT: libc::c_ulong =
 pub const BIOCSRTIMEOUT: libc::c_ulong =
     IOC_IN | ((SIZEOF_TIMEVAL & IOCPARM_MASK) << 16) | (('B' as libc::c_ulong) << 8) | 109;
 
-#[cfg(target_os = "freebsd")]
+#[cfg(any(target_os = "freebsd", target_os = "illumos", target_os = "solaris"))]
 pub const BIOCFEEDBACK: libc::c_ulong =
     IOC_IN | ((SIZEOF_C_UINT & IOCPARM_MASK) << 16) | (('B' as libc::c_ulong) << 8) | 124;
 #[cfg(target_os = "netbsd")]
@@ -56,7 +61,12 @@ pub const BIOCFEEDBACK: libc::c_ulong =
 
 pub const DLT_NULL: libc::c_uint = 0;
 
-#[cfg(any(target_os = "freebsd", target_os = "netbsd"))]
+#[cfg(any(
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "illumos",
+    target_os = "solaris"
+))]
 const BPF_ALIGNMENT: libc::c_int = SIZEOF_C_LONG;
 #[cfg(any(target_os = "openbsd", target_os = "macos", target_os = "ios", windows))]
 const BPF_ALIGNMENT: libc::c_int = 4;
@@ -76,7 +86,15 @@ pub struct ifreq {
 // sdl_data does not match if_dl.h on OS X, since the size of 12 is a minimum.
 // Will be unsafe
 // when sdl_nlen > 40.
-#[cfg(any(target_os = "openbsd", target_os = "freebsd", target_os = "netbsd", target_os = "macos", target_os = "ios"))]
+#[cfg(any(
+    target_os = "openbsd",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "illumos",
+    target_os = "solaris",
+    target_os = "macos",
+    target_os = "ios"
+))]
 pub struct sockaddr_dl {
     pub sdl_len: libc::c_uchar,
     pub sdl_family: libc::c_uchar,
@@ -92,7 +110,12 @@ pub struct sockaddr_dl {
 #[cfg(any(
     target_os = "freebsd",
     target_os = "netbsd",
-    all(any(target_os = "macos", target_os = "ios"), target_pointer_width = "32"),
+    target_os = "illumos",
+    target_os = "solaris",
+    all(
+        any(target_os = "macos", target_os = "ios"),
+        target_pointer_width = "32"
+    ),
     windows
 ))]
 #[repr(C)]
