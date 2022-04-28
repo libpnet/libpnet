@@ -1,4 +1,7 @@
 //! A USB PCAP packet abstraction.
+
+use alloc::vec::Vec;
+
 use pnet_macros::Packet;
 use pnet_macros_support::types::{u1, u3, u4, u7, u16le, u32le, u64le};
 use pnet_macros_support::packet::PrimitiveValues;
@@ -111,7 +114,7 @@ mod tests {
             usbpcap.set_data_length(2);
             assert_eq!(usbpcap.get_data_length(), 2);
 
-            assert_eq!(usbpcap.get_header_payload(), &[]);
+            assert_eq!(usbpcap.get_header_payload(), Vec::<u8>::new());
 
             usbpcap.set_payload(&[90, 100]);
             assert_eq!(usbpcap.payload(), &[90, 100]);
@@ -146,7 +149,7 @@ mod tests {
             usbpcap.set_header_payload(&[110]);
             assert_eq!(usbpcap.get_header_payload(), &[110]);
 
-            assert_eq!(usbpcap.payload(), &[]);
+            assert_eq!(usbpcap.payload(), Vec::<u8>::new());
         }
 
         let ref_packet = [

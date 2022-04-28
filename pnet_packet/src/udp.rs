@@ -11,10 +11,12 @@
 use crate::Packet;
 use crate::ip::IpNextHeaderProtocols;
 
+use alloc::vec::Vec;
+
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use pnet_base::core_net::{Ipv4Addr, Ipv6Addr};
 use crate::util;
 
 /// Represents a UDP Packet.

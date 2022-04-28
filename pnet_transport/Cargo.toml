@@ -13,6 +13,10 @@ edition = "2021"
 
 [dependencies]
 libc = "0.2.94"
-pnet_base = { path = "../pnet_base", version = "0.29.0" }
+pnet_base = { path = "../pnet_base", version = "0.29.0", default-features = false }
 pnet_sys = { path = "../pnet_sys", version = "0.29.0" }
 pnet_packet = { path = "../pnet_packet", version = "0.29.0" }
+
+[features]
+std = ["pnet_base/std"]
+default = ["std"]

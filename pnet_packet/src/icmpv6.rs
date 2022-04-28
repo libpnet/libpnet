@@ -10,9 +10,12 @@
 
 use crate::ip::IpNextHeaderProtocols;
 use crate::PrimitiveValues;
+
+use alloc::vec::Vec;
+
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
-use std::net::Ipv6Addr;
+use pnet_base::core_net::Ipv6Addr;
 
 /// Represents the "ICMPv6 type" header field.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -83,6 +86,7 @@ pub fn checksum(packet: &Icmpv6Packet, source: &Ipv6Addr, destination: &Ipv6Addr
 
 #[cfg(test)]
 mod checksum_tests {
+    use alloc::vec;
     use super::*;
 
     #[test]
@@ -152,9 +156,12 @@ pub mod ndp {
     use crate::icmpv6::{Icmpv6Code, Icmpv6Type};
     use crate::PrimitiveValues;
     use crate::Packet;
+
+    use alloc::vec::Vec;
+
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
-    use std::net::Ipv6Addr;
+    use pnet_base::core_net::Ipv6Addr;
 
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
@@ -561,6 +568,7 @@ pub mod ndp {
 
     #[cfg(test)]
     mod ndp_tests {
+        use alloc::vec;
         use crate::icmpv6::{Icmpv6Types, Icmpv6Code};
         use super::*;
 
@@ -841,6 +849,9 @@ pub mod echo_reply {
 
     use crate::PrimitiveValues;
     use crate::icmpv6::{Icmpv6Code, Icmpv6Type};
+
+    use alloc::vec::Vec;
+
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
@@ -920,6 +931,9 @@ pub mod echo_request {
 
     use crate::PrimitiveValues;
     use crate::icmpv6::{Icmpv6Code, Icmpv6Type};
+
+    use alloc::vec::Vec;
+
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
 

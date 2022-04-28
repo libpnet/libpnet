@@ -12,10 +12,15 @@ categories = ["network-programming"]
 edition = "2021"
 
 [dependencies]
+no-std-net = { version = "0.6.0", default-features = false }
 serde = { version = "1.0.126", optional = true, default-features = false }
 
 [dev-dependencies]
 serde_test = "1.0.126"
+
+[features]
+std = ["no-std-net/std"]
+default = ["std"]
 
 [package.metadata.docs.rs]
 # Enable the serde feature when generating docs on docs.rs, so the traits are visible

@@ -9,6 +9,9 @@
 //! An ICMP packet abstraction.
 
 use crate::PrimitiveValues;
+
+use alloc::vec::Vec;
+
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
@@ -73,6 +76,7 @@ pub fn checksum(packet: &IcmpPacket) -> u16be {
 
 #[cfg(test)]
 mod checksum_tests {
+    use alloc::vec;
     use super::*;
 
     #[test]
@@ -161,6 +165,9 @@ pub mod echo_reply {
 
     use crate::PrimitiveValues;
     use crate::icmp::{IcmpCode, IcmpType};
+
+    use alloc::vec::Vec;
+
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
@@ -240,6 +247,9 @@ pub mod echo_request {
 
     use crate::PrimitiveValues;
     use crate::icmp::{IcmpCode, IcmpType};
+
+    use alloc::vec::Vec;
+
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
@@ -318,6 +328,9 @@ pub mod destination_unreachable {
     //! ```
 
     use crate::icmp::{IcmpCode, IcmpType};
+
+    use alloc::vec::Vec;
+
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
@@ -389,6 +402,9 @@ pub mod time_exceeded {
     //! ```
 
     use crate::icmp::{IcmpCode, IcmpType};
+
+    use alloc::vec::Vec;
+
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
 
