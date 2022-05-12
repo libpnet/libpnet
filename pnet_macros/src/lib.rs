@@ -73,10 +73,10 @@
 //!    structures. These include:
 //!      - `pnet::packet::Packet` (`ExamplePacket` and `MutableExamplePacket`)
 //!      - `pnet::packet::MutablePacket` (`MutableExamplePacket` only)
-//!      - `std::fmt::Debug` (`ExamplePacket` and `MutableExamplePacket`)
+//!      - `core::fmt::Debug` (`ExamplePacket` and `MutableExamplePacket`)
 //!      - `pnet::packet::FromPacket` (`ExamplePacket` and `MutableExamplePacket`)
 //!      - `pnet::packet::PacketSize` (`ExamplePacket` and `MutableExamplePacket`)
-//!  * An `ExampleIterator` structure, which implements `std::iter::Iterator`, to allow iterating
+//!  * An `ExampleIterator` structure, which implements `core::iter::Iterator`, to allow iterating
 //!    over vectors of `ExamplePacket` contained within another packet. Used internally.
 //!
 //! ## Attributes

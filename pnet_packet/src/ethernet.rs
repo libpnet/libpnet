@@ -10,7 +10,9 @@
 
 use crate::PrimitiveValues;
 
-use std::fmt;
+use alloc::vec::Vec;
+use core::fmt;
+
 use pnet_base::MacAddr;
 use pnet_macros::packet;
 
@@ -161,8 +163,10 @@ impl fmt::Display for EtherType {
     }
 }
 
+#[cfg(feature = "std")]
 #[test]
 fn ether_type_to_str() {
+    use std::format;
     let ipv4 = EtherType(0x0800);
     assert_eq!(format!("{}", ipv4), "Ipv4");
     let arp = EtherType(0x0806);

@@ -9,7 +9,7 @@
 //! Defines the type and constants for IP next header/next level protocol
 //! fields.
 
-use std::fmt;
+use core::fmt;
 use crate::PrimitiveValues;
 
 /// Protocol numbers as defined at:
@@ -645,6 +645,7 @@ impl fmt::Display for IpNextHeaderProtocol {
 
 #[test]
 fn ip_next_header_protocol_to_str() {
+    use std::format;
     let hopopt = IpNextHeaderProtocol(0);
     assert_eq!(format!("{}", hopopt), "Hopopt");
     let rvd = IpNextHeaderProtocol(66);

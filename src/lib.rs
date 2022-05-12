@@ -6,6 +6,17 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#![deny(missing_docs)]
+#![no_std]
+#![cfg_attr(feature = "nightly", feature(custom_attribute, plugin))]
+#![cfg_attr(feature = "nightly", plugin(pnet_macros_plugin))]
+#![cfg_attr(feature = "clippy", feature(plugin))]
+#![cfg_attr(feature = "benchmark", feature(test))]
+#![cfg_attr(feature = "clippy", plugin(clippy))]
+// We can't implement Iterator since we use streaming iterators
+#![cfg_attr(feature = "clippy", allow(should_implement_trait))]
+#![cfg_attr(any(feature = "appveyor", feature = "travis"), deny(warnings))]
+
 //! # libpnet
 //!
 //! `libpnet` provides a cross-platform API for low level networking using Rust.
@@ -40,7 +51,7 @@
 //! packet is received on an interface, it echo's the packet back; reversing the
 //! source and destination addresses.
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! extern crate pnet;
 //!
 //! use pnet::datalink::{self, NetworkInterface};
@@ -102,28 +113,24 @@
 //! }
 //! ```
 
-#![deny(missing_docs)]
-#![cfg_attr(feature = "nightly", feature(custom_attribute, plugin))]
-#![cfg_attr(feature = "nightly", plugin(pnet_macros_plugin))]
-#![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "benchmark", feature(test))]
-#![cfg_attr(feature = "clippy", plugin(clippy))]
-// We can't implement Iterator since we use streaming iterators
-#![cfg_attr(feature = "clippy", allow(should_implement_trait))]
-#![cfg_attr(any(feature = "appveyor", feature = "travis"), deny(warnings))]
-
 #[cfg(feature = "benchmark")]
 extern crate test;
 
+#[cfg(feature = "std")]
 pub extern crate ipnetwork;
 
 extern crate pnet_base;
+
+#[cfg(feature = "std")]
 extern crate pnet_datalink;
 extern crate pnet_packet;
+#[cfg(feature = "std")]
 extern crate pnet_sys;
+#[cfg(feature = "std")]
 extern crate pnet_transport;
 
 /// Support for sending and receiving data link layer packets.
+#[cfg(feature = "std")]
 pub mod datalink {
     pub use pnet_datalink::*;
 }
@@ -134,6 +141,7 @@ pub mod packet {
 }
 
 /// Support for sending and receiving transport layer packets.
+#[cfg(feature = "std")]
 pub mod transport {
     pub use pnet_transport::*;
 }
@@ -142,5 +150,5 @@ pub mod util;
 
 // NOTE should probably have a cfg(pnet_test_network) here, but cargo doesn't
 //      allow custom --cfg flags
-#[cfg(test)]
+#[cfg(all(test, std))]
 mod pnettest;
