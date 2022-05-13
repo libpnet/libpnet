@@ -18,7 +18,7 @@ default = ["std"]
 
 [dependencies]
 libc = "0.2.97"
-ipnetwork = "0.18.0"
+ipnetwork = "0.19.0"
 pnet_base = { path = "../pnet_base", version = "0.30.0", default-features = false }
 pnet_sys = { path = "../pnet_sys", version = "0.30.0" }
 
