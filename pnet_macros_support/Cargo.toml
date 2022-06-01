@@ -12,8 +12,4 @@ keywords = ["networking", "bitfields", "packet", "protocol"]
 edition = "2021"
 
 [dependencies]
-pnet_base = { path = "../pnet_base", version = "0.30.0" }
-
-[features]
-std = ["pnet_base/std"]
-default = ["std"]
+pnet_base = { path = "../pnet_base", version = "0.30.0", default-features = false }
