@@ -5,3 +5,28 @@ updates:
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
+- package-ecosystem: cargo
+  directory: "/pnet_base"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+- package-ecosystem: cargo
+  directory: "/pnet_sys"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+- package-ecosystem: cargo
+  directory: "/pnet_datalink"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+- package-ecosystem: cargo
+  directory: "/pnet_transport"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+- package-ecosystem: cargo
+  directory: "/pnet_packet"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
