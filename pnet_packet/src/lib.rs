@@ -34,5 +34,6 @@ pub mod tcp;
 pub mod udp;
 pub mod usbpcap;
 pub mod vlan;
+pub mod dhcp;
 
 pub mod util;
