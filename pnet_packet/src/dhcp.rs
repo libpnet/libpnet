@@ -66,65 +66,35 @@ pub mod DhcpHardwareTypes {
     pub const Ethernet: DhcpHardwareType = DhcpHardwareType(1);
 }
 
-/// Represents the Dhcp magic cookie.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct DhcpMagicCookie(pub u32);
-
-impl DhcpMagicCookie {
-    /// Create a new `DhcpMagicCookie`.
-    pub fn new(value: u32) -> Self {
-        DhcpMagicCookie(value)
-    }
-}
-
-impl PrimitiveValues for DhcpMagicCookie {
-    type T = (u32,);
-    fn to_primitive_values(&self) -> (u32,) {
-        (self.0,)
-    }
-}
-
-/// The Dhcp protocol hardware types.
-#[allow(non_snake_case)]
-#[allow(non_upper_case_globals)]
-pub mod DhcpMagicCookies {
-    use super::DhcpMagicCookie;
-
-    /// Cookie default
-    pub const cookie: DhcpMagicCookie = DhcpMagicCookie(0x63825363);
-}
-
 /// Represents an DHCP Packet.
 #[packet]
 #[allow(non_snake_case)]
 pub struct Dhcp {
     #[construct_with(u8)]
-    pub op_code: DhcpOperation,
+    pub op: DhcpOperation,
     #[construct_with(u8)]
-    pub hw_type: DhcpHardwareType,
-    pub hw_address_length: u8,
-    pub hop_count: u8,
-    pub transaction_id: u32be,
-    pub number_of_seconds: u16be,
+    pub htype: DhcpHardwareType,
+    pub hlen: u8,
+    pub hops: u8,
+    pub xid: u32be,
+    pub secs: u16be,
     pub flags: u16be,
     #[construct_with(u8, u8, u8, u8)]
-    pub client_ip_addr: Ipv4Addr,
+    pub ciaddr: Ipv4Addr,
     #[construct_with(u8, u8, u8, u8)]
-    pub your_ip_addr: Ipv4Addr,
+    pub yiaddr: Ipv4Addr,
     #[construct_with(u8, u8, u8, u8)]
-    pub server_ip_addr: Ipv4Addr,
+    pub siaddr: Ipv4Addr,
     #[construct_with(u8, u8, u8, u8)]
-    pub reply_agent_ip_addr: Ipv4Addr,
+    pub giaddr: Ipv4Addr,
     #[construct_with(u8, u8, u8, u8, u8, u8)]
-    pub client_hw_addr: MacAddr,
+    pub chaddr: MacAddr,
     #[length = "10"]
-    pub client_hw_addr_pad: Vec<u8>,
+    pub chaddr_pad: Vec<u8>,
     #[length = "64"]
-    pub server_host_name: Vec<u8>,
+    pub sname: Vec<u8>,
     #[length = "128"]
-    pub boot_file_name: Vec<u8>,
-    #[construct_with(u32)]
-    pub magic_cookie: DhcpMagicCookie,
+    pub file: Vec<u8>,
     #[payload]
-    pub payload: Vec<u8>,
+    pub options: Vec<u8>,
 }
