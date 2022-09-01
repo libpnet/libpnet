@@ -23,6 +23,7 @@ extern crate pnet_macros;
 pub use pnet_macros_support::packet::*;
 
 pub mod arp;
+pub mod dhcp;
 pub mod ethernet;
 pub mod gre;
 pub mod icmp;
@@ -34,6 +35,5 @@ pub mod tcp;
 pub mod udp;
 pub mod usbpcap;
 pub mod vlan;
-pub mod dhcp;
 
 pub mod util;
