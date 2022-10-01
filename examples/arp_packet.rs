@@ -58,13 +58,16 @@ fn get_mac_through_arp(interface: NetworkInterface, target_ip: Ipv4Addr) -> MacA
 
     println!("Sent ARP request");
 
-    let buf = receiver.next().unwrap();
-
-    let arp = ArpPacket::new(&buf[MutableEthernetPacket::minimum_packet_size()..]).unwrap();
-
-    println!("Received reply");
-
-    arp.get_sender_hw_addr()
+    while let buf = receiver.next().unwrap() {
+        let arp = ArpPacket::new(&buf[MutableEthernetPacket::minimum_packet_size()..]).unwrap();
+        if arp.get_sender_proto_addr() == target_ip
+            && arp.get_target_hw_addr() == interface.mac.unwrap()
+        {
+            println!("Received reply");
+            return arp.get_sender_hw_addr();
+        }
+    }
+    panic!("Never reach here")
 }
 
 fn main() {
