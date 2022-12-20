@@ -8,8 +8,11 @@
 
 //! Packet helpers for `pnet_macros`.
 
-use pnet_base;
+extern crate alloc;
+use alloc::vec;
+
 use core::ops::{Deref, DerefMut, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
+use pnet_base;
 
 /// Represents a generic network packet.
 pub trait Packet {
@@ -88,7 +91,7 @@ macro_rules! impl_index_mut {
 #[derive(PartialEq)]
 pub enum PacketData<'p> {
     /// A packet owns its contents.
-    Owned(Vec<u8>),
+    Owned(vec::Vec<u8>),
     /// A packet borrows its contents.
     Borrowed(&'p [u8]),
 }
@@ -128,7 +131,7 @@ impl_index!(PacketData, RangeFull, [u8]);
 #[derive(PartialEq)]
 pub enum MutPacketData<'p> {
     /// Owned mutable packet data.
-    Owned(Vec<u8>),
+    Owned(vec::Vec<u8>),
     /// Borrowed mutable packet data.
     Borrowed(&'p mut [u8]),
 }
@@ -199,7 +202,7 @@ impl PrimitiveValues for pnet_base::MacAddr {
 }
 
 
-impl PrimitiveValues for ::std::net::Ipv4Addr {
+impl PrimitiveValues for ::pnet_base::core_net::Ipv4Addr {
     type T = (u8, u8, u8, u8);
     #[inline]
     fn to_primitive_values(&self) -> (u8, u8, u8, u8) {
@@ -209,7 +212,7 @@ impl PrimitiveValues for ::std::net::Ipv4Addr {
     }
 }
 
-impl PrimitiveValues for ::std::net::Ipv6Addr {
+impl PrimitiveValues for ::pnet_base::core_net::Ipv6Addr {
     type T = (u16, u16, u16, u16, u16, u16, u16, u16);
     #[inline]
     fn to_primitive_values(&self) -> (u16, u16, u16, u16, u16, u16, u16, u16) {

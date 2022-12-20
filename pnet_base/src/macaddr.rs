@@ -6,9 +6,11 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#[cfg(feature = "std")]
 use std::error::Error;
-use std::fmt;
-use std::str::FromStr;
+
+use core::fmt;
+use core::str::FromStr;
 
 #[cfg(feature = "serde")]
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
@@ -121,7 +123,7 @@ impl Serialize for MacAddr {
     #[inline]
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         if serializer.is_human_readable() {
-            serializer.serialize_str(&format!("{}", self))
+            serializer.collect_str(self)
         } else {
             serializer.serialize_bytes(&[self.0, self.1, self.2, self.3, self.4, self.5])
         }
@@ -143,7 +145,7 @@ impl<'de> Deserialize<'de> for MacAddr {
 
             #[inline]
             fn visit_str<E: de::Error>(self, value: &str) -> Result<MacAddr, E> {
-                value.parse().map_err(|err| E::custom(&format!("{}", err)))
+                value.parse().map_err(|err| E::custom(err))
             }
 
             #[inline]
@@ -190,6 +192,7 @@ pub enum ParseMacAddrErr {
     InvalidComponent,
 }
 
+#[cfg(feature = "std")]
 impl Error for ParseMacAddrErr {}
 
 impl ParseMacAddrErr {

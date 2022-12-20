@@ -10,6 +10,8 @@ extern crate libc;
 
 use std::io;
 use std::mem;
+
+#[cfg(unix)]
 use std::time::Duration;
 
 #[cfg(unix)]

@@ -12,11 +12,13 @@ use crate::Packet;
 use crate::PrimitiveValues;
 use crate::ip::IpNextHeaderProtocols;
 
+use alloc::{vec, vec::Vec};
+
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
-use std::net::Ipv4Addr;
-use std::net::Ipv6Addr;
+use pnet_base::core_net::Ipv4Addr;
+use pnet_base::core_net::Ipv6Addr;
 use crate::util::{self, Octets};
 
 /// The TCP flags.
@@ -403,6 +405,7 @@ fn tcp_test_options_slice_invalid_offset() {
 
 #[test]
 fn tcp_test_option_invalid_len() {
+    use std::println;
     let mut buf = [0; 24];
     {
         if let Some(mut tcp) = MutableTcpPacket::new(&mut buf[..]) {
