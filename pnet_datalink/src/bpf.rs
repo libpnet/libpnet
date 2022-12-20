@@ -75,11 +75,17 @@ impl Default for Config {
 // NOTE buffer must be word aligned.
 #[inline]
 pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Result<super::Channel> {
-    #[cfg(any(target_os = "freebsd", target_os = "netbsd"))]
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "illumos",
+        target_os = "solaris"
+    ))]
     fn get_fd(_attempts: usize) -> libc::c_int {
+        let c_file_name = CString::new(&b"/dev/bpf"[..]).unwrap();
         unsafe {
             libc::open(
-                CString::new(&b"/dev/bpf"[..]).unwrap().as_ptr(),
+                c_file_name.as_ptr(),
                 libc::O_RDWR,
                 0,
             )
@@ -106,7 +112,12 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         -1
     }
 
-    #[cfg(any(target_os = "freebsd", target_os = "netbsd"))]
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "illumos",
+        target_os = "solaris"
+    ))]
     fn set_feedback(fd: libc::c_int) -> io::Result<()> {
         if unsafe { bpf::ioctl(fd, bpf::BIOCFEEDBACK, &1) } == -1 {
             let err = io::Error::last_os_error();
@@ -129,7 +140,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
     }
     let mut iface: bpf::ifreq = unsafe { mem::zeroed() };
     for (i, c) in network_interface.name.bytes().enumerate() {
-        iface.ifr_name[i] = c as i8;
+        iface.ifr_name[i] = c as libc::c_char;
     }
 
     let buflen = config.read_buffer_size as libc::c_uint;

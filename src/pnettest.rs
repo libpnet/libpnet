@@ -18,7 +18,7 @@ use crate::packet::udp;
 use crate::packet::udp::{MutableUdpPacket, UdpPacket};
 use crate::packet::Packet;
 use std::iter::Iterator;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use pnet_base::core_net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::mpsc::channel;
 use std::thread;
 use crate::transport::TransportProtocol::{Ipv4, Ipv6};

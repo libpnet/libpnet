@@ -15,7 +15,7 @@ use crate::util::{
 use proc_macro2::{Group, Span};
 use quote::{quote, ToTokens};
 use regex::Regex;
-use std::iter::FromIterator;
+use core::iter::FromIterator;
 use syn::{spanned::Spanned, Error};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -729,7 +729,7 @@ fn generate_packet_trait_impls(
             if !payload_bounds.upper.is_empty() {
                 pre = pre
                     + &format!(
-                        "let end = ::std::cmp::min({}, _self.packet.len());",
+                        "let end = ::core::cmp::min({}, _self.packet.len());",
                         payload_bounds.upper
                     )[..];
                 end = "end".to_owned();
@@ -787,7 +787,7 @@ fn generate_iterables(packet: &Packet) -> Result<proc_macro2::TokenStream, Error
         #[inline]
         fn next(&mut self) -> Option<{name}Packet<'a>> {{
             use pnet_macros_support::packet::PacketSize;
-            use std::cmp::min;
+            use core::cmp::min;
             if self.buf.len() > 0 {{
                 if let Some(ret) = {name}Packet::new(self.buf) {{
                     let start = min(ret.packet_size(), self.buf.len());
@@ -862,9 +862,9 @@ fn generate_debug_impls(packet: &Packet) -> Result<proc_macro2::TokenStream, Err
         .map(|packet| {
             let s = format!(
                 "
-        impl<'p> ::std::fmt::Debug for {packet}<'p> {{
+        impl<'p> ::core::fmt::Debug for {packet}<'p> {{
             #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
-            fn fmt(&self, fmt: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {{
+            fn fmt(&self, fmt: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {{
                 let _self = self;
                 write!(fmt,
                        \"{packet} {{{{ {field_fmt_str} }}}}\"
@@ -1135,7 +1135,7 @@ fn handle_vector_field(
                                 #[allow(trivial_numeric_casts)]
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}_raw(&self) -> &[u8] {{
-                                    use std::cmp::min;
+                                    use core::cmp::min;
                                     let _self = self;
                                     let current_offset = {co};
                                     let end = min(current_offset + {packet_length}, _self.packet.len());
@@ -1153,7 +1153,7 @@ fn handle_vector_field(
                                 #[allow(trivial_numeric_casts)]
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}_raw_mut(&mut self) -> &mut [u8] {{
-                                    use std::cmp::min;
+                                    use core::cmp::min;
                                     let _self = self;
                                     let current_offset = {co};
                                     let end = min(current_offset + {packet_length}, _self.packet.len());
@@ -1309,7 +1309,7 @@ fn handle_vector_field(
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}(&self) -> Vec<{inner_ty_str}> {{
                                     use pnet_macros_support::packet::FromPacket;
-                                    use std::cmp::min;
+                                    use core::cmp::min;
                                     let _self = self;
                                     let current_offset = {co};
                                     let end = min(current_offset + {packet_length}, _self.packet.len());
@@ -1326,7 +1326,7 @@ fn handle_vector_field(
                                 #[allow(trivial_numeric_casts)]
                                 #[cfg_attr(feature = \"clippy\", allow(used_underscore_binding))]
                                 pub fn get_{name}_iter(&self) -> {inner_ty_str}Iterable {{
-                                    use std::cmp::min;
+                                    use core::cmp::min;
                                     let _self = self;
                                     let current_offset = {co};
                                     let end = min(current_offset + {packet_length}, _self.packet.len());

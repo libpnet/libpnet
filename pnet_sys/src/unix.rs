@@ -30,6 +30,10 @@ pub mod public {
     pub type TvUsecType = libc::c_long;
     #[cfg(any(target_os = "macos", target_os = "ios", target_os = "netbsd"))]
     pub type TvUsecType = libc::c_int;
+    #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+    pub type InAddrType = libc::c_uint;
+    #[cfg(any(target_os = "illumos", target_os = "solaris"))]
+    pub type InAddrType = libc::c_ulonglong;
 
     pub const AF_INET: libc::c_int = libc::AF_INET;
     pub const AF_INET6: libc::c_int = libc::AF_INET6;
@@ -206,8 +210,8 @@ pub mod public {
 use self::public::*;
 
 #[inline(always)]
-pub fn ipv4_addr(addr: InAddr) -> u32 {
-    (addr.s_addr as u32).to_be()
+pub fn ipv4_addr(addr: InAddr) -> InAddrType {
+    (addr.s_addr as InAddrType).to_be()
 }
 
 #[inline(always)]

@@ -70,8 +70,8 @@ pub mod public {
     }
 
     pub fn make_in6_addr(segments: [u16; 8]) -> In6Addr {
-        let mut val: In6Addr = unsafe { mem::uninitialized() };
         unsafe {
+            let mut val: In6Addr = mem::MaybeUninit::uninit().assume_init();
             *val.u.Word_mut() = [
                 htons(segments[0]),
                 htons(segments[1]),
@@ -82,8 +82,9 @@ pub mod public {
                 htons(segments[6]),
                 htons(segments[7]),
             ];
+
+            val
         }
-        val
     }
 
     pub fn addr_to_sockaddr(addr: SocketAddr, storage: &mut SockAddrStorage) -> SockLen {
@@ -186,11 +187,12 @@ pub fn ipv4_addr(addr: InAddr) -> u32 {
 
 #[inline(always)]
 pub fn mk_inaddr(addr: u32) -> InAddr {
-    let mut val: InAddr = unsafe { mem::uninitialized() };
     unsafe {
+        let mut val: InAddr = mem::MaybeUninit::uninit().assume_init();
         *val.S_un.S_addr_mut() = addr as minwindef::ULONG;
+
+        val
     }
-    val
 }
 
 pub unsafe fn sendto(
