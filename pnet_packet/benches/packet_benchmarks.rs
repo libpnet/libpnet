@@ -85,22 +85,13 @@ fn bench_ipv4_parsing(c: &mut Criterion) {
 criterion_group!(
     name = benches;
     config = Criterion::default()
-        //warmup time set to 5 secs to help the CPU get to speed
         .warm_up_time(Duration::from_secs(5))
-        //.measurement_time(Duration::from_secs(120))
-        // degree of noise to ignore in measurements, here 1%
         .noise_threshold(0.01)
-        // likelihood of noise registering as difference, here 5%
         .significance_level(0.05)
-        // likelihood of capturing the true runtime, here 95%
         .confidence_level(0.95)
-        // total number of bootstrap resamples, higher is less noisy but slower
         .nresamples(100_000)
-        // sample size from 100 to 150 for better confidence in results
         .sample_size(150)
-        //disable plotting
         .without_plots();
-        //.with_profiler(perf::FlamegraphProfiler::new(100));
 
     targets = bench_packet_new_constructor, bench_packet_get_source, bench_packet_get_packet_len, bench_packet_set_source_black_box, bench_packet_mutable_to_immutable, bench_packet_immutable_to_immutable, bench_ipv4_parsing
 );

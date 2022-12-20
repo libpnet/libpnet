@@ -89,8 +89,6 @@ pub struct Fragment {
     pub reserved: u8,
     pub fragment_offset_with_flags: u16be,
     pub id: u32be,
-    //#[length = "0"] // Removed this due to Github Issue #487, payload is at end
-    // based on documentation, it should populate without need of #[length] or #[length_fn]
     #[payload]
     pub payload: Vec<u8>,
 }
