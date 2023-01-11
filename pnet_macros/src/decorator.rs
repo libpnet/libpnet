@@ -1019,7 +1019,7 @@ fn handle_vec_primitive(
                                         let end = min(current_offset + {packet_length}, pkt_len);
 
                                         let packet = &_self.packet[current_offset..end];
-                                        let mut vec: Vec<{inner_ty_str}> = Vec::with_capacity(packet.len());
+                                        let mut vec: Vec<{inner_ty_str}> = Vec::with_capacity(packet.len() / {size});
                                         let mut co = 0;
                                         for _ in 0..vec.capacity() {{
                                             vec.push({{
