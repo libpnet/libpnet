@@ -32,7 +32,7 @@ impl<T: Packet> Packet for alloc::boxed::Box<T> {
 
     /// Retrieve the payload for the packet.
     fn payload(&self) -> &[u8] {
-        self.packet()
+        self.payload()
     }
 }
 
@@ -44,7 +44,7 @@ impl<T: Packet> Packet for &T {
 
     /// Retrieve the payload for the packet.
     fn payload(&self) -> &[u8] {
-        self.packet()
+        self.payload()
     }
 }
 
