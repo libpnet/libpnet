@@ -20,7 +20,7 @@ appveyor = []
 travis = []
 serde = ["pnet_base/serde", "pnet_datalink?/serde"]
 std = ["pnet_base/std", "pnet_sys", "pnet_datalink", "pnet_transport", "ipnetwork"]
-default = ["pnet_base/default", "pnet_datalink/default", "pnet_transport/default", "pnet_packet/default"]
+default = ["std"]
 
 [dependencies]
 ipnetwork = { version = "0.19.0", optional = true }
