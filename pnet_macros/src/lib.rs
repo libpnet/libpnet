@@ -121,7 +121,7 @@
 //!    If the packet has no payload, you must still specify this attribute, but you can provide a
 //!    `#[length_fn]` attribute returning zero.
 //!
-//!  * \#[construct_with(<primitive type>, ...)]
+//!  * \#[construct_with(\<primitive type>, ...)]
 //!
 //!    Unfortunately, compiler plugins do not currently have access to type information during the
 //!    decoration stage (where all of the above is generated), so this attribute is required. This
