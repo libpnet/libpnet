@@ -26,9 +26,6 @@ pcap = { version = "1.0.0", optional = true }
 netmap_sys = { version = "0.1.4", optional = true, features = ["netmap_with_libs"] }
 serde = { version = "1.0.152", optional = true, default-features = false, features = [ "derive" ] }
 
-[dev-dependencies]
-pnet = { path = "../", version = "0.32.0" }
-
 [target.'cfg(windows)'.dependencies]
 winapi = "0.3.9"
 
