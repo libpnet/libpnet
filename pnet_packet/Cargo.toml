@@ -1,6 +1,6 @@
 [package]
 name = "pnet_packet"
-version = "0.31.0"
+version = "0.32.0"
 authors = ["Robert Clipsham <robert@octarineparrot.com>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
@@ -12,9 +12,9 @@ categories = ["network-programming", "parser-implementations"]
 edition = "2018"
 
 [dependencies]
-pnet_base = { path = "../pnet_base", version = "0.31.0", default-features = false }
-pnet_macros_support = { path = "../pnet_macros_support", version = "0.31.0" }
-pnet_macros = { path = "../pnet_macros", version = "0.31.0" }
+pnet_base = { path = "../pnet_base", version = "0.32.0", default-features = false }
+pnet_macros_support = { path = "../pnet_macros_support", version = "0.32.0" }
+pnet_macros = { path = "../pnet_macros", version = "0.32.0" }
 
 [features]
 std = ["pnet_base/std"]

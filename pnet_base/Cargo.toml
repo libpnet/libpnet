@@ -1,6 +1,6 @@
 [package]
 name = "pnet_base"
-version = "0.31.0"
+version = "0.32.0"
 authors = ["Robert Clipsham <robert@octarineparrot.com>", "Linus Färnstrand <faern@faern.net>"]
 license = "MIT/Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
