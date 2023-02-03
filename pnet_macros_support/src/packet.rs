@@ -23,31 +23,6 @@ pub trait Packet {
     fn payload(&self) -> &[u8];
 }
 
-/// Blanket impl for Boxed objects
-impl<T: Packet> Packet for alloc::boxed::Box<T> {
-    /// Retrieve the underlying buffer for the packet.
-    fn packet(&self) -> &[u8] {
-        self.packet()
-    }
-
-    /// Retrieve the payload for the packet.
-    fn payload(&self) -> &[u8] {
-        self.payload()
-    }
-}
-
-impl<T: Packet> Packet for &T {
-    /// Retrieve the underlying buffer for the packet.
-    fn packet(&self) -> &[u8] {
-        self.packet()
-    }
-
-    /// Retrieve the payload for the packet.
-    fn payload(&self) -> &[u8] {
-        self.payload()
-    }
-}
-
 /// Represents a generic, mutable, network packet.
 pub trait MutablePacket: Packet {
     /// Retreive the underlying, mutable, buffer for the packet.
