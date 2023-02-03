@@ -77,6 +77,7 @@ pub fn BPF_WORDALIGN(x: isize) -> isize {
 }
 
 // See /usr/include/net/if.h
+#[repr(C)]
 pub struct ifreq {
     pub ifr_name: [libc::c_char; IFNAMSIZ],
     pub ifru_addr: pnet_sys::SockAddr, // NOTE Should be a union
@@ -95,6 +96,7 @@ pub struct ifreq {
     target_os = "macos",
     target_os = "ios"
 ))]
+#[repr(C)]
 pub struct sockaddr_dl {
     pub sdl_len: libc::c_uchar,
     pub sdl_family: libc::c_uchar,
@@ -126,6 +128,7 @@ pub struct bpf_hdr {
     pub bh_hdrlen: libc::c_ushort,
 }
 
+#[repr(C)]
 pub struct timeval32 {
     pub tv_sec: i32,
     pub tv_usec: i32,

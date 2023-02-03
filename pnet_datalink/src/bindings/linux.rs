@@ -29,6 +29,7 @@ pub const PACKET_FANOUT_FLAG_UNIQUEID: libc::c_uint = 0x2000;
 pub const PACKET_FANOUT_FLAG_DEFRAG: libc::c_uint = 0x8000;
 
 // man 7 packet
+#[repr(C)]
 pub struct packet_mreq {
     pub mr_ifindex: libc::c_int,
     pub mr_type: libc::c_ushort,
