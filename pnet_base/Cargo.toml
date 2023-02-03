@@ -13,10 +13,10 @@ edition = "2021"
 
 [dependencies]
 no-std-net = { version = "0.6.0", default-features = false }
-serde = { version = "1.0.137", optional = true, default-features = false }
+serde = { version = "1.0.152", optional = true, default-features = false }
 
 [dev-dependencies]
-serde_test = "1.0.137"
+serde_test = "1.0.152"
 
 [features]
 std = ["no-std-net/std"]

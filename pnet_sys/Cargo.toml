@@ -12,7 +12,7 @@ categories = ["network-programming"]
 edition = "2021"
 
 [dependencies]
-libc = "0.2.126"
+libc = "0.2.139"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.9", features = [ "winsock2", "ws2ipdef" ] }
