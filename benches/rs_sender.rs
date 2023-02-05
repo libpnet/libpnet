@@ -44,7 +44,7 @@ pub fn build_ipv4_header(packet: &mut [u8]) -> MutableIpv4Packet {
 pub fn build_udp_header(packet: &mut [u8]) -> MutableUdpPacket {
     let mut udp_header = MutableUdpPacket::new(packet).unwrap();
 
-    udp_header.set_source(1234); // Arbitary port number
+    udp_header.set_source(1234); // Arbitrary port number
     udp_header.set_destination(1234);
     udp_header.set_length((UDP_HEADER_LEN + TEST_DATA_LEN) as u16);
 
