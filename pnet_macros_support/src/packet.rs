@@ -50,10 +50,10 @@ impl<T: Packet> Packet for &T {
 
 /// Represents a generic, mutable, network packet.
 pub trait MutablePacket: Packet {
-    /// Retreive the underlying, mutable, buffer for the packet.
+    /// Retrieve the underlying, mutable, buffer for the packet.
     fn packet_mut(&mut self) -> &mut [u8];
 
-    /// Retreive the mutable payload for the packet.
+    /// Retrieve the mutable payload for the packet.
     fn payload_mut(&mut self) -> &mut [u8];
 
     /// Initialize this packet by cloning another.

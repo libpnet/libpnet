@@ -80,7 +80,7 @@ fn build_ipv6_header(packet: &mut [u8], offset: usize) {
 fn build_udp_header(packet: &mut [u8], offset: usize) {
     let mut udp_header = MutableUdpPacket::new(&mut packet[offset..]).expect("could not create MutableUdpPacket");
 
-    udp_header.set_source(1234); // Arbitary port number
+    udp_header.set_source(1234); // Arbitrary port number
     udp_header.set_destination(1234);
     udp_header.set_length((UDP_HEADER_LEN + TEST_DATA_LEN) as u16);
 }
