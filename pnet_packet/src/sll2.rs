@@ -12,27 +12,27 @@ use super::ethernet::EtherType;
 #[packet]
 pub struct SLL2 {
     #[construct_with(u16)]
-    protocol_type: EtherType,
+    pub protocol_type: EtherType,
     
     #[construct_with(u16)]
-    reserverd: u16be,
+    pub reserverd: u16be,
     
     #[construct_with(u32)]
-    interface_index: u32be,
+    pub interface_index: u32be,
     
     #[construct_with(u16)]
-    arphrd_type: u16be,
+    pub arphrd_type: u16be,
     
     #[construct_with(u8)]
-    packet_type: u8,
+    pub packet_type: u8,
     
     #[construct_with(u8)]
-    link_layer_address_length: u8,
+    pub link_layer_address_length: u8,
     
     #[construct_with(u8, u8, u8, u8, u8, u8, u8, u8)]
-	#[length = "8"]
+    #[length = "8"]
 	pub link_layer_address: Vec<u8>,
-	
-	#[payload]
+    
+    #[payload]
 	pub payload: Vec<u8>
 }
