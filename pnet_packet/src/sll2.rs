@@ -1,3 +1,6 @@
+//! A Linux cooked-mode capture v2 (LINKTYPE_LINUX_SLL2) packet abstraction.
+// ref: https://www.tcpdump.org/linktypes/LINKTYPE_LINUX_SLL2.html
+
 use alloc::vec::Vec;
 
 use pnet_macros::packet;
@@ -5,16 +8,20 @@ use pnet_macros_support::types::*;
 
 use super::ethernet::EtherType;
 
+/// Represents an SLL2 packet (LINKTYPE_LINUX_SLL2).
 #[packet]
 pub struct SLL2 {
     #[construct_with(u16)]
-    protocol: EtherType,
+    protocol_type: EtherType,
+    
+    #[construct_with(u16)]
+    reserverd: u16be,
     
     #[construct_with(u32)]
     interface_index: u32be,
     
     #[construct_with(u16)]
-    ha_type: u16be,
+    arphrd_type: u16be,
     
     #[construct_with(u8)]
     packet_type: u8,
