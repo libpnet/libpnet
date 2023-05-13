@@ -6,7 +6,7 @@ use pnet_macros_support::types::*;
 use super::ethernet::EtherType;
 
 #[packet]
-pub struct SSL2 {
+pub struct SLL2 {
     #[construct_with(u16)]
     protocol: EtherType,
     
