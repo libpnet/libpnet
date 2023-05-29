@@ -69,3 +69,20 @@ jobs:
 
     - name: Build and test
       run: cargo test --verbose --features "appveyor serde"
+
+  run-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpcap-dev
+
+    - run: cargo run --example arp_packet en0 192.168.0.17

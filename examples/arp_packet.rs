@@ -99,7 +99,10 @@ fn main() {
     let interfaces = pnet::datalink::interfaces();
     let interface = interfaces
         .into_iter()
-        .find(|iface| iface.name == iface_name)
+        .find(|iface| {
+            println!("Interface: {}", iface.name);
+            iface.name == iface_name
+        })
         .unwrap();
     let _source_mac = interface.mac.unwrap();
 
