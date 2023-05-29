@@ -80,4 +80,4 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpcap-dev
 
     - run: cargo build
-    - run: cargo run --example arp_packet en0 192.168.0.17
+    - run: cargo run --example arp_packet eth0 192.168.0.17
