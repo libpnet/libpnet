@@ -291,6 +291,24 @@ impl DataLinkSender for DataLinkSenderImpl {
 
     #[inline]
     fn send_to(&mut self, packet: &[u8], _dst: Option<NetworkInterface>) -> Option<io::Result<()>> {
+        println!(
+            "
+            self.send_addr.sll_family={},
+            self.send_addr.sll_protocol={},
+            self.send_addr.sll_ifindex={},
+            self.send_addr.sll_hatype={},
+            self.send_addr.sll_pkttype={},
+            self.send_addr.sll_halen={},
+            self.send_addr.sll_addr={:?},
+            ",
+            self.send_addr.sll_family,
+            self.send_addr.sll_protocol,
+            self.send_addr.sll_ifindex,
+            self.send_addr.sll_hatype,
+            self.send_addr.sll_pkttype,
+            self.send_addr.sll_halen,
+            self.send_addr.sll_addr,
+        );
         unsafe {
             libc::FD_ZERO(&mut self.fd_set as *mut libc::fd_set);
             libc::FD_SET(self.socket.fd, &mut self.fd_set as *mut libc::fd_set);

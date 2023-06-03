@@ -22,6 +22,7 @@ fn get_mac_through_arp(interface: NetworkInterface, target_ip: Ipv4Addr) -> MacA
             _ => unreachable!(),
         })
         .unwrap();
+    println!("source_ip: {}", source_ip);
 
     let (mut sender, mut receiver) = match pnet::datalink::channel(&interface, Default::default()) {
         Ok(Channel::Ethernet(tx, rx)) => (tx, rx),
@@ -51,6 +52,7 @@ fn get_mac_through_arp(interface: NetworkInterface, target_ip: Ipv4Addr) -> MacA
 
     ethernet_packet.set_payload(arp_packet.packet_mut());
 
+    println!("packet: {:?}", ethernet_packet.packet());
     sender
         .send_to(ethernet_packet.packet(), None)
         .unwrap()
