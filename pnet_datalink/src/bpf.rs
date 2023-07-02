@@ -294,7 +294,7 @@ impl DataLinkSender for DataLinkSenderImpl {
                     )
                 };
                 if ret == -1 {
-                    // Error occured!
+                    // Error occurred!
                     return Some(Err(io::Error::last_os_error()));
                 } else if ret == 0 {
                     return Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")));
@@ -339,7 +339,7 @@ impl DataLinkSender for DataLinkSenderImpl {
             )
         };
         if ret == -1 {
-            // Error occured!
+            // Error occurred!
             return Some(Err(io::Error::last_os_error()));
         } else if ret == 0 {
             return Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")));

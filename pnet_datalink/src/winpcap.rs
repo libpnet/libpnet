@@ -343,7 +343,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
         buf.resize(buflen as usize, 0);
 
         // Second call should now work with the correct buffer size. If not, this may be
-        // due to some privilege or other unforseen issue.
+        // due to some privilege or other unforeseen issue.
         if unsafe { winpcap::PacketGetAdapterNames(buf.as_mut_ptr() as *mut i8, &mut buflen) } == 0
         {
             panic!("Unable to get interface list despite increasing buffer size");
