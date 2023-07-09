@@ -27,32 +27,35 @@ use crate::util::{self, Octets};
 pub mod TcpFlags {
     use pnet_macros_support::types::*;
     /// NS – ECN-nonce concealment protection (experimental: see RFC 3540).
-    pub const NS: u9be = 0b100000000;
+    /// From 2003–2017, the last bit (bit 103 of the header) was defined as the NS (Nonce Sum)
+    /// flag by the experimental RFC 3540, ECN-nonce.
+    /// ECN-nonce never gained widespread use and the RFC was moved to Historic status
+    /// pub const NS: u9be = 0b1000000000;
     /// CWR – Congestion Window Reduced (CWR) flag is set by the sending
     /// host to indicate that it received a TCP segment with the ECE flag set
     /// and had responded in congestion control mechanism (added to header by RFC 3168).
-    pub const CWR: u9be = 0b010000000;
+    pub const CWR: u8 = 0b10000000;
     /// ECE – ECN-Echo has a dual role, depending on the value of the
     /// SYN flag. It indicates:
     /// If the SYN flag is set (1), that the TCP peer is ECN capable.
     /// If the SYN flag is clear (0), that a packet with Congestion Experienced
     /// flag set (ECN=11) in IP header received during normal transmission
     /// (added to header by RFC 3168).
-    pub const ECE: u9be = 0b001000000;
+    pub const ECE: u8 = 0b01000000;
     /// URG – indicates that the Urgent pointer field is significant.
-    pub const URG: u9be = 0b000100000;
+    pub const URG: u8 = 0b00100000;
     /// ACK – indicates that the Acknowledgment field is significant.
     /// All packets after the initial SYN packet sent by the client should have this flag set.
-    pub const ACK: u9be = 0b000010000;
+    pub const ACK: u8 = 0b00010000;
     /// PSH – Push function. Asks to push the buffered data to the receiving application.
-    pub const PSH: u9be = 0b000001000;
+    pub const PSH: u8 = 0b00001000;
     /// RST – Reset the connection.
-    pub const RST: u9be = 0b000000100;
+    pub const RST: u8 = 0b00000100;
     /// SYN – Synchronize sequence numbers. Only the first packet sent from each end
     /// should have this flag set.
-    pub const SYN: u9be = 0b000000010;
+    pub const SYN: u8 = 0b00000010;
     /// FIN – No more data from sender.
-    pub const FIN: u9be = 0b000000001;
+    pub const FIN: u8 = 0b00000001;
 }
 
 /// Represents a TCP packet.
@@ -63,7 +66,7 @@ pub struct Tcp {
     pub sequence: u32be,
     pub acknowledgement: u32be,
     pub data_offset: u4,
-    pub reserved: u3,
+    pub reserved: u4,
     pub flags: u8,
     pub window: u16be,
     pub checksum: u16be,
