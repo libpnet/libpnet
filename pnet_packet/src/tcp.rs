@@ -64,7 +64,7 @@ pub struct Tcp {
     pub acknowledgement: u32be,
     pub data_offset: u4,
     pub reserved: u3,
-    pub flags: u9be,
+    pub flags: u8,
     pub window: u16be,
     pub checksum: u16be,
     pub urgent_ptr: u16be,
