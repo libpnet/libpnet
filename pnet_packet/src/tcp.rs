@@ -25,12 +25,12 @@ use crate::util::{self, Octets};
 #[allow(non_snake_case)]
 #[allow(non_upper_case_globals)]
 pub mod TcpFlags {
-    use pnet_macros_support::types::*;
+    // use pnet_macros_support::types::*;
     /// NS – ECN-nonce concealment protection (experimental: see RFC 3540).
     /// From 2003–2017, the last bit (bit 103 of the header) was defined as the NS (Nonce Sum)
     /// flag by the experimental RFC 3540, ECN-nonce.
     /// ECN-nonce never gained widespread use and the RFC was moved to Historic status
-    /// pub const NS: u9be = 0b1000000000;
+    // pub const NS: u9be = 0b1000000000;
     /// CWR – Congestion Window Reduced (CWR) flag is set by the sending
     /// host to indicate that it received a TCP segment with the ECE flag set
     /// and had responded in congestion control mechanism (added to header by RFC 3168).
