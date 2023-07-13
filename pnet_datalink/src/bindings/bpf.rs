@@ -68,7 +68,13 @@ pub const DLT_NULL: libc::c_uint = 0;
     target_os = "solaris"
 ))]
 const BPF_ALIGNMENT: libc::c_int = SIZEOF_C_LONG;
-#[cfg(any(target_os = "openbsd", target_os = "macos", target_os = "ios", windows))]
+#[cfg(any(
+    target_os = "openbsd",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "tvos",
+    windows
+))]
 const BPF_ALIGNMENT: libc::c_int = 4;
 
 pub fn BPF_WORDALIGN(x: isize) -> isize {
@@ -94,7 +100,8 @@ pub struct ifreq {
     target_os = "illumos",
     target_os = "solaris",
     target_os = "macos",
-    target_os = "ios"
+    target_os = "ios",
+    target_os = "tvos"
 ))]
 #[repr(C)]
 pub struct sockaddr_dl {
@@ -115,7 +122,7 @@ pub struct sockaddr_dl {
     target_os = "illumos",
     target_os = "solaris",
     all(
-        any(target_os = "macos", target_os = "ios"),
+        any(target_os = "macos", target_os = "ios", target_os = "tvos"),
         target_pointer_width = "32"
     ),
     windows
@@ -136,7 +143,10 @@ pub struct timeval32 {
 
 #[cfg(any(
     target_os = "openbsd",
-    all(any(target_os = "macos", target_os = "ios"), target_pointer_width = "64")
+    all(
+        any(target_os = "macos", target_os = "ios", target_os = "tvos"),
+        target_pointer_width = "64"
+    )
 ))]
 #[repr(C)]
 pub struct bpf_hdr {

@@ -145,7 +145,8 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
     target_os = "illumos",
     target_os = "solaris",
     target_os = "macos",
-    target_os = "ios"
+    target_os = "ios",
+    target_os = "tvos"
 ))]
 fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
     use crate::bindings::bpf;
