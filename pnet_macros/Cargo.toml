@@ -25,5 +25,5 @@ trybuild = "1.0.77"
 [dependencies]
 proc-macro2 = "1.0.50"
 quote = "1.0.23"
-syn = { version = "1.0.107", features = ["full"] }
+syn = { version = "2.0.25", features = ["full"] }
 regex = "1.7.1"
