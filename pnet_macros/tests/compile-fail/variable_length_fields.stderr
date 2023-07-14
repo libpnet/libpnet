@@ -2,4 +2,4 @@ error: variable length field must have #[length = ""] or #[length_fn = ""] attri
   --> tests/compile-fail/variable_length_fields.rs:16:17
    |
 16 |     var_length: Vec<u8>, //~ ERROR: variable length field must have #[length = ""] or #[length_fn = ""] attribute
-   |                 ^^^^^^^
+   |                 ^^^
