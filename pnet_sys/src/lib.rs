@@ -6,6 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#![deny(warnings)]
 extern crate libc;
 
 use std::io;

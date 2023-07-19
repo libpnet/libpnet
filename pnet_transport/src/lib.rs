@@ -16,6 +16,7 @@
 //! X and FreeBSD, it is impossible to implement protocols which are already
 //! implemented in the kernel such as TCP and UDP.
 
+#![deny(warnings)]
 #![macro_use]
 
 extern crate libc;
@@ -34,10 +35,12 @@ use pnet_packet::Packet;
 
 use std::io;
 use std::io::Error;
+#[cfg(unix)]
 use std::io::ErrorKind;
 use std::mem;
 use std::net::{self, IpAddr};
 use std::sync::Arc;
+#[cfg(unix)]
 use std::time::Duration;
 
 /// Represents a transport layer protocol.

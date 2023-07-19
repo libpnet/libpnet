@@ -15,7 +15,7 @@ pub struct SLL2 {
     pub protocol_type: EtherType,
     
     #[construct_with(u16)]
-    pub reserverd: u16be,
+    pub reserved: u16be,
     
     #[construct_with(u32)]
     pub interface_index: u32be,

@@ -71,7 +71,7 @@ pub mod public {
 
     pub fn make_in6_addr(segments: [u16; 8]) -> In6Addr {
         unsafe {
-            let mut val: In6Addr = mem::MaybeUninit::uninit().assume_init();
+            let mut val: In6Addr = mem::zeroed();
             *val.u.Word_mut() = [
                 htons(segments[0]),
                 htons(segments[1]),
@@ -188,7 +188,7 @@ pub fn ipv4_addr(addr: InAddr) -> u32 {
 #[inline(always)]
 pub fn mk_inaddr(addr: u32) -> InAddr {
     unsafe {
-        let mut val: InAddr = mem::MaybeUninit::uninit().assume_init();
+        let mut val: InAddr = mem::zeroed();
         *val.S_un.S_addr_mut() = addr as minwindef::ULONG;
 
         val

@@ -39,12 +39,12 @@ impl<T: Packet> Packet for alloc::boxed::Box<T> {
 impl<T: Packet> Packet for &T {
     /// Retrieve the underlying buffer for the packet.
     fn packet(&self) -> &[u8] {
-        self.deref().packet()
+        (*self).packet()
     }
 
     /// Retrieve the payload for the packet.
     fn payload(&self) -> &[u8] {
-        self.deref().payload()
+        (*self).payload()
     }
 }
 
