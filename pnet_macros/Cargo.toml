@@ -20,10 +20,10 @@ travis = []
 
 [dev-dependencies]
 pnet_macros_support = { path = "../pnet_macros_support", version = "0.33.0" }
-trybuild = "1.0.77"
+trybuild = "1.0.81"
 
 [dependencies]
-proc-macro2 = "1.0.50"
-quote = "1.0.23"
-syn = { version = "2.0.25", features = ["full"] }
-regex = "1.7.1"
+proc-macro2 = "1.0.66"
+quote = "1.0.31"
+syn = { version = "2.0.26", features = ["full"] }
+regex = "1.9.1"

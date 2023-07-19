@@ -136,9 +136,7 @@
 //!        `#[construct_with(...)]` attribute, and in the `new` method.
 
 #![deny(missing_docs)]
-// #![cfg_attr(feature = "clippy", feature(plugin))]
-// #![cfg_attr(feature = "clippy", plugin(clippy))]
-// #![cfg_attr(feature = "clippy", allow(let_and_return))]
+#![deny(warnings)]
 
 use proc_macro::TokenStream;
 use quote::quote;

@@ -8,6 +8,7 @@
 
 //! Provides interfaces for interacting with packets and headers.
 #![allow(missing_docs)]
+#![deny(warnings)]
 #![no_std]
 #![macro_use]
 

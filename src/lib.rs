@@ -7,6 +7,8 @@
 // except according to those terms.
 
 #![deny(missing_docs)]
+#![deny(warnings)]
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "nightly", feature(custom_attribute, plugin))]
 #![cfg_attr(feature = "nightly", plugin(pnet_macros_plugin))]
@@ -15,7 +17,6 @@
 #![cfg_attr(feature = "clippy", plugin(clippy))]
 // We can't implement Iterator since we use streaming iterators
 #![cfg_attr(feature = "clippy", allow(should_implement_trait))]
-#![cfg_attr(any(feature = "appveyor", feature = "travis"), deny(warnings))]
 
 //! # libpnet
 //!
