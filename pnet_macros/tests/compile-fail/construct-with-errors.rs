@@ -25,10 +25,35 @@ pub struct PacketU16 {
 
 #[packet]
 pub struct PacketU16B {
-    #[construct_with("test")] //~ ERROR #[construct_with] should be of the form #[construct_with(<types>)]
+    #[construct_with("test")] //~ ERROR #[construct_with] should be of the form #[construct_with(<primitive types>)]
     banana: Toto,
     #[payload]
     payload: Vec<u8>,
 }
+
+#[packet]
+pub struct PacketU16C {
+    #[construct_with(::foo:bar)] //~ ERROR #[construct_with] should be of the form #[construct_with(<primitive types>)]
+    banana: Toto,
+    #[payload]
+    payload: Vec<u8>,
+}
+
+#[packet]
+pub struct PacketU16D {
+    #[construct_with(Vec<u8>)] //~ ERROR #[construct_with] should be of the form #[construct_with(<primitive types>)]
+    banana: Toto,
+    #[payload]
+    payload: Vec<u8>,
+}
+
+#[packet]
+pub struct PacketU16E {
+    #[construct_with(test)] //~ ERROR arguments to #[construct_with] must be primitives
+    banana: Toto,
+    #[payload]
+    payload: Vec<u8>,
+}
+
 
 fn main() {}

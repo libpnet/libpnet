@@ -1,11 +1,47 @@
 error: #[construct_with] must have at least one argument
-  --> $DIR/construct-with-errors.rs:20:7
+  --> tests/compile-fail/construct-with-errors.rs:20:7
    |
 20 |     #[construct_with()] //~ ERROR #[construct_with] must have at least one argument
    |       ^^^^^^^^^^^^^^
 
-error: #[construct_with] should be of the form #[construct_with(<types>)]
-  --> $DIR/construct-with-errors.rs:28:22
+error: unexpected literal in nested attribute, expected ident
+  --> tests/compile-fail/construct-with-errors.rs:28:22
    |
-28 |     #[construct_with("test")] //~ ERROR #[construct_with] should be of the form #[construct_with(<types>)]
+28 |     #[construct_with("test")] //~ ERROR #[construct_with] should be of the form #[construct_with(<primitive types>)]
    |                      ^^^^^^
+
+error: #[construct_with] should be of the form #[construct_with(<primitive types>)]
+  --> tests/compile-fail/construct-with-errors.rs:28:7
+   |
+28 |     #[construct_with("test")] //~ ERROR #[construct_with] should be of the form #[construct_with(<primitive types>)]
+   |       ^^^^^^^^^^^^^^
+
+error: expected ident
+  --> tests/compile-fail/construct-with-errors.rs:36:24
+   |
+36 |     #[construct_with(::foo:bar)] //~ ERROR #[construct_with] should be of the form #[construct_with(<primitive types>)]
+   |                        ^^^
+
+error: #[construct_with] should be of the form #[construct_with(<primitive types>)]
+  --> tests/compile-fail/construct-with-errors.rs:36:7
+   |
+36 |     #[construct_with(::foo:bar)] //~ ERROR #[construct_with] should be of the form #[construct_with(<primitive types>)]
+   |       ^^^^^^^^^^^^^^
+
+error: expected `,`
+  --> tests/compile-fail/construct-with-errors.rs:44:25
+   |
+44 |     #[construct_with(Vec<u8>)] //~ ERROR #[construct_with] should be of the form #[construct_with(<primitive types>)]
+   |                         ^
+
+error: #[construct_with] should be of the form #[construct_with(<primitive types>)]
+  --> tests/compile-fail/construct-with-errors.rs:44:7
+   |
+44 |     #[construct_with(Vec<u8>)] //~ ERROR #[construct_with] should be of the form #[construct_with(<primitive types>)]
+   |       ^^^^^^^^^^^^^^
+
+error: arguments to #[construct_with] must be primitives
+  --> tests/compile-fail/construct-with-errors.rs:52:5
+   |
+52 |     #[construct_with(test)] //~ ERROR arguments to #[construct_with] must be primitives
+   |     ^

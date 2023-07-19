@@ -12,10 +12,10 @@
 use crate::util::{
     operations, to_little_endian, to_mutator, Endianness, GetOperation, SetOperation,
 };
+use core::iter::FromIterator;
 use proc_macro2::{Group, Span};
 use quote::{quote, ToTokens};
 use regex::Regex;
-use core::iter::FromIterator;
 use syn::{spanned::Spanned, Error};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -161,9 +161,8 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
         let mut packet_length = None;
         let mut struct_length = None;
         for attr in &field.attrs {
-            let node = attr.parse_meta()?;
-            match node {
-                syn::Meta::Path(p) => {
+            match attr.meta {
+                syn::Meta::Path(ref p) => {
                     if let Some(ident) = p.get_ident() {
                         if ident == "payload" {
                             if payload_span.is_some() {
@@ -180,7 +179,11 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
                 syn::Meta::NameValue(ref name_value) => {
                     if let Some(ident) = name_value.path.get_ident() {
                         if ident == "length_fn" {
-                            if let syn::Lit::Str(ref s) = name_value.lit {
+                            if let syn::Expr::Lit(syn::ExprLit {
+                                lit: syn::Lit::Str(ref s),
+                                ..
+                            }) = name_value.value
+                            {
                                 packet_length = Some(s.value() + "(&_self.to_immutable())");
                             } else {
                                 return Err(Error::new(
@@ -191,7 +194,11 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
                             }
                         } else if ident == "length" {
                             // get literal
-                            if let syn::Lit::Str(ref s) = name_value.lit {
+                            if let syn::Expr::Lit(syn::ExprLit {
+                                lit: syn::Lit::Str(ref s),
+                                ..
+                            }) = name_value.value
+                            {
                                 let field_names: Vec<String> = sfields
                                     .iter()
                                     .filter_map(|field| {
@@ -216,7 +223,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
                                 packet_length = Some(parsed.to_string());
                             } else {
                                 return Err(Error::new(
-                                    name_value.lit.span(),
+                                    name_value.value.span(),
                                     "#[length] should be used as #[length = \
                                                 \"field_name and/or arithmetic expression\"]",
                                 ));
@@ -233,33 +240,37 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
                     if let Some(ident) = l.path.get_ident() {
                         if ident == "construct_with" {
                             let mut some_construct_with = Vec::new();
-                            if l.nested.is_empty() {
-                                return Err(Error::new(
-                                    l.path.span(),
-                                    "#[construct_with] must have at least one argument",
-                                ));
-                            }
 
-                            for item in &l.nested {
-                                if let syn::NestedMeta::Meta(ref meta) = item {
-                                    let ty_str = meta.to_token_stream().to_string();
+                            l.parse_nested_meta(|meta| {
+                                if let Some(ident) = meta.path.get_ident() {
+                                    // #[construct_with(<type>,...)]
+                                    let ty_str = ident.to_string();
                                     match make_type(ty_str, false) {
-                                        Ok(ty) => some_construct_with.push(ty),
-                                        Err(e) => {
-                                            return Err(Error::new(
-                                                field.ty.span(),
-                                                &format!("{}", e),
-                                            ));
+                                        Ok(ty) => {
+                                            some_construct_with.push(ty);
+                                            Ok(())
                                         }
+                                        Err(e) => Err(meta.error(e)),
                                     }
                                 } else {
-                                    // literal
-                                    return Err(Error::new(
-                                        l.nested.span(),
-                                        "#[construct_with] should be of the form \
-                                                #[construct_with(<types>)]",
-                                    ));
+                                    // Not an ident. Something else, likely a path.
+                                    Err(meta.error("expected ident"))
                                 }
+                            })
+                            .map_err(|mut err| {
+                                err.combine(Error::new(
+                                    l.span(),
+                                    "#[construct_with] should be of the form \
+                                        #[construct_with(<primitive types>)]",
+                                ));
+                                err
+                            })?;
+
+                            if some_construct_with.is_empty() {
+                                return Err(Error::new(
+                                    l.span(),
+                                    "#[construct_with] must have at least one argument",
+                                ));
                             }
                             construct_with = Some(some_construct_with);
                         } else {
@@ -294,9 +305,9 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
                             inner_size += size;
                         } else {
                             return Err(Error::new(
-                                    field.span(),
-                                    "arguments to #[construct_with] must be primitives",
-                                    ));
+                                field.span(),
+                                "arguments to #[construct_with] must be primitives",
+                            ));
                         }
                     }
                     if inner_size % 8 != 0 {
