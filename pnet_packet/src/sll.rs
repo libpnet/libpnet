@@ -2,9 +2,9 @@
 
 use alloc::vec::Vec;
 
-use ethernet::EtherType;
+use super::ethernet::EtherType;
 use pnet_macros::packet;
-use pnet_macros_support::types::*
+use pnet_macros_support::types::*;
 
 // ref: https://wiki.wireshark.org/SLL
 // ref: https://www.tcpdump.org/linktypes/LINKTYPE_LINUX_SLL.html
