@@ -31,7 +31,7 @@
 //!
 //! ## Terminology
 //!
-//! The documentation uses the following terms interchangably:
+//! The documentation uses the following terms interchangeably:
 //!
 //!  * Layer 2, datalink layer;
 //!  * Layer 3, network layer;
@@ -48,7 +48,7 @@
 //! ### Ethernet echo server
 //!
 //! This (fairly useless) code implements an Ethernet echo server. Whenever a
-//! packet is received on an interface, it echo's the packet back; reversing the
+//! packet is received on an interface, it echoes the packet back; reversing the
 //! source and destination addresses.
 //!
 //! ```rust,ignore

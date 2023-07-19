@@ -111,7 +111,7 @@ pub fn set_socket_receive_timeout(socket: CSocket, t: Duration) -> io::Result<()
     }
 }
 
-/// Extracts and returns a timout for reading from the socket.
+/// Extracts and returns a timeout for reading from the socket.
 #[cfg(unix)]
 pub fn get_socket_receive_timeout(socket: CSocket) -> io::Result<Duration> {
     let ts = libc::timeval {
