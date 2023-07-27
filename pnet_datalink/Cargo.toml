@@ -2,7 +2,7 @@
 name = "pnet_datalink"
 version = "0.34.0"
 authors = ["Robert Clipsham <robert@octarineparrot.com>", "Linus Färnstrand <faern@faern.net>"]
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
 repository = "https://github.com/libpnet/libpnet"
 description = "Cross-platform, datalink layer networking."
