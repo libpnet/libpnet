@@ -21,6 +21,7 @@ pub trait Packet {
 
     /// Retrieve the payload for the packet.
     fn payload(&self) -> &[u8];
+
 }
 
 /// Blanket impl for Boxed objects
@@ -121,6 +122,7 @@ pub enum PacketData<'p> {
 }
 
 impl<'p> PacketData<'p> {
+
     /// Get a slice of the packet data.
     #[inline]
     pub fn as_slice(&self) -> &[u8] {
@@ -141,6 +143,7 @@ impl<'p> PacketData<'p> {
     pub fn len(&self) -> usize {
         self.as_slice().len()
     }
+
 }
 
 impl_index!(PacketData, usize, u8);
@@ -214,6 +217,7 @@ pub trait PrimitiveValues {
     fn to_primitive_values(&self) -> Self::T;
 }
 
+
 impl PrimitiveValues for pnet_base::MacAddr {
     type T = (u8, u8, u8, u8, u8, u8);
     #[inline]
@@ -221,6 +225,7 @@ impl PrimitiveValues for pnet_base::MacAddr {
         (self.0, self.1, self.2, self.3, self.4, self.5)
     }
 }
+
 
 impl PrimitiveValues for ::pnet_base::core_net::Ipv4Addr {
     type T = (u8, u8, u8, u8);

@@ -89,7 +89,6 @@ pub struct Fragment {
     pub reserved: u8,
     pub fragment_offset_with_flags: u16be,
     pub id: u32be,
-    #[length = "0"]
     #[payload]
     pub payload: Vec<u8>,
 }

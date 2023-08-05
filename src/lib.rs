@@ -153,3 +153,7 @@ pub mod util;
 //      allow custom --cfg flags
 #[cfg(all(test, std))]
 mod pnettest;
+
+
+#[cfg(test)]
+mod gh_issue_487;

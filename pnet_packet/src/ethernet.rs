@@ -118,6 +118,7 @@ pub struct EtherType(pub u16);
 
 impl EtherType {
     /// Construct a new `EtherType` instance.
+    #[inline]
     pub fn new(val: u16) -> EtherType {
         EtherType(val)
     }
@@ -125,6 +126,7 @@ impl EtherType {
 
 impl PrimitiveValues for EtherType {
     type T = (u16,);
+    #[inline]
     fn to_primitive_values(&self) -> (u16,) {
         (self.0,)
     }

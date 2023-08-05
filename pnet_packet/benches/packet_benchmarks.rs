@@ -1,13 +1,15 @@
 //Using criterion so that we dont need to use the test framework which requires nightly toolchain
 use criterion::{criterion_group, criterion_main, Criterion, black_box};
-
+use std::time::Duration;
 use pnet_packet::ethernet::EthernetPacket;
 use pnet_packet::ethernet::MutableEthernetPacket;
 use pnet_packet::ipv4::MutableIpv4Packet;
 use pnet_base::MacAddr;
 use pnet_packet::Packet;
 use pnet_packet::ipv4::Ipv4Packet;
+use pnet_packet::PacketSize;
 
+mod perf;
 
 fn bench_packet_new_constructor(c: &mut Criterion) {
     let buffer = vec![0; 20];
@@ -24,6 +26,16 @@ fn bench_packet_get_source(c: &mut Criterion) {
     c.bench_function("EthernetPacket Get Source", |b| {
         b.iter(|| 
             black_box(packet.get_source())
+        );
+    });
+}
+
+fn bench_packet_get_packet_len(c: &mut Criterion) {
+    let buffer = vec![0; 20];
+    let packet = EthernetPacket::new(&buffer).unwrap();
+    c.bench_function("EthernetPacket Get Length", |b| {
+        b.iter(|| 
+            black_box(packet.packet_size())
         );
     });
 }
@@ -70,6 +82,18 @@ fn bench_ipv4_parsing(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_packet_new_constructor, bench_packet_get_source, bench_packet_set_source_black_box, bench_packet_mutable_to_immutable, bench_packet_immutable_to_immutable, bench_ipv4_parsing);
+criterion_group!(
+    name = benches;
+    config = Criterion::default()
+        .warm_up_time(Duration::from_secs(5))
+        .noise_threshold(0.01)
+        .significance_level(0.05)
+        .confidence_level(0.95)
+        .nresamples(100_000)
+        .sample_size(150)
+        .without_plots();
+
+    targets = bench_packet_new_constructor, bench_packet_get_source, bench_packet_get_packet_len, bench_packet_set_source_black_box, bench_packet_mutable_to_immutable, bench_packet_immutable_to_immutable, bench_ipv4_parsing
+);
 
 criterion_main!(benches);

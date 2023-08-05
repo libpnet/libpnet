@@ -383,6 +383,7 @@ fn ipv4_packet_option_test() {
                       0x03,           /* length */
                       0x10,           /* data */];
 
+    println!("{:?}", packet);
     assert_eq!(&ref_packet[..], &packet[..]);
 }
 
