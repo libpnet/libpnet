@@ -107,14 +107,13 @@ pub mod TcpOptionNumbers {
 #[packet]
 pub struct TcpOption {
     #[construct_with(u8)]
-    number: TcpOptionNumber,
+    pub number: TcpOptionNumber,
     #[length_fn = "tcp_option_length"]
-    // The length field is an optional field, using a Vec is a way to implement
-    // it
-    length: Vec<u8>,
+    // The length field is an optional field, using a Vec is a way to implement it.
+    pub length: Vec<u8>,
     #[length_fn = "tcp_option_payload_length"]
     #[payload]
-    data: Vec<u8>,
+    pub data: Vec<u8>,
 }
 
 impl TcpOption {
