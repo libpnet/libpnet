@@ -367,7 +367,7 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
         }
     }
 
-    fn next_with_timeout<'a>(&'a mut self, t: Duration) -> io::Result<&[u8]> {
+    fn next_with_timeout(&mut self, t: Duration) -> io::Result<&[u8]> {
         let timeout = Some(pnet_sys::duration_to_timespec(t));
         let mut caddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
         unsafe {
