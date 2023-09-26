@@ -263,6 +263,10 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
         };
         Ok(slice)
     }
+
+    fn next_with_timeout<'a>(&'a mut self, t: Duration) -> io::Result<&[u8]> {
+        unimplemented!()
+    }
 }
 
 /// Get a list of available network interfaces for the current machine.

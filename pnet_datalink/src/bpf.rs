@@ -432,6 +432,72 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
         }
         Ok(&self.read_buffer[start..start + len])
     }
+
+    fn next_with_timeout<'a>(&'a mut self, t: Duration) -> io::Result<&[u8]> {
+        let timeout = Some(pnet_sys::duration_to_timespec(t));
+        // Loopback packets arrive with a 4 byte header instead of normal ethernet header.
+        // Discard that header and replace with zeroed out ethernet header.
+        let (header_size, buffer_offset) = if self.loopback {
+            (4, ETHERNET_HEADER_SIZE)
+        } else {
+            (0, 0)
+        };
+        if self.packets.is_empty() {
+            let buffer = &mut self.read_buffer[buffer_offset..];
+            let ret = unsafe {
+                libc::FD_SET(self.fd.fd, &mut self.fd_set as *mut libc::fd_set);
+                libc::pselect(
+                    self.fd.fd + 1,
+                    &mut self.fd_set as *mut libc::fd_set,
+                    ptr::null_mut(),
+                    ptr::null_mut(),
+                    timeout
+                        .as_ref()
+                        .map(|to| to as *const libc::timespec)
+                        .unwrap_or(ptr::null()),
+                    ptr::null(),
+                )
+            };
+            if ret == -1 {
+                return Err(io::Error::last_os_error());
+            } else if ret == 0 {
+                return Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out"));
+            } else {
+                let buflen = match unsafe {
+                    libc::read(
+                        self.fd.fd,
+                        buffer.as_ptr() as *mut libc::c_void,
+                        buffer.len() as libc::size_t,
+                    )
+                } {
+                    len if len > 0 => len,
+                    _ => return Err(io::Error::last_os_error()),
+                };
+                let mut ptr = buffer.as_mut_ptr();
+                let end = unsafe { buffer.as_ptr().offset(buflen as isize) };
+                while (ptr as *const u8) < end {
+                    unsafe {
+                        let packet: *const bpf::bpf_hdr = mem::transmute(ptr);
+                        let start =
+                            ptr as isize + (*packet).bh_hdrlen as isize - buffer.as_ptr() as isize;
+                        self.packets.push_back((
+                            start as usize + header_size,
+                            (*packet).bh_caplen as usize - header_size,
+                        ));
+                        let offset = (*packet).bh_hdrlen as isize + (*packet).bh_caplen as isize;
+                        ptr = ptr.offset(bpf::BPF_WORDALIGN(offset));
+                    }
+                }
+            }
+        }
+        let (start, mut len) = self.packets.pop_front().unwrap();
+        len += buffer_offset;
+        // Zero out part that will become fake ethernet header if on loopback.
+        for i in (&mut self.read_buffer[start..start + buffer_offset]).iter_mut() {
+            *i = 0;
+        }
+        Ok(&self.read_buffer[start..start + len])
+    }
 }
 
 /// Get a list of available network interfaces for the current machine.

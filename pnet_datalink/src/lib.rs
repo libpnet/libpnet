@@ -215,6 +215,8 @@ pub trait DataLinkSender: Send {
 pub trait DataLinkReceiver: Send {
     /// Get the next ethernet frame in the channel.
     fn next(&mut self) -> io::Result<&[u8]>;
+    /// Get the next ethernet frame in the channel within the specified timeout.
+    fn next_with_timeout(&mut self, t: Duration) -> io::Result<&[u8]>;
 }
 
 /// Represents a network interface and its associated addresses.
