@@ -56,7 +56,8 @@ pub mod linux;
         target_os = "illumos",
         target_os = "solaris",
         target_os = "macos",
-        target_os = "ios"
+        target_os = "ios",
+        target_os = "tvos"
     )
 ))]
 #[path = "bpf.rs"]
@@ -68,7 +69,8 @@ mod backend;
     target_os = "illumos",
     target_os = "solaris",
     target_os = "macos",
-    target_os = "ios"
+    target_os = "ios",
+    target_os = "tvos"
 ))]
 pub mod bpf;
 
