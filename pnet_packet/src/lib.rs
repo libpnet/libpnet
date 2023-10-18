@@ -38,5 +38,6 @@ pub mod usbpcap;
 pub mod vlan;
 pub mod sll;
 pub mod sll2;
+pub mod vxlan;
 
 pub mod util;
