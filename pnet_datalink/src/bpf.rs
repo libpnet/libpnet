@@ -192,7 +192,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
     if dlt == bpf::DLT_NULL {
         loopback = true;
         // The loopback device provides a smaller (4-byte) header than ethernet (14-byte).
-        // We deal with this by offseting the write buffer, then overwriting the null header
+        // We deal with this by offsetting the write buffer, then overwriting the null header
         // with a zeroed ethernet header. This is complicated by the fact that the buffer
         // offset must be a multiple of four for pointer alignment, and that the write itself
         // must be 4096 bytes.
