@@ -16,7 +16,7 @@ use pnet_sys;
 use std::collections::VecDeque;
 use std::ffi::CString;
 use std::io;
-use std::mem;
+use std::mem::{self, align_of};
 use std::ptr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -196,9 +196,8 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         // with a zeroed ethernet header. This is complicated by the fact that the buffer
         // offset must be a multiple of four for pointer alignment, and that the write itself
         // must be 4096 bytes.
-        //
-        // & !x is a bit-hack to round down to nearest multiple of x + 1.
-        buffer_offset = (ETHERNET_HEADER_SIZE - NULL_HEADER_SIZE + 4 - 1) & !(4 - 1);
+        let align = align_of::<bpf::bpf_hdr>();
+        buffer_offset = (ETHERNET_HEADER_SIZE - NULL_HEADER_SIZE).next_multiple_of(align);
         allocated_read_buffer_size += buffer_offset;
 
         // Allow packets to be read back after they are written
