@@ -87,7 +87,7 @@
 //!             Ok(packet) => {
 //!                 let packet = EthernetPacket::new(packet).unwrap();
 //!
-//!                 // Constructs a single packet, the same length as the the one received,
+//!                 // Constructs a single packet, the same length as the one received,
 //!                 // using the provided closure. This allows the packet to be constructed
 //!                 // directly in the write buffer, without copying. If copying is not a
 //!                 // problem, you could also use send_to.
