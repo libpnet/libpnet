@@ -163,7 +163,7 @@ pub fn transport_channel_with(
     channel_type: TransportChannelType,
     configuration: Config,
 ) -> io::Result<(TransportSender, TransportReceiver)> {
-    let (mut sender, receiver) = transport_channel(buffer_size, channel_type)?;
+    let (sender, receiver) = transport_channel(buffer_size, channel_type)?;
 
     sender.set_ttl(configuration.time_to_live)?;
     Ok((sender, receiver))
@@ -200,7 +200,7 @@ fn set_socket_ttl(
 }
 
 impl TransportSender {
-    fn send<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
+    fn send<T: Packet>(&self, packet: T, dst: IpAddr) -> io::Result<usize> {
         let mut caddr = unsafe { mem::zeroed() };
         let sockaddr = match dst {
             IpAddr::V4(ip_addr) => net::SocketAddr::V4(net::SocketAddrV4::new(ip_addr, 0)),
@@ -214,12 +214,12 @@ impl TransportSender {
 
     /// Send a packet to the provided destination.
     #[inline]
-    pub fn send_to<T: Packet>(&mut self, packet: T, destination: IpAddr) -> io::Result<usize> {
+    pub fn send_to<T: Packet>(&self, packet: T, destination: IpAddr) -> io::Result<usize> {
         self.send_to_impl(packet, destination)
     }
 
     /// Sets a time-to-live on the socket, which then applies for all packets sent.
-    pub fn set_ttl(&mut self, time_to_live: u8) -> io::Result<()> {
+    pub fn set_ttl(&self, time_to_live: u8) -> io::Result<()> {
         let (level, name) = match self.channel_type {
             Layer4(Ipv4(_)) | Layer3(_) => (pnet_sys::IPPROTO_IP, pnet_sys::IP_TTL),
             Layer4(Ipv6(_)) => (pnet_sys::IPPROTO_IPV6, pnet_sys::IPV6_UNICAST_HOPS),
@@ -231,12 +231,12 @@ impl TransportSender {
         not(target_os = "freebsd"),
         not(any(target_os = "macos", target_os = "ios"))
     ))]
-    fn send_to_impl<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
+    fn send_to_impl<T: Packet>(&self, packet: T, dst: IpAddr) -> io::Result<usize> {
         self.send(packet, dst)
     }
 
     #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "ios"))]
-    fn send_to_impl<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
+    fn send_to_impl<T: Packet>(&self, packet: T, dst: IpAddr) -> io::Result<usize> {
         use pnet_packet::ipv4::MutableIpv4Packet;
         use pnet_packet::MutablePacket;
 
