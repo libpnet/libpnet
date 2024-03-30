@@ -289,7 +289,7 @@ pub struct Dns {
     #[length_fn = "authority_length"]
     pub authorities: Vec<DnsResponse>,
     #[length_fn = "additional_length"]
-    pub additionals: Vec<DnsResponse>,
+    pub additional: Vec<DnsResponse>,
     #[payload]
     pub payload: Vec<u8>,
 }
@@ -438,7 +438,7 @@ impl DnsQuery {
             if label_len == 0 {
                 break;
             }
-            if qname.is_empty() {
+            if !qname.is_empty() {
                 qname.push('.');
             }
             qname.push_str(
@@ -492,11 +492,11 @@ fn test_dns_query_packet() {
     assert_eq!(packet.get_queries()[0].qclass, DnsClasses::IN);
     assert_eq!(packet.get_responses().len(), 0);
     assert_eq!(packet.get_authorities().len(), 0);
-    assert_eq!(packet.get_additionals().len(), 0);
+    assert_eq!(packet.get_additional().len(), 0);
 }
 
 #[test]
-fn test_dns_reponse_packet() {
+fn test_dns_response_packet() {
     let packet = DnsPacket::new(b"\xbc\x12\x85\x80\x00\x01\x00\x01\x00\x00\x00\x00\x05s4dc1\x05samba\x08windows8\x07private\x00\x00\x01\x00\x01\xc0\x0c\x00\x01\x00\x01\x00\x00\x03\x84\x00\x04\xc0\xa8z\xbd").unwrap();
     assert_eq!(packet.get_id(), 48146);
     assert_eq!(packet.get_is_response(), 1);
@@ -523,9 +523,12 @@ fn test_dns_reponse_packet() {
     assert_eq!(packet.get_responses()[0].rclass, DnsClasses::IN);
     assert_eq!(packet.get_responses()[0].ttl, 900);
     assert_eq!(packet.get_responses()[0].data_len, 4);
-    assert_eq!(packet.get_responses()[0].data, vec![192, 168, 122, 189]);
+    assert_eq!(
+        packet.get_responses()[0].data.as_slice(),
+        [192, 168, 122, 189]
+    );
     assert_eq!(packet.get_authorities().len(), 0);
-    assert_eq!(packet.get_additionals().len(), 0);
+    assert_eq!(packet.get_additional().len(), 0);
 }
 
 #[test]
@@ -538,10 +541,10 @@ fn test_dns_query() {
 }
 
 #[test]
-fn test_dns_reponse() {
+fn test_dns_response() {
     let data = b"\xc0\x0c\x00\x01\x00\x01\x00\x00\x00<\x00\x04\x0d\xe2\x02\x12";
     let packet = DnsResponsePacket::new(data).expect("Failed to parse dns response");
-    assert_eq!(packet.get_data(), vec![13, 226, 2, 18]);
+    assert_eq!(packet.get_data().as_slice(), [13, 226, 2, 18]);
     assert_eq!(packet.get_rtype(), DnsTypes::A);
     assert_eq!(packet.get_rclass(), DnsClasses::IN);
     assert_eq!(packet.get_ttl(), 60);
