@@ -266,23 +266,16 @@ impl fmt::Display for DnsType {
 #[packet]
 pub struct Dns {
     pub id: u16be,
-    #[construct_with(u1)]
-    pub is_response: BooleanField,
+    pub is_response: u1,
     #[construct_with(u4)]
     pub opcode: Opcode,
-    #[construct_with(u1)]
-    pub is_authoriative: BooleanField,
-    #[construct_with(u1)]
-    pub is_truncated: BooleanField,
-    #[construct_with(u1)]
-    pub is_recursion_desirable: BooleanField,
-    #[construct_with(u1)]
-    pub is_recursion_available: BooleanField,
+    pub is_authoriative: u1,
+    pub is_truncated: u1,
+    pub is_recursion_desirable: u1,
+    pub is_recursion_available: u1,
     pub zero_reserved: u1,
-    #[construct_with(u1)]
-    pub is_answer_authenticated: BooleanField,
-    #[construct_with(u1)]
-    pub is_non_authenticated_data: BooleanField,
+    pub is_answer_authenticated: u1,
+    pub is_non_authenticated_data: u1,
     #[construct_with(u4)]
     pub rcode: Retcode,
     pub query_count: u16be,
@@ -347,51 +340,6 @@ fn additional_length(packet: &DnsPacket) -> usize {
         }
     }
     length
-}
-
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum BooleanField {
-    True,
-    False,
-}
-
-impl PrimitiveValues for BooleanField {
-    type T = (u8,);
-    fn to_primitive_values(&self) -> (u8,) {
-        match self {
-            BooleanField::True => (1,),
-            BooleanField::False => (0,),
-        }
-    }
-}
-
-impl BooleanField {
-    pub fn new(value: u8) -> Self {
-        match value {
-            1 => Self::True,
-            0 => Self::False,
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl From<bool> for BooleanField {
-    fn from(value: bool) -> Self {
-        if value {
-            Self::True
-        } else {
-            Self::False
-        }
-    }
-}
-
-impl From<BooleanField> for bool {
-    fn from(value: BooleanField) -> Self {
-        match value {
-            BooleanField::True => true,
-            BooleanField::False => false,
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -523,12 +471,12 @@ pub struct DnsResponse {
 fn test_dns_query_packet() {
     let packet = DnsPacket::new(b"\x9b\xa0\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x05_ldap\x04_tcp\x02dc\x06_msdcs\x05S4DOM\x07PRIVATE\x00\x00!\x00\x01").unwrap();
     assert_eq!(packet.get_id(), 39840);
-    assert_eq!(packet.get_is_response(), BooleanField::False);
+    assert_eq!(packet.get_is_response(), 0);
     assert_eq!(packet.get_opcode(), Opcode::StandardQuery);
-    assert_eq!(packet.get_is_authoriative(), BooleanField::False);
-    assert_eq!(packet.get_is_truncated(), BooleanField::False);
-    assert_eq!(packet.get_is_recursion_desirable(), BooleanField::True);
-    assert_eq!(packet.get_is_recursion_available(), BooleanField::False);
+    assert_eq!(packet.get_is_authoriative(), 0);
+    assert_eq!(packet.get_is_truncated(), 0);
+    assert_eq!(packet.get_is_recursion_desirable(), 1);
+    assert_eq!(packet.get_is_recursion_available(), 0);
     assert_eq!(packet.get_zero_reserved(), 0);
     assert_eq!(packet.get_rcode(), Retcode::NoError);
     assert_eq!(packet.get_query_count(), 1);
@@ -551,12 +499,12 @@ fn test_dns_query_packet() {
 fn test_dns_reponse_packet() {
     let packet = DnsPacket::new(b"\xbc\x12\x85\x80\x00\x01\x00\x01\x00\x00\x00\x00\x05s4dc1\x05samba\x08windows8\x07private\x00\x00\x01\x00\x01\xc0\x0c\x00\x01\x00\x01\x00\x00\x03\x84\x00\x04\xc0\xa8z\xbd").unwrap();
     assert_eq!(packet.get_id(), 48146);
-    assert_eq!(packet.get_is_response(), BooleanField::True);
+    assert_eq!(packet.get_is_response(), 1);
     assert_eq!(packet.get_opcode(), Opcode::StandardQuery);
-    assert_eq!(packet.get_is_authoriative(), BooleanField::True);
-    assert_eq!(packet.get_is_truncated(), BooleanField::False);
-    assert_eq!(packet.get_is_recursion_desirable(), BooleanField::True);
-    assert_eq!(packet.get_is_recursion_available(), BooleanField::True);
+    assert_eq!(packet.get_is_authoriative(), 1);
+    assert_eq!(packet.get_is_truncated(), 0);
+    assert_eq!(packet.get_is_recursion_desirable(), 1);
+    assert_eq!(packet.get_is_recursion_available(), 1);
     assert_eq!(packet.get_zero_reserved(), 0);
     assert_eq!(packet.get_rcode(), Retcode::NoError);
     assert_eq!(packet.get_query_count(), 1);
