@@ -46,9 +46,11 @@ pub mod public {
     pub const IPPROTO_IP: libc::c_int = libc::IPPROTO_IP;
     pub const IP_HDRINCL: libc::c_int = libc::IP_HDRINCL;
     pub const IP_TTL: libc::c_int = libc::IP_TTL;
+    pub const IP_TOS: libc::c_int = 1;
 
     pub const IPPROTO_IPV6: libc::c_int = libc::IPPROTO_IPV6;
     pub const IPV6_UNICAST_HOPS: libc::c_int = libc::IPV6_UNICAST_HOPS;
+    pub const IPV6_TCLASS: libc::c_int = libc::IPV6_TCLASS;
 
     pub use libc::{IFF_BROADCAST, IFF_LOOPBACK, IFF_RUNNING, IFF_MULTICAST, IFF_POINTOPOINT, IFF_UP};
 
