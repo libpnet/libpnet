@@ -101,7 +101,7 @@ fn generate_packet_struct(packet: &Packet) -> proc_macro2::TokenStream {
     let tts: Vec<_> = items
         .iter()
         .map(|(name, packet_data)| {
-            let name = syn::Ident::new(&name, Span::call_site());
+            let name = syn::Ident::new(name, Span::call_site());
             let packet_data = syn::Ident::new(packet_data, Span::call_site());
             quote! {
                 #[derive(PartialEq)]
@@ -134,7 +134,7 @@ fn make_type(ty_str: String, endianness_important: bool) -> Result<Type, String>
             Ok(ty) => Ok(Type::Vector(Box::new(ty))),
             Err(e) => Err(e),
         }
-    } else if ty_str.starts_with("&") {
+    } else if ty_str.starts_with('&') {
         Err(format!("invalid type: {}", ty_str))
     } else {
         Ok(Type::Misc(ty_str))
@@ -231,7 +231,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
                         } else {
                             return Err(Error::new(
                                 ident.span(),
-                                &format!("Unknown meta/namevalue option '{}'", ident),
+                                format!("Unknown meta/namevalue option '{}'", ident),
                             ));
                         }
                     }
@@ -276,7 +276,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
                         } else {
                             return Err(Error::new(
                                 ident.span(),
-                                &format!("unknown attribute: {}", ident),
+                                format!("unknown attribute: {}", ident),
                             ));
                         }
                     } else {
@@ -292,7 +292,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
         let ty = match make_type(ty_to_string(&field.ty), true) {
             Ok(ty) => ty,
             Err(e) => {
-                return Err(Error::new(field.ty.span(), &format!("{}", e)));
+                return Err(Error::new(field.ty.span(), e.to_string()));
             }
         };
 
@@ -388,7 +388,7 @@ fn parse_length_expr(
                             tts.to_token_stream().into_iter().collect();
                         tokens_packet.append(&mut modified_packet_tokens);
                     } else {
-                        if let None = needs_constant {
+                        if needs_constant.is_none() {
                             needs_constant = Some(tt_token.span());
                         }
                         tokens_packet.push(tt_token.clone());
@@ -459,15 +459,13 @@ fn generate_packet_impl(
             if field.packet_length.is_some() {
                 upper_bound_str =
                     format!("{} + {}", co.clone(), field.packet_length.as_ref().unwrap());
-            } else {
-                if idx != packet.fields.len() - 1 {
+            } else if idx != packet.fields.len() - 1 {
                     return Err(Error::new(
                         field.span,
                         "#[payload] must specify a #[length_fn], unless it is the \
                                         last field of a packet",
                     ));
                 }
-            }
             payload_bounds = Some(PayloadBounds {
                 lower: co.clone(),
                 upper: upper_bound_str,
@@ -488,21 +486,19 @@ fn generate_packet_impl(
                     ops = to_little_endian(ops);
                 }
 
-                mutators = mutators
-                    + &generate_mutator_str(
+                mutators += &generate_mutator_str(
                         &field.name[..],
                         &ty_str[..],
                         &co[..],
                         &to_mutator(&ops[..])[..],
                         None,
                     )[..];
-                accessors = accessors
-                    + &generate_accessor_str(&field.name[..], &ty_str[..], &co[..], &ops[..], None)
+                accessors += &generate_accessor_str(&field.name[..], &ty_str[..], &co[..], &ops[..], None)
                         [..];
                 bit_offset += size;
             }
             Type::Vector(ref inner_ty) => handle_vector_field(
-                &field,
+                field,
                 &mut bit_offset,
                 &offset_fns_packet[..],
                 &mut co,
@@ -512,14 +508,14 @@ fn generate_packet_impl(
                 inner_ty,
             )?,
             Type::Misc(ref ty_str) => handle_misc_field(
-                &field,
+                field,
                 &mut bit_offset,
                 &offset_fns_packet[..],
                 &mut co,
                 &name,
                 &mut mutators,
                 &mut accessors,
-                &ty_str,
+                ty_str,
             )?,
         }
         if field.packet_length.is_some() {
@@ -535,12 +531,10 @@ fn generate_packet_impl(
         for field in &packet.fields {
             match field.ty {
                 Type::Vector(_) => {
-                    set_fields = set_fields
-                        + &format!("_self.set_{field}(&packet.{field});\n", field = field.name)[..];
+                    set_fields += &format!("_self.set_{field}(&packet.{field});\n", field = field.name)[..];
                 }
                 _ => {
-                    set_fields = set_fields
-                        + &format!("_self.set_{field}(packet.{field});\n", field = field.name)[..];
+                    set_fields += &format!("_self.set_{field}(packet.{field});\n", field = field.name)[..];
                 }
             }
         }
@@ -549,7 +543,7 @@ fn generate_packet_impl(
     }
 
     let populate = if mutable {
-        let set_fields = generate_set_fields(&packet);
+        let set_fields = generate_set_fields(packet);
         let imm_name = packet.packet_name();
         format!(
             "/// Populates a {name}Packet using a {name} structure
@@ -667,8 +661,7 @@ fn generate_packet_impls(
 ) -> Result<(proc_macro2::TokenStream, PayloadBounds, String), Error> {
     let mut ret = None;
     let mut tts = Vec::new();
-    for (mutable, name) in vec![
-        (false, packet.packet_name()),
+    for (mutable, name) in [ (false, packet.packet_name()),
         (true, packet.packet_name_mut()),
     ] {
         let (tokens, bounds, size) = generate_packet_impl(packet, mutable, name)?;
@@ -726,12 +719,11 @@ fn generate_packet_trait_impls(
             let mut start = "".to_owned();
             let mut end = "".to_owned();
             if !payload_bounds.lower.is_empty() {
-                pre = pre + &format!("let start = {};", payload_bounds.lower)[..];
+                pre += &format!("let start = {};", payload_bounds.lower)[..];
                 start = "start".to_owned();
             }
             if !payload_bounds.upper.is_empty() {
-                pre = pre
-                    + &format!(
+                pre += &format!(
                         "let end = ::core::cmp::min({}, _self.packet.len());",
                         payload_bounds.upper
                     )[..];
@@ -885,6 +877,7 @@ fn generate_debug_impls(packet: &Packet) -> Result<proc_macro2::TokenStream, Err
     Ok(quote! { #(#tts)* })
 }
 
+#[allow(clippy::too_many_arguments)]
 #[inline]
 fn handle_misc_field(
     field: &Field,
@@ -922,21 +915,19 @@ fn handle_misc_field(
             }
 
             let arg_name = format!("arg{}", i);
-            inner_accessors = inner_accessors
-                + &generate_accessor_str(
+            inner_accessors += &generate_accessor_str(
                     &arg_name[..],
                     &ty_str[..],
                     &co[..],
                     &ops[..],
-                    Some(&name[..]),
+                    Some(name),
                 )[..];
-            inner_mutators = inner_mutators
-                + &generate_mutator_str(
+            inner_mutators += &generate_mutator_str(
                     &arg_name[..],
                     &ty_str[..],
                     &co[..],
                     &to_mutator(&ops[..])[..],
-                    Some(&name[..]),
+                    Some(name),
                 )[..];
             get_args = format!("{}get_{}(&self), ", get_args, arg_name);
             set_args = format!("{}set_{}(_self, vals.{});\n", set_args, arg_name, i);
@@ -1061,12 +1052,10 @@ fn handle_vec_primitive(
 
         let copy_vals = if inner_ty_str == "u8" {
             // Efficient copy_from_slice (memcpy)
-            format!(
                 "
                                     _self.packet[current_offset..current_offset + vals.len()]
                                         .copy_from_slice(vals);
-                                "
-            )
+                                ".to_string()
         } else {
             // e.g. Vec<u16> -> Vec<u8>
             let sop_strings = generate_sop_strings(&to_mutator(&ops));
@@ -1113,6 +1102,7 @@ fn handle_vec_primitive(
     }
 }
 
+#[allow(clippy::too_many_arguments, clippy::borrowed_box)]
 #[inline]
 fn handle_vector_field(
     field: &Field,
@@ -1124,7 +1114,7 @@ fn handle_vector_field(
     accessors: &mut String,
     inner_ty: &Box<Type>,
 ) -> Result<(), Error> {
-    if !field.is_payload && !field.packet_length.is_some() {
+    if !field.is_payload && field.packet_length.is_none() {
         return Err(Error::new(
             field.span,
             "variable length field must have #[length_fn = \"\"] attribute",
@@ -1173,10 +1163,10 @@ fn handle_vector_field(
             handle_vec_primitive(inner_ty_str, _size, field, accessors, mutators, co)
         }
         Type::Vector(_) => {
-            return Err(Error::new(
+            Err(Error::new(
                 field.span,
                 "variable length fields may not contain vectors",
-            ));
+            ))
         }
         Type::Misc(ref inner_ty_str) => {
             if let Some(construct_with) = field.construct_with.as_ref() {
@@ -1203,21 +1193,19 @@ fn handle_vector_field(
 
                         inner_size += size;
                         let arg_name = format!("arg{}", i);
-                        inner_accessors = inner_accessors
-                            + &generate_accessor_with_offset_str(
+                        inner_accessors += &generate_accessor_with_offset_str(
                                 &arg_name[..],
                                 &ty_str[..],
                                 &co[..],
                                 &ops[..],
-                                &name[..],
+                                name,
                             )[..];
-                        inner_mutators = inner_mutators
-                            + &generate_mutator_with_offset_str(
+                        inner_mutators += &generate_mutator_with_offset_str(
                                 &arg_name[..],
                                 &ty_str[..],
                                 &co[..],
                                 &to_mutator(&ops[..])[..],
-                                &name[..],
+                                name,
                             )[..];
                         get_args =
                             format!("{}get_{}(&self, additional_offset), ", get_args, arg_name);
@@ -1507,7 +1495,7 @@ fn generate_mutator_str(
 ) -> String {
     let op_strings = generate_sop_strings(operations);
 
-    let mutator = if let Some(struct_name) = inner {
+    if let Some(struct_name) = inner {
         format!(
             "#[inline]
     #[allow(trivial_numeric_casts)]
@@ -1540,9 +1528,7 @@ fn generate_mutator_str(
             co = offset,
             operations = op_strings
         )
-    };
-
-    mutator
+    }
 }
 
 fn generate_mutator_with_offset_str(
@@ -1578,7 +1564,7 @@ fn generate_accessor_op_str(name: &str, ty: &str, operations: &[GetOperation]) -
     fn build_return(max: usize) -> String {
         let mut ret = "".to_owned();
         for i in 0..max {
-            ret = ret + &format!("b{} | ", i)[..];
+            ret += &format!("b{} | ", i)[..];
         }
         let new_len = ret.len() - 3;
         ret.truncate(new_len);
@@ -1598,9 +1584,9 @@ fn generate_accessor_op_str(name: &str, ty: &str, operations: &[GetOperation]) -
         for (idx, operation) in operations.iter().enumerate() {
             let replacement_str = format!("({}[co + {}] as {})", name, idx, ty);
             let operation = operation.to_string().replace("{}", &replacement_str[..]);
-            op_strings = op_strings + &format!("let b{} = ({}) as {};\n", idx, operation, ty)[..];
+            op_strings += &format!("let b{} = ({}) as {};\n", idx, operation, ty)[..];
         }
-        op_strings = op_strings + &format!("\n{}\n", build_return(operations.len()))[..];
+        op_strings += &format!("\n{}\n", build_return(operations.len()))[..];
 
         op_strings
     };
@@ -1650,7 +1636,7 @@ fn generate_accessor_str(
 ) -> String {
     let op_strings = generate_accessor_op_str("_self.packet", ty, operations);
 
-    let accessor = if let Some(struct_name) = inner {
+    if let Some(struct_name) = inner {
         format!(
             "#[inline(always)]
         #[allow(trivial_numeric_casts, unused_parens)]
@@ -1683,9 +1669,7 @@ fn generate_accessor_str(
             co = offset,
             operations = op_strings
         )
-    };
-
-    accessor
+    }
 }
 
 #[inline]
@@ -1729,8 +1713,7 @@ fn generate_get_fields(packet: &Packet) -> String {
 
     for field in &packet.fields {
         if field.is_payload {
-            gets = gets
-                + &format!(
+            gets += &format!(
                     "{field} : {{
                                                 let payload = self.payload();
                                                 let mut vec = Vec::with_capacity(payload.len());
@@ -1741,7 +1724,7 @@ fn generate_get_fields(packet: &Packet) -> String {
                     field = field.name
                 )[..]
         } else {
-            gets = gets + &format!("{field} : _self.get_{field}(),\n", field = field.name)[..]
+            gets += &format!("{field} : _self.get_{field}(),\n", field = field.name)[..]
         }
     }
 

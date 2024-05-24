@@ -76,6 +76,7 @@ pub trait FromPacket: Packet {
     /// The type of the packet to convert from.
     type T;
 
+    #[allow(clippy::wrong_self_convention)]
     /// Converts a wire-format packet to #\[packet\] struct format.
     fn from_packet(&self) -> Self::T;
 }
@@ -124,9 +125,9 @@ impl<'p> PacketData<'p> {
     /// Get a slice of the packet data.
     #[inline]
     pub fn as_slice(&self) -> &[u8] {
-        match self {
-            &PacketData::Owned(ref data) => data.deref(),
-            &PacketData::Borrowed(ref data) => data,
+        match &self {
+            PacketData::Owned(ref data) => data.deref(),
+            PacketData::Borrowed(data) => data,
         }
     }
 
@@ -138,6 +139,7 @@ impl<'p> PacketData<'p> {
 
     /// A length of the packet data.
     #[inline]
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.as_slice().len()
     }
@@ -162,18 +164,18 @@ impl<'p> MutPacketData<'p> {
     /// Get packet data as a slice.
     #[inline]
     pub fn as_slice(&self) -> &[u8] {
-        match self {
-            &MutPacketData::Owned(ref data) => data.deref(),
-            &MutPacketData::Borrowed(ref data) => data,
+        match &self {
+            MutPacketData::Owned(ref data) => data.deref(),
+            MutPacketData::Borrowed(data) => data,
         }
     }
 
     /// Get packet data as a mutable slice.
     #[inline]
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
-        match self {
-            &mut MutPacketData::Owned(ref mut data) => data.deref_mut(),
-            &mut MutPacketData::Borrowed(ref mut data) => data,
+        match *self {
+            MutPacketData::Owned(ref mut data) => data.deref_mut(),
+            MutPacketData::Borrowed(ref mut data) => data,
         }
     }
 
@@ -188,6 +190,7 @@ impl<'p> MutPacketData<'p> {
 
     /// Get a length of data in the packet.
     #[inline]
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.as_slice().len()
     }

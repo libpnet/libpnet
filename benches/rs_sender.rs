@@ -75,13 +75,12 @@ fn main() {
     use pnet::datalink::Channel::Ethernet;
 
     let interface_name = env::args().nth(1).unwrap();
-    let destination = (&env::args().nth(2).unwrap()[..]).parse().unwrap();
+    let destination = (env::args().nth(2).unwrap()[..]).parse().unwrap();
     // Find the network interface with the provided name
     let interfaces = datalink::interfaces();
     let interface = interfaces
         .iter()
-        .filter(|iface| iface.name == interface_name)
-        .next()
+        .find(|iface| iface.name == interface_name)
         .unwrap();
 
     // Create a channel to send on

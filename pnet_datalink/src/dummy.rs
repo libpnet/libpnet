@@ -41,9 +41,9 @@ impl Config {
     /// through `build_and_send()` and `send_to()` to the `sender` channel.
     pub fn new(receiver: Receiver<io::Result<Box<[u8]>>>, sender: Sender<Box<[u8]>>) -> Config {
         Config {
-            receiver: receiver,
+            receiver,
             inject_handle: None,
-            sender: sender,
+            sender,
             read_handle: None,
         }
     }
@@ -157,7 +157,7 @@ impl DataLinkReceiver for MockDataLinkReceiver {
 
 /// Get three fake interfaces generated with `dummy_interface(0..3)`.
 pub fn interfaces() -> Vec<NetworkInterface> {
-    (0..3).map(|i| dummy_interface(i)).collect()
+    (0..3).map(dummy_interface).collect()
 }
 
 /// Generates a fake `NetworkInterface`.
@@ -298,6 +298,7 @@ mod tests {
         }
     }
 
+    #[allow(clippy::type_complexity)]
     fn create_net() -> (
         Sender<io::Result<Box<[u8]>>>,
         Receiver<Box<[u8]>>,

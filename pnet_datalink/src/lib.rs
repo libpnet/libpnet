@@ -45,6 +45,7 @@ pub mod winpcap;
 mod backend;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
+#[allow(clippy::duplicate_mod)]
 pub mod linux;
 
 #[cfg(all(
@@ -288,7 +289,7 @@ impl NetworkInterface {
 
 impl ::std::fmt::Display for NetworkInterface {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        const FLAGS: [&'static str; 8] = [
+        const FLAGS: [&str; 8] = [
             "UP",
             "BROADCAST",
             "LOOPBACK",
@@ -351,7 +352,7 @@ impl ::std::fmt::Display for NetworkInterface {
             .mac
             .map(|mac| mac.to_string())
             .unwrap_or("N/A".to_owned());
-        let ips = if self.ips.len() > 0 {
+        let ips = if !self.ips.is_empty() {
             format!(
                 "\n{}",
                 self.ips

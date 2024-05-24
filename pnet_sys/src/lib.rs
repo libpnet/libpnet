@@ -11,6 +11,7 @@ extern crate libc;
 
 use std::io;
 use std::mem;
+use std::cmp::Ordering;
 
 #[cfg(unix)]
 use std::time::Duration;
@@ -38,7 +39,8 @@ impl Drop for FileDesc {
     }
 }
 
-pub fn send_to(
+#[allow(clippy::missing_safety_doc)]
+pub unsafe fn send_to(
     socket: CSocket,
     buffer: &[u8],
     dst: *const SockAddr,
@@ -100,15 +102,13 @@ pub fn set_socket_receive_timeout(socket: CSocket, t: Duration) -> io::Result<()
         )
     };
 
-    if r < 0 {
-        Err(io::Error::last_os_error())
-    } else if r > 0 {
-        Err(io::Error::new(
+    match r.cmp(&0) {
+        Ordering::Less => Err(io::Error::last_os_error()),
+        Ordering::Greater => Err(io::Error::new(
             io::ErrorKind::Other,
             format!("Unknown return value from getsockopt(): {}", r),
-        ))
-    } else {
-        Ok(())
+        )),
+        Ordering::Equal => Ok(())
     }
 }
 
@@ -135,15 +135,13 @@ pub fn get_socket_receive_timeout(socket: CSocket) -> io::Result<Duration> {
         "getsockopt did not set size of return value"
     );
 
-    if r < 0 {
-        Err(io::Error::last_os_error())
-    } else if r > 0 {
-        Err(io::Error::new(
+    match r.cmp(&0) {
+        Ordering::Less => Err(io::Error::last_os_error()),
+        Ordering::Greater => Err(io::Error::new(
             io::ErrorKind::Other,
             format!("Unknown return value from getsockopt(): {}", r),
-        ))
-    } else {
-        Ok(timeval_to_duration(ts))
+        )),
+        Ordering::Equal => Ok(timeval_to_duration(ts)),
     }
 }
 
@@ -172,7 +170,7 @@ mod tests {
 
         let t0 = Instant::now();
         let res = recv_from(socket, &mut buffer, &mut caddr);
-        assert!(!res.is_ok());
+        assert!(res.is_err());
         Instant::now() - t0
     }
 
@@ -180,11 +178,10 @@ mod tests {
     fn test_set_socket_receive_timeout_1s() {
         let socket = unsafe { libc::socket(libc::AF_INET, libc::SOCK_RAW, 1 as libc::c_int) };
         let d = Duration::new(1, 0);
-        let res = set_socket_receive_timeout(socket, d.clone());
-        match res {
-            Err(e) => panic!("set_socket_receive_timeout reslted in error: {}", e),
-            _ => {}
-        };
+        let res = set_socket_receive_timeout(socket, d);
+        if let Err(e) =  res {
+            panic!("set_socket_receive_timeout resulted in error: {}; are you root?", e);
+        }
 
         let t = test_timeout(socket);
         assert!(t >= Duration::new(1, 0));
@@ -196,10 +193,9 @@ mod tests {
         let socket = unsafe { libc::socket(libc::AF_INET, libc::SOCK_RAW, 1 as libc::c_int) };
         let d = Duration::from_millis(500);
         let res = set_socket_receive_timeout(socket, d);
-        match res {
-            Err(e) => panic!("set_socket_receive_timeout reslted in error: {}", e),
-            _ => {}
-        };
+        if let Err(e) =  res {
+            panic!("set_socket_receive_timeout resulted in error: {}; are you root?", e);
+        }
 
         let t = test_timeout(socket);
         assert!(t >= Duration::from_millis(500));
@@ -211,10 +207,9 @@ mod tests {
         let socket = unsafe { libc::socket(libc::AF_INET, libc::SOCK_RAW, 1 as libc::c_int) };
         let d = Duration::from_millis(1500);
         let res = set_socket_receive_timeout(socket, d);
-        match res {
-            Err(e) => panic!("set_socket_receive_timeout reslted in error: {}", e),
-            _ => {}
-        };
+        if let Err(e) =  res {
+            panic!("set_socket_receive_timeout resulted in error: {}; are you root?", e);
+        }
 
         let t = test_timeout(socket);
         assert!(t >= Duration::from_millis(1500));

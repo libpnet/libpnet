@@ -180,11 +180,10 @@ pub fn checksum(packet: &Ipv4Packet) -> u16be {
 #[cfg(test)]
 mod checksum_tests {
     use super::*;
-    use alloc::vec;
 
     #[test]
     fn checksum_zeros() {
-        let mut data = vec![0; 20];
+        let mut data = [0; 20];
         let expected = 64255;
         let mut pkg = MutableIpv4Packet::new(&mut data[..]).unwrap();
         pkg.set_header_length(5);
@@ -195,7 +194,7 @@ mod checksum_tests {
 
     #[test]
     fn checksum_nonzero() {
-        let mut data = vec![255; 20];
+        let mut data = [255; 20];
         let expected = 2560;
         let mut pkg = MutableIpv4Packet::new(&mut data[..]).unwrap();
         pkg.set_header_length(5);
@@ -206,7 +205,7 @@ mod checksum_tests {
 
     #[test]
     fn checksum_too_small_header_length() {
-        let mut data = vec![148; 20];
+        let mut data = [148; 20];
         let expected = 51910;
         let mut pkg = MutableIpv4Packet::new(&mut data[..]).unwrap();
         pkg.set_header_length(0);
@@ -215,7 +214,7 @@ mod checksum_tests {
 
     #[test]
     fn checksum_too_large_header_length() {
-        let mut data = vec![148; 20];
+        let mut data = [148; 20];
         let expected = 51142;
         let mut pkg = MutableIpv4Packet::new(&mut data[..]).unwrap();
         pkg.set_header_length(99);
@@ -373,10 +372,10 @@ fn ipv4_packet_option_test() {
         ipv4_options.set_number(Ipv4OptionNumber(3));
         assert_eq!(ipv4_options.get_number(), Ipv4OptionNumbers::LSR);
 
-        ipv4_options.set_length(&vec![3]);
+        ipv4_options.set_length(&[3]);
         assert_eq!(ipv4_options.get_length(), vec![3]);
 
-        ipv4_options.set_data(&vec![16]);
+        ipv4_options.set_data(&[16]);
     }
 
     let ref_packet = [0x83,           /* copy / class / number */

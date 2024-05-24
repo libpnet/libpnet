@@ -209,7 +209,7 @@ impl TransportSender {
         let slen = pnet_sys::addr_to_sockaddr(sockaddr, &mut caddr);
         let caddr_ptr = (&caddr as *const pnet_sys::SockAddrStorage) as *const pnet_sys::SockAddr;
 
-        pnet_sys::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen)
+        unsafe { pnet_sys::send_to(self.socket.fd, packet.packet(), caddr_ptr, slen) }
     }
 
     /// Send a packet to the provided destination.
@@ -290,10 +290,11 @@ macro_rules! transport_channel_iterator {
         #[doc = $tyname]
         #[doc = "` for some transport receiver."]
         pub fn $func(tr: &mut TransportReceiver) -> $iter {
-            $iter { tr: tr }
+            $iter { tr }
         }
 
         impl<'a> $iter<'a> {
+            #[allow(clippy::should_implement_trait)] // Suppress a false warning from clippy.
             #[doc = "Get the next (`"]
             #[doc = $tyname ]
             #[doc = "`, `IpAddr`) pair for the given channel."]

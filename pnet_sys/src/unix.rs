@@ -57,14 +57,17 @@ pub mod public {
 
     pub const INVALID_SOCKET: CSocket = -1;
 
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn close(sock: CSocket) {
         let _ = libc::close(sock);
     }
 
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn socket(af: libc::c_int, sock: libc::c_int, proto: libc::c_int) -> CSocket {
         libc::socket(af, sock, proto)
     }
 
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn getsockopt(
         socket: CSocket,
         level: libc::c_int,
@@ -75,6 +78,7 @@ pub mod public {
         libc::getsockopt(socket, level, name, value, option_len)
     }
 
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn setsockopt(
         socket: CSocket,
         level: libc::c_int,
@@ -107,7 +111,7 @@ pub mod public {
     pub fn duration_to_timespec(dur: Duration) -> libc::timespec {
         libc::timespec {
             tv_sec: dur.as_secs() as libc::time_t,
-            tv_nsec: (dur.subsec_nanos() as TvUsecType).into(),
+            tv_nsec: (dur.subsec_nanos() as TvUsecType),
         }
     }
 
@@ -168,7 +172,7 @@ pub mod public {
     pub fn sockaddr_to_addr(storage: &SockAddrStorage, len: usize) -> io::Result<SocketAddr> {
         match storage.ss_family as libc::c_int {
             AF_INET => {
-                assert!(len as usize >= mem::size_of::<SockAddrIn>());
+                assert!(len >= mem::size_of::<SockAddrIn>());
                 let storage: &SockAddrIn = unsafe { mem::transmute(storage) };
                 let ip = super::ipv4_addr(storage.sin_addr);
                 let a = (ip >> 24) as u8;
@@ -180,7 +184,7 @@ pub mod public {
                 Ok(SocketAddr::V4(sockaddrv4))
             }
             AF_INET6 => {
-                assert!(len as usize >= mem::size_of::<SockAddrIn6>());
+                assert!(len >= mem::size_of::<SockAddrIn6>());
                 let storage: &SockAddrIn6 = unsafe { mem::transmute(storage) };
                 let arr: [u16; 8] = unsafe { mem::transmute(storage.sin6_addr.s6_addr) };
                 let a = ntohs(arr[0]);
