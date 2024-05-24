@@ -138,7 +138,7 @@ impl TcpOption {
         TcpOption {
             number: TcpOptionNumbers::TIMESTAMPS,
             length: vec![10],
-            data: data,
+            data,
         }
     }
 
@@ -151,7 +151,7 @@ impl TcpOption {
         TcpOption {
             number: TcpOptionNumbers::MSS,
             length: vec![4],
-            data: data,
+            data,
         }
     }
 
@@ -188,7 +188,7 @@ impl TcpOption {
         TcpOption {
             number: TcpOptionNumbers::SACK,
             length: vec![1 /* number */ + 1 /* length */ + data.len() as u8],
-            data: data,
+            data,
         }
     }
 }
@@ -307,10 +307,10 @@ fn tcp_header_ipv4_test() {
     }
 
     // Set data
-    packet[IPV4_HEADER_LEN + TCP_HEADER_LEN] = 't' as u8;
-    packet[IPV4_HEADER_LEN + TCP_HEADER_LEN + 1] = 'e' as u8;
-    packet[IPV4_HEADER_LEN + TCP_HEADER_LEN + 2] = 's' as u8;
-    packet[IPV4_HEADER_LEN + TCP_HEADER_LEN + 3] = 't' as u8;
+    packet[IPV4_HEADER_LEN + TCP_HEADER_LEN] = b't';
+    packet[IPV4_HEADER_LEN + TCP_HEADER_LEN + 1] = b'e';
+    packet[IPV4_HEADER_LEN + TCP_HEADER_LEN + 2] = b's';
+    packet[IPV4_HEADER_LEN + TCP_HEADER_LEN + 3] = b't';
 
     {
         let mut tcp_header = MutableTcpPacket::new(&mut packet[IPV4_HEADER_LEN..]).unwrap();
@@ -336,7 +336,7 @@ fn tcp_header_ipv4_test() {
         assert_eq!(tcp_header.get_data_offset(), 8);
 
         let ts = TcpOption::timestamp(743951781, 44056978);
-        tcp_header.set_options(&vec![TcpOption::nop(), TcpOption::nop(), ts]);
+        tcp_header.set_options(&[TcpOption::nop(), TcpOption::nop(), ts]);
 
         let checksum = ipv4_checksum(&tcp_header.to_immutable(), &ipv4_source, &ipv4_destination);
         tcp_header.set_checksum(checksum);

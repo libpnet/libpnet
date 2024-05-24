@@ -30,7 +30,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
             _ => new.mac,
         };
         old.ips.extend_from_slice(&new.ips[..]);
-        old.flags = old.flags | new.flags;
+        old.flags |= new.flags;
     }
 
     let mut ifaces: Vec<NetworkInterface> = Vec::new();
@@ -69,7 +69,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
             name: name.clone(),
             description: "".to_string(),
             index: 0,
-            mac: mac,
+            mac,
             ips: network.into_iter().collect(),
             flags: addr_ref.ifa_flags,
         };
@@ -125,7 +125,7 @@ fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Opti
             (Some(mac), None)
         } else {
             let addr = pnet_sys::sockaddr_to_addr(
-                mem::transmute(sa),
+                &*(sa as *const libc::sockaddr_storage),
                 mem::size_of::<libc::sockaddr_storage>(),
             );
 

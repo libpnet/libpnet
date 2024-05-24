@@ -6,14 +6,11 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Support for sending and receiving data link layer packets using Linux's `AF_PACKET`.
 
 extern crate libc;
 
 use crate::bindings::linux;
 use crate::{DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
-
-use pnet_sys;
 
 use std::cmp;
 use std::io;
@@ -126,8 +123,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
     pmr.mr_type = linux::PACKET_MR_PROMISC as u16;
 
     // Enable promiscuous capture
-    if config.promiscuous {
-        if unsafe {
+    if config.promiscuous && unsafe {
             libc::setsockopt(
                 socket,
                 linux::SOL_PACKET,
@@ -142,7 +138,6 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
                 pnet_sys::close(socket);
             }
             return Err(err);
-        }
     }
 
     // Enable packet fanout
@@ -160,11 +155,11 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         } as u32;
         // set defrag flag
         if fanout.defrag {
-            typ = typ | linux::PACKET_FANOUT_FLAG_DEFRAG;
+            typ |= linux::PACKET_FANOUT_FLAG_DEFRAG;
         }
         // set rollover flag
         if fanout.rollover {
-            typ = typ | linux::PACKET_FANOUT_FLAG_ROLLOVER;
+            typ |= linux::PACKET_FANOUT_FLAG_ROLLOVER;
         }
         // set uniqueid flag -- probably not needed atm..
         // PACKET_FANOUT_FLAG_UNIQUEID -- https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=4a69a864209e9ab436d4a58e8028ac96cc873d15
@@ -207,7 +202,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         send_addr_len: len,
         timeout: config
             .write_timeout
-            .map(|to| pnet_sys::duration_to_timespec(to)),
+            .map(pnet_sys::duration_to_timespec),
     });
     let receiver = Box::new(DataLinkReceiverImpl {
         socket: fd.clone(),
@@ -216,7 +211,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         _channel_type: config.channel_type,
         timeout: config
             .read_timeout
-            .map(|to| pnet_sys::duration_to_timespec(to)),
+            .map(pnet_sys::duration_to_timespec),
     });
 
     Ok(super::Channel::Ethernet(sender, receiver))
@@ -271,16 +266,14 @@ impl DataLinkSender for DataLinkSenderImpl {
                     return Some(Err(io::Error::last_os_error()));
                 } else if ret == 0 {
                     return Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")));
-                } else {
-                    if let Err(e) = pnet_sys::send_to(
+                } else if let Err(e) = unsafe { pnet_sys::send_to(
                         self.socket.fd,
                         chunk,
                         send_addr,
                         self.send_addr_len as libc::socklen_t,
-                    ) {
+                    )} {
                         return Some(Err(e));
                     }
-                }
             }
 
             Some(Ok(()))
@@ -313,12 +306,12 @@ impl DataLinkSender for DataLinkSenderImpl {
         } else if ret == 0 {
             Some(Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out")))
         } else {
-            match pnet_sys::send_to(
+            match unsafe { pnet_sys::send_to(
                 self.socket.fd,
                 packet,
                 (&self.send_addr as *const libc::sockaddr_ll) as *const _,
                 self.send_addr_len as libc::socklen_t,
-            ) {
+            )} {
                 Err(e) => Some(Err(e)),
                 Ok(_) => Some(Ok(())),
             }
@@ -371,6 +364,7 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
 /// Get a list of available network interfaces for the current machine.
 pub fn interfaces() -> Vec<NetworkInterface> {
     #[path = "unix_interfaces.rs"]
+    #[allow(clippy::module_inception)]
     mod interfaces;
     interfaces::interfaces()
 }

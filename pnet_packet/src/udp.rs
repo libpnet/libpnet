@@ -71,10 +71,10 @@ fn udp_header_ipv4_test() {
     }
 
     // Set data
-    packet[20 + 8] = 't' as u8;
-    packet[20 + 8 + 1] = 'e' as u8;
-    packet[20 + 8 + 2] = 's' as u8;
-    packet[20 + 8 + 3] = 't' as u8;
+    packet[20 + 8] = b't';
+    packet[20 + 8 + 1] = b'e';
+    packet[20 + 8 + 2] = b's';
+    packet[20 + 8 + 3] = b't';
 
     {
         let mut udp_header = MutableUdpPacket::new(&mut packet[20..]).unwrap();
@@ -141,10 +141,10 @@ fn udp_header_ipv6_test() {
     }
 
     // Set data
-    packet[40 + 8] = 't' as u8;
-    packet[40 + 8 + 1] = 'e' as u8;
-    packet[40 + 8 + 2] = 's' as u8;
-    packet[40 + 8 + 3] = 't' as u8;
+    packet[40 + 8] = b't';
+    packet[40 + 8 + 1] = b'e';
+    packet[40 + 8 + 2] = b's';
+    packet[40 + 8 + 3] = b't';
 
     {
         let mut udp_header = MutableUdpPacket::new(&mut packet[40..]).unwrap();

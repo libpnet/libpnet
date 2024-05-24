@@ -211,7 +211,7 @@ impl FromStr for MacAddr {
                 return Err(ParseMacAddrErr::TooManyComponents);
             }
             match u8::from_str_radix(split, 16) {
-                Ok(b) if split.len() != 0 => parts[i] = b,
+                Ok(b) if !split.is_empty() => parts[i] = b,
                 _ => return Err(ParseMacAddrErr::InvalidComponent),
             }
             i += 1;

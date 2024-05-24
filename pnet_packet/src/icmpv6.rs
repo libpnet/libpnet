@@ -86,14 +86,13 @@ pub fn checksum(packet: &Icmpv6Packet, source: &Ipv6Addr, destination: &Ipv6Addr
 
 #[cfg(test)]
 mod checksum_tests {
-    use alloc::vec;
     use super::*;
 
     #[test]
     fn checksum_echo_request() {
         // The equivalent of your typical ping -6 ::1%lo
         let lo = &Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
-        let mut data = vec![
+        let mut data = [
             0x80, // Icmpv6 Type
             0x00, // Code
             0xff, 0xff, // Checksum
@@ -574,7 +573,7 @@ pub mod ndp {
 
         #[test]
         fn basic_option_parsing() {
-            let mut data = vec![
+            let mut data = [
                 0x02, 0x01, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
                 // Extra bytes to confuse the parsing
                 0x00, 0x00, 0x00
@@ -588,7 +587,7 @@ pub mod ndp {
 
         #[test]
         fn basic_rs_parse() {
-            let mut data = vec![
+            let mut data = [
                 0x85, // Type
                 0x00, // Code
                 0x00, 0x00, // Checksum
@@ -618,14 +617,14 @@ pub mod ndp {
 
         #[test]
         fn basic_rs_create() {
-            let ref_packet = vec![
+            let ref_packet = [
                 0x85, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00,
                 0x01, 0x01, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00
             ];
             let mut packet = [0u8; 16];
-            let options = vec![
+            let options = [
                 NdpOption {
                     option_type: NdpOptionTypes::SourceLLAddr,
                     length: 1,
@@ -643,7 +642,7 @@ pub mod ndp {
 
         #[test]
         fn basic_ra_parse() {
-            let mut data = vec![
+            let mut data = [
                 0x86, // Type
                 0x00, // Code
                 0x00, 0x00, // Checksum
@@ -679,7 +678,7 @@ pub mod ndp {
 
         #[test]
         fn basic_ra_create() {
-            let ref_packet = vec![
+            let ref_packet = [
                 0x86, 0x00, 0x00, 0x00,
                 0xff, 0x80, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00,
@@ -688,7 +687,7 @@ pub mod ndp {
                 0x00, 0x00, 0x00, 0x00
             ];
             let mut packet = [0u8; 24];
-            let options = vec![
+            let options = [
                 NdpOption {
                     option_type: NdpOptionTypes::MTU,
                     length: 1,
@@ -708,7 +707,7 @@ pub mod ndp {
 
         #[test]
         fn basic_ns_parse() {
-            let mut data = vec![
+            let mut data = [
                 0x87, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00,
                 0xff, 0x02, 0x00, 0x00,
@@ -726,7 +725,7 @@ pub mod ndp {
 
         #[test]
         fn basic_ns_create() {
-            let ref_packet = vec![
+            let ref_packet = [
                 0x87, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00,
                 0xff, 0x02, 0x00, 0x00,
@@ -746,7 +745,7 @@ pub mod ndp {
 
         #[test]
         fn basic_na_parse() {
-            let mut data = vec![
+            let mut data = [
                 0x88, 0x00, 0x00, 0x00,
                 0x80, 0x00, 0x00, 0x00,
                 0xff, 0x02, 0x00, 0x00,
@@ -765,7 +764,7 @@ pub mod ndp {
 
         #[test]
         fn basic_na_create() {
-            let ref_packet = vec![
+            let ref_packet = [
                 0x88, 0x00, 0x00, 0x00,
                 0x80, 0x00, 0x00, 0x00,
                 0xff, 0x02, 0x00, 0x00,
@@ -786,7 +785,7 @@ pub mod ndp {
 
         #[test]
         fn basic_redirect_parse() {
-            let mut data = vec![
+            let mut data = [
                 0x89, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00,
                 0xff, 0x02, 0x00, 0x00,
@@ -809,7 +808,7 @@ pub mod ndp {
 
         #[test]
         fn basic_redirect_create() {
-            let ref_packet = vec![
+            let ref_packet = [
                 0x89, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00,
                 0xff, 0x02, 0x00, 0x00,

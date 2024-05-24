@@ -76,12 +76,11 @@ pub fn checksum(packet: &IcmpPacket) -> u16be {
 
 #[cfg(test)]
 mod checksum_tests {
-    use alloc::vec;
     use super::*;
 
     #[test]
     fn checksum_zeros() {
-        let mut data = vec![0u8; 8];
+        let mut data = [0u8; 8];
         let expected = 65535;
         let mut pkg = MutableIcmpPacket::new(&mut data[..]).unwrap();
         assert_eq!(checksum(&pkg.to_immutable()), expected);
@@ -91,7 +90,7 @@ mod checksum_tests {
 
     #[test]
     fn checksum_nonzero() {
-        let mut data = vec![255u8; 8];
+        let mut data = [255u8; 8];
         let expected = 0;
         let mut pkg = MutableIcmpPacket::new(&mut data[..]).unwrap();
         assert_eq!(checksum(&pkg.to_immutable()), expected);
@@ -101,9 +100,9 @@ mod checksum_tests {
 
     #[test]
     fn checksum_odd_bytes() {
-        let mut data = vec![191u8; 7];
+        let data = [191u8; 7];
         let expected = 49535;
-        let pkg = IcmpPacket::new(&mut data[..]).unwrap();
+        let pkg = IcmpPacket::new(&data).unwrap();
         assert_eq!(checksum(&pkg), expected);
     }
 }

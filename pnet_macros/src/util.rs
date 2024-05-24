@@ -36,6 +36,7 @@ impl fmt::Display for GetOperation {
             "{}".to_owned()
         };
 
+        #[allow(clippy::comparison_chain)]
         if shift == 0 {
             write!(fmt, "{}", mask_str)
         } else if shift < 0 {
@@ -154,8 +155,9 @@ impl fmt::Display for SetOperation {
             "{val}".to_owned()
         };
 
+        #[allow(clippy::comparison_chain)]
         let shift_str = if shift == 0 {
-            format!("{}", mask_str)
+            mask_str.to_string()
         } else if shift < 0 {
             format!("{} << {}", mask_str, shift.abs())
         } else {
@@ -252,7 +254,7 @@ fn get_mask(offset: usize, bits_remaining: usize) -> (usize, u8) {
     assert!(num_bits_to_mask <= 8 - offset);
     let mut mask = 0;
     while num_bits_to_mask > 0 {
-        mask = mask | (0x80 >> (offset + num_bits_to_mask - 1));
+        mask |= 0x80 >> (offset + num_bits_to_mask - 1);
         num_bits_to_mask -= 1;
     }
 
@@ -393,7 +395,7 @@ pub fn operations(offset: usize, size: usize) -> Option<Vec<GetOperation>> {
     for i in 0..num_bytes {
         let (consumed, mask) = get_mask(current_offset, num_bits_remaining);
         ops.push(GetOperation {
-            mask: mask,
+            mask,
             shiftl: get_shiftl(offset, size, i, num_bytes),
             shiftr: get_shiftr(offset, size, i, num_bytes),
         });
@@ -647,7 +649,7 @@ fn operations_test() {
 fn mask_high_bits(mut bits: u64) -> u64 {
     let mut mask = 0;
     while bits > 0 {
-        mask = mask | (1 << (bits - 1));
+        mask |= 1 << (bits - 1);
         bits -= 1;
     }
 

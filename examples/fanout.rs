@@ -12,7 +12,6 @@
 extern crate pnet;
 extern crate pnet_datalink;
 
-use std::io::{self, Write};
 use std::process;
 
 #[cfg(not(target_os = "linux"))]
@@ -31,7 +30,7 @@ fn main() {
     let iface_name = match env::args().nth(1) {
         Some(n) => n,
         None => {
-            writeln!(io::stderr(), "USAGE: fanout <NETWORK INTERFACE> [hash|*round-robin*|cpu|rollover|rnd|qm|cbpf|ebpf] [group-id:123]").unwrap();
+            eprintln!("USAGE: fanout <NETWORK INTERFACE> [hash|*round-robin*|cpu|rollover|rnd|qm|cbpf|ebpf] [group-id:123]");
             process::exit(1);
         }
     };
@@ -39,11 +38,7 @@ fn main() {
 
     // Find the network interface with the provided name
     let interfaces = datalink::linux::interfaces();
-    let interface = interfaces
-        .into_iter()
-        .filter(interface_names_match)
-        .next()
-        .unwrap();
+    let interface = interfaces.into_iter().find(interface_names_match).unwrap();
 
     let fanout_type = match env::args().nth(2) {
         Some(n) => match n.to_lowercase().as_str() {
@@ -65,13 +60,15 @@ fn main() {
         None => 123,
     };
 
-    let mut config: Config = Default::default();
-    config.linux_fanout = Some(FanoutOption {
-        group_id: group_id,
-        fanout_type: fanout_type,
-        defrag: true,
-        rollover: false,
-    });
+    let config: Config = Config {
+        linux_fanout: Some(FanoutOption {
+            group_id,
+            fanout_type,
+            defrag: true,
+            rollover: false,
+        }),
+        ..Default::default()
+    };
 
     let mut threads = vec![];
     for x in 0..3 {
@@ -91,12 +88,7 @@ fn main() {
                 loop {
                     match rx.next() {
                         Ok(_packet) => {
-                            writeln!(
-                                io::stdout(),
-                                "Received packet on thread {:?}",
-                                handle.name()
-                            )
-                            .unwrap();
+                            eprintln!("Received packet on thread {:?}", handle.name());
                         }
                         Err(e) => panic!("packetdump: unable to receive packet: {}", e),
                     }

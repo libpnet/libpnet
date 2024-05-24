@@ -1,7 +1,6 @@
 extern crate pnet;
 
 use std::env;
-use std::io::{self, Write};
 use std::net::{AddrParseError, IpAddr, Ipv4Addr};
 use std::process;
 
@@ -76,11 +75,7 @@ fn main() {
     let iface_name = match args.next() {
         Some(n) => n,
         None => {
-            writeln!(
-                io::stderr(),
-                "USAGE: arp_packet <NETWORK INTERFACE> <TARGET IP>"
-            )
-            .unwrap();
+            eprintln!("USAGE: arp_packet <NETWORK INTERFACE> <TARGET IP>");
             process::exit(1);
         }
     };
@@ -88,11 +83,7 @@ fn main() {
     let target_ip: Result<Ipv4Addr, AddrParseError> = match args.next() {
         Some(n) => n.parse(),
         None => {
-            writeln!(
-                io::stderr(),
-                "USAGE: arp_packet <NETWORK INTERFACE> <TARGET IP>"
-            )
-            .unwrap();
+            eprintln!("USAGE: arp_packet <NETWORK INTERFACE> <TARGET IP>");
             process::exit(1);
         }
     };
