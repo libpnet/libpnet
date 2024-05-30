@@ -35,7 +35,7 @@ pnet_packet = { path = "pnet_packet", version = "0.34.0", default-features = fal
 time = "0.3.23"
 
 [[example]]
-name = "arp_packet"
+name = "ip_to_mac"
 required-features = ["std"]
 
 [[example]]
