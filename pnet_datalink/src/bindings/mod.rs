@@ -14,6 +14,7 @@
     target_os = "solaris",
     target_os = "macos",
     target_os = "ios",
+    target_os = "tvos",
     windows
 ))]
 pub mod bpf;
