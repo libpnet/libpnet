@@ -251,6 +251,7 @@ impl TransportSender {
     }
 
     /// Sets an ECN marking on the socket, which then applies for all packets sent.
+    #[cfg(unix)]
     pub fn set_ecn(&mut self, tos: Ecn) -> io::Result<()> {
         let (level, name) = match self.channel_type {
             Layer4(Ipv4(_)) | Layer3(_) => (pnet_sys::IPPROTO_IP, pnet_sys::IP_TOS),
