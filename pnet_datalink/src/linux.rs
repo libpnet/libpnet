@@ -65,6 +65,8 @@ pub struct Config {
 
     /// Promiscuous mode.
     pub promiscuous: bool,
+
+    pub socket_fd: Option<i32>,
 }
 
 impl<'a> From<&'a super::Config> for Config {
@@ -77,6 +79,7 @@ impl<'a> From<&'a super::Config> for Config {
             write_timeout: config.write_timeout,
             fanout: config.linux_fanout,
             promiscuous: config.promiscuous,
+            socket_fd: config.socket_fd,
         }
     }
 }
@@ -91,25 +94,32 @@ impl Default for Config {
             channel_type: super::ChannelType::Layer2,
             fanout: None,
             promiscuous: true,
+            socket_fd: None,
         }
     }
 }
 
 /// Create a data link channel using the Linux's `AF_PACKET` socket type.
 #[inline]
-pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Result<super::Channel> {
-    let eth_p_all = 0x0003;
-    let (typ, proto) = match config.channel_type {
-        super::ChannelType::Layer2 => (libc::SOCK_RAW, eth_p_all),
-        super::ChannelType::Layer3(proto) => (libc::SOCK_DGRAM, proto),
+pub fn channel(
+    network_interface: &NetworkInterface,
+    config: Config,
+) -> io::Result<super::Channel> {
+    let (_typ, proto) = match config.channel_type {
+        super::ChannelType::Layer2 => (libc::SOCK_RAW, libc::ETH_P_ALL),
+        super::ChannelType::Layer3(proto) => (libc::SOCK_DGRAM, proto as i32),
     };
-    let socket = unsafe { libc::socket(libc::AF_PACKET, typ, proto.to_be() as i32) };
-    if socket == -1 {
-        return Err(io::Error::last_os_error());
-    }
-    let mut addr: libc::sockaddr_storage = unsafe { mem::zeroed() };
-    let len = network_addr_to_sockaddr(network_interface, &mut addr, proto as i32);
 
+    let socket = match config.socket_fd {
+        Some(sock) => sock,
+        None => match unsafe { libc::socket(libc::AF_PACKET, _typ, proto.to_be()) } {
+            -1 => return Err(io::Error::last_os_error()),
+            fd => fd
+        }
+    };
+
+    let mut addr: libc::sockaddr_storage = unsafe { mem::zeroed() };
+    let len = network_addr_to_sockaddr(network_interface, &mut addr, proto);
     let send_addr = (&addr as *const libc::sockaddr_storage) as *const libc::sockaddr;
 
     // Bind to interface
