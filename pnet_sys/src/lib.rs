@@ -182,7 +182,7 @@ mod tests {
         let d = Duration::new(1, 0);
         let res = set_socket_receive_timeout(socket, d.clone());
         match res {
-            Err(e) => panic!("set_socket_receive_timeout reslted in error: {}", e),
+            Err(e) => panic!("set_socket_receive_timeout resulted in error: {}; are you root?", e),
             _ => {}
         };
 
@@ -197,7 +197,7 @@ mod tests {
         let d = Duration::from_millis(500);
         let res = set_socket_receive_timeout(socket, d);
         match res {
-            Err(e) => panic!("set_socket_receive_timeout reslted in error: {}", e),
+            Err(e) => panic!("set_socket_receive_timeout resulted in error: {}; are you root?", e),
             _ => {}
         };
 
@@ -212,7 +212,7 @@ mod tests {
         let d = Duration::from_millis(1500);
         let res = set_socket_receive_timeout(socket, d);
         match res {
-            Err(e) => panic!("set_socket_receive_timeout reslted in error: {}", e),
+            Err(e) => panic!("set_socket_receive_timeout resulted in error: {}; are you root?", e),
             _ => {}
         };
 
