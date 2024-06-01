@@ -52,12 +52,17 @@ pub enum TransportProtocol {
     Ipv6(IpNextHeaderProtocol),
 }
 
+/// Represents the valid codepoints for the Explicit Network Congestion in the IP header.
 #[repr(u8)]
 #[derive(Clone,Copy,Debug,PartialEq)]
 pub enum Ecn {
+    /// Not-ECT: The packet is not using ECN.
     NotEct = 0x0,
+    /// ECT(1): The connection supports ECN.
     Ect1 = 0x1,
+    /// ECT(0): The connection supports ECN.
     Ect0 = 0x2,
+    /// CN: A host is notifying its peer that congestion has occurred.
     CE = 0x3
 }
 
@@ -251,6 +256,10 @@ impl TransportSender {
     }
 
     /// Sets an ECN marking on the socket, which then applies for all packets sent.
+    ///
+    /// Marking a connection as ECN-capable or notifying the other end of a connection
+    /// about network congestion can be done by setting the appropriate tos value. See
+    /// RFC3168 for more information.
     #[cfg(unix)]
     pub fn set_ecn(&mut self, tos: Ecn) -> io::Result<()> {
         let (level, name) = match self.channel_type {
