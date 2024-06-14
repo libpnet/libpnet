@@ -62,6 +62,12 @@ if [[ -z "$PNET_TEST_IFACE" && "$SYSTEM" = "Linux" ]]; then
     done
 fi
 
+# To avoid unbound variable reference, $VERBOSE is explicitly set to
+# zero if $VERBOSE is unbound (or empty)
+if [ -z "$VERBOSE" ]; then
+    VERBOSE="0"
+fi
+
 set -euo pipefail
 
 # FIXME Need to link libraries properly on Windows
