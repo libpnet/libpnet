@@ -309,7 +309,7 @@ fn queries_length(packet: &DnsPacket) -> usize {
 fn responses_length(packet: &DnsPacket) -> usize {
     let base = 12 + queries_length(packet);
     let mut length = 0;
-    for _ in 0..packet.get_query_count() {
+    for _ in 0..packet.get_response_count() {
         match DnsResponsePacket::new(&packet.packet()[base + length..]) {
             Some(query) => length += query.packet_size(),
             None => break,
@@ -321,7 +321,7 @@ fn responses_length(packet: &DnsPacket) -> usize {
 fn authority_length(packet: &DnsPacket) -> usize {
     let base = 12 + queries_length(packet) + responses_length(packet);
     let mut length = 0;
-    for _ in 0..packet.get_query_count() {
+    for _ in 0..packet.get_authority_rr_count() {
         match DnsResponsePacket::new(&packet.packet()[base + length..]) {
             Some(query) => length += query.packet_size(),
             None => break,
@@ -333,7 +333,7 @@ fn authority_length(packet: &DnsPacket) -> usize {
 fn additional_length(packet: &DnsPacket) -> usize {
     let base = 12 + queries_length(packet) + responses_length(packet) + authority_length(packet);
     let mut length = 0;
-    for _ in 0..packet.get_query_count() {
+    for _ in 0..packet.get_additional_rr_count() {
         match DnsResponsePacket::new(&packet.packet()[base + length..]) {
             Some(query) => length += query.packet_size(),
             None => break,
@@ -454,7 +454,8 @@ impl DnsQuery {
 
 #[packet]
 pub struct DnsResponse {
-    pub name_tag: u16be,
+    #[length_fn = "rname_length"]
+    pub rname: Vec<u8>,
     #[construct_with(u16be)]
     pub rtype: DnsType,
     #[construct_with(u16be)]
@@ -465,6 +466,133 @@ pub struct DnsResponse {
     pub data: Vec<u8>,
     #[payload]
     pub payload: Vec<u8>,
+}
+
+fn rname_length(packet: &DnsResponsePacket) -> usize {
+    let mut offset = 0;
+    let mut size = 0;
+    loop {
+        let label_len = packet.packet()[offset] as usize;
+        if label_len == 0 {
+            size += 1;
+            break;
+        }
+        if label_len & 0xC0 == 0xC0 {
+            size += 2;
+            break;
+        }
+        size += label_len + 1;
+        offset += label_len + 1;
+    }
+    size
+}
+
+// parse any string in the DNS message, using its unique encoding
+// Call this on DnsPacket, pass the string([u8]) to be decoded
+pub fn dns_parse_name(packet: &DnsPacket, coded_name: &Vec<u8>) -> String {
+    // First follow the path in the rname, except if it starts with a C0
+    // then move to using the offsets from the start
+    let start = packet.packet();
+    let mut name = coded_name.as_slice();
+    let mut rname = String::new();
+    let mut offset:usize = 0;
+
+    loop {
+        let label_len:u16 = name[offset] as u16;
+        if label_len == 0 {
+            break;
+        }
+        if (label_len & 0xC0) == 0xC0 {
+            let offset1 = ((label_len & 0x3F) as usize) << 8;
+            let offset2 = name[offset + 1] as usize;
+            offset =  offset1 + offset2;
+            // now change name
+            name = start;
+            continue;
+        }
+        if !rname.is_empty() {
+            rname.push('.');
+        }
+        rname.push_str(
+            str::from_utf8(&name[offset + 1..offset + 1 + label_len as usize])
+                .ok()
+                .unwrap(),
+        );
+        offset += label_len as usize + 1;
+    }
+    rname
+}
+
+#[packet]
+pub struct DnsRrTXT {
+    pub data_len: u8,
+    #[length = "data_len"]
+    pub text: Vec<u8>,
+    #[payload]
+    pub payload: Vec<u8>,
+}
+
+#[packet]
+pub struct DnsRrSrv {
+    pub priority: u16be,
+    pub weight: u16be,
+    pub port: u16be,
+    #[length_fn = "target_length"]
+    pub target: Vec<u8>,
+    #[payload]
+    pub payload: Vec<u8>,
+}
+
+fn target_length(packet: &DnsRrSrvPacket) -> usize {
+    let mut offset = 6;
+    let mut size = 0;
+    loop {
+        let label_len = packet.packet()[offset] as usize;
+        if label_len == 0 {
+            size += 1;
+            break;
+        }
+        if label_len & 0xC0 == 0xC0 {
+            size += 2;
+            break;
+        }
+        size += label_len + 1;
+        offset += label_len + 1;
+    }
+    size
+}
+ 
+#[derive(Debug)]
+pub struct SrvName {
+    pub instance: Option<String>,
+    pub service: Option<String>,
+    pub protocol: Option<String>,
+    pub domain: Option<String>,
+}
+
+impl SrvName {
+    pub fn new(name: &str) -> Self {
+        let parts: Vec<&str> = name.split('.').collect();
+        let (instance, service, protocol, domain) = match parts.as_slice() {
+            [instance, service, protocol, domain @ ..] if service.starts_with('_') && protocol.starts_with('_') => {
+                (Some(String::from(*instance)), Some(String::from(*service)), Some(String::from(*protocol)), Some(String::from(domain.join("."))))
+            },
+            [service, protocol, domain @ ..] if service.starts_with('_') && protocol.starts_with('_') => {
+                (None, Some(String::from(*service)), Some(String::from(*protocol)), Some(String::from(domain.join("."))))
+            },
+            [instance, service, protocol, domain @ ..] => {
+                (Some(String::from(*instance)), Some(String::from(*service)), Some(String::from(*protocol)), Some(String::from(domain.join("."))))
+            },
+            _ => (None, None, None, None),
+        };
+
+        SrvName {
+            instance,
+            service,
+            protocol,
+            domain,
+        }
+    }
 }
 
 #[test]
@@ -548,4 +676,73 @@ fn test_dns_response() {
     assert_eq!(packet.get_rtype(), DnsTypes::A);
     assert_eq!(packet.get_rclass(), DnsClasses::IN);
     assert_eq!(packet.get_ttl(), 60);
+}
+
+#[test]
+fn test_mdns_response() {
+    let data = b"\x00\x00\x84\x00\x00\x00\x00\x04\x00\x00\x00\x00\x0b\x5f\x61\x6d\x7a\x6e\x2d\x61\x6c\x65\x78\x61\x04\x5f\x74\x63\x70\x05\x6c\x6f\x63\x61\x6c\x00\x00\x0c\x00\x01\x00\x00\x11\x94\x00\x0b\x08\x5f\x73\x65\x72\x76\x69\x63\x65\xc0\x0c\xc0\x2e\x00\x10\x80\x01\x00\x00\x11\x94\x00\x0a\x09\x76\x65\x72\x73\x69\x6f\x6e\x3d\x31\xc0\x2e\x00\x21\x80\x01\x00\x00\x00\x78\x00\x1d\x00\x00\x00\x00\x19\x8f\x14\x61\x76\x73\x2d\x66\x66\x72\x65\x67\x2d\x31\x36\x35\x34\x34\x37\x35\x36\x38\x33\xc0\x1d\xc0\x61\x00\x01\x80\x01\x00\x00\x00\x78\x00\x04\xc0\xa8\x01\x06";
+    let packet = DnsPacket::new(data).expect("Failed to parse dns response");
+    assert_eq!(packet.get_id(), 0);
+    assert_eq!(packet.get_is_response(), 1);
+    assert_eq!(packet.get_opcode(), Opcode::StandardQuery);
+    assert_eq!(packet.get_is_authoriative(), 1);
+    assert_eq!(packet.get_is_truncated(), 0);
+    assert_eq!(packet.get_is_recursion_desirable(), 0);
+    assert_eq!(packet.get_is_recursion_available(), 0);
+    assert_eq!(packet.get_zero_reserved(), 0);
+    assert_eq!(packet.get_rcode(), Retcode::NoError);
+    assert_eq!(packet.get_query_count(), 0);
+    assert_eq!(packet.get_response_count(), 4);
+    assert_eq!(packet.get_authority_rr_count(), 0);
+    assert_eq!(packet.get_additional_rr_count(), 0);
+    assert_eq!(packet.get_responses().len(), 4);
+    let responses = packet.get_responses();
+    // RR #1
+    assert_eq!(
+        dns_parse_name(&packet, &responses[0].rname),
+        "_amzn-alexa._tcp.local"
+    );
+    assert_eq!(responses[0].rtype, DnsTypes::PTR);
+    assert_eq!(responses[0].rclass, DnsClasses::IN);
+    assert_eq!(responses[0].ttl, 4500);
+    assert_eq!(responses[0].data_len, 11);
+    assert_eq!(
+        dns_parse_name(&packet, &responses[0].data),
+        "_service._amzn-alexa._tcp.local"
+    );
+    // RR #2
+    assert_eq!(
+        dns_parse_name(&packet, &responses[1].rname),
+        "_service._amzn-alexa._tcp.local"
+    );
+    assert_eq!(responses[1].rtype, DnsTypes::TXT);
+    assert_eq!(responses[1].ttl, 4500);
+    assert_eq!(responses[1].data_len, 10);
+    let text_rr = DnsRrTXTPacket::new(&responses[1].data).unwrap();
+    assert_eq!(text_rr.get_data_len(), 9);
+    assert_eq!(String::from_utf8(text_rr.get_text()).unwrap(), "version=1");
+    // RR #3
+    let srv_name = dns_parse_name(&packet, &responses[2].rname);
+    assert_eq!(
+        srv_name, "_service._amzn-alexa._tcp.local"
+    );
+    assert_eq!(responses[2].rtype, DnsTypes::SRV);
+    assert_eq!(responses[2].data_len, 29);
+    let srv_rr = DnsRrSrvPacket::new(&responses[2].data).unwrap();
+    assert_eq!(srv_rr.get_priority(), 0);
+    assert_eq!(srv_rr.get_weight(), 0);
+    assert_eq!(srv_rr.get_port(), 6543);
+    assert_eq!(
+        dns_parse_name(&packet, &srv_rr.get_target()),
+        "avs-ffreg-1654475683.local"
+    );
+    let srv = SrvName::new(&srv_name);
+    assert_eq!(srv.instance, Some(String::from("_service")));
+    assert_eq!(srv.service, Some(String::from("_amzn-alexa")));
+    assert_eq!(srv.protocol, Some(String::from("_tcp")));
+    assert_eq!(srv.domain, Some(String::from("local")));
+    // RR #4
+    assert_eq!(responses[3].rtype, DnsTypes::A);
+    assert_eq!(responses[3].data.as_slice(), [192, 168, 1, 6]);
+
 }
