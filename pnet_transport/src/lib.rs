@@ -197,14 +197,13 @@ pub fn transport_channel_with(
     Ok((sender, receiver))
 }
 
-/// Sets a socket option whose value is a byte. Close the socket on error.
-fn set_sockopt_u8(
+/// Sets a socket option whose value is a signed 32-bit integer. Close the socket on error.
+fn set_sockopt_i32(
     socket: Arc<pnet_sys::FileDesc>,
     level: libc::c_int,
     name: libc::c_int,
-    value: u8,
+    value: i32,
 ) -> io::Result<()> {
-    let value = value as i32;
     let res = unsafe {
         pnet_sys::setsockopt(
             socket.fd,
@@ -225,6 +224,18 @@ fn set_sockopt_u8(
         }
         _ => Ok(()),
     }
+}
+
+
+/// Sets a socket option whose value is a byte. Close the socket on error.
+fn set_sockopt_u8(
+    socket: Arc<pnet_sys::FileDesc>,
+    level: libc::c_int,
+    name: libc::c_int,
+    value: u8,
+) -> io::Result<()> {
+    let value = value as i32;
+    set_sockopt_i32(socket, level, name, value)
 }
 
 impl TransportSender {
@@ -267,6 +278,52 @@ impl TransportSender {
             Layer4(Ipv6(_)) => (pnet_sys::IPPROTO_IPV6, pnet_sys::IPV6_TCLASS),
         };
         set_sockopt_u8(self.socket.clone(), level, name, tos as u8)
+    }
+
+    /// Configures path MTU discovery on a socket.
+    ///
+    /// On Linux-based systems, configuring the socket's path MTU discovery setting is
+    /// the way to "(un)set" the "don't fragment" bit in the IP header.
+    #[cfg(target_os = "linux")]
+    pub fn configure_path_mtu_discovery(&mut self, enable_disable: bool) -> io::Result<()> {
+        let config = [
+            [
+                (
+                    // IPv4, Disable PMTU Discovery
+                    pnet_sys::IPPROTO_IP,
+                    pnet_sys::IP_MTU_DISCOVER,
+                    pnet_sys::IP_PMTUDISC_DONT,
+                ),
+                (
+                    // IPv4, Enable PMTU Discovery
+                    pnet_sys::IPPROTO_IP,
+                    pnet_sys::IP_MTU_DISCOVER,
+                    pnet_sys::IP_PMTUDISC_DO,
+                ),
+            ],
+            [
+                (
+                    // IPv6, Disable PMTU Discovery
+                    pnet_sys::IPPROTO_IPV6,
+                    pnet_sys::IPV6_MTU_DISCOVER,
+                    pnet_sys::IPV6_PMTUDISC_DONT,
+                ),
+                (
+                    // IPv6, Enable PMTU Discovery
+                    pnet_sys::IPPROTO_IPV6,
+                    pnet_sys::IPV6_MTU_DISCOVER,
+                    pnet_sys::IPV6_PMTUDISC_DO,
+                ),
+            ],
+        ];
+
+        let protocol = match self.channel_type {
+            Layer4(Ipv4(_)) | Layer3(_) => 0,
+            Layer4(Ipv6(_)) => 1,
+        };
+
+        let (level, name, value) = config[protocol][enable_disable as usize];
+        set_sockopt_i32(self.socket.clone(), level, name, value)
     }
 
     #[cfg(all(
