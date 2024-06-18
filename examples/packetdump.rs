@@ -249,8 +249,11 @@ fn main() {
         match rx.next() {
             Ok(packet) => {
                 let payload_offset;
-                if cfg!(any(target_os = "macos", target_os = "ios", target_os = "tvos"))
-                    && interface.is_up()
+                if cfg!(any(
+                    target_os = "macos",
+                    target_os = "ios",
+                    target_os = "tvos"
+                )) && interface.is_up()
                     && !interface.is_broadcast()
                     && ((!interface.is_loopback() && interface.is_point_to_point())
                         || interface.is_loopback())
