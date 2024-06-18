@@ -105,6 +105,7 @@ pub mod public {
     /// Convert a Duration into a platform specific `timeval`.
     pub fn duration_to_timeval(dur: Duration) -> libc::timeval {
         libc::timeval {
+            #[cfg_attr(target_env = "musl", allow(deprecated))] // FIXME: https://github.com/rust-lang/libc/issues/1848
             tv_sec: dur.as_secs() as libc::time_t,
             tv_usec: dur.subsec_micros() as TvUsecType,
         }
@@ -118,6 +119,7 @@ pub mod public {
     /// Convert a Duration into a platform specific `timespec`.
     pub fn duration_to_timespec(dur: Duration) -> libc::timespec {
         libc::timespec {
+            #[cfg_attr(target_env = "musl", allow(deprecated))] // FIXME: https://github.com/rust-lang/libc/issues/1848
             tv_sec: dur.as_secs() as libc::time_t,
             tv_nsec: (dur.subsec_nanos() as TvUsecType).into(),
         }
