@@ -425,7 +425,22 @@ pub struct DnsQuery {
 }
 
 fn qname_length(packet: &DnsQueryPacket) -> usize {
-    packet.packet().iter().take_while(|w| *w != &0).count() + 1
+    let mut offset = 0;
+    let mut size = 0;
+    loop {
+        let label_len = packet.packet()[offset] as usize;
+        if label_len == 0 {
+            size += 1;
+            break;
+        }
+        if label_len & 0xC0 == 0xC0 {
+            size += 2;
+            break;
+        }
+        size += label_len + 1;
+        offset += label_len + 1;
+    }
+    size
 }
 
 impl DnsQuery {
