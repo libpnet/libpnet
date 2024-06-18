@@ -129,7 +129,7 @@ run_test() {
         MINGW*|MSYS*)
             PNET_TEST_IFACE=$PNET_TEST_IFACE RUST_TEST_THREADS=1 $TESTER
         ;;
-        FreeBSD|*)
+        *)
             echo "Unsupported testing platform"
         ;;
     esac
