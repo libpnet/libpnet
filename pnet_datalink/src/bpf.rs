@@ -82,35 +82,38 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         target_os = "illumos",
         target_os = "solaris"
     ))]
-    fn get_fd(_attempts: usize) -> libc::c_int {
+    fn get_fd(_attempts: usize) -> io::Result<libc::c_int> {
         let c_file_name = CString::new(&b"/dev/bpf"[..]).unwrap();
-        unsafe {
-            libc::open(
-                c_file_name.as_ptr(),
-                libc::O_RDWR,
-                0,
-            )
+        let fd = unsafe { libc::open(c_file_name.as_ptr(), libc::O_RDWR, 0) };
+        if fd == -1 {
+            return Err(io::Error::last_os_error());
         }
+        Ok(fd)
     }
 
-    #[cfg(any(target_os = "openbsd", target_os = "macos", target_os = "ios", target_os = "tvos"))]
-    fn get_fd(attempts: usize) -> libc::c_int {
+    #[cfg(any(
+        target_os = "openbsd",
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "tvos"
+    ))]
+    fn get_fd(attempts: usize) -> io::Result<libc::c_int> {
+        let mut old_errno = io::ErrorKind::PermissionDenied;
         for i in 0..attempts {
             let fd = unsafe {
                 let file_name = format!("/dev/bpf{}", i);
                 let c_file_name = CString::new(file_name.as_bytes()).unwrap();
-                libc::open(
-                    c_file_name.as_ptr(),
-                    libc::O_RDWR,
-                    0,
-                )
+                libc::open(c_file_name.as_ptr(), libc::O_RDWR, 0)
             };
             if fd != -1 {
-                return fd;
+                return Ok(fd);
             }
+            if io::Error::last_os_error().kind() == io::ErrorKind::NotFound {
+                break;
+            }
+            old_errno = io::Error::last_os_error().kind();
         }
-
-        -1
+        Err(io::Error::new(old_errno, "Failed to open /dev/bpf*"))
     }
 
     #[cfg(any(
@@ -130,12 +133,17 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         Ok(())
     }
 
-    #[cfg(any(target_os = "macos", target_os = "openbsd", target_os = "ios", target_os = "tvos"))]
+    #[cfg(any(
+        target_os = "macos",
+        target_os = "openbsd",
+        target_os = "ios",
+        target_os = "tvos"
+    ))]
     fn set_feedback(_fd: libc::c_int) -> io::Result<()> {
         Ok(())
     }
 
-    let fd = get_fd(config.bpf_fd_attempts);
+    let fd = get_fd(config.bpf_fd_attempts)?;
     if fd == -1 {
         return Err(io::Error::last_os_error());
     }
