@@ -241,6 +241,29 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
         }
         Ok(unsafe { slice::from_raw_parts(buf, h.len as usize) })
     }
+
+    fn next_with_timeout<'a>(&'a mut self, t: Duration) -> io::Result<&[u8]> {
+        let timeout = Some(pnet_sys::duration_to_timespec(t));
+        let desc = self.desc.desc;
+        let mut h: nm_pkthdr = unsafe { mem::uninitialized() };
+        let mut buf = unsafe { nm_nextpkt(desc, &mut h) };
+        if buf.is_null() {
+            let mut fds = pollfd {
+                fd: unsafe { NETMAP_FD(desc) },
+                events: POLLIN,
+                revents: 0,
+            };
+            let timespec = timeout
+                .as_ref()
+                .map(|ts| ts as *const _)
+                .unwrap_or(ptr::null());
+            if unsafe { ppoll(&mut fds, 1, timespec, ptr::null()) } < 0 {
+                return Err(io::Error::last_os_error());
+            }
+            buf = unsafe { nm_nextpkt(desc, &mut h) };
+        }
+        Ok(unsafe { slice::from_raw_parts(buf, h.len as usize) })
+    }
 }
 
 /// Get a list of available network interfaces for the current machine.
