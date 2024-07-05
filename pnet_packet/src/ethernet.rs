@@ -110,6 +110,9 @@ pub mod EtherTypes {
     pub const Cfm: EtherType = EtherType(0x8902);
     /// Q-in-Q Vlan Tagging \[IEEE 802.1Q\].
     pub const QinQ: EtherType = EtherType(0x9100);
+    /// Process Field Network Protocol (Profinet)
+    pub const Profinet: EtherType = EtherType(0x8892);
+
 }
 
 /// Represents the `Ethernet::ethertype` field.
@@ -158,6 +161,7 @@ impl fmt::Display for EtherType {
                    &EtherTypes::Ptp => "Ptp", //(0x88f7)
                    &EtherTypes::Cfm => "Cfm", //(0x8902)
                    &EtherTypes::QinQ => "QinQ", //(0x9100)
+                   &EtherTypes::Profinet => write!(f, "Profinet"),
                    _ => "unknown",
                })
     }
@@ -173,5 +177,7 @@ fn ether_type_to_str() {
     assert_eq!(format!("{}", arp), "Arp");
     let unknown = EtherType(0x0666);
     assert_eq!(format!("{}", unknown), "unknown");
+    let profinet = EtherType(0x8892);
+    assert_eq!(format!("{}", profinet), "Profinet");
 }
 
