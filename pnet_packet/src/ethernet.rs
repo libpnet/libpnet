@@ -161,7 +161,7 @@ impl fmt::Display for EtherType {
                    &EtherTypes::Ptp => "Ptp", //(0x88f7)
                    &EtherTypes::Cfm => "Cfm", //(0x8902)
                    &EtherTypes::QinQ => "QinQ", //(0x9100)
-                   &EtherTypes::Profinet => write!(f, "Profinet"),
+                   &EtherTypes::Profinet => "Profinet", //(0x8892)
                    _ => "unknown",
                })
     }
