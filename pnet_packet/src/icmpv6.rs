@@ -15,7 +15,7 @@ use alloc::vec::Vec;
 
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
-use pnet_base::core_net::Ipv6Addr;
+use core::net::Ipv6Addr;
 
 /// Represents the "ICMPv6 type" header field.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -161,7 +161,7 @@ pub mod ndp {
 
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
-    use pnet_base::core_net::Ipv6Addr;
+    use core::net::Ipv6Addr;
 
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]

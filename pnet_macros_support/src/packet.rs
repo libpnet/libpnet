@@ -11,6 +11,7 @@
 extern crate alloc;
 use alloc::vec;
 
+use core::net::{Ipv4Addr, Ipv6Addr};
 use core::ops::{Deref, DerefMut, Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo};
 use pnet_base;
 
@@ -222,7 +223,7 @@ impl PrimitiveValues for pnet_base::MacAddr {
     }
 }
 
-impl PrimitiveValues for ::pnet_base::core_net::Ipv4Addr {
+impl PrimitiveValues for Ipv4Addr {
     type T = (u8, u8, u8, u8);
     #[inline]
     fn to_primitive_values(&self) -> (u8, u8, u8, u8) {
@@ -232,7 +233,7 @@ impl PrimitiveValues for ::pnet_base::core_net::Ipv4Addr {
     }
 }
 
-impl PrimitiveValues for ::pnet_base::core_net::Ipv6Addr {
+impl PrimitiveValues for Ipv6Addr {
     type T = (u16, u16, u16, u16, u16, u16, u16, u16);
     #[inline]
     fn to_primitive_values(&self) -> (u16, u16, u16, u16, u16, u16, u16, u16) {
