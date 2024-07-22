@@ -588,24 +588,39 @@ pub struct SrvName {
 impl SrvName {
     pub fn new(name: &str) -> Self {
         let parts: Vec<&str> = name.split('.').collect();
-        let (instance, service, protocol, domain) = match parts.as_slice() {
-            [instance, service, protocol, domain @ ..] if service.starts_with('_') && protocol.starts_with('_') => {
-                (Some(String::from(*instance)), Some(String::from(*service)), Some(String::from(*protocol)), Some(String::from(domain.join("."))))
+        match parts.len() {
+            len if len >4 => {
+                SrvName {
+                    instance: Some(parts[0..len-3].join(".")),
+                    service: Some(String::from(parts[len-3])),
+                    protocol: Some(String::from(parts[len-2])),
+                    domain: Some(String::from(parts[len-1])),
+                }
             },
-            [service, protocol, domain @ ..] if service.starts_with('_') && protocol.starts_with('_') => {
-                (None, Some(String::from(*service)), Some(String::from(*protocol)), Some(String::from(domain.join("."))))
+            4 => {
+                SrvName {
+                    instance: Some(String::from(parts[0])),
+                    service: Some(String::from(parts[1])),
+                    protocol: Some(String::from(parts[2])),
+                    domain: Some(String::from(parts[3])),
+                }
             },
-            [instance, service, protocol, domain @ ..] => {
-                (Some(String::from(*instance)), Some(String::from(*service)), Some(String::from(*protocol)), Some(String::from(domain.join("."))))
+            3 => {
+                SrvName {
+                    instance: None,
+                    service: Some(String::from(parts[0])),
+                    protocol: Some(String::from(parts[1])),
+                    domain: Some(String::from(parts[2])),
+                }
             },
-            _ => (None, None, None, None),
-        };
-
-        SrvName {
-            instance,
-            service,
-            protocol,
-            domain,
+            _ => {
+                SrvName {
+                    instance: None,
+                    service: None,
+                    protocol: None,
+                    domain: None,
+                }
+            },
         }
     }
 }
