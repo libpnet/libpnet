@@ -57,12 +57,19 @@ pub mod public {
     pub const IP_HDRINCL: libc::c_int = libc::IP_HDRINCL;
     pub const IP_TTL: libc::c_int = libc::IP_TTL;
     pub const IP_TOS: libc::c_int = 1;
+    #[cfg(target_os = "linux")]
+    pub const IP_MTU_DISCOVER: libc::c_int = libc::IP_MTU_DISCOVER;
 
     pub const IPPROTO_IPV6: libc::c_int = libc::IPPROTO_IPV6;
     pub const IPV6_UNICAST_HOPS: libc::c_int = libc::IPV6_UNICAST_HOPS;
     pub const IPV6_TCLASS: libc::c_int = libc::IPV6_TCLASS;
+    #[cfg(target_os = "linux")]
+    pub const IPV6_MTU_DISCOVER: libc::c_int = libc::IPV6_MTU_DISCOVER;
 
     pub use libc::{IFF_BROADCAST, IFF_LOOPBACK, IFF_RUNNING, IFF_MULTICAST, IFF_POINTOPOINT, IFF_UP};
+
+    #[cfg(target_os = "linux")]
+    pub use libc::{IP_PMTUDISC_DO, IP_PMTUDISC_DONT, IPV6_PMTUDISC_DO, IPV6_PMTUDISC_DONT};
 
     #[cfg(any(target_os = "linux", target_os = "android"))]
     pub use libc::{IFF_LOWER_UP, IFF_DORMANT};
