@@ -12,14 +12,13 @@ categories = ["network-programming"]
 edition = "2021"
 
 [dependencies]
-no-std-net = { version = "0.6.0", default-features = false }
 serde = { version = "1.0.171", optional = true, default-features = false }
 
 [dev-dependencies]
 serde_test = "1.0.171"
 
 [features]
-std = ["no-std-net/std"]
+std = []
 default = ["std"]
 
 [package.metadata.docs.rs]

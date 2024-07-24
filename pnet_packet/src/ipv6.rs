@@ -15,7 +15,7 @@ use alloc::vec::Vec;
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
-use pnet_base::core_net::Ipv6Addr;
+use core::net::Ipv6Addr;
 
 /// Represents an IPv6 Packet.
 #[packet]

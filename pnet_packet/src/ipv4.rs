@@ -16,7 +16,7 @@ use alloc::vec::Vec;
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
-use pnet_base::core_net::Ipv4Addr;
+use core::net::Ipv4Addr;
 
 /// The IPv4 header flags.
 #[allow(non_snake_case)]

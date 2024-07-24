@@ -15,5 +15,3 @@ extern crate serde;
 
 mod macaddr;
 pub use crate::macaddr::*;
-
-pub use no_std_net as core_net;
