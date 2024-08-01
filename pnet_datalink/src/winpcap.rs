@@ -314,13 +314,12 @@ pub fn interfaces() -> Vec<NetworkInterface> {
 
         unsafe {
             let name_str_ptr = (*cursor).AdapterName.as_ptr() as *const i8;
-
-            let bytes = CStr::from_ptr(name_str_ptr).to_bytes();
-            let name_str = from_utf8_unchecked(bytes).to_owned();
+            let name_str_bytes = CStr::from_ptr(name_str_ptr).to_bytes();
+            let name_str = String::from_utf8_lossy(name_str_bytes).to_string();
 
             let description_str_ptr = (*cursor).Description.as_ptr() as *const i8;
-            let bytes = CStr::from_ptr(description_str_ptr).to_bytes();
-            let description_str = from_utf8_unchecked(bytes).to_owned();
+            let description_str_bytes = CStr::from_ptr(description_str_ptr).to_bytes();
+            let description_str = String::from_utf8_lossy(description_str_bytes).to_string();
 
             all_ifaces.push(NetworkInterface {
                 name: name_str,
