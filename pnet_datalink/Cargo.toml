@@ -27,7 +27,7 @@ netmap_sys = { version = "0.1.4", optional = true, features = ["netmap_with_libs
 serde = { version = "1.0.171", optional = true, default-features = false, features = [ "derive" ] }
 
 [target.'cfg(windows)'.dependencies]
-winapi = "0.3.9"
+winapi = { version = "0.3.9", features = ["stringapiset"] }
 
 [package.metadata.docs.rs]
 # Enable the serde feature when generating docs on docs.rs, so the traits are visible
