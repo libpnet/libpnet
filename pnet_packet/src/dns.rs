@@ -1,5 +1,6 @@
 use alloc::string::String;
 use alloc::vec::Vec;
+use core::str::Utf8Error;
 use core::{fmt, str};
 use pnet_macros::packet;
 use pnet_macros_support::packet::{Packet, PacketSize, PrimitiveValues};
@@ -504,7 +505,7 @@ fn rname_length(packet: &DnsResponsePacket) -> usize {
 
 // parse any string in the DNS message, using its unique encoding
 // Call this on DnsPacket, pass the string([u8]) to be decoded
-pub fn dns_parse_name(packet: &DnsPacket, coded_name: &Vec<u8>) -> String {
+pub fn parse_name(packet: &DnsPacket, coded_name: &Vec<u8>) -> Result<String, Utf8Error> {
     // First follow the path in the rname, except if it starts with a C0
     // then move to using the offsets from the start
     let start = packet.packet();
@@ -529,13 +530,14 @@ pub fn dns_parse_name(packet: &DnsPacket, coded_name: &Vec<u8>) -> String {
             rname.push('.');
         }
         rname.push_str(
-            str::from_utf8(&name[offset + 1..offset + 1 + label_len as usize])
-                .ok()
-                .unwrap(),
+            match str::from_utf8(&name[offset + 1..offset + 1 + label_len as usize]) {
+                Ok(s) => s,
+                Err(e) => return Err(e),
+            }
         );
         offset += label_len as usize + 1;
     }
-    rname
+    Ok(rname)
 }
 
 #[packet]
@@ -729,7 +731,7 @@ fn test_mdns_response() {
     let responses = packet.get_responses();
     // RR #1
     assert_eq!(
-        dns_parse_name(&packet, &responses[0].rname),
+        parse_name(&packet, &responses[0].rname).unwrap(),
         "_amzn-alexa._tcp.local"
     );
     assert_eq!(responses[0].rtype, DnsTypes::PTR);
@@ -737,12 +739,12 @@ fn test_mdns_response() {
     assert_eq!(responses[0].ttl, 4500);
     assert_eq!(responses[0].data_len, 11);
     assert_eq!(
-        dns_parse_name(&packet, &responses[0].data),
+        parse_name(&packet, &responses[0].data).unwrap(),
         "_service._amzn-alexa._tcp.local"
     );
     // RR #2
     assert_eq!(
-        dns_parse_name(&packet, &responses[1].rname),
+        parse_name(&packet, &responses[1].rname).unwrap(),
         "_service._amzn-alexa._tcp.local"
     );
     assert_eq!(responses[1].rtype, DnsTypes::TXT);
@@ -752,7 +754,7 @@ fn test_mdns_response() {
     assert_eq!(text_rr.get_data_len(), 9);
     assert_eq!(String::from_utf8(text_rr.get_text()).unwrap(), "version=1");
     // RR #3
-    let srv_name = dns_parse_name(&packet, &responses[2].rname);
+    let srv_name = parse_name(&packet, &responses[2].rname).unwrap();
     assert_eq!(
         srv_name, "_service._amzn-alexa._tcp.local"
     );
@@ -763,7 +765,7 @@ fn test_mdns_response() {
     assert_eq!(srv_rr.get_weight(), 0);
     assert_eq!(srv_rr.get_port(), 6543);
     assert_eq!(
-        dns_parse_name(&packet, &srv_rr.get_target()),
+        parse_name(&packet, &srv_rr.get_target()).unwrap(),
         "avs-ffreg-1654475683.local"
     );
     let srv = SrvName::new(&srv_name);
