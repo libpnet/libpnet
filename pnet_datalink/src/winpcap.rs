@@ -21,9 +21,13 @@ use std::mem;
 use std::slice;
 use std::str::from_utf8_unchecked;
 use std::sync::Arc;
-use winapi::ctypes::c_char;
 
-use winapi::ctypes;
+use winapi::ctypes::{self, c_char};
+use winapi::shared::minwindef::DWORD;
+use winapi::um::{
+    stringapiset::MultiByteToWideChar,
+    winnls::{CP_ACP, MB_PRECOMPOSED},
+};
 
 struct WinPcapAdapter {
     adapter: winpcap::LPADAPTER,
@@ -313,20 +317,18 @@ pub fn interfaces() -> Vec<NetworkInterface> {
         }
 
         unsafe {
-            let name_str_ptr = (*cursor).AdapterName.as_ptr() as *const i8;
-            let name_str_bytes = CStr::from_ptr(name_str_ptr).to_bytes();
-            let name_str = String::from_utf8_lossy(name_str_bytes).to_string();
+            let name = CStr::from_ptr((*cursor).AdapterName.as_ptr());
+            let name = parse_ansi_string(CP_ACP, MB_PRECOMPOSED, name);
 
-            let description_str_ptr = (*cursor).Description.as_ptr() as *const i8;
-            let description_str_bytes = CStr::from_ptr(description_str_ptr).to_bytes();
-            let description_str = String::from_utf8_lossy(description_str_bytes).to_string();
+            let description = CStr::from_ptr((*cursor).Description.as_ptr());
+            let description = parse_ansi_string(CP_ACP, MB_PRECOMPOSED, description);
 
             all_ifaces.push(NetworkInterface {
-                name: name_str,
-                description: description_str,
+                name,
+                description,
                 index: (*cursor).Index,
                 mac: Some(mac),
-                ips: ips,
+                ips,
                 // flags: (*cursor).Type, // FIXME [windows]
                 flags: 0,
             });
@@ -388,4 +390,45 @@ fn parse_ip_network(ip_cursor: winpcap::PIP_ADDR_STRING) -> Result<IpNetwork, ()
 
     let prefix = ip_mask_to_prefix(mask).map_err(|_| ())?;
     IpNetwork::new(ip, prefix).map_err(|_| ())
+}
+
+/// Converts a C string to a UTF-8 string using windows `codepage`
+///
+/// # SAFETY
+///
+/// The caller must ensure that `codepage` and `flags` are valid arguments
+/// https://learn.microsoft.com/windows/win32/api/stringapiset/nf-stringapiset-multibytetowidechar
+unsafe fn parse_ansi_string(codepage: DWORD, flags: DWORD, ansi: &CStr) -> String {
+    if ansi.is_empty() {
+        return String::new();
+    }
+    let len = unsafe {
+        MultiByteToWideChar(codepage, flags, ansi.as_ptr(), -1, core::ptr::null_mut(), 0)
+    };
+    let mut wide = vec![0u16; len as usize];
+    unsafe { MultiByteToWideChar(codepage, flags, ansi.as_ptr(), -1, wide.as_mut_ptr(), len) };
+    String::from_utf16_lossy(&wide)
+        .trim_end_matches(char::is_control)
+        .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const CP_CHINESE: DWORD = 936;
+    const CP_CYRYLIC: DWORD = 1251;
+    const CP_GREEK: DWORD = 1253;
+
+    #[test]
+    fn test_parse_ansi_string() {
+        let ansi = CStr::from_bytes_with_nul(&[0x00]).unwrap();
+        unsafe { assert_eq!("", parse_ansi_string(CP_ACP, MB_PRECOMPOSED, ansi)) };
+        let ansi = CStr::from_bytes_with_nul(&[0xB0, 0xA1, 0x00]).unwrap();
+        unsafe { assert_eq!("啊", parse_ansi_string(CP_CHINESE, MB_PRECOMPOSED, ansi)) };
+        let ansi = CStr::from_bytes_with_nul(&[0xC5, 0xB8, 0x00]).unwrap();
+        unsafe { assert_eq!("Её", parse_ansi_string(CP_CYRYLIC, MB_PRECOMPOSED, ansi)) };
+        let ansi = CStr::from_bytes_with_nul(&[0xD3, 0xF6, 0x00]).unwrap();
+        unsafe { assert_eq!("Σφ", parse_ansi_string(CP_GREEK, MB_PRECOMPOSED, ansi)) };
+    }
 }
