@@ -22,7 +22,7 @@ ipnetwork = "0.20.0"
 pnet_base = { path = "../pnet_base", version = "0.35.0", default-features = false }
 pnet_sys = { path = "../pnet_sys", version = "0.35.0" }
 
-pcap = { version = "1.1.0", optional = true }
+pcap = { version = "2.0.0", optional = true }
 netmap_sys = { version = "0.1.4", optional = true, features = ["netmap_with_libs"] }
 serde = { version = "1.0.171", optional = true, default-features = false, features = [ "derive" ] }
 

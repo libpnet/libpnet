@@ -12,7 +12,7 @@ use crate::ip::IpNextHeaderProtocol;
 use pnet_macros_support::types::u16be;
 
 use core::convert::TryInto;
-use pnet_base::core_net::{Ipv4Addr, Ipv6Addr};
+use core::net::{Ipv4Addr, Ipv6Addr};
 use core::u16;
 use core::u8;
 

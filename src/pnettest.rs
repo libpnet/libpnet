@@ -21,7 +21,7 @@ use crate::transport::TransportProtocol::{Ipv4, Ipv6};
 use crate::transport::{
     ipv4_packet_iter, transport_channel, udp_packet_iter, TransportChannelType, TransportProtocol,
 };
-use pnet_base::core_net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use core::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::iter::Iterator;
 use std::sync::mpsc::channel;
 use std::thread;

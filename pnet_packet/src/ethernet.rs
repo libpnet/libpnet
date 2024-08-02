@@ -132,34 +132,32 @@ impl PrimitiveValues for EtherType {
 
 impl fmt::Display for EtherType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,
-               "{}",
-               match self {
-                   &EtherTypes::Ipv4 => "Ipv4", //(0x0800)
-                   &EtherTypes::Arp => "Arp", //(0x0806)
-                   &EtherTypes::WakeOnLan => "WakeOnLan", //(0x0842)
-                   &EtherTypes::Trill => "Trill", //(0x22F3)
-                   &EtherTypes::DECnet => "DECnet", //(0x6003)
-                   &EtherTypes::Rarp => "Rarp", //(0x8035)
-                   &EtherTypes::AppleTalk => "AppleTalk", //(0x809B)
-                   &EtherTypes::Aarp => "Aarp", //(0x80F3)
-                   &EtherTypes::Ipx => "Ipx", //(0x8137)
-                   &EtherTypes::Qnx => "Qnx", //(0x8204)
-                   &EtherTypes::Ipv6 => "Ipv6", //(0x86DD)
-                   &EtherTypes::FlowControl => "FlowControl", //(0x8808)
-                   &EtherTypes::CobraNet => "CobraNet", //(0x8819)
-                   &EtherTypes::Mpls => "Mpls", //(0x8847)
-                   &EtherTypes::MplsMcast => "MplsMcast", //(0x8848)
-                   &EtherTypes::PppoeDiscovery => "PppoeDiscovery", //(0x8863)
-                   &EtherTypes::PppoeSession => "PppoeSession", //(0x8864)
-                   &EtherTypes::Vlan => "Vlan", //(0x8100)
-                   &EtherTypes::PBridge => "PBridge", //(0x88a8)
-                   &EtherTypes::Lldp => "Lldp", //(0x88cc)
-                   &EtherTypes::Ptp => "Ptp", //(0x88f7)
-                   &EtherTypes::Cfm => "Cfm", //(0x8902)
-                   &EtherTypes::QinQ => "QinQ", //(0x9100)
-                   _ => "unknown",
-               })
+        match self {
+            &EtherTypes::Ipv4 => write!(f, "Ipv4"),
+            &EtherTypes::Arp => write!(f, "Arp"),
+            &EtherTypes::WakeOnLan => write!(f, "WakeOnLan"),
+            &EtherTypes::Trill => write!(f, "Trill"),
+            &EtherTypes::DECnet => write!(f, "DECnet"),
+            &EtherTypes::Rarp => write!(f, "Rarp"),
+            &EtherTypes::AppleTalk => write!(f, "AppleTalk"),
+            &EtherTypes::Aarp => write!(f, "Aarp"),
+            &EtherTypes::Ipx => write!(f, "Ipx"),
+            &EtherTypes::Qnx => write!(f, "Qnx"),
+            &EtherTypes::Ipv6 => write!(f, "Ipv6"),
+            &EtherTypes::FlowControl => write!(f, "FlowControl"),
+            &EtherTypes::CobraNet => write!(f, "CobraNet"),
+            &EtherTypes::Mpls => write!(f, "Mpls"),
+            &EtherTypes::MplsMcast => write!(f, "MplsMcast"),
+            &EtherTypes::PppoeDiscovery => write!(f, "PppoeDiscovery"),
+            &EtherTypes::PppoeSession => write!(f, "PppoeSession"),
+            &EtherTypes::Vlan => write!(f, "Vlan"),
+            &EtherTypes::PBridge => write!(f, "PBridge"),
+            &EtherTypes::Lldp => write!(f, "Lldp"),
+            &EtherTypes::Ptp => write!(f, "Ptp"),
+            &EtherTypes::Cfm => write!(f, "Cfm"),
+            &EtherTypes::QinQ => write!(f, "QinQ"),
+            _ => write!(f, "unknown (0x{:04X})", self.0),
+        }
     }
 }
 
@@ -172,6 +170,6 @@ fn ether_type_to_str() {
     let arp = EtherType(0x0806);
     assert_eq!(format!("{}", arp), "Arp");
     let unknown = EtherType(0x0666);
-    assert_eq!(format!("{}", unknown), "unknown");
+    assert_eq!(format!("{}", unknown), "unknown (0x0666)");
 }
 
