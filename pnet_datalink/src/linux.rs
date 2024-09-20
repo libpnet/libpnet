@@ -63,6 +63,8 @@ pub struct Config {
 
     /// Promiscuous mode.
     pub promiscuous: bool,
+    ///enable auxdata
+    pub packet_auxdata: bool,
 
     pub socket_fd: Option<i32>,
 }
@@ -78,6 +80,7 @@ impl<'a> From<&'a super::Config> for Config {
             fanout: config.linux_fanout,
             promiscuous: config.promiscuous,
             socket_fd: config.socket_fd,
+            packet_auxdata: config.packet_auxdata,
         }
     }
 }
@@ -93,16 +96,14 @@ impl Default for Config {
             fanout: None,
             promiscuous: true,
             socket_fd: None,
+            packet_auxdata: false,
         }
     }
 }
 
 /// Create a data link channel using the Linux's `AF_PACKET` socket type.
 #[inline]
-pub fn channel(
-    network_interface: &NetworkInterface,
-    config: Config,
-) -> io::Result<super::Channel> {
+pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Result<super::Channel> {
     let (_typ, proto) = match config.channel_type {
         super::ChannelType::Layer2 => (libc::SOCK_RAW, libc::ETH_P_ALL),
         super::ChannelType::Layer3(proto) => (libc::SOCK_DGRAM, proto as i32),
@@ -112,8 +113,8 @@ pub fn channel(
         Some(sock) => sock,
         None => match unsafe { libc::socket(libc::AF_PACKET, _typ, proto.to_be()) } {
             -1 => return Err(io::Error::last_os_error()),
-            fd => fd
-        }
+            fd => fd,
+        },
     };
 
     let mut addr: libc::sockaddr_storage = unsafe { mem::zeroed() };
@@ -142,6 +143,25 @@ pub fn channel(
                 linux::PACKET_ADD_MEMBERSHIP,
                 (&pmr as *const linux::packet_mreq) as *const libc::c_void,
                 mem::size_of::<linux::packet_mreq>() as libc::socklen_t,
+            )
+        } == -1
+        {
+            let err = io::Error::last_os_error();
+            unsafe {
+                pnet_sys::close(socket);
+            }
+            return Err(err);
+        }
+    }
+    if config.packet_auxdata {
+        if unsafe {
+            const ONEVAL: libc::c_int = 1;
+            libc::setsockopt(
+                socket,
+                linux::SOL_PACKET,
+                linux::PACKET_AUXDATA,
+                (&ONEVAL as *const libc::c_int) as *const libc::c_void,
+                mem::size_of::<libc::c_int>() as libc::socklen_t,
             )
         } == -1
         {

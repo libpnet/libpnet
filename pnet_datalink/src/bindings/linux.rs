@@ -14,6 +14,7 @@ extern crate libc;
 pub const SOL_PACKET: libc::c_int = 263;
 pub const PACKET_ADD_MEMBERSHIP: libc::c_int = 1;
 pub const PACKET_MR_PROMISC: libc::c_int = 1;
+pub const PACKET_AUXDATA: libc::c_int = 8;
 pub const PACKET_FANOUT: libc::c_int = 18;
 pub const PACKET_FANOUT_HASH: libc::c_int = 0;
 pub const PACKET_FANOUT_LB: libc::c_int = 1;

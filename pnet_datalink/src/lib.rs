@@ -157,7 +157,10 @@ pub struct Config {
 
     pub promiscuous: bool,
 
+    ///enable auxdata
+    pub packet_auxdata: bool,
     /// Linux only: The socket's file descriptor that pnet will use
+    ///
     pub socket_fd: Option<i32>,
 }
 
@@ -173,6 +176,7 @@ impl Default for Config {
             linux_fanout: None,
             promiscuous: true,
             socket_fd: None,
+            packet_auxdata: false,
         }
     }
 }
@@ -189,14 +193,8 @@ impl Default for Config {
 /// When matching on the returned channel, make sure to include a catch-all so that code doesn't
 /// break when new channel types are added.
 #[inline]
-pub fn channel(
-    network_interface: &NetworkInterface,
-    configuration: Config,
-) -> io::Result<Channel> {
-    backend::channel(
-        network_interface,
-        (&configuration).into()
-    )
+pub fn channel(network_interface: &NetworkInterface, configuration: Config) -> io::Result<Channel> {
+    backend::channel(network_interface, (&configuration).into())
 }
 
 /// Trait to enable sending `$packet` packets.

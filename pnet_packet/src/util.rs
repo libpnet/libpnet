@@ -183,8 +183,8 @@ fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::sum_be_words;
-    use core::slice;
     use alloc::{vec, vec::Vec};
+    use core::slice;
 
     #[test]
     fn sum_be_words_different_skipwords() {
@@ -237,20 +237,20 @@ mod tests {
     }
 }
 
-#[cfg(all(test, feature = "benchmark"))]
-mod checksum_benchmarks {
-    use super::checksum;
-    use test::{black_box, Bencher};
+// #[cfg(all(test, feature = "benchmark"))]
+// mod checksum_benchmarks {
+//     use super::checksum;
+//     use test::{black_box, Bencher};
 
-    #[bench]
-    fn bench_checksum_small(b: &mut Bencher) {
-        let data = vec![99u8; 20];
-        b.iter(|| checksum(black_box(&data), 5));
-    }
+//     #[bench]
+//     fn bench_checksum_small(b: &mut Bencher) {
+//         let data = vec![99u8; 20];
+//         b.iter(|| checksum(black_box(&data), 5));
+//     }
 
-    #[bench]
-    fn bench_checksum_large(b: &mut Bencher) {
-        let data = vec![123u8; 1024];
-        b.iter(|| checksum(black_box(&data), 5));
-    }
-}
+//     #[bench]
+//     fn bench_checksum_large(b: &mut Bencher) {
+//         let data = vec![123u8; 1024];
+//         b.iter(|| checksum(black_box(&data), 5));
+//     }
+// }
