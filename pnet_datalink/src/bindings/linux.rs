@@ -37,3 +37,25 @@ pub struct packet_mreq {
     pub mr_alen: libc::c_ushort,
     pub mr_address: [libc::c_uchar; 8],
 }
+
+#[repr(C)]
+pub struct tpacket_auxdata {
+    pub tp_status: libc::c_uint,
+    pub tp_len: libc::c_uint,
+    pub tp_snaplen: libc::c_uint,
+    pub tp_mac: libc::c_ushort,
+    pub tp_net: libc::c_ushort,
+    pub tp_vlan_tci: libc::c_ushort,
+    pub tp_vlan_tpid: libc::c_ushort,
+}
+
+// struct tpacket_auxdata {
+//     __u32 tp_status;
+//     __u32 tp_len;      /* packet length */
+//     __u32 tp_snaplen;  /* captured length */
+//     __u16 tp_mac;
+//     __u16 tp_net;
+//     __u16 tp_vlan_tci;
+//     __u16 tp_vlan_tpid; /* Since Linux 3.14; earlier, these
+//                            were unused padding bytes */
+// };

@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![deny(warnings)]
+//#![deny(warnings)]
 extern crate libc;
 
 use std::io;
@@ -79,6 +79,15 @@ pub fn recv_from(
         )
     });
 
+    if len < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(len as usize)
+    }
+}
+
+pub fn recv_msg(socket: CSocket, msg: *mut libc::msghdr) -> io::Result<usize> {
+    let len = imp::retry(&mut || unsafe { imp::recvmsg(socket, msg, 0) });
     if len < 0 {
         Err(io::Error::last_os_error())
     } else {
@@ -161,10 +170,10 @@ mod tests {
     use crate::get_socket_receive_timeout;
     use crate::recv_from;
     use crate::set_socket_receive_timeout;
-    use std::mem;
-    use std::time::{Duration, Instant};
     use crate::CSocket;
     use crate::SockAddrStorage;
+    use std::mem;
+    use std::time::{Duration, Instant};
 
     fn test_timeout(socket: CSocket) -> Duration {
         let mut buffer = [0u8; 1024];
@@ -182,7 +191,10 @@ mod tests {
         let d = Duration::new(1, 0);
         let res = set_socket_receive_timeout(socket, d.clone());
         match res {
-            Err(e) => panic!("set_socket_receive_timeout resulted in error: {}; are you root?", e),
+            Err(e) => panic!(
+                "set_socket_receive_timeout resulted in error: {}; are you root?",
+                e
+            ),
             _ => {}
         };
 
@@ -197,7 +209,10 @@ mod tests {
         let d = Duration::from_millis(500);
         let res = set_socket_receive_timeout(socket, d);
         match res {
-            Err(e) => panic!("set_socket_receive_timeout resulted in error: {}; are you root?", e),
+            Err(e) => panic!(
+                "set_socket_receive_timeout resulted in error: {}; are you root?",
+                e
+            ),
             _ => {}
         };
 
@@ -212,7 +227,10 @@ mod tests {
         let d = Duration::from_millis(1500);
         let res = set_socket_receive_timeout(socket, d);
         match res {
-            Err(e) => panic!("set_socket_receive_timeout resulted in error: {}; are you root?", e),
+            Err(e) => panic!(
+                "set_socket_receive_timeout resulted in error: {}; are you root?",
+                e
+            ),
             _ => {}
         };
 

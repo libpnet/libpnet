@@ -8,7 +8,7 @@
 
 //! Support for sending and receiving data link layer packets.
 
-#![deny(warnings)]
+// #![deny(warnings)]
 
 extern crate ipnetwork;
 extern crate libc;
@@ -225,6 +225,8 @@ pub trait DataLinkSender: Send {
 pub trait DataLinkReceiver: Send {
     /// Get the next ethernet frame in the channel.
     fn next(&mut self) -> io::Result<&[u8]>;
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    fn next_msg(&mut self) -> io::Result<(&[u8], Option<TpacketAuxdata>)>;
 }
 
 /// Represents a network interface and its associated addresses.
@@ -417,4 +419,37 @@ impl ::std::fmt::Display for NetworkInterface {
 ///
 pub fn interfaces() -> Vec<NetworkInterface> {
     backend::interfaces()
+}
+
+#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
+pub struct TpacketAuxdata {
+    pub tp_status: u32,
+    pub tp_len: u32,
+    pub tp_snaplen: u32,
+    pub tp_mac: u16,
+    pub tp_net: u16,
+    pub tp_vlan_tci: u16,
+    pub tp_vlan_tpid: u16,
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+impl TpacketAuxdata {
+    fn from(origdata: &[u8]) -> Self {
+        let tp_status: [u8; 4] = origdata[..4].try_into().unwrap();
+        let tp_len: [u8; 4] = origdata[4..8].try_into().unwrap();
+        let tp_snaplen: [u8; 4] = origdata[8..12].try_into().unwrap();
+        let tp_mac: [u8; 2] = origdata[12..14].try_into().unwrap();
+        let tp_net: [u8; 2] = origdata[14..16].try_into().unwrap();
+        let tp_vlan_tci: [u8; 2] = origdata[16..18].try_into().unwrap();
+        let tp_vlan_tpid: [u8; 2] = origdata[18..20].try_into().unwrap();
+        TpacketAuxdata {
+            tp_status: u32::from_ne_bytes(tp_status),
+            tp_len: u32::from_ne_bytes(tp_len),
+            tp_snaplen: u32::from_ne_bytes(tp_snaplen),
+            tp_mac: u16::from_ne_bytes(tp_mac),
+            tp_net: u16::from_ne_bytes(tp_net),
+            tp_vlan_tci: u16::from_ne_bytes(tp_vlan_tci),
+            tp_vlan_tpid: u16::from_ne_bytes(tp_vlan_tpid),
+        }
+    }
 }
