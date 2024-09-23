@@ -20,7 +20,6 @@ use std::fmt::Debug;
 use std::io;
 use std::mem::{self, MaybeUninit};
 use std::os::raw::c_void;
-use std::ptr::addr_of_mut;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -458,9 +457,8 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
             // POLLIN is set, meaning the socket has data to be read
             //align buffer on stack, careful of total stack size though.
             #[repr(align(8))]
-            #[derive(Debug)]
             struct Align8<T>(T);
-            const CAPACITY: usize = 512;
+            const CAPACITY: usize = 128;
             let mut controlbuffer = Align8([0_u8; CAPACITY]);
             let mut iovec = libc::iovec {
                 iov_base: self.read_buffer.as_mut_ptr().cast::<c_void>(),
@@ -483,11 +481,16 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
                     let mut auxdata: Option<TpacketAuxdata> = None;
                     if self.enabled_packet_auxdata {
                         //we know there should be just one single cmsg because the only option we enabled was auxdata
-                        let current_hdr = unsafe { libc::CMSG_FIRSTHDR(inithdr) };
-                        let derefferable = unsafe { &*current_hdr };
-                        if derefferable.cmsg_type == linux::PACKET_AUXDATA
-                            && derefferable.cmsg_level == linux::SOL_PACKET
-                        {
+                        let is_auxpacket_data;
+                        let current_hdr = unsafe {
+                            let newhdr = libc::CMSG_FIRSTHDR(inithdr);
+                            let hdrtmp = *newhdr;
+                            is_auxpacket_data = hdrtmp.cmsg_type == linux::PACKET_AUXDATA
+                                && hdrtmp.cmsg_level == linux::SOL_PACKET;
+                            newhdr
+                        };
+
+                        if is_auxpacket_data {
                             const TPACKDATALEN: usize = mem::size_of::<linux::tpacket_auxdata>();
                             let tpacket = unsafe {
                                 let data = libc::CMSG_DATA(current_hdr);
