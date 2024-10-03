@@ -120,11 +120,11 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         },
     };
 
-    let mut sendaddr: libc::sockaddr_storage = unsafe { mem::zeroed() };
-    let sendlen = network_addr_to_sockaddr(network_interface, &mut sendaddr, proto);
-    let send_addr = (&sendaddr as *const libc::sockaddr_storage) as *const libc::sockaddr;
+    let mut addr: libc::sockaddr_storage = unsafe { mem::zeroed() };
+    let len = network_addr_to_sockaddr(network_interface, &mut addr, proto);
+    let send_addr = (&addr as *const libc::sockaddr_storage) as *const libc::sockaddr;
     // Bind to interface
-    if unsafe { libc::bind(socket, send_addr, sendlen as libc::socklen_t) } == -1 {
+    if unsafe { libc::bind(socket, send_addr, len as libc::socklen_t) } == -1 {
         let err = io::Error::last_os_error();
         unsafe {
             pnet_sys::close(socket);
@@ -235,7 +235,7 @@ pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Resu
         write_buffer: vec![0; config.write_buffer_size],
         _channel_type: config.channel_type,
         send_addr: unsafe { *(send_addr as *const libc::sockaddr_ll) },
-        send_addr_len: sendlen,
+        send_addr_len: len,
         timeout: config
             .write_timeout
             .map(|to| pnet_sys::duration_to_timespec(to)),
