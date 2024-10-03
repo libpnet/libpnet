@@ -8,7 +8,7 @@
 
 //! Support for sending and receiving data link layer packets.
 
-// #![deny(warnings)]
+#![deny(warnings)]
 
 extern crate ipnetwork;
 extern crate libc;
