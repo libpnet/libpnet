@@ -225,7 +225,7 @@ pub trait DataLinkSender: Send {
 pub trait DataLinkReceiver: Send {
     /// Get the next ethernet frame in the channel.
     fn next(&mut self) -> io::Result<&[u8]>;
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+
     fn next_msg(&mut self) -> io::Result<(&[u8], Option<TpacketAuxdata>)>;
 }
 
