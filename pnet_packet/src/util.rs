@@ -237,7 +237,7 @@ mod tests {
     }
 }
 
-#[cfg(all(test, feature = "benchmark"))]
+#[cfg(test)]
 mod checksum_benchmarks {
     use super::checksum;
     use test::{black_box, Bencher};
