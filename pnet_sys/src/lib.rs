@@ -38,6 +38,25 @@ impl Drop for FileDesc {
     }
 }
 
+#[cfg(unix)]
+impl std::os::fd::AsRawFd for FileDesc {
+    fn as_raw_fd(&self) -> std::os::fd::RawFd {
+        self.fd
+    }
+}
+
+#[cfg(windows)]
+impl std::os::windows::io::AsRawSocket for FileDesc {
+    #[cfg(target_pointer_width = "32")]
+    fn as_raw_socket(&self) -> std::os::windows::io::RawSocket {
+        self.fd as u64
+    }
+    #[cfg(target_pointer_width = "64")]
+    fn as_raw_socket(&self) -> std::os::windows::io::RawSocket {
+        self.fd as u64
+    }
+}
+
 pub fn send_to(
     socket: CSocket,
     buffer: &[u8],
