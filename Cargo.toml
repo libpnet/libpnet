@@ -21,6 +21,7 @@ travis = []
 serde = ["pnet_base/serde", "pnet_datalink?/serde"]
 std = ["pnet_base/std", "pnet_sys", "pnet_datalink", "pnet_transport", "ipnetwork"]
 default = ["std"]
+nightly = []
 
 [dependencies]
 ipnetwork = { version = "0.20.0", optional = true }
