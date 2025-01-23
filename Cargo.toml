@@ -24,7 +24,7 @@ default = ["std"]
 nightly = []
 
 [dependencies]
-ipnetwork = { version = "0.20.0", optional = true }
+ipnetwork = { version = "0.21.1", optional = true }
 
 pnet_base = { path = "pnet_base", version = "0.35.0", default-features = false }
 pnet_sys = { path = "pnet_sys", version = "0.35.0", optional = true, default-features = false }
