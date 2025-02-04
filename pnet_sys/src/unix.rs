@@ -3,8 +3,8 @@ use std::io;
 
 pub mod public {
 
-    use libc;
     use super::{htons, ntohs};
+    use libc;
     use std::io;
     use std::mem;
     use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
@@ -62,10 +62,12 @@ pub mod public {
     pub const IPV6_UNICAST_HOPS: libc::c_int = libc::IPV6_UNICAST_HOPS;
     pub const IPV6_TCLASS: libc::c_int = libc::IPV6_TCLASS;
 
-    pub use libc::{IFF_BROADCAST, IFF_LOOPBACK, IFF_RUNNING, IFF_MULTICAST, IFF_POINTOPOINT, IFF_UP};
+    pub use libc::{
+        IFF_BROADCAST, IFF_LOOPBACK, IFF_MULTICAST, IFF_POINTOPOINT, IFF_RUNNING, IFF_UP,
+    };
 
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    pub use libc::{IFF_LOWER_UP, IFF_DORMANT};
+    pub use libc::{IFF_DORMANT, IFF_LOWER_UP};
 
     pub const INVALID_SOCKET: CSocket = -1;
 
@@ -253,6 +255,10 @@ pub unsafe fn recvfrom(
     libc::recvfrom(socket, buf, len, flags, addr, addrlen)
 }
 
+pub unsafe fn recvmsg(socket: CSocket, msg: *mut libc::msghdr, flags: libc::c_int) -> CouldFail {
+    libc::recvmsg(socket, msg, flags)
+}
+
 #[inline]
 pub fn retry<F>(f: &mut F) -> libc::ssize_t
 where
@@ -273,8 +279,8 @@ fn errno() -> i32 {
 #[cfg(test)]
 mod tests {
     use crate::duration_to_timespec;
-    use std::time::Duration;
     use crate::timespec_to_duration;
+    use std::time::Duration;
 
     #[test]
     fn test_duration_to_timespec() {

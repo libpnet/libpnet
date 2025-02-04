@@ -183,8 +183,8 @@ fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::sum_be_words;
-    use core::slice;
     use alloc::{vec, vec::Vec};
+    use core::slice;
 
     #[test]
     fn sum_be_words_different_skipwords() {
