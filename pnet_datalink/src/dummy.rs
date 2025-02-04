@@ -153,6 +153,30 @@ impl DataLinkReceiver for MockDataLinkReceiver {
             }
         }
     }
+
+    fn next_with_timeout(&mut self, t: time::Duration) -> io::Result<&[u8]> {
+        match self.receiver.recv() {
+            Ok(result) => {
+                // A network event happened. Might be a packet or a simulated error
+                match result {
+                    Ok(buffer) => {
+                        self.used_packets.push(buffer);
+                        let buffer_ref = &*self.used_packets[self.used_packets.len() - 1];
+                        Ok(buffer_ref)
+                    }
+                    Err(e) => Err(e),
+                }
+            }
+            Err(_) => {
+                // The channel supplying fake packets is broken. The user lost/destroyed their
+                // inject_handle. This means there will never be any more packets sent to this
+                // dummy network. To simulate an idle network we block and sleep forever here.
+                loop {
+                    thread::sleep(t);
+                }
+            }
+        }
+    }
 }
 
 /// Get three fake interfaces generated with `dummy_interface(0..3)`.
