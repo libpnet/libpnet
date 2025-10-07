@@ -7,4 +7,11 @@ fn main() {
             "Features `npcap` and `winpkfilter` are mutually exclusive. Please enable only one."
         );
     }
+
+    if !npcap_enabled && !winpkfilter_enabled {
+        panic!(
+            "You must enable exactly one of the features: `npcap` or `winpkfilter`."
+        );
+    }
 }
+

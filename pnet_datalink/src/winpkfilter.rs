@@ -1,4 +1,9 @@
-use super::{DataLinkSender, DataLinkReceiver, NetworkInterface};
+use super::{DataLinkReceiver, DataLinkSender, NetworkInterface};
+
+use ndisapi::{IphlpNetworkAdapterInfo, MacAddress, Ndisapi, PacketOidData};
+use pnet_base::MacAddr;
+
+use std::collections::VecDeque;
 use std::io;
 
 /// The WinpkFilter's specific configuration.
@@ -29,20 +34,20 @@ impl Default for Config {
 }
 
 pub fn channel(
-    network_interface: &NetworkInterface,
-    config: Config,
+    _network_interface: &NetworkInterface,
+    _config: Config,
 ) -> io::Result<super::Channel> {
     // TODO: Use ndisapi to open the adapter using network_interface.name
     // Initialize your sender/receiver objects here
     //
     // Example: You’ll likely use `Ndisapi::new()` and then `open_adapter(name)`
-    
+
     let sender = Box::new(DataLinkSenderImpl {
         // Fill with real fields
     });
 
     let receiver = Box::new(DataLinkReceiverImpl {
-        // Fill with real fields
+        packets: VecDeque::new(),
     });
 
     Ok(super::Channel::Ethernet(sender, receiver))
@@ -55,9 +60,9 @@ struct DataLinkSenderImpl {
 impl DataLinkSender for DataLinkSenderImpl {
     fn build_and_send(
         &mut self,
-        num_packets: usize,
-        packet_size: usize,
-        func: &mut dyn FnMut(&mut [u8]),
+        _num_packets: usize,
+        _packet_size: usize,
+        _func: &mut dyn FnMut(&mut [u8]),
     ) -> Option<io::Result<()>> {
         // TODO: Build `num_packets` and send via ndisapi (sync or async)
         None
@@ -69,8 +74,6 @@ impl DataLinkSender for DataLinkSenderImpl {
         })
     }
 }
-
-use std::collections::VecDeque;
 
 struct DataLinkReceiverImpl {
     // TODO: Fields for adapter, buffers, queue, etc.
@@ -84,9 +87,48 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
     }
 }
 
-use super::NetworkInterface;
-
 pub fn interfaces() -> Vec<NetworkInterface> {
-    // TODO: Use ndisapi to list adapters, e.g. via `get_interface_names()` or related
-    vec![]
+    const OID_802_3_CURRENT_ADDRESS: u32 = 0x01010102;
+    IphlpNetworkAdapterInfo
+    let mut interfaces = Vec::new();
+
+    let driver = match Ndisapi::new("NDISRD") {
+        Ok(d) => d,
+        Err(_) => return interfaces, // No driver? Return empty
+    };
+
+    let adapters = match driver.get_tcpip_bound_adapters_info() {
+        Ok(adapters) => adapters,
+        Err(_) => return interfaces,
+    };
+
+    for adapter in adapters {
+        let name = adapter.get_name().to_string();
+        let description =
+            Ndisapi::get_friendly_adapter_name(adapter.get_name()).unwrap_or_else(|_| name.clone());
+
+        let index = adapter.get_handle().0 as u32; // this is a HANDLE, but we can treat as u32 for indexing
+
+        // Get MAC
+        let mac: Option<MacAddr> = MacAddress::from_slice(adapter.get_hw_address())
+    .map(|m| {
+        let bytes = m.get();
+        MacAddr(bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5])
+    });
+
+
+        // IP address info not directly available from `ndisapi` — leave empty for now
+        let ips = vec![];
+
+        interfaces.push(NetworkInterface {
+            name,
+            description,
+            index,
+            mac,
+            ips,
+            flags: 0,
+        });
+    }
+
+    interfaces
 }
