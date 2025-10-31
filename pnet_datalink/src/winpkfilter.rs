@@ -94,12 +94,19 @@ pub fn interfaces() -> Vec<NetworkInterface> {
 
     let driver = match Ndisapi::new("NDISRD") {
         Ok(d) => d,
-        Err(_) => return interfaces, // No driver? Return empty
+        Err(e) => {
+            eprintln!("Failed to open WinPkFilter driver: {:?}", e);
+            eprintln!("Make sure the Windows Packet Filter driver is installed and running.");
+            return Vec::new();
+        }
     };
 
     let adapters = match driver.get_tcpip_bound_adapters_info() {
         Ok(adapters) => adapters,
-        Err(_) => return interfaces,
+        Err(e) => {
+            eprintln!("Failed to get adapter information: {:?}", e);
+            return Vec::new();
+        }
     };
 
     for adapter in adapters {
