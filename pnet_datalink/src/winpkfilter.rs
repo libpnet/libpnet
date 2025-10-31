@@ -1,10 +1,12 @@
 use super::{DataLinkReceiver, DataLinkSender, NetworkInterface};
 
-use ndisapi::{IphlpNetworkAdapterInfo, MacAddress, Ndisapi, PacketOidData};
+use ndisapi::{MacAddress, Ndisapi, IphlpNetworkAdapterInfo};
 use pnet_base::MacAddr;
+use ipnetwork::IpNetwork;
 
 use std::collections::VecDeque;
 use std::io;
+use std::net::IpAddr;
 
 /// The WinpkFilter's specific configuration.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -88,8 +90,6 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
 }
 
 pub fn interfaces() -> Vec<NetworkInterface> {
-    const OID_802_3_CURRENT_ADDRESS: u32 = 0x01010102;
-    IphlpNetworkAdapterInfo
     let mut interfaces = Vec::new();
 
     let driver = match Ndisapi::new("NDISRD") {
@@ -116,9 +116,25 @@ pub fn interfaces() -> Vec<NetworkInterface> {
         MacAddr(bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5])
     });
 
-
-        // IP address info not directly available from `ndisapi` — leave empty for now
-        let ips = vec![];
+        // Get IP addresses using ndisapi-rs IP Helper functionality
+        let ips: Vec<IpNetwork> = if let Some(mac_addr) = MacAddress::from_slice(adapter.get_hw_address()) {
+            if let Some(ip_info) = IphlpNetworkAdapterInfo::get_connection_by_hw_address(&mac_addr) {
+                ip_info.unicast_address_list()
+                    .iter()
+                    .filter_map(|ip_addr| {
+                        // Convert IpAddr to IpNetwork with default prefix lengths
+                        match ip_addr {
+                            IpAddr::V4(_) => IpNetwork::new(*ip_addr, 24).ok(), // Default /24 for IPv4
+                            IpAddr::V6(_) => IpNetwork::new(*ip_addr, 64).ok(), // Default /64 for IPv6
+                        }
+                    })
+                    .collect()
+            } else {
+                vec![]
+            }
+        } else {
+            vec![]
+        };
 
         interfaces.push(NetworkInterface {
             name,
