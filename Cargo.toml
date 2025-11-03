@@ -56,6 +56,18 @@ required-features = ["std"]
 name = "transport_echo_server"
 required-features = ["std"]
 
+[[example]]
+name = "send_packets"
+required-features = ["std"]
+
+[[example]]
+name = "receive_packets"
+required-features = ["std"]
+
+[[example]]
+name = "listen"
+required-features = ["std"]
+
 [[bench]]
 name = "rs_sender"
 required-features = ["std"]
