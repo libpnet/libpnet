@@ -6,4 +6,5 @@ extend-ignore-identifiers-re = [
     "SunNd",
     "Ect",
     "ECT",
+    "uable",
 ]
