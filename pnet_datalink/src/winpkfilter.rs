@@ -79,6 +79,7 @@ impl DataLinkSender for DataLinkSenderImpl {
 
 struct DataLinkReceiverImpl {
     // TODO: Fields for adapter, buffers, queue, etc.
+    #[allow(dead_code)]
     packets: VecDeque<(usize, usize)>,
 }
 
