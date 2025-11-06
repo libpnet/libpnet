@@ -1,9 +1,10 @@
 use super::{DataLinkReceiver, DataLinkSender, NetworkInterface};
 
-use ndisapi::{MacAddress, Ndisapi, IphlpNetworkAdapterInfo, EthRequest, IntermediateBuffer};
+use ndisapi::{MacAddress, Ndisapi, IphlpNetworkAdapterInfo, EthRequest, EthRequestMut, IntermediateBuffer, FilterFlags};
 use pnet_base::MacAddr;
 use ipnetwork::IpNetwork;
-use windows::Win32::Foundation::HANDLE;
+use windows::Win32::Foundation::{HANDLE, WAIT_OBJECT_0, WAIT_TIMEOUT};
+use windows::Win32::System::Threading::{CreateEventW, WaitForSingleObject};
 
 use std::collections::VecDeque;
 use std::io;
@@ -56,6 +57,23 @@ pub fn channel(
 
     let adapter_handle = adapter.get_handle();
 
+    // Create event for packet notifications
+    let event = unsafe {
+        CreateEventW(None, true, false, None).map_err(|e| {
+            io::Error::new(io::ErrorKind::Other, format!("Failed to create event: {}", e))
+        })?
+    };
+
+    // Set the event for packet notifications on this adapter
+    driver.set_packet_event(adapter_handle, event).map_err(|e| {
+        io::Error::new(io::ErrorKind::Other, format!("Failed to set packet event: {}", e))
+    })?;
+
+    // Set adapter to listen mode to capture packets without intercepting them
+    driver.set_adapter_mode(adapter_handle, FilterFlags::MSTCP_FLAG_SENT_RECEIVE_LISTEN).map_err(|e| {
+        io::Error::new(io::ErrorKind::Other, format!("Failed to set adapter mode: {}", e))
+    })?;
+
     let sender = Box::new(DataLinkSenderImpl {
         driver: driver.clone(),
         adapter_handle,
@@ -63,7 +81,12 @@ pub fn channel(
     });
 
     let receiver = Box::new(DataLinkReceiverImpl {
+        driver,
+        adapter_handle,
+        event,
+        read_buffer: IntermediateBuffer::default(),
         packets: VecDeque::new(),
+        packet_data: vec![0u8; config.read_buffer_size],
     });
 
     Ok(super::Channel::Ethernet(sender, receiver))
@@ -132,15 +155,69 @@ impl DataLinkSender for DataLinkSenderImpl {
 }
 
 struct DataLinkReceiverImpl {
-    // TODO: Fields for adapter, buffers, queue, etc.
-    #[allow(dead_code)]
-    packets: VecDeque<(usize, usize)>,
+    driver: Ndisapi,
+    adapter_handle: HANDLE,
+    event: HANDLE,
+    read_buffer: IntermediateBuffer,
+    packets: VecDeque<Vec<u8>>,
+    packet_data: Vec<u8>,
 }
 
 impl DataLinkReceiver for DataLinkReceiverImpl {
     fn next(&mut self) -> io::Result<&[u8]> {
-        // TODO: Use `read_packet` or similar from ndisapi, push into `self.packets`
-        Err(io::Error::new(io::ErrorKind::Other, "not implemented"))
+        // If we have buffered packets, return the next one
+        if let Some(packet) = self.packets.pop_front() {
+            self.packet_data = packet;
+            return Ok(&self.packet_data);
+        }
+
+        // Wait for packets to arrive
+        loop {
+            // Wait for the event to signal that packets are available
+            let wait_result = unsafe { WaitForSingleObject(self.event, 100) }; // 100ms timeout
+            
+            if wait_result != WAIT_OBJECT_0 && wait_result != WAIT_TIMEOUT {
+                return Err(io::Error::new(
+                    io::ErrorKind::Other, 
+                    "Event wait failed"
+                ));
+            }
+
+            // Try to read packets while they're available
+            loop {
+                // Create a read request
+                let mut read_request = EthRequestMut::new(self.adapter_handle);
+                read_request.set_packet(&mut self.read_buffer);
+
+                // Try to read a packet
+                match self.driver.read_packet(&mut read_request) {
+                    Ok(_) => {
+                        // Successfully read a packet, store it in our buffer
+                        let packet_len = self.read_buffer.get_length() as usize;
+                        if packet_len > 0 {
+                            let packet_data = self.read_buffer.get_data().to_vec();
+                            self.packets.push_back(packet_data);
+                            // In listen mode, original packets automatically continue through the stack
+                        }
+                    }
+                    Err(_) => {
+                        // No more packets available, break from read loop
+                        break;
+                    }
+                }
+            }
+
+            // If we have packets after reading, return the first one
+            if let Some(packet) = self.packets.pop_front() {
+                self.packet_data = packet;
+                return Ok(&self.packet_data);
+            }
+
+            // If no packets available and this was a timeout, continue waiting
+            if wait_result == WAIT_TIMEOUT {
+                continue;
+            }
+        }
     }
 }
 
@@ -209,3 +286,6 @@ pub fn interfaces() -> Vec<NetworkInterface> {
 
 unsafe impl Send for DataLinkSenderImpl {}
 unsafe impl Sync for DataLinkSenderImpl {}
+
+unsafe impl Send for DataLinkReceiverImpl {}
+unsafe impl Sync for DataLinkReceiverImpl {}
