@@ -1,4 +1,4 @@
-// Copyright (c) 2024 
+// Copyright (c) 2024
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -7,7 +7,6 @@
 // except according to those terms.
 
 /// Minimal packet receiver that captures UDP and ICMP packets and prints metadata in real time
-
 extern crate pnet;
 extern crate pnet_datalink;
 
@@ -24,7 +23,7 @@ use std::process;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    
+
     if args.len() < 2 {
         println!("Usage: {} <interface_name>", args[0]);
         println!("\nAvailable interfaces:");
@@ -102,22 +101,29 @@ fn handle_ethernet_packet(ethernet: &EthernetPacket) {
 fn handle_ipv4_packet(ipv4: &Ipv4Packet) {
     let src_ip = ipv4.get_source();
     let dst_ip = ipv4.get_destination();
-    
+
     match ipv4.get_next_level_protocol() {
         IpNextHeaderProtocols::Udp => {
             if let Some(udp_packet) = UdpPacket::new(ipv4.payload()) {
-                println!("UDP: {}:{} -> {}:{} [len:{}]",
-                    src_ip, udp_packet.get_source(),
-                    dst_ip, udp_packet.get_destination(),
-                    udp_packet.get_length());
+                println!(
+                    "UDP: {}:{} -> {}:{} [len:{}]",
+                    src_ip,
+                    udp_packet.get_source(),
+                    dst_ip,
+                    udp_packet.get_destination(),
+                    udp_packet.get_length()
+                );
             }
         }
         IpNextHeaderProtocols::Icmp => {
             if let Some(icmp_packet) = IcmpPacket::new(ipv4.payload()) {
-                println!("ICMP: {} -> {} [type:{:?} code:{:?}]",
-                    src_ip, dst_ip,
+                println!(
+                    "ICMP: {} -> {} [type:{:?} code:{:?}]",
+                    src_ip,
+                    dst_ip,
                     icmp_packet.get_icmp_type(),
-                    icmp_packet.get_icmp_code());
+                    icmp_packet.get_icmp_code()
+                );
             }
         }
         _ => {} // Ignore other protocols

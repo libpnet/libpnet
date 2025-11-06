@@ -1,4 +1,4 @@
-// Copyright (c) 2024 
+// Copyright (c) 2024
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -6,9 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-/// This example demonstrates receiving packets at both the datalink layer (Layer 2) 
+/// This example demonstrates receiving packets at both the datalink layer (Layer 2)
 /// and transport layer (Layer 4). It shows how to capture and parse different types of packets.
-
 extern crate pnet;
 extern crate pnet_datalink;
 
@@ -25,7 +24,7 @@ use pnet::packet::udp::UdpPacket;
 use pnet::packet::Packet;
 use pnet::transport::TransportChannelType::Layer4;
 use pnet::transport::TransportProtocol::Ipv4;
-use pnet::transport::{transport_channel, icmp_packet_iter, tcp_packet_iter, udp_packet_iter};
+use pnet::transport::{icmp_packet_iter, tcp_packet_iter, transport_channel, udp_packet_iter};
 use std::env;
 use std::process;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -35,7 +34,7 @@ use std::time::{Duration, Instant};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    
+
     if args.len() < 2 {
         println!("Usage: {} <interface_name> [mode]", args[0]);
         println!("Modes: layer2, layer4, both (default: both)");
@@ -69,7 +68,7 @@ fn main() {
 
     // Shared counters for statistics
     let stats = Arc::new(PacketStats::new());
-    
+
     match mode {
         "layer2" => {
             receive_layer2_packets(&interface, stats);
@@ -88,7 +87,7 @@ fn main() {
                 receive_layer2_packets(&interface_l2, stats_l2);
             });
 
-            // Start Layer 4 receiver in a separate thread  
+            // Start Layer 4 receiver in a separate thread
             let l4_handle = thread::spawn(move || {
                 receive_layer4_packets(&interface_l4, stats_l4);
             });
@@ -145,37 +144,90 @@ impl PacketStats {
         }
     }
 
-    fn increment_ethernet(&self) { self.ethernet.fetch_add(1, Ordering::Relaxed); }
-    fn increment_arp(&self) { self.arp.fetch_add(1, Ordering::Relaxed); }
-    fn increment_ipv4(&self) { self.ipv4.fetch_add(1, Ordering::Relaxed); }
-    fn increment_ipv6(&self) { self.ipv6.fetch_add(1, Ordering::Relaxed); }
-    fn increment_icmp(&self) { self.icmp.fetch_add(1, Ordering::Relaxed); }
-    fn increment_tcp(&self) { self.tcp.fetch_add(1, Ordering::Relaxed); }
-    fn increment_udp(&self) { self.udp.fetch_add(1, Ordering::Relaxed); }
-    fn increment_other(&self) { self.other.fetch_add(1, Ordering::Relaxed); }
-    fn increment_total(&self) { self.total.fetch_add(1, Ordering::Relaxed); }
+    fn increment_ethernet(&self) {
+        self.ethernet.fetch_add(1, Ordering::Relaxed);
+    }
+    fn increment_arp(&self) {
+        self.arp.fetch_add(1, Ordering::Relaxed);
+    }
+    fn increment_ipv4(&self) {
+        self.ipv4.fetch_add(1, Ordering::Relaxed);
+    }
+    fn increment_ipv6(&self) {
+        self.ipv6.fetch_add(1, Ordering::Relaxed);
+    }
+    fn increment_icmp(&self) {
+        self.icmp.fetch_add(1, Ordering::Relaxed);
+    }
+    fn increment_tcp(&self) {
+        self.tcp.fetch_add(1, Ordering::Relaxed);
+    }
+    fn increment_udp(&self) {
+        self.udp.fetch_add(1, Ordering::Relaxed);
+    }
+    fn increment_other(&self) {
+        self.other.fetch_add(1, Ordering::Relaxed);
+    }
+    fn increment_total(&self) {
+        self.total.fetch_add(1, Ordering::Relaxed);
+    }
 
-    fn get_ethernet(&self) -> usize { self.ethernet.load(Ordering::Relaxed) }
-    fn get_arp(&self) -> usize { self.arp.load(Ordering::Relaxed) }
-    fn get_ipv4(&self) -> usize { self.ipv4.load(Ordering::Relaxed) }
-    fn get_ipv6(&self) -> usize { self.ipv6.load(Ordering::Relaxed) }
-    fn get_icmp(&self) -> usize { self.icmp.load(Ordering::Relaxed) }
-    fn get_tcp(&self) -> usize { self.tcp.load(Ordering::Relaxed) }
-    fn get_udp(&self) -> usize { self.udp.load(Ordering::Relaxed) }
-    fn get_other(&self) -> usize { self.other.load(Ordering::Relaxed) }
-    fn get_total(&self) -> usize { self.total.load(Ordering::Relaxed) }
+    fn get_ethernet(&self) -> usize {
+        self.ethernet.load(Ordering::Relaxed)
+    }
+    fn get_arp(&self) -> usize {
+        self.arp.load(Ordering::Relaxed)
+    }
+    fn get_ipv4(&self) -> usize {
+        self.ipv4.load(Ordering::Relaxed)
+    }
+    fn get_ipv6(&self) -> usize {
+        self.ipv6.load(Ordering::Relaxed)
+    }
+    fn get_icmp(&self) -> usize {
+        self.icmp.load(Ordering::Relaxed)
+    }
+    fn get_tcp(&self) -> usize {
+        self.tcp.load(Ordering::Relaxed)
+    }
+    fn get_udp(&self) -> usize {
+        self.udp.load(Ordering::Relaxed)
+    }
+    fn get_other(&self) -> usize {
+        self.other.load(Ordering::Relaxed)
+    }
+    fn get_total(&self) -> usize {
+        self.total.load(Ordering::Relaxed)
+    }
 
     fn print_stats(&self) {
         let elapsed = self.start_time.elapsed().as_secs_f64();
         let total = self.get_total();
-        let rate = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
+        let rate = if elapsed > 0.0 {
+            total as f64 / elapsed
+        } else {
+            0.0
+        };
 
         println!("\n=== Packet Statistics ===");
-        println!("Runtime: {:.1}s | Total: {} packets ({:.1} pps)", elapsed, total, rate);
-        println!("Ethernet: {} | ARP: {} | IPv4: {} | IPv6: {}", 
-                 self.get_ethernet(), self.get_arp(), self.get_ipv4(), self.get_ipv6());
-        println!("ICMP: {} | TCP: {} | UDP: {} | Other: {}", 
-                 self.get_icmp(), self.get_tcp(), self.get_udp(), self.get_other());
+        println!(
+            "Runtime: {:.1}s | Total: {} packets ({:.1} pps)",
+            elapsed, total, rate
+        );
+        println!(
+            "Ethernet: {} | ARP: {} | IPv4: {} | IPv6: {}",
+            self.get_ethernet(),
+            self.get_arp(),
+            self.get_ipv4(),
+            self.get_ipv6()
+        );
+        println!(
+            "ICMP: {} | TCP: {} | UDP: {} | Other: {}",
+            self.get_icmp(),
+            self.get_tcp(),
+            self.get_udp(),
+            self.get_other()
+        );
     }
 
     fn print_rate(&self, last_stats: &mut PacketStats) {
@@ -184,7 +236,7 @@ impl PacketStats {
         let rate = (current_total - last_total) as f64 / 5.0; // 5 second interval
 
         println!("Rate: {:.1} pps | Total: {} packets", rate, current_total);
-        
+
         // Update last stats
         last_stats.total.store(current_total, Ordering::Relaxed);
     }
@@ -193,7 +245,7 @@ impl PacketStats {
 /// Demonstrates receiving packets at the datalink layer (Layer 2)
 fn receive_layer2_packets(interface: &NetworkInterface, stats: Arc<PacketStats>) {
     println!("--- Layer 2 (Datalink) Packet Reception ---");
-    
+
     let config = Config {
         write_buffer_size: 4096,
         read_buffer_size: 4096,
@@ -229,7 +281,7 @@ fn receive_layer2_packets(interface: &NetworkInterface, stats: Arc<PacketStats>)
                 if let Some(ethernet_packet) = EthernetPacket::new(packet) {
                     stats.increment_ethernet();
                     parse_ethernet_packet(&ethernet_packet, &stats);
-                    
+
                     // Print first few packets for demonstration
                     if packet_count <= 10 {
                         print_ethernet_packet_info(&ethernet_packet, packet_count);
@@ -324,39 +376,53 @@ fn parse_ipv6_packet(ipv6: &Ipv6Packet, stats: &Arc<PacketStats>) {
 /// Print detailed information about an Ethernet packet
 fn print_ethernet_packet_info(ethernet: &EthernetPacket, count: usize) {
     println!("\n--- Packet #{} ---", count);
-    println!("Ethernet: {} -> {} (Type: {:?})", 
-             ethernet.get_source(),
-             ethernet.get_destination(), 
-             ethernet.get_ethertype());
+    println!(
+        "Ethernet: {} -> {} (Type: {:?})",
+        ethernet.get_source(),
+        ethernet.get_destination(),
+        ethernet.get_ethertype()
+    );
 
     match ethernet.get_ethertype() {
         EtherTypes::Ipv4 => {
             if let Some(ipv4_packet) = Ipv4Packet::new(ethernet.payload()) {
-                println!("  IPv4: {} -> {} (Proto: {:?})", 
-                         ipv4_packet.get_source(),
-                         ipv4_packet.get_destination(),
-                         ipv4_packet.get_next_level_protocol());
+                println!(
+                    "  IPv4: {} -> {} (Proto: {:?})",
+                    ipv4_packet.get_source(),
+                    ipv4_packet.get_destination(),
+                    ipv4_packet.get_next_level_protocol()
+                );
 
                 match ipv4_packet.get_next_level_protocol() {
                     IpNextHeaderProtocols::Tcp => {
                         if let Some(tcp_packet) = TcpPacket::new(ipv4_packet.payload()) {
-                            println!("    TCP: {}:{} -> {}:{}", 
-                                     ipv4_packet.get_source(), tcp_packet.get_source(),
-                                     ipv4_packet.get_destination(), tcp_packet.get_destination());
+                            println!(
+                                "    TCP: {}:{} -> {}:{}",
+                                ipv4_packet.get_source(),
+                                tcp_packet.get_source(),
+                                ipv4_packet.get_destination(),
+                                tcp_packet.get_destination()
+                            );
                         }
                     }
                     IpNextHeaderProtocols::Udp => {
                         if let Some(udp_packet) = UdpPacket::new(ipv4_packet.payload()) {
-                            println!("    UDP: {}:{} -> {}:{}", 
-                                     ipv4_packet.get_source(), udp_packet.get_source(),
-                                     ipv4_packet.get_destination(), udp_packet.get_destination());
+                            println!(
+                                "    UDP: {}:{} -> {}:{}",
+                                ipv4_packet.get_source(),
+                                udp_packet.get_source(),
+                                ipv4_packet.get_destination(),
+                                udp_packet.get_destination()
+                            );
                         }
                     }
                     IpNextHeaderProtocols::Icmp => {
                         if let Some(icmp_packet) = IcmpPacket::new(ipv4_packet.payload()) {
-                            println!("    ICMP: Type {:?}, Code {:?}", 
-                                     icmp_packet.get_icmp_type(),
-                                     icmp_packet.get_icmp_code());
+                            println!(
+                                "    ICMP: Type {:?}, Code {:?}",
+                                icmp_packet.get_icmp_type(),
+                                icmp_packet.get_icmp_code()
+                            );
                         }
                     }
                     _ => {}
@@ -365,10 +431,12 @@ fn print_ethernet_packet_info(ethernet: &EthernetPacket, count: usize) {
         }
         EtherTypes::Arp => {
             if let Some(arp_packet) = ArpPacket::new(ethernet.payload()) {
-                println!("  ARP: {:?} {} -> {}", 
-                         arp_packet.get_operation(),
-                         arp_packet.get_sender_proto_addr(),
-                         arp_packet.get_target_proto_addr());
+                println!(
+                    "  ARP: {:?} {} -> {}",
+                    arp_packet.get_operation(),
+                    arp_packet.get_sender_proto_addr(),
+                    arp_packet.get_target_proto_addr()
+                );
             }
         }
         _ => {}
@@ -378,7 +446,7 @@ fn print_ethernet_packet_info(ethernet: &EthernetPacket, count: usize) {
 /// Demonstrates receiving packets at the transport layer (Layer 4)
 fn receive_layer4_packets(_interface: &NetworkInterface, stats: Arc<PacketStats>) {
     println!("--- Layer 4 (Transport) Packet Reception ---");
-    
+
     // Start multiple transport receivers for different protocols
     let stats_icmp = Arc::clone(&stats);
     let stats_tcp = Arc::clone(&stats);
@@ -394,7 +462,7 @@ fn receive_layer4_packets(_interface: &NetworkInterface, stats: Arc<PacketStats>
         receive_tcp_packets(stats_tcp);
     });
 
-    // UDP receiver  
+    // UDP receiver
     let udp_handle = thread::spawn(move || {
         receive_udp_packets(stats_udp);
     });
@@ -408,7 +476,7 @@ fn receive_layer4_packets(_interface: &NetworkInterface, stats: Arc<PacketStats>
 /// Receive ICMP packets using transport layer API
 fn receive_icmp_packets(stats: Arc<PacketStats>) {
     let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Icmp));
-    
+
     let (_tx, mut rx) = match transport_channel(4096, protocol) {
         Ok((tx, rx)) => (tx, rx),
         Err(e) => {
@@ -419,22 +487,24 @@ fn receive_icmp_packets(stats: Arc<PacketStats>) {
 
     let mut iter = icmp_packet_iter(&mut rx);
     let mut count = 0;
-    
+
     println!("ICMP transport receiver started");
-    
+
     loop {
         match iter.next() {
             Ok((packet, addr)) => {
                 count += 1;
                 stats.increment_icmp();
                 stats.increment_total();
-                
+
                 if count <= 5 {
-                    println!("ICMP #{}: Type {:?}, Code {:?} from {}", 
-                             count,
-                             packet.get_icmp_type(),
-                             packet.get_icmp_code(),
-                             addr);
+                    println!(
+                        "ICMP #{}: Type {:?}, Code {:?} from {}",
+                        count,
+                        packet.get_icmp_type(),
+                        packet.get_icmp_code(),
+                        addr
+                    );
                 }
             }
             Err(e) => {
@@ -448,7 +518,7 @@ fn receive_icmp_packets(stats: Arc<PacketStats>) {
 /// Receive TCP packets using transport layer API
 fn receive_tcp_packets(stats: Arc<PacketStats>) {
     let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Tcp));
-    
+
     let (_tx, mut rx) = match transport_channel(4096, protocol) {
         Ok((tx, rx)) => (tx, rx),
         Err(e) => {
@@ -459,24 +529,28 @@ fn receive_tcp_packets(stats: Arc<PacketStats>) {
 
     let mut iter = tcp_packet_iter(&mut rx);
     let mut count = 0;
-    
+
     println!("TCP transport receiver started");
-    
+
     loop {
         match iter.next() {
             Ok((packet, addr)) => {
                 count += 1;
                 stats.increment_tcp();
                 stats.increment_total();
-                
+
                 if count <= 5 {
-                    println!("TCP #{}: {}:{} -> {}:{} [Seq: {}, Ack: {}] from {}", 
-                             count,
-                             addr, packet.get_source(),
-                             addr, packet.get_destination(),
-                             packet.get_sequence(),
-                             packet.get_acknowledgement(),
-                             addr);
+                    println!(
+                        "TCP #{}: {}:{} -> {}:{} [Seq: {}, Ack: {}] from {}",
+                        count,
+                        addr,
+                        packet.get_source(),
+                        addr,
+                        packet.get_destination(),
+                        packet.get_sequence(),
+                        packet.get_acknowledgement(),
+                        addr
+                    );
                 }
             }
             Err(e) => {
@@ -490,7 +564,7 @@ fn receive_tcp_packets(stats: Arc<PacketStats>) {
 /// Receive UDP packets using transport layer API
 fn receive_udp_packets(stats: Arc<PacketStats>) {
     let protocol = Layer4(Ipv4(IpNextHeaderProtocols::Udp));
-    
+
     let (_tx, mut rx) = match transport_channel(4096, protocol) {
         Ok((tx, rx)) => (tx, rx),
         Err(e) => {
@@ -501,23 +575,27 @@ fn receive_udp_packets(stats: Arc<PacketStats>) {
 
     let mut iter = udp_packet_iter(&mut rx);
     let mut count = 0;
-    
+
     println!("UDP transport receiver started");
-    
+
     loop {
         match iter.next() {
             Ok((packet, addr)) => {
                 count += 1;
                 stats.increment_udp();
                 stats.increment_total();
-                
+
                 if count <= 5 {
-                    println!("UDP #{}: {}:{} -> {}:{} [Len: {}] from {}", 
-                             count,
-                             addr, packet.get_source(),
-                             addr, packet.get_destination(),
-                             packet.get_length(),
-                             addr);
+                    println!(
+                        "UDP #{}: {}:{} -> {}:{} [Len: {}] from {}",
+                        count,
+                        addr,
+                        packet.get_source(),
+                        addr,
+                        packet.get_destination(),
+                        packet.get_length(),
+                        addr
+                    );
                 }
             }
             Err(e) => {
