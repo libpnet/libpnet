@@ -22,5 +22,6 @@ pub mod bpf;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod linux;
 
-#[cfg(windows)]
+#[cfg(all(windows, feature = "winpcap"))]
 pub mod winpcap;
+

@@ -331,7 +331,7 @@ macro_rules! transport_channel_iterator {
         #[doc = "Return a packet iterator with packets of type `"]
         #[doc = $tyname]
         #[doc = "` for some transport receiver."]
-        pub fn $func(tr: &mut TransportReceiver) -> $iter {
+        pub fn $func(tr: &mut TransportReceiver) -> $iter<'_> {
             $iter { tr: tr }
         }
 
@@ -339,7 +339,7 @@ macro_rules! transport_channel_iterator {
             #[doc = "Get the next (`"]
             #[doc = $tyname ]
             #[doc = "`, `IpAddr`) pair for the given channel."]
-            pub fn next(&mut self) -> io::Result<($ty, IpAddr)> {
+            pub fn next(&mut self) -> io::Result<($ty<'_>, IpAddr)> {
                 let mut caddr: pnet_sys::SockAddrStorage = unsafe { mem::zeroed() };
                 let res =
                     pnet_sys::recv_from(self.tr.socket.fd, &mut self.tr.buffer[..], &mut caddr);

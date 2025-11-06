@@ -30,12 +30,20 @@ pub use pnet_base::{MacAddr, ParseMacAddrErr};
 
 mod bindings;
 
-#[cfg(windows)]
+#[cfg(all(windows, feature = "winpcap"))]
 #[path = "winpcap.rs"]
 mod backend;
 
-#[cfg(windows)]
+
+#[cfg(all(windows, feature = "winpcap"))]
 pub mod winpcap;
+
+#[cfg(all(windows, feature = "winpkfilter"))]
+#[path = "winpkfilter.rs"]
+mod backend;
+
+#[cfg(all(windows, feature = "winpkfilter"))]
+pub mod winpkfilter;
 
 #[cfg(all(
     not(feature = "netmap"),

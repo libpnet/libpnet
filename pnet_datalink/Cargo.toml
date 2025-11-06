@@ -10,11 +10,16 @@ readme = "../README.md"
 keywords = ["networking", "datalink", "ethernet", "raw"]
 categories = ["network-programming"]
 edition = "2021"
+build = "build.rs"
 
 [features]
 netmap = []
 std = ["pnet_base/std"]
-default = ["std"]
+default = ["std", "winpcap"]
+
+winpcap = []
+winpkfilter = [ "ndisapi", "windows" ]
+
 
 [dependencies]
 libc = "0.2.147"
@@ -23,6 +28,8 @@ pnet_base = { path = "../pnet_base", version = "0.35.0", default-features = fals
 pnet_sys = { path = "../pnet_sys", version = "0.35.0" }
 
 pcap = { version = "2.0.0", optional = true }
+ndisapi = { git = "https://github.com/wiresock/ndisapi-rs.git", rev = "5431fd35c4cec8d4d18072166e7b8e2adb6041a3", optional = true }
+windows = { version = "0.54.0", features = ["Win32_Foundation", "Win32_System_Threading"], optional = true }
 netmap_sys = { version = "0.1.4", optional = true, features = ["netmap_with_libs"] }
 serde = { version = "1.0.171", optional = true, default-features = false, features = [ "derive" ] }
 
