@@ -6,7 +6,6 @@ use ipnetwork::IpNetwork;
 
 use std::collections::VecDeque;
 use std::io;
-use std::net::IpAddr;
 
 /// The WinpkFilter's specific configuration.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -127,14 +126,10 @@ pub fn interfaces() -> Vec<NetworkInterface> {
         // Get IP addresses using ndisapi-rs IP Helper functionality
         let ips: Vec<IpNetwork> = if let Some(mac_addr) = MacAddress::from_slice(adapter.get_hw_address()) {
             if let Some(ip_info) = IphlpNetworkAdapterInfo::get_connection_by_hw_address(&mac_addr) {
-                ip_info.unicast_address_list()
+                ip_info.unicast_address_list_with_prefix()
                     .iter()
-                    .filter_map(|ip_addr| {
-                        // Convert IpAddr to IpNetwork with default prefix lengths
-                        match ip_addr {
-                            IpAddr::V4(_) => IpNetwork::new(*ip_addr, 24).ok(), // Default /24 for IPv4
-                            IpAddr::V6(_) => IpNetwork::new(*ip_addr, 64).ok(), // Default /64 for IPv6
-                        }
+                    .filter_map(|(ip_addr, prefix_len)| {
+                        IpNetwork::new(*ip_addr, *prefix_len).ok()
                     })
                     .collect()
             } else {
