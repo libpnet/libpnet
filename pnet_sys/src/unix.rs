@@ -26,20 +26,6 @@ pub mod public {
     pub type InAddr = libc::in_addr;
     pub type In6Addr = libc::in6_addr;
 
-    #[cfg(not(any(
-        target_os = "macos",
-        target_os = "ios",
-        target_os = "tvos",
-        target_os = "netbsd"
-    )))]
-    pub type TvUsecType = libc::c_long;
-    #[cfg(any(
-        target_os = "macos",
-        target_os = "ios",
-        target_os = "tvos",
-        target_os = "netbsd"
-    ))]
-    pub type TvUsecType = libc::c_int;
     #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
     pub type InAddrType = libc::c_uint;
     #[cfg(any(target_os = "illumos", target_os = "solaris"))]
@@ -106,7 +92,7 @@ pub mod public {
     pub fn duration_to_timeval(dur: Duration) -> libc::timeval {
         libc::timeval {
             tv_sec: dur.as_secs() as libc::time_t,
-            tv_usec: dur.subsec_micros() as TvUsecType,
+            tv_usec: dur.subsec_micros() as libc::suseconds_t,
         }
     }
 
@@ -119,7 +105,7 @@ pub mod public {
     pub fn duration_to_timespec(dur: Duration) -> libc::timespec {
         libc::timespec {
             tv_sec: dur.as_secs() as libc::time_t,
-            tv_nsec: (dur.subsec_nanos() as TvUsecType).into(),
+            tv_nsec: (dur.subsec_nanos() as libc::suseconds_t).into(),
         }
     }
 
