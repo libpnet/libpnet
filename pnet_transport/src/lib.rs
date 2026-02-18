@@ -331,7 +331,7 @@ macro_rules! transport_channel_iterator {
         #[doc = "Return a packet iterator with packets of type `"]
         #[doc = $tyname]
         #[doc = "` for some transport receiver."]
-        pub fn $func(tr: &mut TransportReceiver) -> $iter {
+        pub fn $func(tr: &mut TransportReceiver) -> $iter<'_> {
             $iter { tr: tr }
         }
 
@@ -339,7 +339,7 @@ macro_rules! transport_channel_iterator {
             #[doc = "Get the next (`"]
             #[doc = $tyname ]
             #[doc = "`, `IpAddr`) pair for the given channel."]
-            pub fn next(&mut self) -> io::Result<($ty, IpAddr)> {
+            pub fn next(&mut self) -> io::Result<($ty<'_>, IpAddr)> {
                 let mut caddr: pnet_sys::SockAddrStorage = unsafe { mem::zeroed() };
                 let res =
                     pnet_sys::recv_from(self.tr.socket.fd, &mut self.tr.buffer[..], &mut caddr);
@@ -410,7 +410,7 @@ macro_rules! transport_channel_iterator {
             /// Wait only for a timespan of `t` to receive some data, then return. If no data was
             /// received, then `Ok(None)` is returned.
             #[cfg(unix)]
-            pub fn next_with_timeout(&mut self, t: Duration) -> io::Result<Option<($ty, IpAddr)>> {
+            pub fn next_with_timeout(&mut self, t: Duration) -> io::Result<Option<($ty<'_>, IpAddr)>> {
                 let socket_fd = self.tr.socket.fd;
 
                 let old_timeout = match pnet_sys::get_socket_receive_timeout(socket_fd) {
