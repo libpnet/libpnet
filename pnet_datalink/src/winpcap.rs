@@ -8,16 +8,24 @@
 
 //! Support for sending and receiving data link layer packets using the WinPcap library.
 
+use crate::bindings::winpcap::{inet_ntop, AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, SOCKET_ADDRESS};
+
 use super::bindings::{bpf, winpcap};
 use super::{DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
 
-use ipnetwork::{ip_mask_to_prefix, IpNetwork};
+use ipnetwork::IpNetwork;
+use pnet_sys::{AF_INET, AF_INET6};
+use winapi::shared::winerror::NO_ERROR;
+use winapi::shared::ws2def::SOCKADDR_IN;
+use winapi::shared::ws2ipdef::SOCKADDR_IN6;
+use winapi::um::winsock2;
 
 use std::cmp;
 use std::collections::VecDeque;
-use std::ffi::{CStr, CString};
+use std::ffi::{c_void, CStr, CString, OsString};
 use std::io;
 use std::mem;
+use std::os::windows::ffi::OsStringExt;
 use std::slice;
 use std::str::from_utf8_unchecked;
 use std::sync::Arc;
@@ -269,25 +277,40 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
 pub fn interfaces() -> Vec<NetworkInterface> {
     // use super::bindings::winpcap;
 
-    let mut adapters_size = 0u32;
+    let family = AF_UNSPEC as u32;
+    let flags = GAA_FLAG_INCLUDE_PREFIX;
+    let mut adapters_size: u32 = 0;
 
+    // Call once with adapters_size = 0 to get the actual adapters_size first
     unsafe {
-        let mut tmp: winpcap::IP_ADAPTER_INFO = mem::zeroed();
-        // FIXME [windows] This only gets IPv4 addresses - should use
-        // GetAdaptersAddresses
-        winpcap::GetAdaptersInfo(&mut tmp, &mut adapters_size);
+        winpcap::GetAdaptersAddresses(
+            family,
+            flags, 
+            std::ptr::null_mut(), 
+            std::ptr::null_mut(), 
+            &mut adapters_size);
     }
 
-    let mut vec_size = adapters_size / mem::size_of::<winpcap::IP_ADAPTER_INFO>() as u32;
-    if adapters_size % mem::size_of::<winpcap::IP_ADAPTER_INFO>() as u32 != 0 {
+    let mut vec_size = adapters_size / mem::size_of::<winpcap::IP_ADAPTER_ADDRESSES>() as u32;
+    if adapters_size % mem::size_of::<winpcap::IP_ADAPTER_ADDRESSES>() as u32 != 0 {
         vec_size += 1;
     }
     let mut adapters = Vec::with_capacity(vec_size as usize);
 
-    // FIXME [windows] Check return code
-    unsafe {
-        winpcap::GetAdaptersInfo(adapters.as_mut_ptr(), &mut adapters_size);
+    let dw_ret_val = unsafe {
+        winpcap::GetAdaptersAddresses(
+            family,
+            flags, 
+            std::ptr::null_mut(), 
+            adapters.as_mut_ptr(), 
+            &mut adapters_size)
+    };
+
+    if dw_ret_val != NO_ERROR {
+        panic!("Unable to call GetAdaptersAddresses (dw_ret_val = {dw_ret_val})");
     }
+
+    unsafe { adapters.set_len(vec_size as usize); }
 
     // Create a complete list of NetworkInterfaces for the machine
     let mut cursor = adapters.as_mut_ptr();
@@ -295,41 +318,41 @@ pub fn interfaces() -> Vec<NetworkInterface> {
     while !cursor.is_null() {
         let mac = unsafe {
             MacAddr(
-                (*cursor).Address[0],
-                (*cursor).Address[1],
-                (*cursor).Address[2],
-                (*cursor).Address[3],
-                (*cursor).Address[4],
-                (*cursor).Address[5],
+                (*cursor).PhysicalAddress[0],
+                (*cursor).PhysicalAddress[1],
+                (*cursor).PhysicalAddress[2],
+                (*cursor).PhysicalAddress[3],
+                (*cursor).PhysicalAddress[4],
+                (*cursor).PhysicalAddress[5],
             )
         };
-        let mut ip_cursor = unsafe { &mut (*cursor).IpAddressList as winpcap::PIP_ADDR_STRING };
+        let mut ip_cursor = unsafe { (*cursor).FirstUnicastAddress as winpcap::PIP_ADAPTER_UNICAST_ADDRESS };
         let mut ips = Vec::new();
         while !ip_cursor.is_null() {
-            if let Ok(ip_network) = parse_ip_network(ip_cursor) {
+            if let Ok(ip_network) = parse_ip_network(unsafe { &(*ip_cursor).Address }, unsafe { (*ip_cursor).OnLinkPrefixLength }) {
                 ips.push(ip_network);
             }
             ip_cursor = unsafe { (*ip_cursor).Next };
         }
 
         unsafe {
-            let name_str_ptr = (*cursor).AdapterName.as_ptr() as *const i8;
+            let name_str_ptr = (*cursor).AdapterName as *const i8;
 
             let bytes = CStr::from_ptr(name_str_ptr).to_bytes();
             let name_str = from_utf8_unchecked(bytes).to_owned();
-
-            let description_str_ptr = (*cursor).Description.as_ptr() as *const i8;
-            let bytes = CStr::from_ptr(description_str_ptr).to_bytes();
-            let description_str = from_utf8_unchecked(bytes).to_owned();
+            
+            let description_str_ptr = (*cursor).Description;
+            let len = libc::wcslen(description_str_ptr);
+            let bytes = &*std::ptr::slice_from_raw_parts(description_str_ptr, len);
+            let description_str = OsString::from_wide(bytes).into_string().unwrap();
 
             all_ifaces.push(NetworkInterface {
                 name: name_str,
                 description: description_str,
-                index: (*cursor).Index,
+                index: (*cursor).IfIndex,
                 mac: Some(mac),
                 ips: ips,
-                // flags: (*cursor).Type, // FIXME [windows]
-                flags: 0,
+                flags: (*cursor).Flags,
             });
 
             cursor = (*cursor).Next;
@@ -376,17 +399,28 @@ pub fn interfaces() -> Vec<NetworkInterface> {
     vec
 }
 
-fn parse_ip_network(ip_cursor: winpcap::PIP_ADDR_STRING) -> Result<IpNetwork, ()> {
-    let ip_str_ptr = unsafe { &(*ip_cursor) }.IpAddress.String.as_ptr() as *const i8;
-    let ip_bytes = unsafe { CStr::from_ptr(ip_str_ptr).to_bytes() };
-    let ip_str = unsafe { from_utf8_unchecked(ip_bytes).to_owned() };
-    let ip = ip_str.parse().map_err(|_| ())?;
+fn parse_ip_network(address: *const SOCKET_ADDRESS, prefix: u8) -> Result<IpNetwork, ()> {
+    let socket_address = unsafe { (*address).lpSockaddr };
+    match  unsafe { (*socket_address).sa_family } as i32 {
+        AF_INET => {
+            let ip_str_ptr = unsafe { winsock2::inet_ntoa((*(socket_address as *const SOCKADDR_IN)).sin_addr) }; 
+            let ip_bytes = unsafe { CStr::from_ptr(ip_str_ptr).to_bytes() };
+            let ip_str = unsafe { from_utf8_unchecked(ip_bytes).to_owned() };
+            let ip = ip_str.parse().map_err(|_| ())?;
+            
+            IpNetwork::new(ip, prefix).map_err(|_| ())
+        },
+        AF_INET6 => {
+            let mut ip_buf = [0; 46];
+            let sa = &unsafe { *(socket_address as *const SOCKADDR_IN6) }.sin6_addr;
+            let sa = sa as *const _;
+            unsafe { inet_ntop(AF_INET6, sa as *const c_void, ip_buf.as_mut_ptr(), 46) }; 
+            let ip_str = unsafe { CStr::from_ptr(ip_buf.as_ptr()) };
+            let ip_str = ip_str.to_str().map_err(|_| ())?;
+            let ip = ip_str.parse().map_err(|_| ())?;
 
-    let mask_str_ptr = unsafe { &(*ip_cursor) }.IpMask.String.as_ptr() as *const i8;
-    let mask_bytes = unsafe { CStr::from_ptr(mask_str_ptr).to_bytes() };
-    let mask_str = unsafe { from_utf8_unchecked(mask_bytes).to_owned() };
-    let mask = mask_str.parse().map_err(|_| ())?;
-
-    let prefix = ip_mask_to_prefix(mask).map_err(|_| ())?;
-    IpNetwork::new(ip, prefix).map_err(|_| ())
+            IpNetwork::new(ip, prefix).map_err(|_| ())
+        },
+        _ => unreachable!(),
+    }
 }

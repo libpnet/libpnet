@@ -12,11 +12,15 @@
 
 extern crate winapi;
 
+use std::ffi::c_void;
+
 use self::winapi::ctypes;
 use self::winapi::shared::{guiddef, minwindef};
 use self::winapi::um::{minwinbase, winnt};
 
+use libc::{c_char, size_t};
 use pnet_sys;
+use winapi::shared::minwindef::DWORD;
 
 #[repr(C)]
 pub struct _ADAPTER;
@@ -339,6 +343,11 @@ pub struct _IP_ADAPTER_ADDRESSES {
 
 pub type IP_ADAPTER_ADDRESSES = _IP_ADAPTER_ADDRESSES;
 pub type PIP_ADAPTER_ADDRESSES = *mut _IP_ADAPTER_ADDRESSES;
+pub type NETIO_STATUS = DWORD;
+pub type NETIOAPI_API = NETIO_STATUS;
+
+pub const AF_UNSPEC: u16 = 0;
+pub const GAA_FLAG_INCLUDE_PREFIX: ULONG = 0x10;
 
 #[link(name = "iphlpapi")]
 extern "system" {
@@ -352,6 +361,7 @@ extern "system" {
         AdapterAddresses: PIP_ADAPTER_ADDRESSES,
         SizePointer: PULONG,
     ) -> minwindef::DWORD;
+    pub fn ConvertLengthToIpv4Mask(MaskLength: ULONG, Mask: PULONG) -> NETIOAPI_API;
 }
 
 #[link(name = "Packet")]
@@ -379,4 +389,14 @@ extern "C" {
     pub fn PacketSetBuff(AdapterObject: LPADAPTER, dim: ctypes::c_int) -> winnt::BOOLEAN;
     pub fn PacketSetReadTimeout(AdapterObject: LPADAPTER, timeout: ctypes::c_int)
         -> winnt::BOOLEAN;
+}
+
+#[link(name = "Ws2_32")]
+extern "system" {
+    pub fn inet_ntop(
+        Family: i32,
+        pAddr: *const c_void,
+        pstringbuf: *mut c_char,
+        StringBufSize: size_t,
+    ) -> *mut c_char;
 }
