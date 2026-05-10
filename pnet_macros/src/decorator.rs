@@ -297,7 +297,7 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
         };
 
         match ty {
-            Type::Vector(_) => {
+            Type::Vector(ref inner_ty) => {
                 struct_length = if let Some(construct_with) = construct_with.as_ref() {
                     let mut inner_size = 0;
                     for arg in construct_with.iter() {
@@ -320,7 +320,16 @@ fn make_packet(s: &syn::DataStruct, name: String) -> Result<Packet, Error> {
 
                     Some(format!("_packet.{}.len() * {}", field_name, inner_size).to_owned())
                 } else {
-                    Some(format!("_packet.{}.len()", field_name).to_owned())
+                    match **inner_ty {
+                        Type::Misc(ref packet_name) => Some(
+                            format!(
+                                "_packet.{}.iter().map(|x| {}Packet::packet_size(x)).sum::<usize>()",
+                                field_name, packet_name
+                            )
+                            .to_owned(),
+                        ),
+                        _ => Some(format!("_packet.{}.len()", field_name).to_owned()),
+                    }
                 };
                 if !is_payload && packet_length.is_none() {
                     return Err(Error::new(
@@ -1426,7 +1435,7 @@ fn test_parse_ty() {
         parse_ty("u16"),
         Some((16, Endianness::Big, EndiannessSpecified::No))
     );
-    assert_eq!(parse_ty("uable"), None);
+    assert_eq!(parse_ty("uabc"), None);
     assert_eq!(parse_ty("u21re"), None);
     assert_eq!(parse_ty("i21be"), None);
 }

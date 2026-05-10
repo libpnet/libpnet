@@ -44,4 +44,17 @@ fn main() {
     let packet_option = packet.get_packet_option();
     assert_eq!(packet_option.first().unwrap().pineapple, 6);
     assert_eq!(packet_option.first().unwrap().length, 3);
+
+    let packet_with_payload = PacketWithPayload {
+        banana: 1,
+        length: 0,
+        header_length: 5,
+        packet_option: vec![PacketOption {
+            pineapple: 6,
+            length: 3,
+            payload: vec![1],
+        }],
+        payload: vec![9, 10],
+    };
+    assert_eq!(PacketWithPayloadPacket::packet_size(&packet_with_payload), 8);
 }

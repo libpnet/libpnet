@@ -17,7 +17,7 @@ pub struct PacketWithPayload2 {
     payload: Vec<u8>,
 }
 
-fn length_of_payload(_: &PacketWithPayload2Packet) -> usize { //~ ERROR cannot find type `PacketWithPayload2Packet` in this scope
+fn length_of_payload(_: &PacketWithPayload2) -> usize {
     // FIXME
     unimplemented!()
 }
