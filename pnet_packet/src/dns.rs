@@ -429,8 +429,8 @@ fn qname_length(packet: &DnsQueryPacket) -> usize {
 }
 
 impl DnsQuery {
-    /// Parse the qname into its dot-separated form. Malformed labels — a length
-    /// byte exceeding the available bytes, or non-UTF-8 octets — yield a partial
+    /// Parse the qname into its dot-separated form. Malformed labels, a length
+    /// byte exceeding the available bytes, or non-UTF-8 octets, yield a partial
     /// result rather than panicking. Use `get_qname_parsed_checked` if the caller
     /// needs to distinguish a clean parse from a malformed one.
     pub fn get_qname_parsed(&self) -> String {
