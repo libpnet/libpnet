@@ -429,26 +429,44 @@ fn qname_length(packet: &DnsQueryPacket) -> usize {
 }
 
 impl DnsQuery {
+    /// Parse the qname into its dot-separated form. Malformed labels, a length
+    /// byte exceeding the available bytes, or non-UTF-8 octets, yield a partial
+    /// result rather than panicking. Use `get_qname_parsed_checked` if the caller
+    /// needs to distinguish a clean parse from a malformed one.
     pub fn get_qname_parsed(&self) -> String {
+        match self.get_qname_parsed_checked() {
+            Ok(s) => s,
+            Err(partial) => partial,
+        }
+    }
+
+    /// Like `get_qname_parsed` but returns `Err(partial)` when the qname is
+    /// malformed. DNS labels are octet strings (RFC 1035), so parsing must be
+    /// defensive when the source is untrusted.
+    pub fn get_qname_parsed_checked(&self) -> Result<String, String> {
         let name = &self.qname;
         let mut qname = String::new();
         let mut offset = 0;
-        loop {
+        while offset < name.len() {
             let label_len = name[offset] as usize;
             if label_len == 0 {
-                break;
+                return Ok(qname);
             }
+            let start = offset + 1;
+            let end = match start.checked_add(label_len) {
+                Some(e) if e <= name.len() => e,
+                _ => return Err(qname),
+            };
             if !qname.is_empty() {
                 qname.push('.');
             }
-            qname.push_str(
-                str::from_utf8(&name[offset + 1..offset + 1 + label_len])
-                    .ok()
-                    .unwrap(),
-            );
-            offset += label_len + 1;
+            match str::from_utf8(&name[start..end]) {
+                Ok(label) => qname.push_str(label),
+                Err(_) => return Err(qname),
+            }
+            offset = end;
         }
-        qname
+        Err(qname)
     }
 }
 
