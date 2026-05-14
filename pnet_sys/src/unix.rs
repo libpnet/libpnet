@@ -30,14 +30,16 @@ pub mod public {
         target_os = "macos",
         target_os = "ios",
         target_os = "tvos",
-        target_os = "netbsd"
+        target_os = "netbsd",
+        all(target_os = "linux", target_arch = "sparc64")
     )))]
     pub type TvUsecType = libc::c_long;
     #[cfg(any(
         target_os = "macos",
         target_os = "ios",
         target_os = "tvos",
-        target_os = "netbsd"
+        target_os = "netbsd",
+        all(target_os = "linux", target_arch = "sparc64")
     ))]
     pub type TvUsecType = libc::c_int;
     #[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
