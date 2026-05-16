@@ -11,12 +11,15 @@
 extern crate libc;
 
 use crate::bindings::linux;
-use crate::{DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
+use crate::{DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface, TpacketAuxdata};
 
-use pnet_sys;
+// use libc::cmsghdr;
+// use pnet_sys;
 
+use std::fmt::Debug;
 use std::io;
-use std::mem;
+use std::mem::{self, MaybeUninit};
+use std::os::raw::c_void;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -63,6 +66,8 @@ pub struct Config {
 
     /// Promiscuous mode.
     pub promiscuous: bool,
+    ///enable auxdata
+    pub packet_auxdata: bool,
 
     pub socket_fd: Option<i32>,
 }
@@ -78,6 +83,7 @@ impl<'a> From<&'a super::Config> for Config {
             fanout: config.linux_fanout,
             promiscuous: config.promiscuous,
             socket_fd: config.socket_fd,
+            packet_auxdata: config.packet_auxdata,
         }
     }
 }
@@ -93,16 +99,14 @@ impl Default for Config {
             fanout: None,
             promiscuous: true,
             socket_fd: None,
+            packet_auxdata: false,
         }
     }
 }
 
 /// Create a data link channel using the Linux's `AF_PACKET` socket type.
 #[inline]
-pub fn channel(
-    network_interface: &NetworkInterface,
-    config: Config,
-) -> io::Result<super::Channel> {
+pub fn channel(network_interface: &NetworkInterface, config: Config) -> io::Result<super::Channel> {
     let (_typ, proto) = match config.channel_type {
         super::ChannelType::Layer2 => (libc::SOCK_RAW, libc::ETH_P_ALL),
         super::ChannelType::Layer3(proto) => (libc::SOCK_DGRAM, proto as i32),
@@ -112,14 +116,13 @@ pub fn channel(
         Some(sock) => sock,
         None => match unsafe { libc::socket(libc::AF_PACKET, _typ, proto.to_be()) } {
             -1 => return Err(io::Error::last_os_error()),
-            fd => fd
-        }
+            fd => fd,
+        },
     };
 
     let mut addr: libc::sockaddr_storage = unsafe { mem::zeroed() };
     let len = network_addr_to_sockaddr(network_interface, &mut addr, proto);
     let send_addr = (&addr as *const libc::sockaddr_storage) as *const libc::sockaddr;
-
     // Bind to interface
     if unsafe { libc::bind(socket, send_addr, len as libc::socklen_t) } == -1 {
         let err = io::Error::last_os_error();
@@ -142,6 +145,27 @@ pub fn channel(
                 linux::PACKET_ADD_MEMBERSHIP,
                 (&pmr as *const linux::packet_mreq) as *const libc::c_void,
                 mem::size_of::<linux::packet_mreq>() as libc::socklen_t,
+            )
+        } == -1
+        {
+            let err = io::Error::last_os_error();
+            unsafe {
+                pnet_sys::close(socket);
+            }
+            return Err(err);
+        }
+    }
+
+    if config.packet_auxdata {
+        if unsafe {
+            const ONEVAL: libc::c_int = 1;
+            let p_oneval = &ONEVAL as *const libc::c_int;
+            libc::setsockopt(
+                socket,
+                linux::SOL_PACKET,
+                linux::PACKET_AUXDATA,
+                p_oneval as *const libc::c_void,
+                mem::size_of::<libc::c_int>() as libc::socklen_t,
             )
         } == -1
         {
@@ -223,6 +247,7 @@ pub fn channel(
         timeout: config
             .read_timeout
             .map(|to| pnet_sys::duration_to_timespec(to)),
+        enabled_packet_auxdata: config.packet_auxdata,
     });
 
     Ok(super::Channel::Ethernet(sender, receiver))
@@ -356,6 +381,7 @@ struct DataLinkReceiverImpl {
     read_buffer: Vec<u8>,
     _channel_type: super::ChannelType,
     timeout: Option<libc::timespec>,
+    enabled_packet_auxdata: bool,
 }
 
 impl DataLinkReceiver for DataLinkReceiverImpl {
@@ -391,6 +417,93 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
             let res = pnet_sys::recv_from(self.socket.fd, &mut self.read_buffer, &mut caddr);
             match res {
                 Ok(len) => Ok(&self.read_buffer[0..len]),
+                Err(e) => Err(e),
+            }
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Unexpected poll event",
+            ))
+        }
+    }
+
+    fn next_msg(&mut self) -> io::Result<(&[u8], Option<TpacketAuxdata>)> {
+        let mut pollfd = libc::pollfd {
+            fd: self.socket.fd,
+            events: libc::POLLIN, // Monitoring for read availability
+            revents: 0,
+        };
+
+        // Convert timeout to milliseconds as required by poll
+        let timeout_ms = self
+            .timeout
+            .as_ref()
+            .map(|to| (to.tv_sec as i64 * 1000) + (to.tv_nsec as i64 / 1_000_000))
+            .unwrap_or(-1); // -1 means wait indefinitely
+
+        let ret = unsafe {
+            libc::poll(
+                &mut pollfd as *mut libc::pollfd,
+                1,
+                timeout_ms as libc::c_int,
+            )
+        };
+
+        if ret == -1 {
+            Err(io::Error::last_os_error())
+        } else if ret == 0 {
+            Err(io::Error::new(io::ErrorKind::TimedOut, "Timed out"))
+        } else if pollfd.revents & libc::POLLIN != 0 {
+            // POLLIN is set, meaning the socket has data to be read
+            //align buffer on stack, careful of total stack size though.
+            #[repr(align(8))]
+            struct Align8<T>(T);
+            const CAPACITY: usize = 128;
+            let mut controlbuffer = Align8([0_u8; CAPACITY]);
+            let mut iovec = libc::iovec {
+                iov_base: self.read_buffer.as_mut_ptr().cast::<c_void>(),
+                iov_len: self.read_buffer.len(),
+            };
+            let inithdr = unsafe {
+                let mut msghdr = MaybeUninit::<libc::msghdr>::zeroed().assume_init();
+                msghdr.msg_flags = 0;
+                msghdr.msg_name = std::ptr::null_mut();
+                msghdr.msg_namelen = 0;
+                msghdr.msg_control = controlbuffer.0.as_mut_ptr().cast::<libc::c_void>();
+                msghdr.msg_controllen = controlbuffer.0.len().try_into().unwrap();
+                msghdr.msg_iov = std::ptr::from_mut::<libc::iovec>(&mut iovec);
+                msghdr.msg_iovlen = 1;
+                Box::into_raw(Box::new(msghdr))
+            };
+            let res = pnet_sys::recv_msg(self.socket.fd, inithdr);
+            match res {
+                Ok(len) => {
+                    let mut auxdata: Option<TpacketAuxdata> = None;
+                    if self.enabled_packet_auxdata {
+                        //we know there should be just one single cmsg because the only option we enabled was auxdata
+                        let is_auxpacket_data;
+                        let current_hdr = unsafe {
+                            let newhdr = libc::CMSG_FIRSTHDR(inithdr);
+                            let hdrtmp = *newhdr;
+                            is_auxpacket_data = hdrtmp.cmsg_type == linux::PACKET_AUXDATA
+                                && hdrtmp.cmsg_level == linux::SOL_PACKET;
+                            newhdr
+                        };
+
+                        if is_auxpacket_data {
+                            const TPACKDATALEN: usize = mem::size_of::<linux::tpacket_auxdata>();
+                            let tpacket = unsafe {
+                                let data = libc::CMSG_DATA(current_hdr);
+                                let slice = std::ptr::slice_from_raw_parts(data, TPACKDATALEN);
+                                TpacketAuxdata::from(slice.as_ref().unwrap())
+                            };
+                            auxdata = Some(tpacket);
+                        } else {
+                            println!("bug in code, we should find this always.");
+                        }
+                    }
+                    Ok((&self.read_buffer[0..len], auxdata))
+                }
                 Err(e) => Err(e),
             }
         } else {

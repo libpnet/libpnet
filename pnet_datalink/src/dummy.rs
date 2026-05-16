@@ -9,7 +9,7 @@
 //! Support for sending and receiving data link layer packets on a fake network managed
 //! by in memory FIFO queues. Useful for writing tests.
 
-use crate::{DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface};
+use crate::{DataLinkReceiver, DataLinkSender, MacAddr, NetworkInterface, TpacketAuxdata};
 
 use std::io;
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -152,6 +152,11 @@ impl DataLinkReceiver for MockDataLinkReceiver {
                 }
             }
         }
+    }
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    fn next_msg(&mut self) -> io::Result<(&[u8], Option<TpacketAuxdata>)> {
+        let res = self.next()?;
+        return Ok((res, None));
     }
 }
 
