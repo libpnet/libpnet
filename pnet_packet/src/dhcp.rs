@@ -13,7 +13,7 @@ use pnet_macros_support::types::*;
 pub struct DhcpOperation(pub u8);
 
 impl DhcpOperation {
-    /// Create a new `ArpOperation`.
+    /// Create a new `DhcpOperation`.
     pub fn new(value: u8) -> Self {
         DhcpOperation(value)
     }
