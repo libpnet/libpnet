@@ -177,6 +177,10 @@ impl<T: Activated + Send + Sync> DataLinkReceiver for DataLinkReceiverImpl<T> {
         };
         Ok(&self.read_buffer)
     }
+
+    fn next_with_timeout<'a>(&'a mut self, t: Duration) -> io::Result<&[u8]> {
+        unimplemented!()
+    }
 }
 
 /// Get a list of available network interfaces for the current machine.
