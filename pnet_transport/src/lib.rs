@@ -54,7 +54,7 @@ pub enum TransportProtocol {
 
 /// Represents the valid codepoints for the Explicit Network Congestion in the IP header.
 #[repr(u8)]
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Ecn {
     /// Not-ECT: The packet is not using ECN.
     NotEct = 0x0,
@@ -63,18 +63,18 @@ pub enum Ecn {
     /// ECT(0): The connection supports ECN.
     Ect0 = 0x2,
     /// CN: A host is notifying its peer that congestion has occurred.
-    CE = 0x3
+    CE = 0x3,
 }
 
 impl From<u8> for Ecn {
     fn from(value: u8) -> Ecn {
         let ecn_bits = value & 0x3;
         if ecn_bits == Ecn::Ect0 as u8 {
-            return Ecn::Ect0
+            return Ecn::Ect0;
         } else if ecn_bits == Ecn::Ect1 as u8 {
-            return Ecn::Ect1
+            return Ecn::Ect1;
         } else if ecn_bits == Ecn::CE as u8 {
-            return Ecn::CE
+            return Ecn::CE;
         }
         Ecn::NotEct
     }
@@ -277,7 +277,12 @@ impl TransportSender {
         self.send(packet, dst)
     }
 
-    #[cfg(any(target_os = "freebsd", target_os = "macos", target_os = "ios", target_os = "tvos"))]
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "tvos"
+    ))]
     fn send_to_impl<T: Packet>(&mut self, packet: T, dst: IpAddr) -> io::Result<usize> {
         use pnet_packet::ipv4::MutableIpv4Packet;
         use pnet_packet::MutablePacket;
@@ -410,7 +415,10 @@ macro_rules! transport_channel_iterator {
             /// Wait only for a timespan of `t` to receive some data, then return. If no data was
             /// received, then `Ok(None)` is returned.
             #[cfg(unix)]
-            pub fn next_with_timeout(&mut self, t: Duration) -> io::Result<Option<($ty, IpAddr)>> {
+            pub fn next_with_timeout(
+                &mut self,
+                t: Duration,
+            ) -> io::Result<Option<($ty<'_>, IpAddr)>> {
                 let socket_fd = self.tr.socket.fd;
 
                 let old_timeout = match pnet_sys::get_socket_receive_timeout(socket_fd) {
