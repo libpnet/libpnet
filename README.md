@@ -86,6 +86,28 @@ There are three requirements for building on Windows:
  * You must have [WinPcap](https://www.winpcap.org/) or [npcap](https://nmap.org/npcap/) installed
    (tested with version WinPcap 4.1.3) (If using npcap, make sure to install with the "Install Npcap in WinPcap API-compatible Mode")
  * You must place `Packet.lib` from the [WinPcap Developers pack](https://www.winpcap.org/devel.htm)
-   in a directory named `lib`, in the root of this repository. Alternatively, you can use any of the
+   in a directory named `lib`, in the root of this repository.
+   If you keep getting errors after placing `Packet.lib` into the `lib` folder, you can use the following build script:
+   
+   ```rust
+   fn main() {
+      use std::env;
+
+       let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+       println!("cargo:rustc-link-search=native={}/lib", manifest_dir);
+   }
+   ```
+   
+   Additional example: [*crate's build.rs*](build.rs)
+
+   Don't forget to specify `build.rs` in your `Cargo.toml`:
+
+   ```toml
+   [package]
+   # ... Other package information
+   build = "build.rs"
+   ```
+   
+ * Alternatively, instead of the previous step, you can use any of the
    locations listed in the `%LIB%`/`$Env:LIB` environment variables. For the 64 bit toolchain it is
    in `WpdPack/Lib/x64/Packet.lib`, for the 32 bit toolchain, it is in `WpdPack/Lib/Packet.lib`.
