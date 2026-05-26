@@ -27,7 +27,7 @@ pub use self::imp::public::*;
 
 /// Any file descriptor on unix, only sockets on Windows.
 pub struct FileDesc {
-    pub fd: CSocket,
+    fd: CSocket,
 }
 
 impl Drop for FileDesc {
