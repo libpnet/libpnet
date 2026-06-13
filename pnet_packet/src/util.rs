@@ -111,6 +111,16 @@ pub fn ipv4_checksum(
 
     // Checksum packet header and data
     sum += sum_be_words(data, skipword);
+
+    let mut extra_data = extra_data;
+    let is_split_at_odd_boundary = data.len() & 1 != 0 && !extra_data.is_empty();
+    if is_split_at_odd_boundary {
+        // If the length of `data` is odd, the low byte of the last word of `data` will
+        // have been set to zero by `sum_be_words`. If there is extra data, the first
+        // byte of `extra_data` should be added to the sum to overwrite that zero.
+        sum += extra_data[0] as u32;
+        extra_data = &extra_data[1..];
+    }
     sum += sum_be_words(extra_data, usize::MAX);
 
     finalize_checksum(sum)
@@ -144,6 +154,16 @@ pub fn ipv6_checksum(
 
     // Checksum packet header and data
     sum += sum_be_words(data, skipword);
+
+    let mut extra_data = extra_data;
+    let is_split_at_odd_boundary = data.len() & 1 != 0 && !extra_data.is_empty();
+    if is_split_at_odd_boundary {
+        // If the length of `data` is odd, the low byte of the last word of `data` will
+        // have been set to zero by `sum_be_words`. If there is extra data, the first
+        // byte of `extra_data` should be added to the sum to overwrite that zero.
+        sum += extra_data[0] as u32;
+        extra_data = &extra_data[1..];
+    }
     sum += sum_be_words(extra_data, usize::MAX);
 
     finalize_checksum(sum)
