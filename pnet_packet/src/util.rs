@@ -89,6 +89,12 @@ fn finalize_checksum(mut sum: u32) -> u16be {
 }
 
 /// Calculate the checksum for a packet built on IPv4. Used by UDP and TCP.
+///
+/// Note for UDP callers: per RFC 768, a UDP transmitter must replace a
+/// computed checksum of `0` with `0xFFFF` before sending the packet.
+/// This function does *not* perform that substitution — it is applied by
+/// [`crate::udp::ipv4_checksum`]. Callers building UDP checksums using
+/// this function should apply the substitution themselves.
 pub fn ipv4_checksum(
     data: &[u8],
     skipword: usize,
@@ -122,6 +128,12 @@ fn ipv4_word_sum(ip: &Ipv4Addr) -> u32 {
 }
 
 /// Calculate the checksum for a packet built on IPv6.
+///
+/// Note for UDP callers: per RFC 768, a UDP transmitter must replace a
+/// computed checksum of `0` with `0xFFFF` before sending the packet.
+/// This function does *not* perform that substitution — it is applied by
+/// [`crate::udp::ipv6_checksum`]. Callers building UDP checksums using
+/// this function should apply the substitution themselves.
 pub fn ipv6_checksum(
     data: &[u8],
     skipword: usize,

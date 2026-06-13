@@ -47,12 +47,18 @@ pub fn ipv4_checksum_adv(packet: &UdpPacket,
                          source: &Ipv4Addr,
                          destination: &Ipv4Addr)
     -> u16be {
-    util::ipv4_checksum(packet.packet(),
+    let checksum = util::ipv4_checksum(packet.packet(),
                         3,
                         extra_data,
                         source,
                         destination,
-                        IpNextHeaderProtocols::Udp)
+                        IpNextHeaderProtocols::Udp);
+    // RFC 768: "If the computed checksum is zero, it is transmitted as all
+    // ones (the equivalent in one's complement arithmetic). An all zero
+    // transmitted checksum value means that the transmitter generated no
+    // checksum (for debugging or for higher level protocols that don't
+    // care)."
+    if checksum == 0 { 0xFFFF } else { checksum }
 }
 
 #[test]
@@ -117,12 +123,13 @@ pub fn ipv6_checksum_adv(packet: &UdpPacket,
                          source: &Ipv6Addr,
                          destination: &Ipv6Addr)
     -> u16be {
-    util::ipv6_checksum(packet.packet(),
+    let checksum = util::ipv6_checksum(packet.packet(),
                         3,
                         extra_data,
                         source,
                         destination,
-                        IpNextHeaderProtocols::Udp)
+                        IpNextHeaderProtocols::Udp);
+    if checksum == 0 { 0xFFFF } else { checksum }
 }
 
 #[test]
@@ -167,4 +174,27 @@ fn udp_header_ipv6_test() {
                       0x00, 0x0c, /* length */
                       0x13, 0x90  /* checksum */];
     assert_eq!(&ref_packet[..], &packet[40..48]);
+}
+
+// Regression tests for https://github.com/libpnet/libpnet/issues/585.
+#[test]
+fn udp_ipv4_checksum_zero_becomes_ones() {
+    let zero = Ipv4Addr::new(0, 0, 0, 0);
+    let mut buf = [0u8; 8];
+    let mut udp = MutableUdpPacket::new(&mut buf[..]).unwrap();
+    udp.set_source(0x7FEF);
+    udp.set_destination(0x7FEF);
+    udp.set_length(8);
+    assert_eq!(0xFFFF, ipv4_checksum(&udp.to_immutable(), &zero, &zero));
+}
+
+#[test]
+fn udp_ipv6_checksum_zero_becomes_ones() {
+    let zero = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0);
+    let mut buf = [0u8; 8];
+    let mut udp = MutableUdpPacket::new(&mut buf[..]).unwrap();
+    udp.set_source(0x7FEF);
+    udp.set_destination(0x7FEF);
+    udp.set_length(8);
+    assert_eq!(0xFFFF, ipv6_checksum(&udp.to_immutable(), &zero, &zero));
 }
