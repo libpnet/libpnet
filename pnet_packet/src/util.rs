@@ -182,9 +182,40 @@ fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::sum_be_words;
-    use core::slice;
+    use super::{ipv4_checksum, ipv6_checksum, sum_be_words};
+    use crate::ip::IpNextHeaderProtocol;
     use alloc::{vec, vec::Vec};
+    use core::net::{Ipv4Addr, Ipv6Addr};
+    use core::slice;
+
+    // Regression test for https://github.com/libpnet/libpnet/issues/537.
+    //
+    // Reproduces RFC 1071 section 3's split-at-odd-boundary example. The
+    // eight bytes [00 01 f2 03 f4 f5 f6 f7] sum to 0xddf2 when split at
+    // an odd offset.
+    //
+    // With source/destination/proto all zero, the pseudo-header contributes
+    // only len = 8, giving a raw sum of 0xddf2 + 0x0008 = 0xddfa, whose
+    // one's complement is 0x2205.
+    #[test]
+    fn ipv4_checksum_rfc1071_split_at_odd_boundary() {
+        let zero = Ipv4Addr::new(0, 0, 0, 0);
+        let proto = IpNextHeaderProtocol(0);
+        let data = [0x00, 0x01, 0xf2];
+        let extra = [0x03, 0xf4, 0xf5, 0xf6, 0xf7];
+        let got = ipv4_checksum(&data, usize::MAX, &extra, &zero, &zero, proto);
+        assert_eq!(0x2205, got);
+    }
+
+    #[test]
+    fn ipv6_checksum_rfc1071_split_at_odd_boundary() {
+        let zero = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0);
+        let proto = IpNextHeaderProtocol(0);
+        let data = [0x00, 0x01, 0xf2];
+        let extra = [0x03, 0xf4, 0xf5, 0xf6, 0xf7];
+        let got = ipv6_checksum(&data, usize::MAX, &extra, &zero, &zero, proto);
+        assert_eq!(0x2205, got);
+    }
 
     #[test]
     fn sum_be_words_different_skipwords() {
