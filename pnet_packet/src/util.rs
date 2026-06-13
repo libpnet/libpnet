@@ -97,23 +97,8 @@ pub fn ipv4_checksum(
     destination: &Ipv4Addr,
     next_level_protocol: IpNextHeaderProtocol,
 ) -> u16be {
-    let mut sum = 0u32;
-
-    // Checksum pseudo-header
-    sum += ipv4_word_sum(source);
-    sum += ipv4_word_sum(destination);
-
-    let IpNextHeaderProtocol(next_level_protocol) = next_level_protocol;
-    sum += next_level_protocol as u32;
-
-    let len = data.len() + extra_data.len();
-    sum += len as u32;
-
-    // Checksum packet header and data
-    sum += sum_be_words(data, skipword);
-    sum += sum_be_words(extra_data, extra_data.len() / 2);
-
-    finalize_checksum(sum)
+    let address_sum = ipv4_word_sum(source) + ipv4_word_sum(destination);
+    ip_checksum_shared(address_sum, data, skipword, extra_data, next_level_protocol)
 }
 
 fn ipv4_word_sum(ip: &Ipv4Addr) -> u32 {
@@ -130,11 +115,22 @@ pub fn ipv6_checksum(
     destination: &Ipv6Addr,
     next_level_protocol: IpNextHeaderProtocol,
 ) -> u16be {
-    let mut sum = 0u32;
+    let address_sum = ipv6_word_sum(source) + ipv6_word_sum(destination);
+    ip_checksum_shared(address_sum, data, skipword, extra_data, next_level_protocol)
+}
 
-    // Checksum pseudo-header
-    sum += ipv6_word_sum(source);
-    sum += ipv6_word_sum(destination);
+fn ipv6_word_sum(ip: &Ipv6Addr) -> u32 {
+    ip.segments().iter().map(|x| *x as u32).sum()
+}
+
+fn ip_checksum_shared(
+    address_sum: u32,
+    data: &[u8],
+    skipword: usize,
+    extra_data: &[u8],
+    next_level_protocol: IpNextHeaderProtocol,
+) -> u16be {
+    let mut sum = address_sum;
 
     let IpNextHeaderProtocol(next_level_protocol) = next_level_protocol;
     sum += next_level_protocol as u32;
@@ -144,13 +140,19 @@ pub fn ipv6_checksum(
 
     // Checksum packet header and data
     sum += sum_be_words(data, skipword);
-    sum += sum_be_words(extra_data, extra_data.len() / 2);
+
+    let mut extra_data = extra_data;
+    let is_split_at_odd_boundary = data.len() & 1 != 0 && !extra_data.is_empty();
+    if is_split_at_odd_boundary {
+        // If the length of `data` is odd, the low byte of the last word of `data` will
+        // have been set to zero by `sum_be_words`. If there is extra data, the first
+        // byte of `extra_data` should be added to the sum to overwrite that zero.
+        sum += extra_data[0] as u32;
+        extra_data = &extra_data[1..];
+    }
+    sum += sum_be_words(extra_data, usize::MAX);
 
     finalize_checksum(sum)
-}
-
-fn ipv6_word_sum(ip: &Ipv6Addr) -> u32 {
-    ip.segments().iter().map(|x| *x as u32).sum()
 }
 
 /// Sum all words (16 bit chunks) in the given data. The word at word offset
@@ -182,9 +184,40 @@ fn sum_be_words(data: &[u8], skipword: usize) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::sum_be_words;
-    use core::slice;
+    use super::{ipv4_checksum, ipv6_checksum, sum_be_words};
+    use crate::ip::IpNextHeaderProtocol;
     use alloc::{vec, vec::Vec};
+    use core::net::{Ipv4Addr, Ipv6Addr};
+    use core::slice;
+
+    // Regression test for https://github.com/libpnet/libpnet/issues/537.
+    //
+    // Reproduces RFC 1071 section 3's split-at-odd-boundary example. The
+    // eight bytes [00 01 f2 03 f4 f5 f6 f7] sum to 0xddf2 when split at
+    // an odd offset.
+    //
+    // With source/destination/proto all zero, the pseudo-header contributes
+    // only len = 8, giving a raw sum of 0xddf2 + 0x0008 = 0xddfa, whose
+    // one's complement is 0x2205.
+    #[test]
+    fn ipv4_checksum_rfc1071_split_at_odd_boundary() {
+        let zero = Ipv4Addr::new(0, 0, 0, 0);
+        let proto = IpNextHeaderProtocol(0);
+        let data = [0x00, 0x01, 0xf2];
+        let extra = [0x03, 0xf4, 0xf5, 0xf6, 0xf7];
+        let got = ipv4_checksum(&data, usize::MAX, &extra, &zero, &zero, proto);
+        assert_eq!(0x2205, got);
+    }
+
+    #[test]
+    fn ipv6_checksum_rfc1071_split_at_odd_boundary() {
+        let zero = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0);
+        let proto = IpNextHeaderProtocol(0);
+        let data = [0x00, 0x01, 0xf2];
+        let extra = [0x03, 0xf4, 0xf5, 0xf6, 0xf7];
+        let got = ipv6_checksum(&data, usize::MAX, &extra, &zero, &zero, proto);
+        assert_eq!(0x2205, got);
+    }
 
     #[test]
     fn sum_be_words_different_skipwords() {

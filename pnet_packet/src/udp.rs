@@ -38,10 +38,6 @@ pub fn ipv4_checksum(packet: &UdpPacket, source: &Ipv4Addr, destination: &Ipv4Ad
 /// Calculate a checksum for a packet built on IPv4. Advanced version which
 /// accepts an extra slice of data that will be included in the checksum
 /// as being part of the data portion of the packet.
-///
-/// If `packet` contains an odd number of bytes the last byte will not be
-/// counted as the first byte of a word together with the first byte of
-/// `extra_data`.
 pub fn ipv4_checksum_adv(packet: &UdpPacket,
                          extra_data: &[u8],
                          source: &Ipv4Addr,
@@ -108,10 +104,6 @@ pub fn ipv6_checksum(packet: &UdpPacket, source: &Ipv6Addr, destination: &Ipv6Ad
 /// Calculate the checksum for a packet built on IPv6. Advanced version which
 /// accepts an extra slice of data that will be included in the checksum
 /// as being part of the data portion of the packet.
-///
-/// If `packet` contains an odd number of bytes the last byte will not be
-/// counted as the first byte of a word together with the first byte of
-/// `extra_data`.
 pub fn ipv6_checksum_adv(packet: &UdpPacket,
                          extra_data: &[u8],
                          source: &Ipv6Addr,
