@@ -168,3 +168,26 @@ fn udp_header_ipv6_test() {
                       0x13, 0x90  /* checksum */];
     assert_eq!(&ref_packet[..], &packet[40..48]);
 }
+
+// Regression tests for https://github.com/libpnet/libpnet/issues/585.
+#[test]
+fn udp_ipv4_checksum_zero_becomes_ones() {
+    let zero = Ipv4Addr::new(0, 0, 0, 0);
+    let mut buf = [0u8; 8];
+    let mut udp = MutableUdpPacket::new(&mut buf[..]).unwrap();
+    udp.set_source(0x7FEF);
+    udp.set_destination(0x7FEF);
+    udp.set_length(8);
+    assert_eq!(0xFFFF, ipv4_checksum(&udp.to_immutable(), &zero, &zero));
+}
+
+#[test]
+fn udp_ipv6_checksum_zero_becomes_ones() {
+    let zero = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0);
+    let mut buf = [0u8; 8];
+    let mut udp = MutableUdpPacket::new(&mut buf[..]).unwrap();
+    udp.set_source(0x7FEF);
+    udp.set_destination(0x7FEF);
+    udp.set_length(8);
+    assert_eq!(0xFFFF, ipv6_checksum(&udp.to_immutable(), &zero, &zero));
+}
