@@ -47,12 +47,18 @@ pub fn ipv4_checksum_adv(packet: &UdpPacket,
                          source: &Ipv4Addr,
                          destination: &Ipv4Addr)
     -> u16be {
-    util::ipv4_checksum(packet.packet(),
+    let checksum = util::ipv4_checksum(packet.packet(),
                         3,
                         extra_data,
                         source,
                         destination,
-                        IpNextHeaderProtocols::Udp)
+                        IpNextHeaderProtocols::Udp);
+    // RFC 768: "If the computed checksum is zero, it is transmitted as all
+    // ones (the equivalent in one's complement arithmetic). An all zero
+    // transmitted checksum value means that the transmitter generated no
+    // checksum (for debugging or for higher level protocols that don't
+    // care)."
+    if checksum == 0 { 0xFFFF } else { checksum }
 }
 
 #[test]
@@ -117,12 +123,13 @@ pub fn ipv6_checksum_adv(packet: &UdpPacket,
                          source: &Ipv6Addr,
                          destination: &Ipv6Addr)
     -> u16be {
-    util::ipv6_checksum(packet.packet(),
+    let checksum = util::ipv6_checksum(packet.packet(),
                         3,
                         extra_data,
                         source,
                         destination,
-                        IpNextHeaderProtocols::Udp)
+                        IpNextHeaderProtocols::Udp);
+    if checksum == 0 { 0xFFFF } else { checksum }
 }
 
 #[test]
