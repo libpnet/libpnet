@@ -111,7 +111,7 @@ pub fn ipv4_checksum(
 
     // Checksum packet header and data
     sum += sum_be_words(data, skipword);
-    sum += sum_be_words(extra_data, extra_data.len() / 2);
+    sum += sum_be_words(extra_data, usize::MAX);
 
     finalize_checksum(sum)
 }
@@ -144,7 +144,7 @@ pub fn ipv6_checksum(
 
     // Checksum packet header and data
     sum += sum_be_words(data, skipword);
-    sum += sum_be_words(extra_data, extra_data.len() / 2);
+    sum += sum_be_words(extra_data, usize::MAX);
 
     finalize_checksum(sum)
 }
