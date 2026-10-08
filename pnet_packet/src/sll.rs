@@ -3,6 +3,8 @@
 use alloc::vec::Vec;
 
 use super::ethernet::EtherType;
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
@@ -11,18 +13,19 @@ use pnet_macros_support::types::*;
 
 /// Represents an SLL packet (LINKTYPE_LINUX_SLL).
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct SLL {
-	#[construct_with(u16)]
-	pub packet_type: u16be,
-	#[construct_with(u16)]
-	pub link_layer_address_type: u16be,
-	#[construct_with(u16)]
-	pub link_layer_address_len: u16be,
-	#[construct_with(u8, u8, u8, u8, u8, u8, u8, u8)]
-	#[length = "8"]
-	pub link_layer_address: Vec<u8>,
-	#[construct_with(u16)]
-	pub protocol: EtherType,
-	#[payload]
-	pub payload: Vec<u8>,
+    #[construct_with(u16)]
+    pub packet_type: u16be,
+    #[construct_with(u16)]
+    pub link_layer_address_type: u16be,
+    #[construct_with(u16)]
+    pub link_layer_address_len: u16be,
+    #[construct_with(u8, u8, u8, u8, u8, u8, u8, u8)]
+    #[length = "8"]
+    pub link_layer_address: Vec<u8>,
+    #[construct_with(u16)]
+    pub protocol: EtherType,
+    #[payload]
+    pub payload: Vec<u8>,
 }

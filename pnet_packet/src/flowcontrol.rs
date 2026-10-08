@@ -13,11 +13,14 @@ use crate::PrimitiveValues;
 use alloc::vec::Vec;
 use core::fmt;
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 use pnet_macros::packet;
 use pnet_macros_support::types::u16be;
 
 /// Represents the opcode field in an Ethernet Flow Control packet.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct FlowControlOpcode(pub u16);
 
 impl FlowControlOpcode {
@@ -33,12 +36,14 @@ impl PrimitiveValues for FlowControlOpcode {
 }
 impl fmt::Display for FlowControlOpcode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f,
+        write!(
+            f,
             "{}",
             match self {
                 &FlowControlOpcodes::Pause => "pause",
                 _ => "unknown",
-            })
+            }
+        )
     }
 }
 
@@ -54,10 +59,11 @@ pub mod FlowControlOpcodes {
 
 /// Represents an Ethernet Flow Control packet defined by IEEE 802.3x.
 /// ([wikipedia](https://en.wikipedia.org/wiki/Ethernet_flow_control))
-/// 
+///
 /// Use with the [EtherTypes::FlowControl](crate::ethernet::EtherTypes::FlowControl) ethertype (0x8808).
 #[packet]
 #[allow(non_snake_case)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct FlowControl {
     #[construct_with(u16)]
     pub command: FlowControlOpcode,

@@ -1,7 +1,10 @@
 [package]
 name = "pnet_base"
 version = "0.35.0"
-authors = ["Robert Clipsham <robert@octarineparrot.com>", "Linus Färnstrand <faern@faern.net>"]
+authors = [
+  "Robert Clipsham <robert@octarineparrot.com>",
+  "Linus Färnstrand <faern@faern.net>",
+]
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/libpnet/libpnet"
 repository = "https://github.com/libpnet/libpnet"
@@ -12,6 +15,7 @@ categories = ["network-programming"]
 edition = "2021"
 
 [dependencies]
+arbitrary = { version = "1.5.0", features = ["derive"], optional = true }
 serde = { version = "1.0.171", optional = true, default-features = false }
 
 [dev-dependencies]
@@ -20,6 +24,8 @@ serde_test = "1.0.171"
 [features]
 std = []
 default = ["std"]
+arbitrary = ["dep:arbitrary"]
+
 
 [package.metadata.docs.rs]
 # Enable the serde feature when generating docs on docs.rs, so the traits are visible

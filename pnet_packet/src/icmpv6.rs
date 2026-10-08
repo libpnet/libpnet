@@ -12,13 +12,16 @@ use crate::ip::IpNextHeaderProtocols;
 use crate::PrimitiveValues;
 
 use alloc::vec::Vec;
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 
+use core::net::Ipv6Addr;
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
-use core::net::Ipv6Addr;
 
 /// Represents the "ICMPv6 type" header field.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Icmpv6Type(pub u8);
 
 impl Icmpv6Type {
@@ -37,6 +40,7 @@ impl PrimitiveValues for Icmpv6Type {
 
 /// Represents the "ICMPv6 code" header field.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Icmpv6Code(pub u8);
 
 impl Icmpv6Code {
@@ -66,6 +70,7 @@ impl PrimitiveValues for Icmpv6Code {
 ///
 /// [RFC 4443 § 2.1]: https://tools.ietf.org/html/rfc4443#section-2.1
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Icmpv6 {
     #[construct_with(u8)]
     pub icmpv6_type: Icmpv6Type,
@@ -78,16 +83,23 @@ pub struct Icmpv6 {
 
 /// Calculates a checksum of an ICMPv6 packet.
 pub fn checksum(packet: &Icmpv6Packet, source: &Ipv6Addr, destination: &Ipv6Addr) -> u16be {
-    use crate::Packet;
     use crate::util;
+    use crate::Packet;
 
-    util::ipv6_checksum(packet.packet(), 1, &[], source, destination, IpNextHeaderProtocols::Icmpv6)
+    util::ipv6_checksum(
+        packet.packet(),
+        1,
+        &[],
+        source,
+        destination,
+        IpNextHeaderProtocols::Icmpv6,
+    )
 }
 
 #[cfg(test)]
 mod checksum_tests {
-    use alloc::vec;
     use super::*;
+    use alloc::vec;
 
     #[test]
     fn checksum_echo_request() {
@@ -100,13 +112,10 @@ mod checksum_tests {
             0x00, 0x00, // Id
             0x00, 0x01, // Sequence
             // 56 bytes of "random" data
-            0x20, 0x20, 0x75, 0x73, 0x74, 0x20, 0x61, 0x20,
-            0x66, 0x6c, 0x65, 0x73, 0x68, 0x20, 0x77, 0x6f,
-            0x75, 0x6e, 0x64, 0x20, 0x20, 0x74, 0x69, 0x73,
-            0x20, 0x62, 0x75, 0x74, 0x20, 0x61, 0x20, 0x73,
-            0x63, 0x72, 0x61, 0x74, 0x63, 0x68, 0x20, 0x20,
-            0x6b, 0x6e, 0x69, 0x67, 0x68, 0x74, 0x73, 0x20,
-            0x6f, 0x66, 0x20, 0x6e, 0x69, 0x20, 0x20, 0x20
+            0x20, 0x20, 0x75, 0x73, 0x74, 0x20, 0x61, 0x20, 0x66, 0x6c, 0x65, 0x73, 0x68, 0x20,
+            0x77, 0x6f, 0x75, 0x6e, 0x64, 0x20, 0x20, 0x74, 0x69, 0x73, 0x20, 0x62, 0x75, 0x74,
+            0x20, 0x61, 0x20, 0x73, 0x63, 0x72, 0x61, 0x74, 0x63, 0x68, 0x20, 0x20, 0x6b, 0x6e,
+            0x69, 0x67, 0x68, 0x74, 0x73, 0x20, 0x6f, 0x66, 0x20, 0x6e, 0x69, 0x20, 0x20, 0x20,
         ];
         let mut pkg = MutableIcmpv6Packet::new(&mut data[..]).unwrap();
         assert_eq!(checksum(&pkg.to_immutable(), lo, lo), 0x1d2e);
@@ -116,7 +125,6 @@ mod checksum_tests {
         assert_eq!(checksum(&pkg.to_immutable(), lo, lo), 0x1c2e);
     }
 }
-
 
 /// The enumeration of the recognized ICMPv6 types.
 #[allow(non_snake_case)]
@@ -154,14 +162,16 @@ pub mod ndp {
     //! [RFC 4861]: https://tools.ietf.org/html/rfc4861
 
     use crate::icmpv6::{Icmpv6Code, Icmpv6Type};
-    use crate::PrimitiveValues;
     use crate::Packet;
+    use crate::PrimitiveValues;
+    #[cfg(feature = "arbitrary")]
+    use arbitrary::Arbitrary;
 
     use alloc::vec::Vec;
 
+    use core::net::Ipv6Addr;
     use pnet_macros::packet;
     use pnet_macros_support::types::*;
-    use core::net::Ipv6Addr;
 
     #[allow(non_snake_case)]
     #[allow(non_upper_case_globals)]
@@ -173,6 +183,7 @@ pub mod ndp {
 
     /// Represents a Neighbor Discovery Option Type.
     #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
     pub struct NdpOptionType(pub u8);
 
     impl NdpOptionType {
@@ -287,6 +298,7 @@ pub mod ndp {
     ///
     /// [RFC 4861 § 4.6]: https://tools.ietf.org/html/rfc4861#section-4.6
     #[packet]
+    #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
     pub struct NdpOption {
         #[construct_with(u8)]
         pub option_type: NdpOptionType,
@@ -320,6 +332,7 @@ pub mod ndp {
     ///
     /// [RFC 4861 § 4.1]: https://tools.ietf.org/html/rfc4861#section-4.1
     #[packet]
+    #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
     pub struct RouterSolicit {
         #[construct_with(u8)]
         pub icmpv6_type: Icmpv6Type,
@@ -373,6 +386,7 @@ pub mod ndp {
     ///
     /// [RFC 4861 § 4.2]: https://tools.ietf.org/html/rfc4861#section-4.2
     #[packet]
+    #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
     pub struct RouterAdvert {
         #[construct_with(u8)]
         pub icmpv6_type: Icmpv6Type,
@@ -422,6 +436,7 @@ pub mod ndp {
     ///
     /// [RFC 4861 § 4.3]: https://tools.ietf.org/html/rfc4861#section-4.3
     #[packet]
+    #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
     pub struct NeighborSolicit {
         #[construct_with(u8)]
         pub icmpv6_type: Icmpv6Type,
@@ -483,6 +498,7 @@ pub mod ndp {
     ///
     /// [RFC 4861 § 4.4]: https://tools.ietf.org/html/rfc4861#section-4.4
     #[packet]
+    #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
     pub struct NeighborAdvert {
         #[construct_with(u8)]
         pub icmpv6_type: Icmpv6Type,
@@ -539,6 +555,7 @@ pub mod ndp {
     ///
     /// [RFC 4861 § 4.5]: https://tools.ietf.org/html/rfc4861#section-4.5
     #[packet]
+    #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
     pub struct Redirect {
         #[construct_with(u8)]
         pub icmpv6_type: Icmpv6Type,
@@ -568,16 +585,16 @@ pub mod ndp {
 
     #[cfg(test)]
     mod ndp_tests {
-        use alloc::vec;
-        use crate::icmpv6::{Icmpv6Types, Icmpv6Code};
         use super::*;
+        use crate::icmpv6::{Icmpv6Code, Icmpv6Types};
+        use alloc::vec;
 
         #[test]
         fn basic_option_parsing() {
             let mut data = vec![
                 0x02, 0x01, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
                 // Extra bytes to confuse the parsing
-                0x00, 0x00, 0x00
+                0x00, 0x00, 0x00,
             ];
             let pkg = MutableNdpOptionPacket::new(&mut data[..]).unwrap();
             assert_eq!(pkg.get_option_type(), NdpOptionTypes::TargetLLAddr);
@@ -593,8 +610,8 @@ pub mod ndp {
                 0x00, // Code
                 0x00, 0x00, // Checksum
                 0x00, 0x00, 0x00, 0x00, // Reserved
-                0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00,
             ];
 
             let pkg = MutableRouterSolicitPacket::new(&mut data[..]).unwrap();
@@ -619,19 +636,15 @@ pub mod ndp {
         #[test]
         fn basic_rs_create() {
             let ref_packet = vec![
-                0x85, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x01, 0x01, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00
+                0x85, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00,
             ];
             let mut packet = [0u8; 16];
-            let options = vec![
-                NdpOption {
-                    option_type: NdpOptionTypes::SourceLLAddr,
-                    length: 1,
-                    data: vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-                }
-            ];
+            let options = vec![NdpOption {
+                option_type: NdpOptionTypes::SourceLLAddr,
+                length: 1,
+                data: vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+            }];
             {
                 let mut rs_packet = MutableRouterSolicitPacket::new(&mut packet[..]).unwrap();
                 rs_packet.set_icmpv6_type(Icmpv6Types::RouterSolicit);
@@ -653,7 +666,7 @@ pub mod ndp {
                 0x12, 0x34, 0x56, 0x78, // Reachable
                 0x87, 0x65, 0x43, 0x21, // Retrans
                 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Source Link-Layer
-                0x05, 0x01, 0x00, 0x00, 0x57, 0x68, 0x61, 0x74 // MTU
+                0x05, 0x01, 0x00, 0x00, 0x57, 0x68, 0x61, 0x74, // MTU
             ];
             let pkg = MutableRouterAdvertPacket::new(&mut data[..]).unwrap();
             assert_eq!(pkg.get_icmpv6_type(), Icmpv6Types::RouterAdvert);
@@ -680,21 +693,15 @@ pub mod ndp {
         #[test]
         fn basic_ra_create() {
             let ref_packet = vec![
-                0x86, 0x00, 0x00, 0x00,
-                0xff, 0x80, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x05, 0x01, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00
+                0x86, 0x00, 0x00, 0x00, 0xff, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x05, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             ];
             let mut packet = [0u8; 24];
-            let options = vec![
-                NdpOption {
-                    option_type: NdpOptionTypes::MTU,
-                    length: 1,
-                    data: vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-                }
-            ];
+            let options = vec![NdpOption {
+                option_type: NdpOptionTypes::MTU,
+                length: 1,
+                data: vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+            }];
             {
                 let mut ra_packet = MutableRouterAdvertPacket::new(&mut packet[..]).unwrap();
                 ra_packet.set_icmpv6_type(Icmpv6Types::RouterAdvert);
@@ -709,30 +716,25 @@ pub mod ndp {
         #[test]
         fn basic_ns_parse() {
             let mut data = vec![
-                0x87, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0xff, 0x02, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x01
+                0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x02, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
             ];
             let pkg = MutableNeighborSolicitPacket::new(&mut data[..]).unwrap();
             assert_eq!(pkg.get_icmpv6_type(), Icmpv6Types::NeighborSolicit);
             assert_eq!(pkg.get_icmpv6_code(), Icmpv6Code(0));
             assert_eq!(pkg.get_checksum(), 0x00);
             assert_eq!(pkg.get_reserved(), 0x00);
-            assert_eq!(pkg.get_target_addr(), Ipv6Addr::new(0xff02, 0, 0, 0, 0, 0, 0, 1));
+            assert_eq!(
+                pkg.get_target_addr(),
+                Ipv6Addr::new(0xff02, 0, 0, 0, 0, 0, 0, 1)
+            );
         }
 
         #[test]
         fn basic_ns_create() {
             let ref_packet = vec![
-                0x87, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0xff, 0x02, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x01,
+                0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x02, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
             ];
             let mut packet = [0u8; 24];
             {
@@ -747,12 +749,8 @@ pub mod ndp {
         #[test]
         fn basic_na_parse() {
             let mut data = vec![
-                0x88, 0x00, 0x00, 0x00,
-                0x80, 0x00, 0x00, 0x00,
-                0xff, 0x02, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x01
+                0x88, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0xff, 0x02, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
             ];
             let pkg = MutableNeighborAdvertPacket::new(&mut data[..]).unwrap();
             assert_eq!(pkg.get_icmpv6_type(), Icmpv6Types::NeighborAdvert);
@@ -760,18 +758,17 @@ pub mod ndp {
             assert_eq!(pkg.get_checksum(), 0x00);
             assert_eq!(pkg.get_reserved(), 0x00);
             assert_eq!(pkg.get_flags(), 0x80);
-            assert_eq!(pkg.get_target_addr(), Ipv6Addr::new(0xff02, 0, 0, 0, 0, 0, 0, 1));
+            assert_eq!(
+                pkg.get_target_addr(),
+                Ipv6Addr::new(0xff02, 0, 0, 0, 0, 0, 0, 1)
+            );
         }
 
         #[test]
         fn basic_na_create() {
             let ref_packet = vec![
-                0x88, 0x00, 0x00, 0x00,
-                0x80, 0x00, 0x00, 0x00,
-                0xff, 0x02, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x01,
+                0x88, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0xff, 0x02, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
             ];
             let mut packet = [0u8; 24];
             {
@@ -787,39 +784,28 @@ pub mod ndp {
         #[test]
         fn basic_redirect_parse() {
             let mut data = vec![
-                0x89, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0xff, 0x02, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x01,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
+                0x89, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x02, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             ];
             let pkg = MutableRedirectPacket::new(&mut data[..]).unwrap();
             assert_eq!(pkg.get_icmpv6_type(), Icmpv6Types::Redirect);
             assert_eq!(pkg.get_icmpv6_code(), Icmpv6Code(0));
             assert_eq!(pkg.get_checksum(), 0x00);
             assert_eq!(pkg.get_reserved(), 0x00);
-            assert_eq!(pkg.get_target_addr(), Ipv6Addr::new(0xff02, 0, 0, 0, 0, 0, 0, 1));
+            assert_eq!(
+                pkg.get_target_addr(),
+                Ipv6Addr::new(0xff02, 0, 0, 0, 0, 0, 0, 1)
+            );
             assert_eq!(pkg.get_dest_addr(), Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0));
         }
 
         #[test]
         fn basic_redirect_create() {
             let ref_packet = vec![
-                0x89, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0xff, 0x02, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x01,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
+                0x89, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x02, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             ];
             let mut packet = [0u8; 40];
             {
@@ -847,8 +833,8 @@ pub mod echo_reply {
     //! +-+-+-+-+-
     //! ```
 
-    use crate::PrimitiveValues;
     use crate::icmpv6::{Icmpv6Code, Icmpv6Type};
+    use crate::PrimitiveValues;
 
     use alloc::vec::Vec;
 
@@ -929,8 +915,8 @@ pub mod echo_request {
     //! +-+-+-+-+-
     //! ```
 
-    use crate::PrimitiveValues;
     use crate::icmpv6::{Icmpv6Code, Icmpv6Type};
+    use crate::PrimitiveValues;
 
     use alloc::vec::Vec;
 

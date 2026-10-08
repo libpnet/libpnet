@@ -9,8 +9,10 @@
 //! Defines the type and constants for IP next header/next level protocol
 //! fields.
 
-use core::fmt;
 use crate::PrimitiveValues;
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
+use core::fmt;
 
 /// Protocol numbers as defined at:
 /// <http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>
@@ -469,6 +471,7 @@ pub mod IpNextHeaderProtocols {
 /// Represents an IPv4 next level protocol, or an IPv6 next header protocol,
 /// see `IpNextHeaderProtocols` for a list of values.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct IpNextHeaderProtocol(pub u8);
 
 impl IpNextHeaderProtocol {

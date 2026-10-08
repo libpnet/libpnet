@@ -13,6 +13,8 @@ use crate::PrimitiveValues;
 use alloc::vec::Vec;
 use core::fmt;
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 use pnet_base::MacAddr;
 use pnet_macros::packet;
 
@@ -47,9 +49,11 @@ fn ethernet_header_test() {
         assert_eq!(ethernet_header.get_ethertype(), EtherTypes::Ipv6);
     }
 
-    let ref_packet = [0xde, 0xf0, 0x12, 0x34, 0x45, 0x67, /* destination */
-                      0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, /* source */
-                      0x86, 0xdd /* ethertype */];
+    let ref_packet = [
+        0xde, 0xf0, 0x12, 0x34, 0x45, 0x67, /* destination */
+        0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, /* source */
+        0x86, 0xdd, /* ethertype */
+    ];
     assert_eq!(&ref_packet[..], &packet[..]);
 }
 
@@ -75,7 +79,7 @@ pub mod EtherTypes {
     /// DECnet Phase IV.
     pub const DECnet: EtherType = EtherType(0x6003);
     /// Reverse Address Resolution Protocol (RARP) \[RFC903\].
-    pub const Rarp: EtherType = EtherType(0x8035); 
+    pub const Rarp: EtherType = EtherType(0x8035);
     /// AppleTalk - EtherTalk \[Apple\].
     pub const AppleTalk: EtherType = EtherType(0x809B);
     /// AppleTalk Address Resolution Protocol (AARP) \[Apple\].
@@ -114,6 +118,7 @@ pub mod EtherTypes {
 
 /// Represents the `Ethernet::ethertype` field.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct EtherType(pub u16);
 
 impl EtherType {
@@ -172,4 +177,3 @@ fn ether_type_to_str() {
     let unknown = EtherType(0x0666);
     assert_eq!(format!("{}", unknown), "unknown (0x0666)");
 }
-

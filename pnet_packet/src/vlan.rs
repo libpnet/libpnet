@@ -1,15 +1,18 @@
 //! A VLAN packet abstraction.
 
-use crate::PrimitiveValues;
 use crate::ethernet::EtherType;
+use crate::PrimitiveValues;
 
 use alloc::vec::Vec;
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
 /// Represents an IEEE 802.1p class of a service.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct ClassOfService(pub u3);
 
 impl ClassOfService {
@@ -60,6 +63,7 @@ pub mod ClassesOfService {
 
 /// Represents a VLAN-tagged packet.
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Vlan {
     #[construct_with(u3)]
     pub priority_code_point: ClassOfService,
@@ -73,8 +77,8 @@ pub struct Vlan {
 
 #[cfg(test)]
 mod tests {
-    use crate::ethernet::EtherTypes;
     use super::*;
+    use crate::ethernet::EtherTypes;
 
     #[test]
     fn vlan_packet_test() {
@@ -94,10 +98,12 @@ mod tests {
             assert_eq!(vlan_header.get_vlan_identifier(), 0x100);
         }
 
-        let ref_packet = [0x01,  // PCP, DEI, and first nibble of VID
-                          0x00,  // Remainder of VID
-                          0x08,  // First byte of ethertype
-                          0x00]; // Second byte of ethertype
+        let ref_packet = [
+            0x01, // PCP, DEI, and first nibble of VID
+            0x00, // Remainder of VID
+            0x08, // First byte of ethertype
+            0x00,
+        ]; // Second byte of ethertype
         assert_eq!(&ref_packet[..], &packet[..]);
     }
 }

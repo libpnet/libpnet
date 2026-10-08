@@ -15,14 +15,18 @@ edition = "2018"
 pnet_base = { path = "../pnet_base", version = "0.35.0", default-features = false }
 pnet_macros_support = { path = "../pnet_macros_support", version = "0.35.0" }
 pnet_macros = { path = "../pnet_macros", version = "0.35.0" }
+arbitrary = { version = "1.5.0", features = ["derive"], optional = true }
 
 [features]
 std = ["pnet_base/std"]
 default = ["std"]
+arbitrary = ["dep:arbitrary", "pnet_base/arbitrary"]
 
 [dev-dependencies]
 hex = "0.4.3"
-criterion = { version = "0.5.1", features = ["html_reports"] } #added HTML feature because of the annoying warnings when running the tests
+criterion = { version = "0.5.1", features = [
+  "html_reports",
+] } #added HTML feature because of the annoying warnings when running the tests
 
 [build-dependencies]
 glob = "0.3.1"

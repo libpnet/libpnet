@@ -24,6 +24,7 @@ default = ["std"]
 nightly = []
 winpkfilter = ["pnet_datalink/winpkfilter"]
 winpcap = ["pnet_datalink/winpcap"]
+arbitrary = ["pnet_packet/arbitrary", "pnet_base/arbitrary"]
 
 [dependencies]
 ipnetwork = { version = "0.20.0", optional = true }

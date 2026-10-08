@@ -410,7 +410,10 @@ macro_rules! transport_channel_iterator {
             /// Wait only for a timespan of `t` to receive some data, then return. If no data was
             /// received, then `Ok(None)` is returned.
             #[cfg(unix)]
-            pub fn next_with_timeout(&mut self, t: Duration) -> io::Result<Option<($ty, IpAddr)>> {
+            pub fn next_with_timeout(
+                &mut self,
+                t: Duration,
+            ) -> io::Result<Option<($ty<'_>, IpAddr)>> {
                 let socket_fd = self.tr.socket.fd;
 
                 let old_timeout = match pnet_sys::get_socket_receive_timeout(socket_fd) {

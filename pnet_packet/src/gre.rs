@@ -13,6 +13,8 @@
 use crate::Packet;
 
 use alloc::vec::Vec;
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
@@ -41,6 +43,7 @@ use pnet_macros_support::types::*;
 /// Note that routing information from RFC 1701 is not implemented, packets
 /// with `routing_present` true will currently cause a panic.
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Gre {
     pub checksum_present: u1,
     pub routing_present: u1,
@@ -89,9 +92,9 @@ fn gre_routing_length(gre: &GrePacket) -> usize {
     }
 }
 
-
 /// `u16be`, but we can't use that directly in a `Vec` :(
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct U16BE {
     number: u16be,
     #[length = "0"]
@@ -101,6 +104,7 @@ pub struct U16BE {
 
 /// `u32be`, but we can't use that directly in a `Vec` :(
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct U32BE {
     number: u32be,
     #[length = "0"]
@@ -117,10 +121,12 @@ fn gre_packet_test() {
         assert_eq!(gre_packet.payload().len(), 0);
     }
 
-    let ref_packet = [0x00 /* no flags */,
-                      0x00 /* no flags, version 0 */,
-                      0x08 /* protocol 0x0800 */,
-                      0x00];
+    let ref_packet = [
+        0x00, /* no flags */
+        0x00, /* no flags, version 0 */
+        0x08, /* protocol 0x0800 */
+        0x00,
+    ];
 
     assert_eq!(&ref_packet[..], &packet[..]);
 }
@@ -136,14 +142,14 @@ fn gre_checksum_test() {
         assert_eq!(gre_packet.get_offset().len(), 1);
     }
 
-    let ref_packet = [0x80 /* checksum on */,
-                      0x00 /* no flags, version 0 */,
-                      0x00 /* protocol 0x0000 */,
-                      0x00,
-                      0x00 /* 16 bits of checksum */,
-                      0x00,
-                      0x00 /* 16 bits of offset */,
-                      0x00];
+    let ref_packet = [
+        0x80, /* checksum on */
+        0x00, /* no flags, version 0 */
+        0x00, /* protocol 0x0000 */
+        0x00, 0x00, /* 16 bits of checksum */
+        0x00, 0x00, /* 16 bits of offset */
+        0x00,
+    ];
 
     assert_eq!(&ref_packet[..], &packet[..]);
 }

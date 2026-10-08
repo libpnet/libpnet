@@ -10,6 +10,8 @@
 
 use alloc::vec::Vec;
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
@@ -24,6 +26,7 @@ use pnet_macros_support::types::*;
 /// |                VXLAN Network Identifier (VNI) |   Reserved    |
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Vxlan {
     pub flags: u8,
     pub reserved1: u24be,
@@ -35,7 +38,7 @@ pub struct Vxlan {
 
 #[test]
 fn vxlan_packet_test() {
-    let mut packet = [0u8;8];
+    let mut packet = [0u8; 8];
     {
         let mut vxlan_header = MutableVxlanPacket::new(&mut packet[..]).unwrap();
         vxlan_header.set_flags(0x08);
@@ -48,7 +51,7 @@ fn vxlan_packet_test() {
         0x08, // I flag
         0x00, 0x00, 0x00, // Reserved
         0x12, 0x34, 0x56, // VNI
-        0x00 // Reserved
+        0x00, // Reserved
     ];
     assert_eq!(&ref_packet[..], &packet[..]);
 }

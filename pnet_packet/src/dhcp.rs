@@ -2,6 +2,8 @@ use crate::PrimitiveValues;
 
 use alloc::vec::Vec;
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 use core::net::Ipv4Addr;
 
 use pnet_base::MacAddr;
@@ -10,6 +12,7 @@ use pnet_macros_support::types::*;
 
 /// Represents an Dhcp operation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct DhcpOperation(pub u8);
 
 impl DhcpOperation {
@@ -41,6 +44,7 @@ pub mod DhcpOperations {
 
 /// Represents the Dhcp hardware types.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct DhcpHardwareType(pub u8);
 
 impl DhcpHardwareType {
@@ -70,6 +74,7 @@ pub mod DhcpHardwareTypes {
 /// Represents an DHCP Packet.
 #[packet]
 #[allow(non_snake_case)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Dhcp {
     #[construct_with(u8)]
     pub op: DhcpOperation,
@@ -99,3 +104,4 @@ pub struct Dhcp {
     #[payload]
     pub options: Vec<u8>,
 }
+

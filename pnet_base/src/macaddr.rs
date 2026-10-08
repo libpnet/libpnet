@@ -12,6 +12,8 @@ use std::error::Error;
 use core::fmt;
 use core::str::FromStr;
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 #[cfg(feature = "serde")]
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
@@ -26,6 +28,7 @@ const MULTICAST_ADDR_BIT: u8 = 0x01;
 
 /// A MAC address.
 #[derive(PartialEq, Eq, Clone, Copy, Default, Hash, Ord, PartialOrd)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct MacAddr(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
 
 impl MacAddr {

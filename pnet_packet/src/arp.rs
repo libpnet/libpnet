@@ -8,10 +8,12 @@
 
 //! ARP packet abstraction.
 
-use crate::PrimitiveValues;
 use crate::ethernet::EtherType;
+use crate::PrimitiveValues;
 
 use alloc::vec::Vec;
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 
 use core::net::Ipv4Addr;
 
@@ -20,6 +22,7 @@ use pnet_macros::packet;
 
 /// Represents an ARP operation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct ArpOperation(pub u16);
 
 impl ArpOperation {
@@ -51,6 +54,7 @@ pub mod ArpOperations {
 
 /// Represents the ARP hardware types.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct ArpHardwareType(pub u16);
 
 impl ArpHardwareType {
@@ -80,6 +84,7 @@ pub mod ArpHardwareTypes {
 /// Represents an ARP Packet.
 #[packet]
 #[allow(non_snake_case)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Arp {
     #[construct_with(u16)]
     pub hardware_type: ArpHardwareType,

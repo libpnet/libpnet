@@ -8,19 +8,22 @@
 
 //! A UDP packet abstraction.
 
-use crate::Packet;
 use crate::ip::IpNextHeaderProtocols;
+use crate::Packet;
 
 use alloc::vec::Vec;
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
-use core::net::{Ipv4Addr, Ipv6Addr};
 use crate::util;
+use core::net::{Ipv4Addr, Ipv6Addr};
 
 /// Represents a UDP Packet.
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Udp {
     pub source: u16be,
     pub destination: u16be,
@@ -42,17 +45,20 @@ pub fn ipv4_checksum(packet: &UdpPacket, source: &Ipv4Addr, destination: &Ipv4Ad
 /// If `packet` contains an odd number of bytes the last byte will not be
 /// counted as the first byte of a word together with the first byte of
 /// `extra_data`.
-pub fn ipv4_checksum_adv(packet: &UdpPacket,
-                         extra_data: &[u8],
-                         source: &Ipv4Addr,
-                         destination: &Ipv4Addr)
-    -> u16be {
-    util::ipv4_checksum(packet.packet(),
-                        3,
-                        extra_data,
-                        source,
-                        destination,
-                        IpNextHeaderProtocols::Udp)
+pub fn ipv4_checksum_adv(
+    packet: &UdpPacket,
+    extra_data: &[u8],
+    source: &Ipv4Addr,
+    destination: &Ipv4Addr,
+) -> u16be {
+    util::ipv4_checksum(
+        packet.packet(),
+        3,
+        extra_data,
+        source,
+        destination,
+        IpNextHeaderProtocols::Udp,
+    )
 }
 
 #[test]
@@ -92,13 +98,14 @@ fn udp_header_ipv4_test() {
         assert_eq!(udp_header.get_checksum(), 0x9178);
     }
 
-    let ref_packet = [0x30, 0x39, /* source */
-                      0xd4, 0x31, /* destination */
-                      0x00, 0x0c, /* length */
-                      0x91, 0x78  /* checksum */];
+    let ref_packet = [
+        0x30, 0x39, /* source */
+        0xd4, 0x31, /* destination */
+        0x00, 0x0c, /* length */
+        0x91, 0x78, /* checksum */
+    ];
     assert_eq!(&ref_packet[..], &packet[20..28]);
 }
-
 
 /// Calculate a checksum for a packet built on IPv6.
 pub fn ipv6_checksum(packet: &UdpPacket, source: &Ipv6Addr, destination: &Ipv6Addr) -> u16be {
@@ -112,17 +119,20 @@ pub fn ipv6_checksum(packet: &UdpPacket, source: &Ipv6Addr, destination: &Ipv6Ad
 /// If `packet` contains an odd number of bytes the last byte will not be
 /// counted as the first byte of a word together with the first byte of
 /// `extra_data`.
-pub fn ipv6_checksum_adv(packet: &UdpPacket,
-                         extra_data: &[u8],
-                         source: &Ipv6Addr,
-                         destination: &Ipv6Addr)
-    -> u16be {
-    util::ipv6_checksum(packet.packet(),
-                        3,
-                        extra_data,
-                        source,
-                        destination,
-                        IpNextHeaderProtocols::Udp)
+pub fn ipv6_checksum_adv(
+    packet: &UdpPacket,
+    extra_data: &[u8],
+    source: &Ipv6Addr,
+    destination: &Ipv6Addr,
+) -> u16be {
+    util::ipv6_checksum(
+        packet.packet(),
+        3,
+        extra_data,
+        source,
+        destination,
+        IpNextHeaderProtocols::Udp,
+    )
 }
 
 #[test]
@@ -162,9 +172,11 @@ fn udp_header_ipv6_test() {
         assert_eq!(udp_header.get_checksum(), 0x1390);
     }
 
-    let ref_packet = [0x30, 0x39, /* source */
-                      0xd4, 0x31, /* destination */
-                      0x00, 0x0c, /* length */
-                      0x13, 0x90  /* checksum */];
+    let ref_packet = [
+        0x30, 0x39, /* source */
+        0xd4, 0x31, /* destination */
+        0x00, 0x0c, /* length */
+        0x13, 0x90, /* checksum */
+    ];
     assert_eq!(&ref_packet[..], &packet[40..48]);
 }

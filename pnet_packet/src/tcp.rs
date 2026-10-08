@@ -8,17 +8,19 @@
 
 //! A TCP packet abstraction.
 
+use crate::ip::IpNextHeaderProtocols;
 use crate::Packet;
 use crate::PrimitiveValues;
-use crate::ip::IpNextHeaderProtocols;
 
 use alloc::{vec, vec::Vec};
 
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
-use core::net::{Ipv4Addr, Ipv6Addr};
 use crate::util::{self, Octets};
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
+use core::net::{Ipv4Addr, Ipv6Addr};
 
 /// The TCP flags.
 #[allow(non_snake_case)]
@@ -53,6 +55,7 @@ pub mod TcpFlags {
 
 /// Represents a TCP packet.
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Tcp {
     pub source: u16be,
     pub destination: u16be,
@@ -72,6 +75,7 @@ pub struct Tcp {
 
 /// Represents a TCP option.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct TcpOptionNumber(pub u8);
 
 /// The TCP header options.
@@ -104,6 +108,7 @@ pub mod TcpOptionNumbers {
 
 /// A TCP option.
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct TcpOption {
     #[construct_with(u8)]
     pub number: TcpOptionNumber,
@@ -247,17 +252,20 @@ pub fn ipv4_checksum(packet: &TcpPacket, source: &Ipv4Addr, destination: &Ipv4Ad
 /// If `packet` contains an odd number of bytes the last byte will not be
 /// counted as the first byte of a word together with the first byte of
 /// `extra_data`.
-pub fn ipv4_checksum_adv(packet: &TcpPacket,
-                         extra_data: &[u8],
-                         source: &Ipv4Addr,
-                         destination: &Ipv4Addr)
-    -> u16 {
-    util::ipv4_checksum(packet.packet(),
-                        8,
-                        extra_data,
-                        source,
-                        destination,
-                        IpNextHeaderProtocols::Tcp)
+pub fn ipv4_checksum_adv(
+    packet: &TcpPacket,
+    extra_data: &[u8],
+    source: &Ipv4Addr,
+    destination: &Ipv4Addr,
+) -> u16 {
+    util::ipv4_checksum(
+        packet.packet(),
+        8,
+        extra_data,
+        source,
+        destination,
+        IpNextHeaderProtocols::Tcp,
+    )
 }
 
 /// Calculate a checksum for a packet built on IPv6.
@@ -272,17 +280,20 @@ pub fn ipv6_checksum(packet: &TcpPacket, source: &Ipv6Addr, destination: &Ipv6Ad
 /// If `packet` contains an odd number of bytes the last byte will not be
 /// counted as the first byte of a word together with the first byte of
 /// `extra_data`.
-pub fn ipv6_checksum_adv(packet: &TcpPacket,
-                         extra_data: &[u8],
-                         source: &Ipv6Addr,
-                         destination: &Ipv6Addr)
-    -> u16 {
-    util::ipv6_checksum(packet.packet(),
-                        8,
-                        extra_data,
-                        source,
-                        destination,
-                        IpNextHeaderProtocols::Tcp)
+pub fn ipv6_checksum_adv(
+    packet: &TcpPacket,
+    extra_data: &[u8],
+    source: &Ipv6Addr,
+    destination: &Ipv6Addr,
+) -> u16 {
+    util::ipv6_checksum(
+        packet.packet(),
+        8,
+        extra_data,
+        source,
+        destination,
+        IpNextHeaderProtocols::Tcp,
+    )
 }
 
 #[test]
@@ -340,19 +351,18 @@ fn tcp_header_ipv4_test() {
         tcp_header.set_checksum(checksum);
         assert_eq!(tcp_header.get_checksum(), 0xc031);
     }
-    let ref_packet = [0xc1, 0x67, /* source */
-                      0x23, 0x28, /* destination */
-                      0x90, 0x37, 0xd2, 0xb8, /* seq */
-                      0x94, 0x4b, 0xb2, 0x76, /* ack */
-                      0x80, 0x18, 0x0f, 0xaf, /* length, flags, win */
-                      0xc0, 0x31, /* checksum */
-                      0x00, 0x00,  /* urg ptr */
-                      0x01, 0x01, /* options: nop */
-                      0x08, 0x0a, 0x2c, 0x57,
-                      0xcd, 0xa5, 0x02, 0xa0,
-                      0x41, 0x92, /* timestamp */
-                      0x74, 0x65, 0x73, 0x74 /* "test" */
-                      ];
+    let ref_packet = [
+        0xc1, 0x67, /* source */
+        0x23, 0x28, /* destination */
+        0x90, 0x37, 0xd2, 0xb8, /* seq */
+        0x94, 0x4b, 0xb2, 0x76, /* ack */
+        0x80, 0x18, 0x0f, 0xaf, /* length, flags, win */
+        0xc0, 0x31, /* checksum */
+        0x00, 0x00, /* urg ptr */
+        0x01, 0x01, /* options: nop */
+        0x08, 0x0a, 0x2c, 0x57, 0xcd, 0xa5, 0x02, 0xa0, 0x41, 0x92, /* timestamp */
+        0x74, 0x65, 0x73, 0x74, /* "test" */
+    ];
     assert_eq!(&ref_packet[..], &packet[20..]);
 }
 

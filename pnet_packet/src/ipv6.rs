@@ -12,6 +12,8 @@ use crate::ip::IpNextHeaderProtocol;
 
 use alloc::vec::Vec;
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
@@ -19,6 +21,7 @@ use core::net::Ipv6Addr;
 
 /// Represents an IPv6 Packet.
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Ipv6 {
     pub version: u4,
     pub traffic_class: u8,
@@ -44,6 +47,7 @@ impl<'p> ExtensionIterable<'p> {
 
 /// Represents an IPv6 Extension.
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Extension {
     #[construct_with(u8)]
     pub next_header: IpNextHeaderProtocol,
@@ -66,6 +70,7 @@ pub type MutableHopByHopPacket<'p> = MutableExtensionPacket<'p>;
 
 /// Represents an IPv6 Routing Extension.
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Routing {
     #[construct_with(u8)]
     pub next_header: IpNextHeaderProtocol,
@@ -83,6 +88,7 @@ fn routing_extension_length(ext: &RoutingPacket) -> usize {
 
 /// Represents an IPv6 Fragment Extension.
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Fragment {
     #[construct_with(u8)]
     pub next_header: IpNextHeaderProtocol,
@@ -267,44 +273,36 @@ fn ipv6_header_test() {
         );
     }
 
-    let ref_packet = [0x61,           /* ver/traffic class */
-                      0x11,           /* traffic class/flow label */
-                      0x01, 0x01,     /* flow label */
-                      0x01, 0x01,     /* payload length */
-                      0x00,           /* next header */
-                      0x01,           /* hop limit */
-                      /* source ip */
-                      0x01, 0x10, 0x10, 0x01,
-                      0x01, 0x10, 0x10, 0x01,
-                      0x01, 0x10, 0x10, 0x01,
-                      0x01, 0x10, 0x10, 0x01,
-                      /* dest ip */
-                      0x01, 0x10, 0x10, 0x01,
-                      0x01, 0x10, 0x10, 0x01,
-                      0x01, 0x10, 0x10, 0x01,
-                      0x01, 0x10, 0x10, 0x01,
-                      /* Hop-by-Hop Options */
-                      0x3c,             // Next Header
-                      0x01,             // Hdr Ext Len
-                      b'A', b'A', b'A', b'A', b'A', b'A', b'A', b'A',
-                      b'A', b'A', b'A', b'A', b'A', b'A',
-                      /* Destination Options */
-                      0x2b,             // Next Header
-                      0x01,             // Hdr Ext Len
-                      b'B', b'B', b'B', b'B', b'B', b'B', b'B', b'B',
-                      b'B', b'B', b'B', b'B', b'B', b'B',
-                      /* Routing */
-                      0x2c,             // Next Header
-                      0x01,             // Hdr Ext Len
-                      0x04,             // Routing Type
-                      0x02,             // Segments Left
-                      b'C', b'C', b'C', b'C', b'C', b'C', b'C', b'C',
-                      b'C', b'C', b'C', b'C',
-                      /* Fragment */
-                      0x11,                     // Next Header
-                      0x00,                     // Reserved
-                      0x04, 0x01,               // Fragment Offset
-                      0x00, 0x00, 0x04, 0xd2    // Identification
-                      ];
+    let ref_packet = [
+        0x61, /* ver/traffic class */
+        0x11, /* traffic class/flow label */
+        0x01, 0x01, /* flow label */
+        0x01, 0x01, /* payload length */
+        0x00, /* next header */
+        0x01, /* hop limit */
+        /* source ip */
+        0x01, 0x10, 0x10, 0x01, 0x01, 0x10, 0x10, 0x01, 0x01, 0x10, 0x10, 0x01, 0x01, 0x10, 0x10,
+        0x01, /* dest ip */
+        0x01, 0x10, 0x10, 0x01, 0x01, 0x10, 0x10, 0x01, 0x01, 0x10, 0x10, 0x01, 0x01, 0x10, 0x10,
+        0x01, /* Hop-by-Hop Options */
+        0x3c, // Next Header
+        0x01, // Hdr Ext Len
+        b'A', b'A', b'A', b'A', b'A', b'A', b'A', b'A', b'A', b'A', b'A', b'A', b'A', b'A',
+        /* Destination Options */
+        0x2b, // Next Header
+        0x01, // Hdr Ext Len
+        b'B', b'B', b'B', b'B', b'B', b'B', b'B', b'B', b'B', b'B', b'B', b'B', b'B', b'B',
+        /* Routing */
+        0x2c, // Next Header
+        0x01, // Hdr Ext Len
+        0x04, // Routing Type
+        0x02, // Segments Left
+        b'C', b'C', b'C', b'C', b'C', b'C', b'C', b'C', b'C', b'C', b'C', b'C',
+        /* Fragment */
+        0x11, // Next Header
+        0x00, // Reserved
+        0x04, 0x01, // Fragment Offset
+        0x00, 0x00, 0x04, 0xd2, // Identification
+    ];
     assert_eq!(&ref_packet[..], &packet[..ref_packet.len()]);
 }

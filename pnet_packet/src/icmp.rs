@@ -12,11 +12,14 @@ use crate::PrimitiveValues;
 
 use alloc::vec::Vec;
 
+#[cfg(feature = "arbitrary")]
+use arbitrary::Arbitrary;
 use pnet_macros::packet;
 use pnet_macros_support::types::*;
 
 /// Represents the "ICMP type" header field.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct IcmpType(pub u8);
 
 impl IcmpType {
@@ -35,6 +38,7 @@ impl PrimitiveValues for IcmpType {
 
 /// Represents the "ICMP code" header field.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct IcmpCode(pub u8);
 
 impl IcmpCode {
@@ -53,6 +57,7 @@ impl PrimitiveValues for IcmpCode {
 
 /// Represents a generic ICMP packet.
 #[packet]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub struct Icmp {
     #[construct_with(u8)]
     pub icmp_type: IcmpType,
@@ -68,16 +73,16 @@ pub struct Icmp {
 
 /// Calculates a checksum of an ICMP packet.
 pub fn checksum(packet: &IcmpPacket) -> u16be {
-    use crate::Packet;
     use crate::util;
+    use crate::Packet;
 
     util::checksum(packet.packet(), 1)
 }
 
 #[cfg(test)]
 mod checksum_tests {
-    use alloc::vec;
     use super::*;
+    use alloc::vec;
 
     #[test]
     fn checksum_zeros() {
@@ -107,7 +112,6 @@ mod checksum_tests {
         assert_eq!(checksum(&pkg), expected);
     }
 }
-
 
 /// The enumeration of the recognized ICMP types.
 #[allow(non_snake_case)]
@@ -149,7 +153,6 @@ pub mod IcmpTypes {
     pub const Traceroute: IcmpType = IcmpType(30);
 }
 
-
 pub mod echo_reply {
     //! abstraction for ICMP "echo reply" packets.
     //!
@@ -163,8 +166,8 @@ pub mod echo_reply {
     //! +-+-+-+-+-
     //! ```
 
-    use crate::PrimitiveValues;
     use crate::icmp::{IcmpCode, IcmpType};
+    use crate::PrimitiveValues;
 
     use alloc::vec::Vec;
 
@@ -245,8 +248,8 @@ pub mod echo_request {
     //! +-+-+-+-+-
     //! ```
 
-    use crate::PrimitiveValues;
     use crate::icmp::{IcmpCode, IcmpType};
+    use crate::PrimitiveValues;
 
     use alloc::vec::Vec;
 
@@ -387,7 +390,6 @@ pub mod destination_unreachable {
         pub payload: Vec<u8>,
     }
 }
-
 
 pub mod time_exceeded {
     //! abstraction for "time exceeded" ICMP packets.
