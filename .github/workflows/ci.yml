@@ -34,6 +34,9 @@ jobs:
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpcap-dev
 
+    - name: Check standalone datalink serde feature
+      run: cargo check --manifest-path pnet_datalink/Cargo.toml --features serde
+
     - name: Build and test
       run: make travis_script
 

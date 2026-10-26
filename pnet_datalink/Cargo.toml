@@ -12,6 +12,7 @@ categories = ["network-programming"]
 edition = "2021"
 
 [features]
+serde = ["dep:serde", "pnet_base/serde"]
 netmap = []
 std = ["pnet_base/std"]
 default = ["std", "winpcap"]
