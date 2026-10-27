@@ -301,7 +301,7 @@ pub mod ndp {
     fn ndp_option_payload_length(option: &NdpOptionPacket) -> usize {
         let len = option.get_length();
         if len > 0 {
-            ((len * 8) - 2) as usize
+            (usize::from(len) * 8) - 2
         } else {
             0
         }
