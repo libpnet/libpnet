@@ -402,9 +402,10 @@ impl DataLinkReceiver for DataLinkReceiverImpl {
     }
 }
 
+#[path = "unix_interfaces.rs"]
+mod unix_interfaces;
+
 /// Get a list of available network interfaces for the current machine.
 pub fn interfaces() -> Vec<NetworkInterface> {
-    #[path = "unix_interfaces.rs"]
-    mod interfaces;
-    interfaces::interfaces()
+    unix_interfaces::interfaces()
 }
