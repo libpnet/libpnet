@@ -104,7 +104,7 @@ pub fn interfaces() -> Vec<NetworkInterface> {
     ifaces
 }
 
-#[cfg(any(target_os = "linux", target_os = "android"))]
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "fuchsia"))]
 fn sockaddr_to_network_addr(sa: *const libc::sockaddr) -> (Option<MacAddr>, Option<IpAddr>) {
     use std::net::SocketAddr;
 

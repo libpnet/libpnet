@@ -81,6 +81,10 @@ mod backend;
 ))]
 pub mod bpf;
 
+#[cfg(all(not(feature = "netmap"), target_os = "fuchsia"))]
+#[path = "fuchsia.rs"]
+mod backend;
+
 #[cfg(feature = "netmap")]
 #[path = "netmap.rs"]
 mod backend;
